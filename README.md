@@ -111,3 +111,6 @@ The visualization pipeline transforms processed MS data into interpretable visua
    - Publication-quality figures
    - Time-course analysis
    - Comparative analysis visualization
+
+## References 
+7. [Sachikonye, K. (2025). Lavoisier: A High-Performance Computing Solution for MassSpectrometry-Based Metabolomics with Novel Video AnalysisPipeline](./lavoisier.pdf)
