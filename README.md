@@ -1,5 +1,8 @@
 # Lavoisier
 
+[![Python Version](https://img.shields.io/pypi/pyversions/science-platform.svg)](https://pypi.org/project/science-platform/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 Lavoisier is a high performance computing solution for high data volume mass spectrometry based metabolomics data analysis 
 pipelines. Lavoisier contains two main pipelines : 
 1. A numerical analysis pipeline that uses established computational methods for ion spectra extraction, annotates ion peaks through a combination of database search, application of fragmentation rules and natural language processing methods.
