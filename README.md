@@ -5,6 +5,9 @@
   <img src="Antoine_lavoisier-copy.jpg" alt="Spectacular Logo" width="300"/>
 </p>
 
+[![Python Version](https://img.shields.io/pypi/pyversions/science-platform.svg)](https://pypi.org/project/science-platform/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 Lavoisier is a high-performance computing solution for mass spectrometry-based metabolomics data analysis pipelines. It combines traditional numerical methods with advanced visualization and AI-driven analytics to provide comprehensive insights from high-volume MS data.
 
 ## Core Architecture
@@ -359,3 +362,6 @@ Contributions are welcome! Please see our [contributing guidelines](CONTRIBUTING
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## References 
+7. [Sachikonye, K. (2025). Lavoisier: A High-Performance Computing Solution for MassSpectrometry-Based Metabolomics with Novel Video AnalysisPipeline](./lavoisier.pdf)
