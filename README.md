@@ -152,6 +152,34 @@ Lavoisier integrates commercial and open-source LLMs to enhance analytical capab
 - Comparative analysis between numeric and visual pipelines
 - Knowledge extraction and synthesis
 
+## Specialized Models Integration
+
+Lavoisier incorporates domain-specific models for advanced analysis tasks:
+
+### Biomedical Language Models
+- BioMedLM integration for biomedical text analysis and generation
+- Context-aware analysis of mass spectrometry data
+- Biological pathway interpretation and metabolite identification
+- Custom prompting templates for different analytical tasks
+
+### Scientific Text Encoders
+- SciBERT model for scientific literature processing and embedding
+- Multiple pooling strategies for optimal text representation
+- Similarity-based search across scientific documents
+- Batch processing of large text collections
+
+### Chemical Named Entity Recognition
+- PubMedBERT-NER-Chemical for extracting chemical compounds from text
+- Identification and normalization of chemical nomenclature
+- Entity replacement for text preprocessing
+- High-precision extraction with confidence scoring
+
+### Proteomics Analysis
+- InstaNovo model for de novo peptide sequencing
+- Integration of proteomics and metabolomics data
+- Cross-modal analysis for comprehensive biomolecule profiling
+- Advanced protein identification workflows
+
 ## Key Capabilities
 
 ### Performance
@@ -193,6 +221,9 @@ Lavoisier integrates commercial and open-source LLMs to enhance analytical capab
 - Peptide quantification
 - Post-translational modification analysis
 - Comparative proteomics studies
+- De novo peptide sequencing with InstaNovo integration
+- Cross-analysis of proteomics and metabolomics datasets
+- Protein-metabolite interaction mapping
 
 ### Metabolomics Studies
 - Metabolite profiling
@@ -365,3 +396,29 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## References 
 7. [Sachikonye, K. (2025). Lavoisier: A High-Performance Computing Solution for MassSpectrometry-Based Metabolomics with Novel Video AnalysisPipeline](./lavoisier.pdf)
+
+## Key Features
+
+### High-Performance Data Processing
+- **Distributed Computing Architecture**: Process large-scale MS datasets with Ray and Dask integration
+- **Parallel Processing**: Utilize all available cores automatically for maximum throughput
+- **Memory Optimization**: Stream processing for datasets exceeding available RAM
+- **Efficient Storage**: Zarr format with LZ4 compression for optimized I/O operations
+
+### Comprehensive Data Analysis
+- **Multi-Database Integration**: Search against HMDB, LipidMaps, KEGG, PubChem and more 
+- **Confidence Scoring System**: Multi-component evidence weighting for reliable identifications
+- **Automated Annotation**: Combined spectral matching and accurate mass search approaches
+- **Pathway Integration**: Automatic mapping to biological pathways for contextual interpretation
+
+### Specialized Models Integration
+- **Biomedical Language Models**: Integration of BioMedLM for interpreting complex biological data
+- **Scientific Text Encoders**: SciBERT implementation for processing scientific literature
+- **Chemical Named Entity Recognition**: PubMedBERT-NER-Chemical for compound identification
+- **Proteomics Analysis**: InstaNovo model support for advanced peptide sequencing
+
+### Flexible Visualization Suite
+- **Spectrum-to-Image Conversion**: Transform MS data into interpretable visual formats
+- **Time-Series Visualization**: Generate videos showing spectral changes over time
+- **High-Resolution Outputs**: Publication-quality figures and visualizations
+- **Interactive Exploration**: Dynamic visualization tools for data investigation

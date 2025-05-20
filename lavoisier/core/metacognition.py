@@ -8,7 +8,7 @@ import threading
 from enum import Enum
 from dataclasses import dataclass
 
-from lavoisier.core.config import LavoisierConfig
+from lavoisier.core.config import GlobalConfig
 from lavoisier.core.logging import get_logger, ProgressLogger
 
 
@@ -51,7 +51,7 @@ class Orchestrator:
     coordinates their execution, and integrates LLM capabilities.
     """
     
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         """
         Initialize the orchestrator with the given configuration
         
@@ -658,7 +658,7 @@ class Orchestrator:
 
 
 # Factory function to create an orchestrator instance
-def create_orchestrator(config: LavoisierConfig) -> Orchestrator:
+def create_orchestrator(config: GlobalConfig) -> Orchestrator:
     """
     Create an orchestrator instance
     

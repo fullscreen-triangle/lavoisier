@@ -16,8 +16,9 @@ import zarr
 import numpy as np
 import gc
 import uuid
+import h5py
 
-from lavoisier.core.config import LavoisierConfig
+from lavoisier.core.config import GlobalConfig
 from lavoisier.core.logging import get_logger
 from lavoisier.utils.cache import get_cache, cached
 from lavoisier.core.progress import get_progress_tracker, ProgressTracker
@@ -29,7 +30,7 @@ class NumericPipeline:
     and leverages distributed computing.
     """
     
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         """
         Initialize the numeric pipeline
         
@@ -572,7 +573,7 @@ class NumericPipeline:
     
     def _save_results(self, results: Dict[str, Any], output_dir: str) -> str:
         """
-        Save results to disk in an efficient format
+        Save results to disk in multiple formats for easier access
         
         Args:
             results: Dictionary of results
@@ -581,28 +582,124 @@ class NumericPipeline:
         Returns:
             Path to saved results
         """
-        # Create zarr group for results
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save in zarr format (original)
         zarr_path = os.path.join(output_dir, "results.zarr")
         store = zarr.DirectoryStore(zarr_path)
         root = zarr.group(store=store)
+        
+        # Also save in HDF5 format for easier viewing
+        h5_path = os.path.join(output_dir, "results.h5")
+        h5_file = h5py.File(h5_path, 'w')
+        
+        # Create CSV directory for even easier viewing
+        csv_dir = os.path.join(output_dir, "csv_results")
+        os.makedirs(csv_dir, exist_ok=True)
         
         # Use chunked storage for large arrays
         for file_path, result in results.items():
             file_name = os.path.basename(file_path)
             group_name = os.path.splitext(file_name)[0]
-            group = root.create_group(group_name)
             
-            # Process each file's results
+            # Create group in zarr
+            zarr_group = root.create_group(group_name)
+            
+            # Create group in HDF5
+            h5_group = h5_file.create_group(group_name)
+            
+            # Create directory for CSV
+            file_csv_dir = os.path.join(csv_dir, group_name)
+            os.makedirs(file_csv_dir, exist_ok=True)
+            
+            # Process each file's results in all formats
             try:
-                self._save_original_result(group, result)
+                self._save_result_in_all_formats(zarr_group, h5_group, file_csv_dir, result)
             except Exception as e:
                 self.logger.error(f"Error saving results for {file_path}: {str(e)}")
         
-        self.logger.info(f"Results saved to {zarr_path}")
-        return zarr_path
+        # Close the HDF5 file
+        h5_file.close()
+        
+        self.logger.info(f"Results saved to multiple formats:")
+        self.logger.info(f"  - Zarr: {zarr_path}")
+        self.logger.info(f"  - HDF5: {h5_path}")
+        self.logger.info(f"  - CSV: {csv_dir}")
+        
+        return output_dir
+    
+    def _save_result_in_all_formats(self, zarr_group, h5_group, csv_dir, result):
+        """Helper method to save result in all formats"""
+        try:
+            # Original result format is (scan_info, spec_dict, ms1_xic)
+            if isinstance(result, tuple) and len(result) == 3:
+                scan_info, spec_dict, ms1_xic = result
+                
+                # Save scan info
+                if isinstance(scan_info, pd.DataFrame):
+                    # Save to zarr
+                    dask_arr = da.from_array(scan_info.values)
+                    scan_info_ds = zarr_group.create_dataset("scan_info", 
+                                                    data=dask_arr,
+                                                    chunks=True, 
+                                                    compression='lz4')
+                    scan_info_ds.attrs["columns"] = list(scan_info.columns)
+                    
+                    # Save to HDF5
+                    h5_group.create_dataset("scan_info", data=scan_info.values)
+                    h5_group.create_dataset("scan_info_columns", data=np.array(list(scan_info.columns), dtype='S'))
+                    
+                    # Save to CSV
+                    scan_info.to_csv(os.path.join(csv_dir, "scan_info.csv"), index=False)
+                
+                # Save MS1 XIC
+                if isinstance(ms1_xic, pd.DataFrame):
+                    # Save to zarr
+                    dask_arr = da.from_array(ms1_xic.values)
+                    ms1_xic_ds = zarr_group.create_dataset("ms1_xic", 
+                                                   data=dask_arr,
+                                                   chunks=True, 
+                                                   compression='lz4')
+                    ms1_xic_ds.attrs["columns"] = list(ms1_xic.columns)
+                    
+                    # Save to HDF5
+                    h5_group.create_dataset("ms1_xic", data=ms1_xic.values)
+                    h5_group.create_dataset("ms1_xic_columns", data=np.array(list(ms1_xic.columns), dtype='S'))
+                    
+                    # Save to CSV
+                    ms1_xic.to_csv(os.path.join(csv_dir, "ms1_xic.csv"), index=False)
+                
+                # Save spectrum dictionary
+                if spec_dict:
+                    # Create spectrum groups
+                    zarr_spec_group = zarr_group.create_group("spectra")
+                    h5_spec_group = h5_group.create_group("spectra")
+                    spec_csv_dir = os.path.join(csv_dir, "spectra")
+                    os.makedirs(spec_csv_dir, exist_ok=True)
+                    
+                    for spec_idx, spec_df in spec_dict.items():
+                        if isinstance(spec_df, pd.DataFrame):
+                            # Save to zarr
+                            dask_arr = da.from_array(spec_df.values)
+                            spec_ds = zarr_spec_group.create_dataset(str(spec_idx), 
+                                                           data=dask_arr,
+                                                           chunks=True, 
+                                                           compression='lz4')
+                            spec_ds.attrs["columns"] = list(spec_df.columns)
+                            
+                            # Save to HDF5
+                            h5_spec_group.create_dataset(str(spec_idx), data=spec_df.values)
+                            h5_spec_group.create_dataset(f"{spec_idx}_columns", data=np.array(list(spec_df.columns), dtype='S'))
+                            
+                            # Save to CSV
+                            spec_df.to_csv(os.path.join(spec_csv_dir, f"spec_{spec_idx}.csv"), index=False)
+        
+        except Exception as e:
+            self.logger.error(f"Error saving result in multiple formats: {str(e)}")
     
     def _save_original_result(self, group, result):
-        """Helper method to save original result format"""
+        """Helper method to save original result format (keeping for backward compatibility)"""
         try:
             # Original result format is (scan_info, spec_dict, ms1_xic)
             if isinstance(result, tuple) and len(result) == 3:
@@ -625,18 +722,6 @@ class NumericPipeline:
                                                    chunks=True, 
                                                    compression='lz4')
                     ms1_xic_ds.attrs["columns"] = list(ms1_xic.columns)
-                
-                # Save spectrum dictionary
-                if isinstance(spec_dict, dict):
-                    spec_group = group.create_group("spectra")
-                    for spec_idx, spec_data in spec_dict.items():
-                        if isinstance(spec_data, pd.DataFrame):
-                            dask_arr = da.from_array(spec_data.values)
-                            spec_ds = spec_group.create_dataset(str(spec_idx), 
-                                                             data=dask_arr,
-                                                             chunks=True, 
-                                                             compression='lz4')
-                            spec_ds.attrs["columns"] = list(spec_data.columns)
         except Exception as e:
             group.attrs["save_error"] = str(e)
     
