@@ -15,7 +15,7 @@ from pathlib import Path
 import threading
 import weakref
 
-from lavoisier.core.config import LavoisierConfig
+from lavoisier.core.config import GlobalConfig
 
 # Logger for caching operations
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class CacheItem:
 
 class Cache:
     """Base class for caching implementations"""
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         self.config = config
         self.enabled = config.caching.enabled
         self.ttl_minutes = config.caching.ttl_minutes
@@ -109,7 +109,7 @@ class Cache:
 
 class MemoryCache(Cache):
     """In-memory cache implementation"""
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         super().__init__(config)
         self.max_size_bytes = config.caching.max_memory_size_mb * 1024 * 1024
         self.current_size_bytes = 0
@@ -224,7 +224,7 @@ class MemoryCache(Cache):
 
 class DiskCache(Cache):
     """Disk-based cache implementation"""
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         super().__init__(config)
         self.cache_dir = Path(config.caching.disk_cache_path)
         self.lock = threading.RLock()
@@ -392,7 +392,7 @@ class DiskCache(Cache):
 
 class HybridCache(Cache):
     """Hybrid memory+disk cache implementation"""
-    def __init__(self, config: LavoisierConfig):
+    def __init__(self, config: GlobalConfig):
         super().__init__(config)
         self.memory_cache = MemoryCache(config)
         self.disk_cache = DiskCache(config)
@@ -438,7 +438,7 @@ class HybridCache(Cache):
         return memory_success and disk_success
 
 
-def get_cache(config: LavoisierConfig) -> Cache:
+def get_cache(config: GlobalConfig) -> Cache:
     """Factory function to create the appropriate cache based on config"""
     strategy = config.caching.strategy.lower()
     

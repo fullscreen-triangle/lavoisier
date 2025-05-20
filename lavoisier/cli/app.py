@@ -14,7 +14,8 @@ from rich.syntax import Syntax
 from rich.tree import Tree
 import platform
 
-from lavoisier.core.config import LavoisierConfig
+# Import GlobalConfig correctly from the core.config module
+from lavoisier.core.config import GlobalConfig
 from lavoisier.core.logging import setup_logging, console
 from lavoisier.core.metacognition import create_orchestrator, PipelineType, AnalysisStatus
 
@@ -27,19 +28,18 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 
-# Initialize console for rich output
-console = Console()
+
 
 # Store configuration and orchestrator globally
-config: Optional[LavoisierConfig] = None
+config: Optional[GlobalConfig] = None
 orchestrator = None
 
-def _load_config(config_path: str) -> LavoisierConfig:
+def _load_config(config_path: str) -> GlobalConfig:
     """Load configuration from file"""
     global config
     try:
         if config_path and os.path.exists(config_path):
-            config = LavoisierConfig.from_yaml(config_path)
+            config = GlobalConfig.load(config_path)
         else:
             # Try to find config in default locations
             config_locations = [
@@ -50,12 +50,12 @@ def _load_config(config_path: str) -> LavoisierConfig:
             
             for loc in config_locations:
                 if os.path.exists(loc):
-                    config = LavoisierConfig.from_yaml(loc)
+                    config = GlobalConfig.load(loc)
                     break
             
             if config is None:
                 # No config found, use default
-                config = LavoisierConfig()
+                config = GlobalConfig()
                 
         # Make paths absolute based on current directory
         config.update_paths(os.getcwd())
