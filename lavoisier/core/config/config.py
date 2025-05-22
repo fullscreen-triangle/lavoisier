@@ -3,7 +3,6 @@ from typing import Tuple, Dict, Any, List, Optional
 import json
 from pathlib import Path
 import os
-import yaml  # For YAML support
 
 
 @dataclass
@@ -157,15 +156,13 @@ class GlobalConfig:
     @classmethod
     def load(cls, path: str) -> 'GlobalConfig':
         instance = cls()
-        # Check file extension
-        if path.endswith(".json"):
-            with open(path, 'r') as f:
-                config_dict = json.load(f)
-        elif path.endswith(".yaml") or path.endswith(".yml"):
-            with open(path, 'r') as f:
-                config_dict = yaml.safe_load(f)
-        else:
-            raise ValueError(f"Unsupported config file format: {path}")
+        
+        # Check file extension and load JSON
+        if not path.endswith(".json"):
+            raise ValueError(f"Unsupported config file format: {path}. Only JSON files (.json) are supported.")
+            
+        with open(path, 'r') as f:
+            config_dict = json.load(f)
             
         # Load each section if present
         if "processing" in config_dict:
@@ -224,11 +221,11 @@ class GlobalConfig:
         self.caching.disk_cache_path = make_absolute(self.caching.disk_cache_path)
         self.ms_parameters.output_dir = make_absolute(self.ms_parameters.output_dir)
     
-    # For compatibility with LavoisierConfig
+    # For backward compatibility
     @classmethod
     def from_yaml(cls, path: str) -> 'GlobalConfig':
-        """Load configuration from YAML file"""
-        return cls.load(path)
+        """This method is deprecated. Use load() instead."""
+        raise NotImplementedError("YAML support has been deprecated. Please use JSON config files instead.")
 
 # Default configuration
 CONFIG = GlobalConfig()

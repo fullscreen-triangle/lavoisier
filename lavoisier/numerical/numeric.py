@@ -1,5 +1,5 @@
 import logging
-import yaml
+import json
 from pathlib import Path
 import pandas as pd
 import multiprocessing as mp
@@ -14,7 +14,7 @@ import zarr
 import time
 import os
 
-from spectra_reader.MZMLReader import MSParameters, MZMLReader
+from lavoisier.core.io.MZMLReader import MSParameters, MZMLReader
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class MSAnalysisPipeline:
 
     def _load_config(self, config_path: str) -> dict:
         with open(config_path, 'r') as f:
-            return yaml.safe_load(f)
+            return json.load(f)
 
     def setup_logging(self):
         log_file = self.config['logging']['file']
@@ -209,7 +209,7 @@ class MSAnalysisPipeline:
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     input_dir = os.path.join(base_dir, "../spectra")
-    config_path = os.path.join(base_dir, "../config/numeric_config.yaml")
+    config_path = os.path.join(base_dir, "../config/numeric_config.json")
 
     # Create output and log directories if they don't exist
     output_dir = os.path.join(base_dir, "../output")
@@ -219,16 +219,16 @@ def main():
 
     # Modify the config with absolute paths
     with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
+        config = json.load(f)
 
     # Update paths in config
     config['ms_parameters']['output_dir'] = output_dir
     config['logging']['file'] = os.path.join(log_dir, 'ms_processing.log')
 
     # Write updated config
-    temp_config_path = os.path.join(base_dir, "../config/temp_config.yaml")
+    temp_config_path = os.path.join(base_dir, "../config/temp_config.json")
     with open(temp_config_path, 'w') as f:
-        yaml.dump(config, f)
+        json.dump(config, f)
 
     print(f"Input directory: {input_dir}")
     print(f"Output directory: {output_dir}")
