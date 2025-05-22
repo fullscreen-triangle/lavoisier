@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 import typer
-import yaml
+import json
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -43,9 +43,9 @@ def _load_config(config_path: str) -> GlobalConfig:
         else:
             # Try to find config in default locations
             config_locations = [
-                "./lavoisier_config.yaml",
-                os.path.expanduser("~/.config/lavoisier/config.yaml"),
-                "/etc/lavoisier/config.yaml",
+                "./lavoisier_config.json",
+                os.path.expanduser("~/.config/lavoisier/config.json"),
+                "/etc/lavoisier/config.json",
             ]
             
             for loc in config_locations:

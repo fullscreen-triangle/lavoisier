@@ -1,5 +1,5 @@
 # visual.py
-import yaml
+import json
 import logging
 from pathlib import Path
 from typing import List, Tuple, Dict
@@ -31,11 +31,11 @@ def setup_logging(log_dir: Path) -> None:
 
 def load_config(config_path: str) -> dict:
     """
-    Load and validate configuration from YAML file
+    Load and validate configuration from JSON file
     """
     try:
         with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
+            config = json.load(f)
 
         # Convert relative paths to absolute paths
         config['input_directory'] = os.path.abspath(os.path.expanduser(config['input_directory']))
@@ -182,7 +182,7 @@ def main(config_path: str):
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, "../config/visual_config.yaml")
+    config_path = os.path.join(base_dir, "../config/visual_config.json")
     main(config_path)
 
 

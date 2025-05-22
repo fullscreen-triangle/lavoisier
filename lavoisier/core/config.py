@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import Tuple, Dict, Any, List, Optional
 import json
 from pathlib import Path
-import yaml
 import os
 
 
@@ -131,11 +130,11 @@ class LavoisierConfig:
     caching: CachingConfig = field(default_factory=CachingConfig)
 
     @classmethod
-    def from_yaml(cls, path: str) -> 'LavoisierConfig':
-        """Load configuration from YAML file"""
+    def from_json(cls, path: str) -> 'LavoisierConfig':
+        """Load configuration from JSON file"""
         try:
             with open(path, 'r') as f:
-                config_dict = yaml.safe_load(f)
+                config_dict = json.load(f)
             
             instance = cls()
             
@@ -172,8 +171,8 @@ class LavoisierConfig:
         except Exception as e:
             raise RuntimeError(f"Error loading config file: {str(e)}")
 
-    def to_yaml(self, path: str) -> None:
-        """Save configuration to YAML file"""
+    def to_json(self, path: str) -> None:
+        """Save configuration to JSON file"""
         config_dict = {
             "ms_parameters": self.ms_parameters.__dict__,
             "processing": self.processing.__dict__,
@@ -190,7 +189,17 @@ class LavoisierConfig:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         
         with open(path, 'w') as f:
-            yaml.dump(config_dict, f, default_flow_style=False)
+            json.dump(config_dict, f, indent=4)
+
+    # Deprecated methods for backward compatibility
+    @classmethod
+    def from_yaml(cls, path: str) -> 'LavoisierConfig':
+        """This method is deprecated. Use from_json() instead."""
+        raise NotImplementedError("YAML support has been deprecated. Please use JSON config files instead.")
+        
+    def to_yaml(self, path: str) -> None:
+        """This method is deprecated. Use to_json() instead."""
+        raise NotImplementedError("YAML support has been deprecated. Please use JSON config files instead.")
 
     def update_paths(self, base_dir: str) -> None:
         """Update relative paths to absolute paths based on a base directory"""

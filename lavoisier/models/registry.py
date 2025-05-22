@@ -9,11 +9,13 @@ import tempfile
 from pathlib import Path
 from typing import Dict, Optional, Union, Any, List
 from enum import Enum
+import dataclasses
+import json
 
 import torch
-import yaml
 from huggingface_hub import snapshot_download, hf_hub_download, HfApi
 from tqdm import tqdm
+from difflib import get_close_matches
 
 from lavoisier.core.config import CONFIG
 from lavoisier.models.versioning import ModelVersion
@@ -93,17 +95,16 @@ class ModelRegistry:
     """Registry for managing and loading models."""
     
     def __init__(self, cache_dir: Optional[str] = None):
-        """Initialize the model registry.
-        
+        """
         Args:
-            cache_dir: Directory to cache models. If None, uses the default cache directory.
+            cache_dir: Directory to cache models in. If None, uses ~/.lavoisier/models.
         """
         self.cache_dir = cache_dir or os.path.join(CONFIG.get("data_path", "~/.lavoisier"), "models")
         self.cache_dir = os.path.expanduser(self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
         
         # Load model catalog
-        self.catalog_path = os.path.join(self.cache_dir, "model_catalog.yaml")
+        self.catalog_path = os.path.join(self.cache_dir, "model_catalog.json")
         self.load_catalog()
     
     def load_catalog(self) -> None:
@@ -113,7 +114,7 @@ class ModelRegistry:
         if os.path.exists(self.catalog_path):
             try:
                 with open(self.catalog_path, "r") as f:
-                    catalog_data = yaml.safe_load(f) or {}
+                    catalog_data = json.load(f) or {}
                 
                 for model_id, model_data in catalog_data.items():
                     self.catalog[model_id] = HuggingFaceModelInfo.from_dict(model_data)
@@ -125,7 +126,7 @@ class ModelRegistry:
         catalog_data = {model_id: model_info.to_dict() for model_id, model_info in self.catalog.items()}
         
         with open(self.catalog_path, "w") as f:
-            yaml.dump(catalog_data, f)
+            json.dump(catalog_data, f, indent=2)
     
     def register_model(self, model_info: HuggingFaceModelInfo) -> None:
         """Register a model in the catalog.
