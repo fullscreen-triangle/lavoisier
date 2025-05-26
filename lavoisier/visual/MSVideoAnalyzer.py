@@ -152,7 +152,6 @@ class MSVideoAnalyzer:
         Analyze generated MS video for patterns
         """
         cap = cv2.VideoCapture(video_path)
-        optical_flow = cv2.optflow.DualTVL1OpticalFlow_create()
 
         prev_frame = None
         flow_history = []
@@ -163,11 +162,11 @@ class MSVideoAnalyzer:
                 break
 
             if prev_frame is not None:
-                # Calculate optical flow
-                flow = optical_flow.calc(
+                # Calculate optical flow using Farneback method
+                flow = cv2.calcOpticalFlowFarneback(
                     cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY),
                     cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
-                    None
+                    None, 0.5, 3, 15, 3, 5, 1.2, 0
                 )
                 flow_history.append(flow)
 

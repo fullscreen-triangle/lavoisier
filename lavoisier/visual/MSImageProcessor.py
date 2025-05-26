@@ -152,33 +152,65 @@ class MZMLReader:
                 ms_level = spec.ms_level
 
                 if ms_level == 1:
-                    mz_array, int_array = spec.get_peaks()
+                    # Extract peaks using multiple methods
+                    mz_array, int_array = [], []
+                    try:
+                        if hasattr(spec, 'peaks') and callable(spec.peaks):
+                            peaks_data = spec.peaks("raw")
+                            if isinstance(peaks_data, tuple) and len(peaks_data) == 2:
+                                mz_array, int_array = peaks_data
+                            elif hasattr(peaks_data, '__len__') and len(peaks_data) > 0:
+                                peaks_array = np.array(peaks_data)
+                                if peaks_array.ndim == 2 and peaks_array.shape[1] >= 2:
+                                    mz_array = peaks_array[:, 0]
+                                    int_array = peaks_array[:, 1]
+                        elif hasattr(spec, 'peaks'):
+                            peaks = spec.peaks
+                            if hasattr(peaks, '__len__') and len(peaks) > 0:
+                                peaks_array = np.array(peaks)
+                                if peaks_array.ndim == 2 and peaks_array.shape[1] >= 2:
+                                    mz_array = peaks_array[:, 0]
+                                    int_array = peaks_array[:, 1]
+                        elif hasattr(spec, 'mz') and hasattr(spec, 'i'):
+                            mz_array = np.array(spec.mz)
+                            int_array = np.array(spec.i)
+                    except Exception as e:
+                        logging.error(f"Error extracting peaks from spectrum {spec_idx}: {str(e)}")
+                        continue
+
+                    # Convert to numpy arrays and ensure they're the same length
+                    mz_array = np.array(mz_array)
+                    int_array = np.array(int_array)
+
+                    if len(mz_array) == 0 or len(int_array) == 0:
+                        logging.warning(f"No peaks found in spectrum {spec_idx}")
+                        continue
+
                     scan_time = spec.scan_time_in_minutes()
 
-                    if len(mz_array) > 0:
-                        ms1_data.append({
-                            'scan_time': scan_time,
-                            'mz_array': mz_array,
-                            'int_array': int_array
-                        })
+                    ms1_data.append({
+                        'scan_time': scan_time,
+                        'mz_array': mz_array,
+                        'int_array': int_array
+                    })
 
-                        scan_info["spec_index"].append(spec_idx)
-                        scan_info["scan_time"].append(scan_time)
-                        scan_info["dda_event_idx"].append(current_dda_event)
-                        scan_info["DDA_rank"].append(0)
-                        scan_info["scan_number"].append(spec_idx)
+                    scan_info["spec_index"].append(spec_idx)
+                    scan_info["scan_time"].append(scan_time)
+                    scan_info["dda_event_idx"].append(current_dda_event)
+                    scan_info["DDA_rank"].append(0)
+                    scan_info["scan_number"].append(spec_idx)
 
-                        if self.params.ms1_threshold > 0:
-                            mask = int_array >= self.params.ms1_threshold
-                            mz_array = mz_array[mask]
-                            int_array = int_array[mask]
+                    if self.params.ms1_threshold > 0:
+                        mask = int_array >= self.params.ms1_threshold
+                        mz_array = mz_array[mask]
+                        int_array = int_array[mask]
 
-                        spec_dict[spec_idx] = pd.DataFrame({
-                            'mz': mz_array,
-                            'intensity': int_array
-                        })
+                    spec_dict[spec_idx] = pd.DataFrame({
+                        'mz': mz_array,
+                        'intensity': int_array
+                    })
 
-                        current_dda_event += 1
+                    current_dda_event += 1
 
                 elif ms_level == 2:
                     if hasattr(spec, 'selected_precursors') and spec.selected_precursors:
@@ -186,23 +218,52 @@ class MZMLReader:
                         precursor_intensity = spec.selected_precursors[0].get('i', 0)
 
                         if precursor_mz > 0:
-                            mz_array, int_array = spec.get_peaks()
+                            # Extract MS2 peaks using the same methods
+                            mz_array, int_array = [], []
+                            try:
+                                if hasattr(spec, 'peaks') and callable(spec.peaks):
+                                    peaks_data = spec.peaks("raw")
+                                    if isinstance(peaks_data, tuple) and len(peaks_data) == 2:
+                                        mz_array, int_array = peaks_data
+                                    elif hasattr(peaks_data, '__len__') and len(peaks_data) > 0:
+                                        peaks_array = np.array(peaks_data)
+                                        if peaks_array.ndim == 2 and peaks_array.shape[1] >= 2:
+                                            mz_array = peaks_array[:, 0]
+                                            int_array = peaks_array[:, 1]
+                                elif hasattr(spec, 'peaks'):
+                                    peaks = spec.peaks
+                                    if hasattr(peaks, '__len__') and len(peaks) > 0:
+                                        peaks_array = np.array(peaks)
+                                        if peaks_array.ndim == 2 and peaks_array.shape[1] >= 2:
+                                            mz_array = peaks_array[:, 0]
+                                            int_array = peaks_array[:, 1]
+                                elif hasattr(spec, 'mz') and hasattr(spec, 'i'):
+                                    mz_array = np.array(spec.mz)
+                                    int_array = np.array(spec.i)
+                            except Exception as e:
+                                logging.error(f"Error extracting peaks from MS2 spectrum {spec_idx}: {str(e)}")
+                                continue
+
+                            if len(mz_array) == 0 or len(int_array) == 0:
+                                logging.warning(f"No peaks found in MS2 spectrum {spec_idx}")
+                                continue
+
                             scan_time = spec.scan_time_in_minutes()
 
-                            if len(mz_array) > 0:
-                                scan_info["spec_index"].append(spec_idx)
-                                scan_info["scan_time"].append(scan_time)
-                                scan_info["dda_event_idx"].append(current_dda_event - 1)
-                                scan_info["DDA_rank"].append(len([x for x in scan_info["dda_event_idx"]
-                                                                  if x == current_dda_event - 1]))
-                                scan_info["scan_number"].append(spec_idx)
+                            scan_info["spec_index"].append(spec_idx)
+                            scan_info["scan_time"].append(scan_time)
+                            scan_info["dda_event_idx"].append(current_dda_event - 1)
+                            scan_info["DDA_rank"].append(len([x for x in scan_info["dda_event_idx"]
+                                                              if x == current_dda_event - 1]))
+                            scan_info["scan_number"].append(spec_idx)
 
-                                spec_dict[spec_idx] = pd.DataFrame({
-                                    'mz': mz_array,
-                                    'intensity': int_array,
-                                    'precursor_mz': precursor_mz,
-                                    'precursor_intensity': precursor_intensity
-                                })
+                            spec_dict[spec_idx] = pd.DataFrame({
+                                'mz': mz_array,
+                                'intensity': int_array,
+                                'precursor_mz': precursor_mz,
+                                'precursor_intensity': precursor_intensity
+                            })
+
             except Exception as e:
                 logging.error(f"Error processing spectrum {spec_idx}: {str(e)}")
                 continue
