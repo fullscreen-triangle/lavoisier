@@ -19,7 +19,9 @@ import uuid
 import h5py
 
 from lavoisier.core.config import GlobalConfig
+from lavoisier.core.io.MZMLReader import MSParameters, MZMLReader
 from lavoisier.core.logging import get_logger
+from lavoisier.core.ml.models import load_models
 from lavoisier.utils.cache import get_cache, cached
 from lavoisier.core.progress import get_progress_tracker, ProgressTracker
 
@@ -127,8 +129,7 @@ class NumericPipeline:
     
     def _init_ml_models(self):
         """Initialize machine learning models for enhanced analysis"""
-        from lavoisier.numerical.ml.models import load_models
-        
+
         self.logger.info("Loading ML models")
         self._ml_models = load_models(
             model_dir=self.config.paths.model_dir,
@@ -156,8 +157,7 @@ class NumericPipeline:
         """
         # This would normally import from the original package
         # and process the files using the original code
-        from spectra_reader.MZMLReader import MSParameters, MZMLReader
-        
+
         # Convert config dict back to parameters
         params = MSParameters(
             ms1_threshold=config['ms1_threshold'],

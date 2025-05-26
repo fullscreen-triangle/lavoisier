@@ -9,9 +9,9 @@ from tqdm import tqdm
 import os
 from datetime import datetime
 
-from ms_image_analyzer.MSImageDatabase import MSImageDatabase
-from ms_image_analyzer.MSImageProcessor import MSImageProcessor
-from ms_image_analyzer.MSVideoAnalyzer import MSVideoAnalyzer
+from lavoisier.visual.MSImageDatabase import MSImageDatabase
+from lavoisier.visual.MSImageProcessor import MSImageProcessor
+from lavoisier.visual.MSVideoAnalyzer import MSVideoAnalyzer
 
 
 def setup_logging(log_dir: Path) -> None:
@@ -182,7 +182,7 @@ def main(config_path: str):
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, "../config/visual_config.json")
+    config_path = os.path.join(base_dir, "../core/config/visual_config.json")
     main(config_path)
 
 

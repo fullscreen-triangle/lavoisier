@@ -4,7 +4,7 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 import h5py
-from cv2.gapi.wip.draw import Image
+from PIL import Image
 import faiss
 import hashlib
 from dataclasses import dataclass
@@ -81,18 +81,29 @@ class MSImageDatabase:
         # Apply Gaussian blur for continuous representation
         image = cv2.GaussianBlur(image, (5, 5), 0)
 
+        # Convert to 8-bit image for OpenCV compatibility
+        image = (image * 255).astype(np.uint8)
+
         return image
 
     def extract_features(self, image: np.ndarray) -> Tuple[np.ndarray, List]:
         """Extract multiple types of features from spectrum image"""
+        # Ensure image is 8-bit
+        if image.dtype != np.uint8:
+            image = (image * 255).astype(np.uint8)
+
         # SIFT features
         keypoints, descriptors = self.sift.detectAndCompute(image, None)
+        if descriptors is None:
+            descriptors = np.zeros((0, 128), dtype=np.float32)  # SIFT descriptor size is 128
 
         # ORB features for additional perspective
         orb_keypoints, orb_descriptors = self.orb.detectAndCompute(image, None)
+        if orb_descriptors is None:
+            orb_descriptors = np.zeros((0, 32), dtype=np.uint8)  # ORB descriptor size is 32
 
         # Edge features using Canny
-        edges = cv2.Canny(image.astype(np.uint8), 100, 200)
+        edges = cv2.Canny(image, 100, 200)
 
         # Combine features
         combined_features = np.concatenate([
@@ -183,7 +194,8 @@ class MSImageDatabase:
 
     def _calculate_ssim(self, img1: np.ndarray, img2: np.ndarray) -> float:
         """Calculate structural similarity between images"""
-        return cv2.compareSSIM(img1, img2)
+        from skimage.metrics import structural_similarity as ssim
+        return ssim(img1, img2)
 
     def _calculate_optical_flow(self, img1: np.ndarray, img2: np.ndarray) -> np.ndarray:
         """Calculate optical flow between images"""
@@ -230,9 +242,25 @@ class MSImageDatabase:
                 )
             return [f.result() for f in futures]
 
+    def _convert_to_serializable(self, obj):
+        """Convert numpy types to native Python types for JSON serialization"""
+        if isinstance(obj, dict):
+            return {key: self._convert_to_serializable(value) for key, value in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._convert_to_serializable(item) for item in obj]
+        elif isinstance(obj, (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
+                            np.uint8, np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
     def save_database(self, path: str):
         """Save database to disk"""
         db_path = Path(path)
+        db_path.mkdir(parents=True, exist_ok=True)
 
         # Save FAISS index
         faiss.write_index(self.index, str(db_path / "index.faiss"))
@@ -243,7 +271,10 @@ class MSImageDatabase:
                 grp = f.create_group(spectrum_id)
                 grp.create_dataset('features', data=data['features'])
                 grp.create_dataset('image_hash', data=data['image_hash'])
-                grp.attrs['metadata'] = json.dumps(data['metadata'])
+                
+                # Convert metadata to JSON-serializable format
+                serializable_metadata = self._convert_to_serializable(data['metadata'])
+                grp.attrs['metadata'] = json.dumps(serializable_metadata)
 
             # Save image cache
             image_grp = f.create_group('images')
