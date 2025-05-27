@@ -254,6 +254,50 @@ Our comprehensive validation demonstrates the effectiveness of Lavoisier's dual-
 - **Temporal Consistency**: 0.936 consistency score for time-series analysis
 - **Anomaly Detection**: Low anomaly score of 0.02, indicating reliable performance
 
+### Example Analysis Results
+
+#### Mass Spectrometry Analysis
+![Full MS Scan](analytical_visualizations/20250527_094000/mass_spectra/full_scan.png)
+*Full scan mass spectrum showing the comprehensive metabolite profile with high mass accuracy and resolution*
+
+![MS/MS Analysis](analytical_visualizations/20250527_094000/mass_spectra/glucose_msms.png)
+*MS/MS fragmentation pattern analysis for glucose, demonstrating detailed structural elucidation*
+
+![Feature Comparison](analytical_visualizations/20250527_094000/feature_analysis/feature_comparison.png)
+*Comparison of feature extraction between numerical and visual pipelines, showing high concordance and complementarity*
+
+#### Visual Pipeline Output
+https://github.com/username/lavoisier/raw/main/public/output/visual/videos/analysis_video.mp4
+
+*Computer vision pipeline output showing real-time spectral analysis and feature tracking. The video demonstrates the system's ability to:*
+- Track metabolite features across time
+- Visualize intensity changes dynamically
+- Highlight structural similarities
+- Detect pattern changes in real-time
+
+#### Analysis Outputs
+The system generates comprehensive analytical outputs organized in:
+
+1. **Time Series Analysis** (`time_series/`)
+   - Chromatographic peak tracking
+   - Retention time alignment
+   - Intensity variation monitoring
+
+2. **Feature Analysis** (`feature_analysis/`)
+   - Principal component analysis
+   - Feature clustering
+   - Pattern recognition results
+
+3. **Interactive Dashboards** (`interactive_dashboards/`)
+   - Real-time data exploration
+   - Dynamic filtering capabilities
+   - Interactive peak annotation
+
+4. **Publication Quality Figures** (`publication_figures/`)
+   - High-resolution spectral plots
+   - Statistical analysis visualizations
+   - Comparative analysis figures
+
 ### Pipeline Complementarity
 The dual-pipeline approach shows strong synergistic effects:
 - **Feature Comparison**: Multiple validation scores [1.0, 0.999, 0.999, 0.999, 0.932, 1.0] across different aspects
