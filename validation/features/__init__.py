@@ -7,8 +7,8 @@ and information content analysis.
 """
 
 from .feature_comparator import FeatureExtractorComparator
-from .information_content import InformationContentAnalyzer
-from .dimensionality_reduction import DimensionalityReducer
+from .information_content_analyzer import InformationContentAnalyzer
+from .dimensionality_reducer import DimensionalityReducer
 from .clustering_validator import ClusteringValidator
 
 __all__ = [

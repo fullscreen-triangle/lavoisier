@@ -23,8 +23,7 @@ from .statistics import (
 from .performance import (
     PerformanceBenchmark,
     EfficiencyAnalyzer,
-    ScalabilityTester,
-    ResourceMonitor
+    ScalabilityTester
 )
 
 from .quality import (
@@ -61,6 +60,11 @@ from .annotation import (
     ConfidenceScoreValidator
 )
 
+from .visualization import (
+    PipelineComparator,
+    StatisticalPlotter
+)
+
 __version__ = "1.0.0"
 __author__ = "Lavoisier Development Team"
 
@@ -75,7 +79,6 @@ __all__ = [
     "PerformanceBenchmark",
     "EfficiencyAnalyzer",
     "ScalabilityTester",
-    "ResourceMonitor",
     
     # Quality
     "DataQualityAssessor",
@@ -104,5 +107,9 @@ __all__ = [
     "AnnotationPerformanceEvaluator",
     "CompoundIdentificationValidator",
     "DatabaseSearchAnalyzer",
-    "ConfidenceScoreValidator"
+    "ConfidenceScoreValidator",
+    
+    # Visualization
+    "PipelineComparator",
+    "StatisticalPlotter"
 ]
