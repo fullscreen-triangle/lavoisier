@@ -267,13 +267,125 @@ Our comprehensive validation demonstrates the effectiveness of Lavoisier's dual-
 *Comparison of feature extraction between numerical and visual pipelines, showing high concordance and complementarity*
 
 #### Visual Pipeline Output
-https://github.com/username/lavoisier/raw/main/public/output/visual/videos/analysis_video.mp4
+<video width="100%" controls>
+  <source src="public/output/visual/videos/analysis_video.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
-*Computer vision pipeline output showing real-time spectral analysis and feature tracking. The video demonstrates the system's ability to:*
-- Track metabolite features across time
-- Visualize intensity changes dynamically
-- Highlight structural similarities
-- Detect pattern changes in real-time
+### Novel Visual Analysis Method
+
+The visual pipeline represents a groundbreaking approach to mass spectrometry data analysis through computer vision techniques. This section details the mathematical foundations and implementation of this novel method.
+
+#### Mathematical Formulation
+
+1. **Spectrum-to-Image Transformation**
+   The conversion of mass spectra to visual representations follows:
+   ```
+   F(m/z, I) → R^(n×n)
+   ```
+   where:
+   - m/z ∈ R^k: mass-to-charge ratio vector
+   - I ∈ R^k: intensity vector
+   - n: resolution dimension (default: 1024)
+   
+   The transformation is defined by:
+   ```
+   P(x,y) = G(σ) * ∑[δ(x - φ(m/z)) · ψ(I)]
+   ```
+   where:
+   - P(x,y): pixel intensity at coordinates (x,y)
+   - G(σ): Gaussian kernel with σ=1
+   - φ: m/z mapping function to x-coordinate
+   - ψ: intensity scaling function (log1p transform)
+   - δ: Dirac delta function
+
+2. **Temporal Integration**
+   Sequential frames are processed using a sliding window approach:
+   ```
+   B_t = {F_i | i ∈ [t-w, t]}
+   ```
+   where:
+   - B_t: frame buffer at time t
+   - w: window size (default: 30 frames)
+   - F_i: transformed frame at time i
+
+#### Feature Detection and Tracking
+
+1. **Scale-Invariant Feature Transform (SIFT)**
+   - Keypoint detection using DoG (Difference of Gaussians)
+   - Local extrema detection in scale space
+   - Keypoint localization and filtering
+   - Orientation assignment
+   - Feature descriptor generation
+
+2. **Temporal Pattern Analysis**
+   - Optical flow computation using Farneback method
+   - Flow magnitude and direction analysis:
+     ```
+     M(x,y) = √(fx² + fy²)
+     θ(x,y) = arctan(fy/fx)
+     ```
+   where:
+   - M: flow magnitude
+   - θ: flow direction
+   - fx, fy: flow vectors
+
+#### Pattern Recognition
+
+1. **Feature Correlation**
+   Temporal patterns are analyzed using frame-to-frame correlation:
+   ```
+   C(i,j) = corr(F_i, F_j)
+   ```
+   where C(i,j) is the correlation coefficient between frames i and j.
+
+2. **Significant Movement Detection**
+   Features are tracked using a statistical threshold:
+   ```
+   T = μ(M) + 2σ(M)
+   ```
+   where:
+   - T: movement threshold
+   - μ(M): mean flow magnitude
+   - σ(M): standard deviation of flow magnitude
+
+#### Implementation Details
+
+1. **Resolution and Parameters**
+   - Frame resolution: 1024×1024 pixels
+   - Feature vector dimension: 128
+   - Gaussian blur σ: 1.0
+   - Frame rate: 30 fps
+   - Window size: 30 frames
+
+2. **Processing Pipeline**
+   a. Raw spectrum acquisition
+   b. m/z and intensity normalization
+   c. Coordinate mapping
+   d. Gaussian smoothing
+   e. Feature detection
+   f. Temporal integration
+   g. Video generation
+
+3. **Quality Metrics**
+   - Structural Similarity Index (SSIM)
+   - Peak Signal-to-Noise Ratio (PSNR)
+   - Feature stability across frames
+   - Temporal consistency measures
+
+This novel approach enables:
+- Real-time visualization of spectral changes
+- Pattern detection in complex MS data
+- Intuitive interpretation of metabolomic profiles
+- Enhanced feature detection through computer vision
+- Temporal analysis of metabolite dynamics
+
+The video above demonstrates this method in action, showing:
+1. Real-time spectrum-to-image conversion
+2. Feature detection and tracking
+3. Temporal pattern visualization
+4. Metabolite intensity changes
+5. Structural similarity analysis
 
 #### Analysis Outputs
 The system generates comprehensive analytical outputs organized in:
