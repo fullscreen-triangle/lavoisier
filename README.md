@@ -267,14 +267,24 @@ Our comprehensive validation demonstrates the effectiveness of Lavoisier's dual-
 *Comparison of feature extraction between numerical and visual pipelines, showing high concordance and complementarity*
 
 #### Visual Pipeline Output
+
+The following video demonstrates our novel computer vision approach to mass spectrometry analysis:
+
 <video width="100%" controls>
   <source src="public/output/visual/videos/analysis_video.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
-### Novel Visual Analysis Method
+*The video above shows real-time mass spectrometry data analysis through our computer vision pipeline, demonstrating:*
+- Real-time conversion of mass spectra to visual patterns
+- Dynamic feature detection and tracking across time
+- Metabolite intensity changes visualized as flowing patterns
+- Structural similarities highlighted through visual clustering
+- Pattern changes detected and analyzed in real-time
 
-The visual pipeline represents a groundbreaking approach to mass spectrometry data analysis through computer vision techniques. This section details the mathematical foundations and implementation of this novel method.
+### Technical Details: Novel Visual Analysis Method
+
+The visual pipeline represents a groundbreaking approach to mass spectrometry data analysis through computer vision techniques. This section details the mathematical foundations and implementation of the method demonstrated in the video above.
 
 #### Mathematical Formulation
 
@@ -379,13 +389,6 @@ This novel approach enables:
 - Intuitive interpretation of metabolomic profiles
 - Enhanced feature detection through computer vision
 - Temporal analysis of metabolite dynamics
-
-The video above demonstrates this method in action, showing:
-1. Real-time spectrum-to-image conversion
-2. Feature detection and tracking
-3. Temporal pattern visualization
-4. Metabolite intensity changes
-5. Structural similarity analysis
 
 #### Analysis Outputs
 The system generates comprehensive analytical outputs organized in:
