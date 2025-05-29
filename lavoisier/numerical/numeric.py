@@ -15,6 +15,20 @@ import os
 import pymzml
 from dataclasses import dataclass
 import numpy as np
+import torch
+from dotenv import load_dotenv
+
+from lavoisier.models import (
+    SpecTUSModel,
+    CMSSPModel,
+    ChemBERTaModel,
+    create_spectus_model,
+    create_cmssp_model,
+    create_chemberta_model
+)
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +43,13 @@ class MSParameters:
     min_intensity: float = 500.0
     output_dir: str = "output"
     n_workers: int = -1  # Use all available CPUs
+    
+    # Model parameters
+    enable_spectus: bool = os.getenv('ENABLE_SPECTUS', 'true').lower() == 'true'
+    enable_cmssp: bool = os.getenv('ENABLE_CMSSP', 'true').lower() == 'true'
+    enable_chemberta: bool = os.getenv('ENABLE_CHEMBERTA', 'true').lower() == 'true'
+    max_batch_size: int = int(os.getenv('MAX_BATCH_SIZE', '32'))
+    use_gpu: bool = os.getenv('ENABLE_GPU', 'true').lower() == 'true'
 
 class MZMLReader:
     """Class to handle mzML file reading and processing"""
@@ -261,6 +282,22 @@ class MSAnalysisPipeline:
         # Initialize distributed computing
         self._setup_compute_environment()
 
+        # Initialize models if enabled
+        self.device = "cuda" if torch.cuda.is_available() and self.params.use_gpu else "cpu"
+        self.models = {}
+        
+        if self.params.enable_spectus:
+            self.models['spectus'] = create_spectus_model(device=self.device)
+            logger.info("Initialized SpecTUS model")
+            
+        if self.params.enable_cmssp:
+            self.models['cmssp'] = create_cmssp_model(device=self.device)
+            logger.info("Initialized CMSSP model")
+            
+        if self.params.enable_chemberta:
+            self.models['chemberta'] = create_chemberta_model(device=self.device)
+            logger.info("Initialized ChemBERTa model")
+
     def setup_logging(self):
         log_file = self.config['logging']['file']
         
@@ -320,6 +357,31 @@ class MSAnalysisPipeline:
                 print(error_msg)
         return results
 
+    def process_spectrum_with_models(self, mz_values: np.ndarray, intensity_values: np.ndarray) -> Dict:
+        """Process a spectrum using available models"""
+        results = {}
+        
+        try:
+            # SpecTUS for structure prediction
+            if 'spectus' in self.models:
+                smiles = self.models['spectus'].process_spectrum(mz_values, intensity_values)
+                results['predicted_structure'] = smiles
+            
+            # CMSSP for embeddings
+            if 'cmssp' in self.models:
+                embedding = self.models['cmssp'].encode_spectrum(mz_values, intensity_values)
+                results['spectrum_embedding'] = embedding
+            
+            # ChemBERTa for additional properties
+            if 'chemberta' in self.models and 'predicted_structure' in results:
+                properties = self.models['chemberta'].predict_properties(results['predicted_structure'])
+                results['predicted_properties'] = properties
+                
+        except Exception as e:
+            logger.error(f"Error in model processing: {str(e)}")
+            
+        return results
+
     def process_files(self, input_dir: str):
         """Main method to process MS files"""
         start_time = time.time()
@@ -366,6 +428,25 @@ class MSAnalysisPipeline:
 
             print(f"Successfully processed {len(combined_results)} files")
 
+            # Process with ML models in batches
+            if any(self.models):
+                print("Processing with ML models...")
+                for file_path, (scan_info, spec_dict, ms1_xic) in combined_results.items():
+                    model_results = {}
+                    
+                    # Process spectra in batches
+                    spectra = [(spectrum['mz'].values, spectrum['intensity'].values) 
+                              for spectrum in spec_dict.values()]
+                    
+                    for i in range(0, len(spectra), self.params.max_batch_size):
+                        batch = spectra[i:i + self.params.max_batch_size]
+                        for j, (mz, intensity) in enumerate(batch):
+                            spec_idx = list(spec_dict.keys())[i + j]
+                            model_results[spec_idx] = self.process_spectrum_with_models(mz, intensity)
+                    
+                    # Add model results to output
+                    combined_results[file_path] = (scan_info, spec_dict, ms1_xic, model_results)
+            
             output_dir = Path(self.params.output_dir)
             output_dir.mkdir(parents=True, exist_ok=True)
             print(f"Saving results to: {output_dir}")
@@ -392,12 +473,19 @@ class MSAnalysisPipeline:
         """Save results using simple file formats - no more zarr complexity!"""
         print("Saving results...")
         
-        for file_path, (scan_info, spec_dict, ms1_xic) in results.items():
+        for file_path, data in results.items():
             file_name = Path(file_path).stem
             file_output_dir = output_dir / file_name
             file_output_dir.mkdir(parents=True, exist_ok=True)
             
             try:
+                # Unpack results - now includes model results
+                if len(data) == 4:
+                    scan_info, spec_dict, ms1_xic, model_results = data
+                else:
+                    scan_info, spec_dict, ms1_xic = data
+                    model_results = {}
+                
                 # Save scan info as CSV
                 scan_info.to_csv(file_output_dir / "scan_info.csv", index=False)
                 print(f"Saved scan info for {file_name}")
@@ -413,6 +501,12 @@ class MSAnalysisPipeline:
                 
                 for spec_idx, spec_data in spec_dict.items():
                     spec_data.to_csv(spectra_dir / f"spectrum_{spec_idx}.csv", index=False)
+                    
+                    # Save model results if available
+                    if model_results and spec_idx in model_results:
+                        model_output = model_results[spec_idx]
+                        with open(spectra_dir / f"spectrum_{spec_idx}_ml.json", 'w') as f:
+                            json.dump(model_output, f, indent=2)
                 
                 print(f"Saved {len(spec_dict)} spectra for {file_name}")
                 
