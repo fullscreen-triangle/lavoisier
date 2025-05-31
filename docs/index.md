@@ -36,11 +36,19 @@ results = analyzer.process_file("data.mzML")
 
 ## Documentation Sections
 
+### Getting Started
 - [**Installation Guide**](installation.md) - Get up and running quickly
 - [**Analysis Results**](results.md) - View comprehensive analysis outputs  
+
+### Deep Technical Documentation
+- [**Architecture Deep Dive**](architecture.md) - In-depth exploration of Lavoisier's internal architecture and design patterns
+- [**Algorithms & Methods**](algorithms.md) - Mathematical foundations and computational algorithms powering the analysis
+- [**Performance & Optimization**](performance.md) - Comprehensive guide to maximizing computational efficiency
+
+### Specialized Features
 - [**Hugging Face Models**](huggingface-models.md) - AI model integration details
 - [**Scientific Benchmarking**](benchmarking.md) - MTBLS1707 validation study
-- [**API Reference**](api.md) - Complete programming interface
+- [**Visualization Methods**](visualization.md) - Advanced visualization and computer vision techniques
 
 ## Novel Approach
 
@@ -84,11 +92,26 @@ Lavoisier has been rigorously tested using the **MTBLS1707** study - a comprehen
 
 [View Complete Benchmarking Results →](benchmarking.md)
 
+## Advanced Technical Documentation
+
+For developers and researchers seeking in-depth technical understanding:
+
+### [Architecture Deep Dive](architecture.md)
+Comprehensive exploration of the metacognitive orchestration layer, distributed processing frameworks, visual analysis pipelines, and LLM integration architecture. Includes detailed implementation examples and design patterns.
+
+### [Algorithms & Methods](algorithms.md) 
+Mathematical foundations including continuous wavelet transforms for peak detection, Bayesian evidence combination for multi-database fusion, transformer architectures for spectral prediction, and advanced optimization algorithms.
+
+### [Performance & Optimization](performance.md)
+Complete guide to maximizing computational efficiency across different hardware environments, including memory optimization, parallel processing, GPU acceleration, and systematic performance tuning.
+
 ## Getting Started
 
 Ready to revolutionize your metabolomics analysis? Start with our [Installation Guide](installation.md) or explore the [Analysis Results](results.md) to see what Lavoisier can do for your data.
 
 For developers and researchers interested in the AI components, check out our [Hugging Face Models](huggingface-models.md) documentation.
+
+For deep technical insights into the package mechanics, explore our comprehensive [Architecture Documentation](architecture.md) and [Algorithms Guide](algorithms.md).
 
 ---
 
