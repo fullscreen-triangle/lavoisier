@@ -8,7 +8,7 @@ nav_order: 1
 
 *Only the extraordinary can beget the extraordinary*
 
-![Lavoisier Logo](Antoine_lavoisier-copy.jpg)
+![Lavoisier Logo](./Antoine_lavoisier-copy.jpg)
 
 ## Overview
 
@@ -34,20 +34,25 @@ analyzer = MSAnalyzer()
 results = analyzer.process_file("data.mzML")
 ```
 
-## Documentation Sections
+## Complete Documentation Index
 
 ### Getting Started
 - [**Installation Guide**](installation.md) - Get up and running quickly
-- [**Analysis Results**](results.md) - View comprehensive analysis outputs  
+- [**Analysis Results**](results.md) - View comprehensive analysis outputs
+- [**Tasks & Workflows**](tasks.md) - Common analysis tasks and workflow examples
 
 ### Deep Technical Documentation
 - [**Architecture Deep Dive**](architecture.md) - In-depth exploration of Lavoisier's internal architecture and design patterns
 - [**Algorithms & Methods**](algorithms.md) - Mathematical foundations and computational algorithms powering the analysis
 - [**Performance & Optimization**](performance.md) - Comprehensive guide to maximizing computational efficiency
 
-### Specialized Features
-- [**Hugging Face Models**](huggingface-models.md) - AI model integration details
-- [**Scientific Benchmarking**](benchmarking.md) - MTBLS1707 validation study
+### AI & Machine Learning Integration
+- [**Hugging Face Models**](huggingface-models.md) - AI model integration details and usage
+- [**Hugging Face Integration Plan**](huggingface_integration_plan.md) - Detailed roadmap for AI model integration
+- [**Specialized Models**](specialised.md) - Advanced specialized model configurations
+
+### Analysis & Validation
+- [**Scientific Benchmarking**](benchmarking.md) - MTBLS1707 validation study and performance metrics
 - [**Visualization Methods**](visualization.md) - Advanced visualization and computer vision techniques
 
 ## Novel Approach
@@ -105,13 +110,22 @@ Mathematical foundations including continuous wavelet transforms for peak detect
 ### [Performance & Optimization](performance.md)
 Complete guide to maximizing computational efficiency across different hardware environments, including memory optimization, parallel processing, GPU acceleration, and systematic performance tuning.
 
+### [Visualization Methods](visualization.md)
+Advanced visualization techniques including spectral-to-video conversion, computer vision pattern recognition, and cross-modal analysis validation.
+
 ## Getting Started
 
-Ready to revolutionize your metabolomics analysis? Start with our [Installation Guide](installation.md) or explore the [Analysis Results](results.md) to see what Lavoisier can do for your data.
+Ready to revolutionize your metabolomics analysis? 
 
-For developers and researchers interested in the AI components, check out our [Hugging Face Models](huggingface-models.md) documentation.
+1. **Start Here**: [Installation Guide](installation.md) - Complete setup instructions
+2. **See Results**: [Analysis Results](results.md) - Example outputs and capabilities  
+3. **Follow Workflows**: [Tasks & Workflows](tasks.md) - Step-by-step analysis procedures
+4. **Explore AI Features**: [Hugging Face Models](huggingface-models.md) - AI-powered analysis capabilities
 
-For deep technical insights into the package mechanics, explore our comprehensive [Architecture Documentation](architecture.md) and [Algorithms Guide](algorithms.md).
+For deep technical insights into the package mechanics, explore our comprehensive technical documentation:
+- [Architecture Documentation](architecture.md) - System design and implementation
+- [Algorithms Guide](algorithms.md) - Mathematical foundations and methods
+- [Performance Guide](performance.md) - Optimization strategies and benchmarks
 
 ---
 
