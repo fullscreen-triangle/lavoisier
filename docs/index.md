@@ -8,7 +8,7 @@ nav_order: 1
 
 *Only the extraordinary can beget the extraordinary*
 
-![Lavoisier Logo](../Antoine_lavoisier-copy.jpg)
+![Lavoisier Logo](Antoine_lavoisier-copy.jpg)
 
 ## Overview
 
