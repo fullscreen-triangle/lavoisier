@@ -1,12 +1,16 @@
 ---
 layout: default
 title: Hugging Face Models
-nav_order: 4
+nav_order: 6
 ---
 
-# Hugging Face Model Integration
+# Hugging Face Models Integration
 
-Lavoisier leverages state-of-the-art machine learning models from Hugging Face to enhance its mass spectrometry analysis capabilities. Our integration spans multiple domains, from spectrometry-specific models to chemical language models and biomedical text analysis.
+Lavoisier leverages cutting-edge AI models from Hugging Face to enhance mass spectrometry analysis through advanced machine learning capabilities.
+
+## Model Architecture Overview
+
+*Note: Model architecture diagram will be added in future updates*
 
 ## Model Architecture
 

@@ -21,15 +21,15 @@ Our comprehensive validation demonstrates the effectiveness of Lavoisier's dual-
 ## Mass Spectrometry Analysis
 
 ### Full MS Scan
-![Full MS Scan]({{ '/analytical_visualizations/20250527_094000/mass_spectra/full_scan.png' | relative_url }})
+![Full MS Scan]({{ '/assets/analytical_visualizations/20250527_094000/mass_spectra/full_scan.png' | relative_url }})
 *Full scan mass spectrum showing comprehensive metabolite profile with high mass accuracy and resolution*
 
 ### MS/MS Analysis
-![MS/MS Analysis]({{ '/analytical_visualizations/20250527_094000/mass_spectra/glucose_msms.png' | relative_url }})
+![MS/MS Analysis]({{ '/assets/analytical_visualizations/20250527_094000/mass_spectra/glucose_msms.png' | relative_url }})
 *MS/MS fragmentation pattern analysis for glucose, demonstrating detailed structural elucidation*
 
 ### Feature Comparison
-![Feature Comparison]({{ '/analytical_visualizations/20250527_094000/feature_analysis/feature_comparison.png' | relative_url }})
+![Feature Comparison]({{ '/assets/analytical_visualizations/20250527_094000/feature_analysis/feature_comparison.png' | relative_url }})
 *Comparison of feature extraction between numerical and visual pipelines*
 
 ## Visual Pipeline Output
