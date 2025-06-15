@@ -18,33 +18,36 @@ Lavoisier is a high-performance computing solution for mass spectrometry-based m
 
 ## Core Architecture
 
-Lavoisier features a metacognitive orchestration layer that coordinates two main pipelines:
+Lavoisier features a sophisticated AI-driven architecture that combines multiple specialized modules for mass spectrometry analysis:
 
-1. **Numerical Analysis Pipeline**: Uses established computational methods for ion spectra extraction, annotates ion peaks through database search, fragmentation rules, and natural language processing.
-
-2. **Visual Analysis Pipeline**: Converts spectra into video format and applies computer vision methods for annotation.
-
-The orchestration layer manages workflow execution, resource allocation, and integrates LLM-powered intelligence for analysis and decision-making.
+1. **Diadochi Framework**: Multi-domain LLM orchestration system for intelligent query routing and expert collaboration
+2. **Mzekezeke**: Bayesian Evidence Network with Fuzzy Logic for probabilistic MS annotations
+3. **Hatata**: Markov Decision Process verification layer for stochastic validation
+4. **Zengeza**: Intelligent noise reduction using statistical analysis and machine learning
+5. **Nicotine**: Context verification system with cryptographic puzzles for AI integrity
+6. **Diggiden**: Adversarial testing system for evidence network vulnerability assessment
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                   Metacognitive Orchestration                   │
-│                                                                │
-│  ┌──────────────────────┐          ┌───────────────────────┐   │
-│  │                      │          │                       │   │
-│  │  Numerical Pipeline  │◄────────►│  Visual Pipeline      │   │
-│  │                      │          │                       │   │
-│  └──────────────────────┘          └───────────────────────┘   │
-│                 ▲                              ▲                │
-│                 │                              │                │
-│                 ▼                              ▼                │
-│  ┌──────────────────────┐          ┌───────────────────────┐   │
-│  │                      │          │                       │   │
-│  │  Model Repository    │◄────────►│  LLM Integration      │   │
-│  │                      │          │                       │   │
-│  └──────────────────────┘          └───────────────────────┘   │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Lavoisier AI Architecture                           │
+│                                                                             │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │
+│  │                 │    │                 │    │                 │        │
+│  │   Diadochi      │◄──►│   Mzekezeke     │◄──►│    Hatata       │        │
+│  │   (LLM Routing) │    │ (Bayesian Net)  │    │ (MDP Verify)    │        │
+│  │                 │    │                 │    │                 │        │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘        │
+│           ▲                        ▲                        ▲              │
+│           │                        │                        │              │
+│           ▼                        ▼                        ▼              │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │
+│  │                 │    │                 │    │                 │        │
+│  │    Zengeza      │◄──►│    Nicotine     │◄──►│    Diggiden     │        │
+│  │ (Noise Reduce)  │    │ (Context Verify)│    │ (Adversarial)   │        │
+│  │                 │    │                 │    │                 │        │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Command Line Interface
@@ -186,7 +189,260 @@ Lavoisier incorporates domain-specific models for advanced analysis tasks:
 - Cross-modal analysis for comprehensive biomolecule profiling
 - Advanced protein identification workflows
 
+## Advanced Model Architecture
+
+Lavoisier features a comprehensive multi-tier model architecture that integrates cutting-edge AI technologies:
+
+### 1. Models Module (`lavoisier.models`)
+
+The models module provides a complete framework for managing, versioning, and deploying specialized AI models:
+
+#### Chemical Language Models (`chemical_language_models.py`)
+- **ChemBERTa Model**: Pre-trained transformer for molecular property prediction
+  - SMILES encoding with multiple pooling strategies (CLS, mean, max)
+  - Support for molecular embedding generation
+  - Integration with DeepChem models
+- **MoLFormer Model**: Large-scale molecular representation learning
+  - Advanced molecular understanding through self-supervised learning
+  - Custom tokenization for chemical structures
+  - Transfer learning capabilities for downstream tasks
+- **PubChemDeBERTa Model**: Specialized for chemical property prediction
+  - Fine-tuned on PubChem data
+  - Multi-task learning for property prediction
+  - High-accuracy molecular classification
+
+#### Spectral Transformer Models (`spectral_transformers.py`)
+- **SpecTUS Model**: EI-MS spectra to SMILES conversion
+  - Transformer-based spectrum interpretation
+  - Direct structural elucidation from mass spectra
+  - Batch processing and beam search optimization
+  - Preprocessing pipelines for spectral data normalization
+
+#### Embedding Models (`embedding_models.py`)
+- **CMSSP Model**: Joint embeddings of MS/MS spectra and molecules
+  - Cross-modal representation learning
+  - Spectral similarity computation
+  - Molecular structure-spectrum alignment
+  - Batch processing for high-throughput analysis
+
+#### Model Repository System (`repository.py`)
+- Centralized model storage and retrieval
+- Model versioning and metadata management
+- Automatic model updates and synchronization
+- Performance tracking and model comparison
+
+#### Knowledge Distillation (`distillation.py`)
+- Academic paper knowledge extraction
+- Pipeline-specific model creation
+- Ollama integration for local model deployment
+- Progressive complexity training
+- Model testing and validation frameworks
+
+#### Model Registry (`registry.py`)
+- Unified model discovery and management
+- HuggingFace model integration
+- Model type classification and organization
+- Automatic model loading and configuration
+
+#### Version Management (`versioning.py`)
+- Comprehensive model versioning system
+- Metadata tracking and validation
+- Model performance history
+- Rollback and comparison capabilities
+
+### 2. LLM Integration Module (`lavoisier.llm`)
+
+The LLM module provides comprehensive integration with large language models for enhanced analytical capabilities:
+
+#### LLM Service Architecture (`service.py`)
+- **Multi-Provider Support**: Seamless integration with commercial and local LLMs
+- **Query Generation**: Automatic analytical query generation with increasing complexity
+- **Caching System**: Intelligent result caching for improved performance
+- **Asynchronous Processing**: Concurrent LLM request handling
+- **Progressive Analysis**: Multi-stage analysis with escalating complexity
+- **Pipeline Comparison**: Automated comparison between numerical and visual pipelines
+
+#### API Client Layer (`api.py`)
+- **Unified Interface**: Standardized API for different LLM providers
+- **OpenAI Integration**: Direct integration with GPT models
+- **Anthropic Integration**: Claude model support
+- **Error Handling**: Robust error recovery and retry mechanisms
+- **Rate Limiting**: Automatic rate limiting and quota management
+
+#### Commercial LLM Proxy (`commercial.py`)
+- **Provider Abstraction**: Unified interface for multiple commercial providers
+- **Load Balancing**: Intelligent request distribution across providers
+- **Cost Optimization**: Automatic provider selection based on cost and performance
+- **API Key Management**: Secure credential handling
+
+#### Local LLM Support (`ollama.py`)
+- **Ollama Integration**: Complete integration with Ollama for local inference
+- **Model Management**: Automatic model downloading and management
+- **Offline Capabilities**: Full functionality without internet connectivity
+- **Custom Model Support**: Support for fine-tuned and specialized models
+
+#### Query Generation System (`query_gen.py`)
+- **Adaptive Queries**: Context-aware query generation
+- **Complexity Scaling**: Progressive query complexity increase
+- **Domain-Specific Templates**: Specialized query templates for different analysis types
+- **Multi-Modal Integration**: Queries combining numerical and visual analysis results
+
+#### Chemical NER (`chemical_ner.py`)
+- **PubMedBERT-NER**: Chemical entity recognition from text
+- **Batch Processing**: High-throughput text processing
+- **Entity Normalization**: Standardized chemical nomenclature
+- **Confidence Scoring**: Reliability assessment for extracted entities
+
+#### Text Encoders (`text_encoders.py`)
+- **SciBERT Integration**: Scientific text understanding
+- **Multiple Pooling Strategies**: Optimized text representation
+- **Similarity Search**: Semantic similarity computation
+- **Batch Processing**: Efficient large-scale text processing
+
+#### Specialized LLM (`specialized_llm.py`)
+- **Domain-Specific Models**: Models fine-tuned for mass spectrometry
+- **Context-Aware Processing**: Specialized prompting strategies
+- **Multi-Modal Understanding**: Integration of spectral and textual data
+
+### 3. AI Integration Module (`lavoisier.ai_modules.integration`)
+
+The integration module orchestrates all AI components into a cohesive analytical system:
+
+#### Advanced MS Analysis System
+- **Multi-Module Orchestration**: Coordinates all six AI modules (Diadochi, Mzekezeke, Hatata, Zengeza, Nicotine, Diggiden)
+- **Parallel Processing**: Concurrent execution of multiple AI modules
+- **Result Integration**: Unified analysis results from all modules
+- **Quality Assessment**: Multi-layered validation and confidence scoring
+- **Comprehensive Reporting**: Detailed analysis reports with all module outputs
+
+#### Analysis Pipeline
+1. **Stage 1 - Noise Reduction**: Zengeza intelligent noise removal
+2. **Stage 2 - Evidence Networks**: Mzekezeke Bayesian network construction
+3. **Stage 3 - Context Verification**: Nicotine cryptographic puzzle validation
+4. **Stage 4 - MDP Validation**: Hatata stochastic verification
+5. **Stage 5 - Security Assessment**: Diggiden adversarial testing
+6. **Stage 6 - Integration**: Unified result compilation and confidence scoring
+
+#### System Health Monitoring
+- **Performance Metrics**: Real-time system performance tracking
+- **Module Health**: Individual module status monitoring
+- **Resource Utilization**: CPU, memory, and GPU usage tracking
+- **Error Detection**: Automatic error detection and recovery
+
+#### Export and Reporting
+- **Multiple Formats**: JSON, CSV, HDF5, and custom formats
+- **Visualization Ready**: Data formatted for immediate visualization
+- **Audit Trail**: Complete analysis history and provenance
+- **Quality Grades**: Automated quality assessment and grading
+
+## Enhanced System Architecture
+
+The complete Lavoisier architecture now includes these additional layers:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Enhanced Lavoisier Architecture                          │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                          LLM Integration Layer                          │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │ │
+│  │  │ Commercial  │  │    Local    │  │   Query     │  │  Chemical   │   │ │
+│  │  │     LLMs    │  │    LLMs     │  │  Generator  │  │     NER     │   │ │
+│  │  │ (GPT/Claude)│  │  (Ollama)   │  │             │  │             │   │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                      ▲                                       │
+│                                      │                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                          Models Management Layer                        │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │ │
+│  │  │  Chemical   │  │  Spectral   │  │ Embedding   │  │ Knowledge   │   │ │
+│  │  │  Language   │  │Transformers │  │   Models    │  │Distillation │   │ │
+│  │  │   Models    │  │             │  │             │  │             │   │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                      ▲                                       │
+│                                      │                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                        AI Integration Layer                             │ │
+│  │                    ┌─────────────────────────┐                         │ │
+│  │                    │  Advanced MS Analysis   │                         │ │
+│  │                    │        System           │                         │ │
+│  │                    └─────────────────────────┘                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                      ▲                                       │
+│                                      │                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                           Core AI Modules                              │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │ │
+│  │  │  Diadochi   │  │  Mzekezeke  │  │   Hatata    │  │   Zengeza   │   │ │
+│  │  │ (LLM Route) │  │(Bayes Net)  │  │(MDP Verify) │  │(Noise Reduce│   │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘   │ │
+│  │  ┌─────────────┐  ┌─────────────┐                                      │ │
+│  │  │  Nicotine   │  │  Diggiden   │                                      │ │
+│  │  │(Context Ver)│  │(Adversarial)│                                      │ │
+│  │  └─────────────┘  └─────────────┘                                      │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                      ▲                                       │
+│                                      │                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                      Processing Pipelines                              │ │
+│  │  ┌─────────────────┐                    ┌─────────────────┐            │ │
+│  │  │    Numerical    │                    │     Visual      │            │ │
+│  │  │    Pipeline     │                    │    Pipeline     │            │ │
+│  │  │                 │                    │                 │            │ │
+│  │  └─────────────────┘                    └─────────────────┘            │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ## Key Capabilities
+
+### AI-Driven Analysis
+- **Multi-Modal Reasoning**: Combines statistical, probabilistic, and logical approaches
+- **Adversarial Robustness**: Built-in protection against data poisoning and attacks
+- **Context Preservation**: Cryptographic verification of analysis context
+- **Uncertainty Quantification**: Fuzzy logic and Bayesian approaches for uncertainty
+- **Knowledge Distillation**: Academic literature integration into specialized models
+- **Progressive Learning**: Continuous improvement through feedback loops
+
+### Advanced Model Management
+- **Model Repository**: Centralized storage and versioning system
+- **Automatic Updates**: Self-updating model ecosystem
+- **Performance Tracking**: Continuous model performance monitoring
+- **Cross-Modal Learning**: Integration of spectral and chemical language models
+- **Custom Model Creation**: Tools for creating domain-specific models
+
+### LLM-Enhanced Analysis
+- **Natural Language Interface**: Query mass spectrometry data using natural language
+- **Automated Report Generation**: AI-generated analytical reports
+- **Multi-Provider Support**: Seamless integration with various LLM providers
+- **Local and Cloud**: Both offline and online LLM capabilities
+- **Context-Aware Processing**: LLMs with domain-specific knowledge
+
+### Advanced Annotation System
+- **Evidence Network**: Graph-based evidence correlation and validation
+- **Probabilistic Scoring**: Bayesian inference for annotation confidence
+- **Fuzzy Membership**: Handles uncertainty in mass spectrometry measurements
+- **Multi-Database Integration**: Combines evidence from multiple sources
+- **Chemical Language Understanding**: Advanced chemical entity recognition
+- **Spectral-Structure Alignment**: Direct spectrum-to-structure prediction
+
+### Quality Assurance
+- **MDP Verification**: Stochastic validation of analysis workflows
+- **Adversarial Testing**: Systematic vulnerability assessment
+- **Context Integrity**: Cryptographic verification of analysis context
+- **Noise Characterization**: Advanced noise modeling and removal
+- **Multi-Layer Validation**: Independent verification systems
+- **System Health Monitoring**: Real-time performance and reliability tracking
+
+### Performance Optimization
+- **Intelligent Routing**: LLM-based query routing to appropriate experts
+- **Parallel Processing**: Multi-expert parallel analysis
+- **Adaptive Algorithms**: Self-optimizing analysis parameters
+- **Resource Management**: Efficient computational resource allocation
+- **Model Caching**: Intelligent model and result caching
+- **Batch Processing**: Optimized high-throughput analysis
 
 ### Performance
 - Processing speeds: Up to 1000 spectra/second (hardware dependent)
@@ -208,12 +464,6 @@ Lavoisier incorporates domain-specific models for advanced analysis tasks:
 - Isotope pattern matching and fragmentation prediction
 - RT prediction for additional identification confidence
 
-### Quality Control
-- Automated validation checks
-- Signal-to-noise ratio monitoring
-- Quality metrics reporting
-- Error detection and handling
-
 ### Analysis Features
 - Peak detection and quantification
 - Retention time alignment
@@ -221,6 +471,24 @@ Lavoisier incorporates domain-specific models for advanced analysis tasks:
 - Intensity normalization
 
 ## Use Cases
+
+### Advanced MS Analysis
+- **Intelligent Annotation**: AI-driven compound identification with uncertainty quantification
+- **Robust Analysis**: Adversarially-tested analysis pipelines
+- **Quality Validation**: Multi-layer verification of results
+- **Context-Aware Processing**: Maintains analysis context throughout workflows
+
+### AI Research Applications
+- **Multi-Domain LLM Systems**: Template for combining specialized AI models
+- **Adversarial ML Research**: Framework for testing ML robustness
+- **Bayesian Network Applications**: Probabilistic reasoning in scientific domains
+- **Context Verification**: Novel approaches to AI system integrity
+
+### Security and Robustness
+- **Adversarial Testing**: Systematic evaluation of AI system vulnerabilities
+- **Data Integrity**: Cryptographic verification of analysis context
+- **Noise Robustness**: Advanced noise modeling and mitigation
+- **Quality Assurance**: Multi-modal validation of scientific results
 
 ### Proteomics Research
 - Protein identification workflows
@@ -440,74 +708,97 @@ lavoisier/
 ├── LICENSE                   # Project license
 ├── README.md                 # This file
 ├── docs/                     # Documentation
+│   ├── ai-modules.md         # Comprehensive AI modules documentation
 │   ├── user_guide.md         # User documentation
-│   └── developer_guide.md    # Developer documentation
+│   ├── developer_guide.md    # Developer documentation
+│   ├── architecture.md       # System architecture details
+│   └── performance.md        # Performance benchmarking
 ├── lavoisier/                # Main package
 │   ├── __init__.py           # Package initialization
-│   ├── cli/                  # Command-line interface
+│   ├── diadochi/             # Multi-domain LLM framework
 │   │   ├── __init__.py
-│   │   ├── app.py            # CLI application entry point
-│   │   ├── commands/         # CLI command implementations
-│   │   └── ui/               # Terminal UI components
+│   │   ├── core.py           # Core framework components
+│   │   ├── routers.py        # Query routing strategies
+│   │   ├── chains.py         # Sequential processing chains
+│   │   └── mixers.py         # Response mixing strategies
+│   ├── ai_modules/           # Specialized AI modules
+│   │   ├── __init__.py
+│   │   ├── integration.py    # AI system orchestration
+│   │   ├── mzekezeke.py      # Bayesian Evidence Network
+│   │   ├── hatata.py         # MDP Verification Layer
+│   │   ├── zengeza.py        # Intelligent Noise Reduction
+│   │   ├── nicotine.py       # Context Verification System
+│   │   └── diggiden.py       # Adversarial Testing Framework
+│   ├── models/               # AI Model Management
+│   │   ├── __init__.py
+│   │   ├── chemical_language_models.py  # ChemBERTa, MoLFormer, PubChemDeBERTa
+│   │   ├── spectral_transformers.py     # SpecTUS model
+│   │   ├── embedding_models.py          # CMSSP model
+│   │   ├── huggingface_models.py        # HuggingFace integration
+│   │   ├── distillation.py              # Knowledge distillation
+│   │   ├── registry.py                  # Model registry system
+│   │   ├── repository.py                # Model repository
+│   │   ├── versioning.py                # Model versioning
+│   │   └── papers.py                    # Research papers integration
+│   ├── llm/                  # LLM Integration Layer
+│   │   ├── __init__.py
+│   │   ├── service.py        # LLM service architecture
+│   │   ├── api.py            # API client layer
+│   │   ├── query_gen.py      # Query generation system
+│   │   ├── commercial.py     # Commercial LLM proxy
+│   │   ├── ollama.py         # Local LLM support
+│   │   ├── chemical_ner.py   # Chemical NER
+│   │   ├── text_encoders.py  # Scientific text encoders
+│   │   └── specialized_llm.py # Specialized LLM implementations
 │   ├── core/                 # Core functionality
 │   │   ├── __init__.py
-│   │   ├── metacognition.py  # Orchestration layer
 │   │   ├── config.py         # Configuration management
 │   │   ├── logging.py        # Logging utilities
-│   │   └── ml/               # Machine learning components
-│   │       ├── __init__.py
-│   │       ├── models.py     # ML model implementations
-│   │       └── MSAnnotator.py # MS2 annotation engine
-│   ├── numerical/            # Numerical pipeline
+│   │   └── registry.py       # Component registry
+│   ├── numerical/            # Traditional MS analysis pipeline
 │   │   ├── __init__.py
-│   │   ├── processing.py     # Data processing functions
-│   │   ├── pipeline.py       # Main pipeline implementation
+│   │   ├── numeric.py        # Main numerical analysis
 │   │   ├── ms1.py            # MS1 spectra analysis
 │   │   ├── ms2.py            # MS2 spectra analysis
-│   │   ├── ml/               # Machine learning components
-│   │   │   ├── __init__.py
-│   │   │   ├── models.py     # ML model definitions
-│   │   │   └── training.py   # Training utilities
-│   │   ├── distributed/      # Distributed computing
-│   │   │   ├── __init__.py
-│   │   │   ├── ray_utils.py  # Ray integration
-│   │   │   └── dask_utils.py # Dask integration
 │   │   └── io/               # Input/output operations
 │   │       ├── __init__.py
 │   │       ├── readers.py    # File format readers
 │   │       └── writers.py    # File format writers
-│   ├── visual/               # Visual pipeline
+│   ├── visual/               # Computer vision pipeline
 │   │   ├── __init__.py
 │   │   ├── conversion.py     # Spectra to visual conversion
 │   │   ├── processing.py     # Visual processing
 │   │   ├── video.py          # Video generation
 │   │   └── analysis.py       # Visual analysis
-│   ├── llm/                  # LLM integration
+│   ├── proteomics/           # Proteomics analysis
+│   │   └── __init__.py       # Proteomics module initialization
+│   ├── cli/                  # Command-line interface
 │   │   ├── __init__.py
-│   │   ├── api.py            # API for LLM communication
-│   │   ├── ollama.py         # Ollama integration
-│   │   ├── commercial.py     # Commercial LLM integrations
-│   │   └── query_gen.py      # Query generation
-│   ├── models/               # Model repository
-│   │   ├── __init__.py
-│   │   ├── repository.py     # Model management
-│   │   ├── distillation.py   # Knowledge distillation
-│   │   └── versioning.py     # Model versioning
+│   │   ├── app.py            # CLI application entry point
+│   │   ├── commands/         # CLI command implementations
+│   │   └── ui/               # Terminal UI components
 │   └── utils/                # Utility functions
 │       ├── __init__.py
 │       ├── helpers.py        # General helpers
 │       └── validation.py     # Validation utilities
 ├── tests/                    # Tests
 │   ├── __init__.py
-│   ├── test_numerical.py
-│   ├── test_visual.py
-│   ├── test_llm.py
-│   └── test_cli.py
+│   ├── test_ai_modules.py    # AI modules tests
+│   ├── test_models.py        # Models module tests
+│   ├── test_llm.py           # LLM integration tests
+│   ├── test_diadochi.py      # Diadochi framework tests
+│   ├── test_numerical.py     # Numerical pipeline tests
+│   └── test_cli.py           # CLI tests
+├── scripts/                  # Analysis scripts
+│   ├── run_mtbls1707_analysis.py # MTBLS1707 benchmark
+│   └── benchmark_analysis.py     # Performance benchmarking
 └── examples/                 # Example workflows
-    ├── basic_analysis.py
-    ├── distributed_processing.py
-    ├── llm_assisted_analysis.py
-    └── visual_analysis.py
+    ├── ai_assisted_analysis.py   # AI-driven analysis
+    ├── adversarial_testing.py    # Security testing
+    ├── bayesian_annotation.py    # Bayesian network annotation
+    ├── model_distillation.py     # Knowledge distillation example
+    ├── llm_integration.py        # LLM integration example
+    └── complete_pipeline.py      # Full pipeline example
 ```
 
 ## Installation & Usage
