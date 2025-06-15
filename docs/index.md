@@ -47,6 +47,8 @@ results = analyzer.process_file("data.mzML")
 - [**Performance & Optimization**](performance.md) - Comprehensive guide to maximizing computational efficiency
 
 ### AI & Machine Learning Integration
+- [**AI Module Summary**](module-summary.md) - Complete inventory of all 21+ AI modules and components
+- [**AI Modules Documentation**](ai-modules.md) - Comprehensive technical documentation for all AI systems
 - [**Hugging Face Models**](huggingface-models.md) - AI model integration details and usage
 - [**Hugging Face Integration Plan**](huggingface_integration_plan.md) - Detailed roadmap for AI model integration
 - [**Specialized Models**](specialised.md) - Advanced specialized model configurations
