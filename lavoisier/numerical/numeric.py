@@ -18,14 +18,15 @@ import numpy as np
 import torch
 from dotenv import load_dotenv
 
-from lavoisier.models import (
-    SpecTUSModel,
-    CMSSPModel,
-    ChemBERTaModel,
-    create_spectus_model,
-    create_cmssp_model,
-    create_chemberta_model
-)
+# Remove problematic model imports - use simple functionality only
+# from lavoisier.models import (
+#     SpecTUSModel,
+#     CMSSPModel, 
+#     ChemBERTaModel,
+#     create_spectus_model,
+#     create_cmssp_model,
+#     create_chemberta_model
+# )
 
 # Load environment variables
 load_dotenv()
@@ -282,21 +283,10 @@ class MSAnalysisPipeline:
         # Initialize distributed computing
         self._setup_compute_environment()
 
-        # Initialize models if enabled
+        # Initialize basic device settings
         self.device = "cuda" if torch.cuda.is_available() and self.params.use_gpu else "cpu"
-        self.models = {}
-        
-        if self.params.enable_spectus:
-            self.models['spectus'] = create_spectus_model(device=self.device)
-            logger.info("Initialized SpecTUS model")
-            
-        if self.params.enable_cmssp:
-            self.models['cmssp'] = create_cmssp_model(device=self.device)
-            logger.info("Initialized CMSSP model")
-            
-        if self.params.enable_chemberta:
-            self.models['chemberta'] = create_chemberta_model(device=self.device)
-            logger.info("Initialized ChemBERTa model")
+        self.models = {}  # Keep empty for now - models will be added via specialized LLM
+        logger.info(f"Using device: {self.device}")
 
     def setup_logging(self):
         log_file = self.config['logging']['file']

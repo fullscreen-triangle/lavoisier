@@ -99,7 +99,9 @@ class ModelRegistry:
         Args:
             cache_dir: Directory to cache models in. If None, uses ~/.lavoisier/models.
         """
-        self.cache_dir = cache_dir or os.path.join(CONFIG.get("data_path", "~/.lavoisier"), "models")
+        # Fix CONFIG access - use paths.cache_dir attribute instead of get method
+        default_cache = os.path.join(CONFIG.paths.cache_dir if hasattr(CONFIG, 'paths') and hasattr(CONFIG.paths, 'cache_dir') else "~/.lavoisier", "models")
+        self.cache_dir = cache_dir or default_cache
         self.cache_dir = os.path.expanduser(self.cache_dir)
         os.makedirs(self.cache_dir, exist_ok=True)
         

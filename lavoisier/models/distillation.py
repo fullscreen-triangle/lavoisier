@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from lavoisier.core.logging import get_logger
 from lavoisier.models.versioning import ModelVersion, ModelMetadata
-from lavoisier.models.papers import PaperAnalyzer
+# from lavoisier.models.papers import PaperAnalyzer  # Commented out - papers not ready yet
 
 
 class KnowledgeDistiller:
@@ -49,8 +49,9 @@ class KnowledgeDistiller:
         # Embedding model configuration
         self.embedding_model = config.get("embedding_model", "all-MiniLM-L6-v2")
         
-        # Paper analyzer
-        self.paper_analyzer = PaperAnalyzer(config)
+        # Paper analyzer - commented out until papers are ready
+        # self.paper_analyzer = PaperAnalyzer(config)
+        self.paper_analyzer = None
         
         # Thread pool for processing
         self.executor = ThreadPoolExecutor(max_workers=config.get("max_workers", 4))
@@ -72,6 +73,9 @@ class KnowledgeDistiller:
         Returns:
             Path to the created model
         """
+        if self.paper_analyzer is None:
+            raise NotImplementedError("Paper analysis is not available yet - papers collection in progress")
+        
         papers_dir = Path(papers_dir)
         self.logger.info(f"Starting distillation from papers in {papers_dir}")
         

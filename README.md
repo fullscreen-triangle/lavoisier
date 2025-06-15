@@ -2,11 +2,17 @@
 <p align="center"><em> Only the extraordinary can beget the extraordinary</em></p>
 
 <p align="center">
-  <img src="Antoine_lavoisier-copy.jpg" alt="Spectacular Logo" width="300"/>
+  <img src="assets/Antoine_lavoisier-copy.jpg" alt="Spectacular Logo" width="300"/>
 </p>
 
 [![Python Version](https://img.shields.io/pypi/pyversions/science-platform.svg)](https://pypi.org/project/science-platform/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-FFD21E?logo=huggingface&logoColor=000)](#)
+[![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](#)
+[![ChatGPT](https://img.shields.io/badge/ChatGPT-74aa9c?logo=openai&logoColor=white)](#)
+[![IntelliJ IDEA](https://img.shields.io/badge/IntelliJIDEA-000000.svg?logo=intellij-idea&logoColor=white)](#)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=fff)](#)
 
 Lavoisier is a high-performance computing solution for mass spectrometry-based metabolomics data analysis pipelines. It combines traditional numerical methods with advanced visualization and AI-driven analytics to provide comprehensive insights from high-volume MS data.
 
@@ -257,13 +263,13 @@ Our comprehensive validation demonstrates the effectiveness of Lavoisier's dual-
 ### Example Analysis Results
 
 #### Mass Spectrometry Analysis
-![Full MS Scan](analytical_visualizations/20250527_094000/mass_spectra/full_scan.png)
+![Full MS Scan](assets/analytical_visualizations/20250527_094000/mass_spectra/full_scan.png)
 *Full scan mass spectrum showing the comprehensive metabolite profile with high mass accuracy and resolution*
 
-![MS/MS Analysis](analytical_visualizations/20250527_094000/mass_spectra/glucose_msms.png)
+![MS/MS Analysis](assets/analytical_visualizations/20250527_094000/mass_spectra/glucose_msms.png)
 *MS/MS fragmentation pattern analysis for glucose, demonstrating detailed structural elucidation*
 
-![Feature Comparison](analytical_visualizations/20250527_094000/feature_analysis/feature_comparison.png)
+![Feature Comparison](assets/analytical_visualizations/20250527_094000/feature_analysis/feature_comparison.png)
 *Comparison of feature extraction between numerical and visual pipelines, showing high concordance and complementarity*
 
 #### Visual Pipeline Output
@@ -424,7 +430,7 @@ For detailed information about our validation approach and complete results, ple
 - [Visualization Documentation](docs/visualization.md) - Comprehensive analysis framework
 - `validation_results/` - Raw validation data and metrics
 - `validation_visualizations/` - Interactive visualizations and temporal analysis
-- `analytical_visualizations/` - Detailed analytical outputs
+- `assets/analytical_visualizations/` - Detailed analytical outputs
 
 ## Project Structure
 
