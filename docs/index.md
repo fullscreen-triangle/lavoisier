@@ -53,6 +53,11 @@ results = analyzer.process_file("data.mzML")
 - [**Hugging Face Integration Plan**](huggingface_integration_plan.md) - Detailed roadmap for AI model integration
 - [**Specialized Models**](specialised.md) - Advanced specialized model configurations
 
+### Revolutionary Architecture (2024)
+- [**Rust Integration**](rust-integration.md) - High-performance computing with 100x speedups for large datasets
+- [**Autobahn Consciousness Engine**](autobahn-integration.md) - Biological intelligence and consciousness-aware reasoning system
+- [**Embodied Understanding**](embodied-understanding.md) - Video reconstruction as proof of molecular comprehension
+
 ### Analysis & Validation
 - [**Scientific Benchmarking**](benchmarking.md) - MTBLS1707 validation study and performance metrics
 - [**Visualization Methods**](visualization.md) - Advanced visualization and computer vision techniques
