@@ -55,6 +55,8 @@ results = analyzer.process_file("data.mzML")
 
 ### Revolutionary Architecture (2024)
 - [**Rust Integration**](rust-integration.md) - High-performance computing with 100x speedups for large datasets
+- [**Rust Implementation Guide**](RUST_README.md) - Complete Rust codebase documentation, API reference, and usage examples
+- [**Implementation Roadmap**](implementation-roadmap.md) - Comprehensive roadmap for implementing all architectural changes
 - [**Autobahn Consciousness Engine**](autobahn-integration.md) - Biological intelligence and consciousness-aware reasoning system
 - [**Embodied Understanding**](embodied-understanding.md) - Video reconstruction as proof of molecular comprehension
 
