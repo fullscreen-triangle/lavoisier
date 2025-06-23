@@ -1,0 +1,141 @@
+// diabetes_biomarker_discovery.bh
+// Example Buhera script demonstrating surgical precision mass spectrometry
+// for diabetes biomarker discovery with explicit objective focus
+
+import lavoisier.mzekezeke
+import lavoisier.hatata  
+import lavoisier.zengeza
+import lavoisier.diggiden
+
+// Define the scientific objective with explicit success criteria
+objective DiabetesBiomarkerDiscovery:
+    target: "identify metabolites predictive of diabetes progression with clinical utility"
+    success_criteria: "sensitivity >= 0.85 AND specificity >= 0.85 AND auc >= 0.9"
+    evidence_priorities: "mass_match,ms2_fragmentation,pathway_membership,retention_time"
+    biological_constraints: "glycolysis_upregulated,tca_cycle_disrupted,insulin_resistance_markers"
+    statistical_requirements: "sample_size >= 30, effect_size >= 0.5, power >= 0.8"
+
+// Pre-flight validation to catch experimental flaws before execution
+validate InstrumentCapability:
+    check_instrument_capability
+    if target_concentration < instrument_detection_limit:
+        abort("Orbitrap cannot detect picomolar glucose metabolites - adjust concentration or method")
+
+validate SampleSize:
+    check_sample_size
+    if sample_size < 30:
+        warn("Sample size may be insufficient for robust biomarker discovery")
+    if case_control_ratio < 0.5:
+        warn("Unbalanced case-control ratio may bias results")
+
+validate BiologicalCoherence:
+    check_pathway_consistency
+    if glycolysis_markers absent AND diabetes_expected:
+        warn("Missing expected glycolysis disruption markers")
+
+// Analysis phases with objective-directed processing
+phase DataAcquisition:
+    // Load data with metadata for biomarker context
+    dataset = load_dataset(
+        file_path: "diabetes_cohort_samples.mzML",
+        metadata: "clinical_diabetes_progression_data.csv",
+        groups: ["control", "prediabetic", "t2dm"]
+    )
+    
+    // Validate data quality for biomarker discovery
+    quality_check = lavoisier.validate_data_quality(dataset)
+    if quality_check.mass_accuracy > 5_ppm:
+        abort("Mass accuracy insufficient for metabolite identification")
+
+phase Preprocessing:
+    // Intelligent noise reduction that preserves biomarker signals
+    clean_data = lavoisier.zengeza.noise_reduction(
+        data: dataset,
+        objective_context: "diabetes_biomarker_discovery",
+        preserve_patterns: ["glucose_pathway", "lipid_metabolism", "amino_acids"]
+    )
+    
+    // Normalize with biomarker-aware method
+    normalized_data = lavoisier.preprocess(
+        data: clean_data,
+        method: "quantile_biomarker_aware",
+        biological_context: "diabetes_progression"
+    )
+
+phase EvidenceBuilding:
+    // Build evidence network already knowing what we're looking for
+    evidence_network = lavoisier.mzekezeke.build_evidence_network(
+        data: normalized_data,
+        objective: "diabetes_biomarker_discovery",
+        evidence_types: [
+            "mass_match",           // Basic compound identification  
+            "ms2_fragmentation",    // Structural confirmation
+            "pathway_membership",   // Biological relevance
+            "retention_time",       // Chromatographic confirmation
+            "isotope_pattern"       // Additional confidence
+        ],
+        pathway_focus: ["glycolysis", "gluconeogenesis", "pentose_phosphate", "tca_cycle"],
+        clinical_relevance: "diabetes_progression_markers"
+    )
+
+phase BayesianInference:
+    // Validate evidence with objective-specific criteria
+    annotations = lavoisier.hatata.validate_with_objective(
+        evidence_network: evidence_network,
+        confidence_threshold: 0.85,
+        clinical_utility_threshold: 0.8,
+        objective_alignment: "diabetes_biomarker_discovery"
+    )
+    
+    // Adversarial testing to ensure robustness
+    robustness_test = lavoisier.diggiden.test_biomarker_robustness(
+        annotations: annotations,
+        perturbation_types: ["noise_injection", "batch_effects", "concentration_drift"]
+    )
+
+phase ClinicalValidation:
+    // Cross-validate biomarker candidates
+    if annotations.confidence > 0.85:
+        biomarker_candidates = filter_top_candidates(annotations, top_n: 20)
+        
+        // Test clinical utility
+        clinical_performance = validate_clinical_utility(
+            candidates: biomarker_candidates,
+            clinical_data: "clinical_diabetes_progression_data.csv",
+            validation_method: "nested_cross_validation"
+        )
+        
+        // Generate clinically-relevant report
+        if clinical_performance.auc >= 0.9:
+            generate_biomarker_report(
+                candidates: biomarker_candidates,
+                performance: clinical_performance,
+                clinical_context: "diabetes_progression_prediction"
+            )
+        else:
+            suggest_additional_evidence(
+                current_candidates: biomarker_candidates,
+                missing_pathways: clinical_performance.gaps,
+                improvement_strategies: "increase_sample_size,add_validation_cohort"
+            )
+    else:
+        abort("Insufficient evidence for reliable biomarker identification")
+
+phase ResultsSynthesis:
+    // Final validation that we achieved the objective
+    objective_achieved = validate_objective_completion(
+        target: "diabetes_biomarker_discovery",
+        results: clinical_performance,
+        success_criteria: {
+            "sensitivity": 0.85,
+            "specificity": 0.85, 
+            "auc": 0.9,
+            "clinical_utility": 0.8
+        }
+    )
+    
+    if objective_achieved:
+        finalize_biomarker_panel(clinical_performance)
+        generate_clinical_implementation_guide()
+    else:
+        generate_improvement_recommendations() 

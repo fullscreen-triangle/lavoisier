@@ -16,7 +16,36 @@ Lavoisier is a high-performance computing framework for mass spectrometry-based 
 
 ## System Architecture
 
-The Lavoisier framework consists of three primary computational layers: (1) Rust-accelerated core processing modules, (2) biological coherence-based reasoning system integration, and (3) embodied understanding validation through three-dimensional molecular reconstruction.
+The Lavoisier framework consists of four primary computational layers: (1) **Buhera scripting language** for encoding scientific objectives, (2) Rust-accelerated core processing modules, (3) biological coherence-based reasoning system integration, and (4) embodied understanding validation through three-dimensional molecular reconstruction.
+
+### Buhera: Surgical Precision Scripting
+
+Lavoisier now includes **Buhera**, a domain-specific scripting language that encodes the actual scientific method as executable scripts. Key features:
+
+- 🎯 **Objective-First Analysis**: Scripts declare explicit scientific goals before execution
+- ✅ **Pre-flight Validation**: Catch experimental flaws before wasting time and resources
+- 🧠 **Goal-Directed AI**: Bayesian evidence networks optimized for specific objectives
+- 🔬 **Scientific Rigor**: Enforced statistical requirements and biological coherence
+
+```javascript
+// Example Buhera script for diabetes biomarker discovery
+objective DiabetesBiomarkerDiscovery:
+    target: "identify metabolites predictive of diabetes progression"
+    success_criteria: "sensitivity >= 0.85 AND specificity >= 0.85"
+    evidence_priorities: "pathway_membership,ms2_fragmentation,mass_match"
+
+validate InstrumentCapability:
+    if target_concentration < instrument_detection_limit:
+        abort("Instrument cannot detect target concentrations")
+
+phase EvidenceBuilding:
+    evidence_network = lavoisier.mzekezeke.build_evidence_network(
+        objective: "diabetes_biomarker_discovery",
+        pathway_focus: ["glycolysis", "gluconeogenesis"]
+    )
+```
+
+See [README_BUHERA.md](README_BUHERA.md) for complete documentation.
 
 ### Core Processing Layer
 
