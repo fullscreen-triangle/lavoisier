@@ -1,5 +1,5 @@
 //! Executor for Buhera Scripts
-//! 
+//!
 //! Executes validated Buhera scripts by orchestrating calls to Lavoisier's
 //! AI modules for goal-directed mass spectrometry analysis.
 
@@ -101,7 +101,7 @@ impl BuheraExecutor {
 
     fn execute_data_acquisition(
         &mut self,
-        phase: &AnalysisPhase,
+        _phase: &AnalysisPhase,
         lavoisier_system: &PyAny,
     ) -> BuheraResult<()> {
         // Call Lavoisier data loading with context
@@ -113,7 +113,7 @@ impl BuheraExecutor {
 
     fn execute_evidence_building(
         &mut self,
-        phase: &AnalysisPhase,
+        _phase: &AnalysisPhase,
         lavoisier_system: &PyAny,
     ) -> BuheraResult<()> {
         // Get objective for goal-directed evidence building
@@ -128,7 +128,7 @@ impl BuheraExecutor {
 
     fn execute_bayesian_inference(
         &mut self,
-        phase: &AnalysisPhase,
+        _phase: &AnalysisPhase,
         lavoisier_system: &PyAny,
     ) -> BuheraResult<()> {
         // Call Lavoisier's Hatata for validation
@@ -138,9 +138,12 @@ impl BuheraExecutor {
         Ok(())
     }
 
-    fn calculate_evidence_scores(&self, script: &BuheraScript) -> BuheraResult<HashMap<String, f64>> {
+    fn calculate_evidence_scores(
+        &self,
+        script: &BuheraScript,
+    ) -> BuheraResult<HashMap<String, f64>> {
         let mut scores = HashMap::new();
-        
+
         // Calculate scores based on evidence priorities
         for evidence_type in &script.objective.evidence_priorities {
             let score = match evidence_type {
@@ -152,7 +155,7 @@ impl BuheraExecutor {
             };
             scores.insert(format!("{:?}", evidence_type), score);
         }
-        
+
         Ok(scores)
     }
 }
@@ -182,4 +185,4 @@ impl ExecutionResult {
             self.execution_time_seconds
         )
     }
-} 
+}

@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  lavoisier-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/target  # Rust build cache
+      - /app/.venv   # Python virtual environment
+    ports:
+      - "8000:8000"  # FastAPI
+      - "8501:8501"  # Streamlit (if used)
+      - "8888:8888"  # Jupyter Lab
+    environment:
+      - PYTHONPATH=/app
+      - RUST_LOG=debug
+      - LAVOISIER_ENV=development
+    depends_on:
+      - redis
+      - postgres
+    command: uvicorn lavoisier.api:app --host 0.0.0.0 --port 8000 --reload
+
+  lavoisier-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:8000"
+    environment:
+      - PYTHONPATH=/app
+      - RUST_LOG=info
+      - LAVOISIER_ENV=production
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: lavoisier
+      POSTGRES_USER: lavoisier
+      POSTGRES_PASSWORD: lavoisier_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    volumes:
+      - .:/app
+      - jupyter_data:/home/jovyan/work
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTHONPATH=/app
+    command: start-notebook.sh --NotebookApp.token='' --NotebookApp.password=''
+
+volumes:
+  redis_data:
+  postgres_data:
+  jupyter_data:
+
+networks:
+  default:
+    name: lavoisier-network 

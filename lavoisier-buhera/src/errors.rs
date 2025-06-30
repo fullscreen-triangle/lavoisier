@@ -1,41 +1,41 @@
 //! Error handling for the Buhera language
-//! 
+//!
 //! Provides comprehensive error types and handling for parsing, validation,
 //! and execution of Buhera scripts.
 
-use thiserror::Error;
 use pyo3::prelude::*;
+use thiserror::Error;
 
 /// Main error type for Buhera operations
 #[derive(Error, Debug)]
 pub enum BuheraError {
     #[error("Parse error: {0}")]
     ParseError(String),
-    
+
     #[error("Validation error: {0}")]
     ValidationError(String),
-    
+
     #[error("Execution error: {0}")]
     ExecutionError(String),
-    
+
     #[error("Python integration error: {0}")]
     PythonError(String),
-    
+
     #[error("Serialization error: {0}")]
     SerializationError(String),
-    
+
     #[error("File I/O error: {0}")]
     IoError(String),
-    
+
     #[error("Scientific logic error: {0}")]
     ScientificLogicError(String),
-    
+
     #[error("Statistical validation error: {0}")]
     StatisticalError(String),
-    
+
     #[error("Instrument capability error: {0}")]
     InstrumentError(String),
-    
+
     #[error("Biological constraint violation: {0}")]
     BiologicalError(String),
 }
@@ -83,7 +83,7 @@ pub type BuheraResult<T> = Result<T, BuheraError>;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Severity {
     Info,
-    Warning, 
+    Warning,
     Error,
     Critical,
 }
@@ -110,18 +110,18 @@ impl ValidationIssue {
             error_code: None,
         }
     }
-    
+
     pub fn with_suggestion(mut self, suggestion: String) -> Self {
         self.suggestion = Some(suggestion);
         self
     }
-    
+
     pub fn with_location(mut self, line: usize, column: usize) -> Self {
         self.line_number = Some(line);
         self.column_number = Some(column);
         self
     }
-    
+
     pub fn with_code(mut self, code: String) -> Self {
         self.error_code = Some(code);
         self
@@ -157,22 +157,47 @@ pub enum ScientificError {
 impl std::fmt::Display for ScientificError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScientificError::InsufficientSampleSize { required, actual, power } => {
-                write!(f, "Insufficient sample size: need {} samples for 80% power, have {} (current power: {:.1f}%)", 
+            ScientificError::InsufficientSampleSize {
+                required,
+                actual,
+                power,
+            } => {
+                write!(f, "Insufficient sample size: need {} samples for 80% power, have {} (current power: {:.1f}%)",
                        required, actual, power * 100.0)
             }
-            ScientificError::InstrumentLimitation { target_concentration, detection_limit, instrument_type } => {
-                write!(f, "Instrument limitation: {} cannot detect {:.2e} concentration (LOD: {:.2e})", 
-                       instrument_type, target_concentration, detection_limit)
+            ScientificError::InstrumentLimitation {
+                target_concentration,
+                detection_limit,
+                instrument_type,
+            } => {
+                write!(
+                    f,
+                    "Instrument limitation: {} cannot detect {:.2e} concentration (LOD: {:.2e})",
+                    instrument_type, target_concentration, detection_limit
+                )
             }
-            ScientificError::BiologicalInconsistency { pathway, contradictory_conditions, expected_direction, actual_direction } => {
-                write!(f, "Biological inconsistency in {} pathway: expected {}, but conditions suggest {} (contradictory: {:?})", 
+            ScientificError::BiologicalInconsistency {
+                pathway,
+                contradictory_conditions,
+                expected_direction,
+                actual_direction,
+            } => {
+                write!(f, "Biological inconsistency in {} pathway: expected {}, but conditions suggest {} (contradictory: {:?})",
                        pathway, expected_direction, actual_direction, contradictory_conditions)
             }
-            ScientificError::StatisticalPowerInsufficient { current_power, required_power, recommended_sample_size } => {
-                write!(f, "Statistical power insufficient: {:.1f}% (need {:.1f}%) - recommend {} samples", 
-                       current_power * 100.0, required_power * 100.0, recommended_sample_size)
+            ScientificError::StatisticalPowerInsufficient {
+                current_power,
+                required_power,
+                recommended_sample_size,
+            } => {
+                write!(
+                    f,
+                    "Statistical power insufficient: {:.1f}% (need {:.1f}%) - recommend {} samples",
+                    current_power * 100.0,
+                    required_power * 100.0,
+                    recommended_sample_size
+                )
             }
         }
     }
-} 
+}

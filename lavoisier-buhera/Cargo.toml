@@ -1,56 +1,51 @@
 [package]
-name = "buhera"
+name = "lavoisier-buhera"
 version = "0.1.0"
 edition = "2021"
 authors = ["Lavoisier Development Team"]
 description = "Buhera: Surgical precision scripting language for mass spectrometry analysis"
 license = "MIT"
 
-[dependencies]
-# Parsing and lexing
-nom = "7.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-
-# Python integration
-pyo3 = { version = "0.20", features = ["extension-module"] }
-
-# Error handling and validation
-thiserror = "1.0"
-anyhow = "1.0"
-
-# Data structures
-indexmap = "2.0"
-petgraph = "0.6"
-
-# Mathematical operations
-nalgebra = "0.32"
-statrs = "0.16"
-
-# Async runtime for complex operations
-tokio = { version = "1.0", features = ["full"] }
-
-# Logging and diagnostics
-tracing = "0.1"
-tracing-subscriber = "0.3"
-
-# File system operations
-walkdir = "2.0"
-glob = "0.3"
-
 [lib]
-name = "buhera"
+name = "lavoisier_buhera"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-name = "buhera-cli"
+name = "cli"
 path = "src/bin/cli.rs"
 
+[dependencies]
+# Local dependencies
+lavoisier-core = { path = "../lavoisier-core" }
+
+# Workspace dependencies
+pyo3 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+nalgebra = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# External dependencies not in workspace
+nom = "7.1"
+serde_yaml = "0.9"
+indexmap = "2.0"
+petgraph = "0.6"
+statrs = "0.16"
+walkdir = "2.0"
+glob = "0.3"
+
 [dev-dependencies]
-criterion = "0.5"
+criterion = { workspace = true }
 tempfile = "3.0"
 
 [[bench]]
 name = "parser_benchmark"
-harness = false 
+harness = false
+
+[features]
+default = ["python-bindings"]
+python-bindings = ["pyo3/extension-module"]

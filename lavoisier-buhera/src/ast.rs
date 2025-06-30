@@ -1,10 +1,10 @@
 //! Abstract Syntax Tree (AST) for the Buhera Language
-//! 
+//!
 //! Defines all language constructs for surgical precision mass spectrometry analysis
 
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use pyo3::prelude::*;
 
 /// Main Buhera script structure
 #[pyclass]
@@ -285,14 +285,16 @@ impl BuheraScript {
     }
 
     /// Create a BuheraScript from a file
-    pub fn from_file(path: &str) -> Result<Self, crate::BuheraError> {
+    pub fn from_file(path: &str) -> Result<Self, crate::errors::BuheraError> {
         // This will be implemented in the parser module
         crate::parser::parse_file(path)
     }
 
     /// Validate the script's experimental logic
-    pub fn validate(&self) -> Result<crate::ValidationResult, crate::BuheraError> {
-        let validator = crate::BuheraValidator::new();
+    pub fn validate(
+        &self,
+    ) -> Result<crate::validator::ValidationResult, crate::errors::BuheraError> {
+        let validator = crate::validator::BuheraValidator::new();
         validator.validate(self)
     }
 
@@ -318,16 +320,16 @@ impl BuheraScript {
     }
 
     /// Export script to JSON
-    pub fn to_json(&self) -> Result<String, crate::BuheraError> {
+    pub fn to_json(&self) -> Result<String, crate::errors::BuheraError> {
         serde_json::to_string_pretty(self)
-            .map_err(|e| crate::BuheraError::SerializationError(e.to_string()))
+            .map_err(|e| crate::errors::BuheraError::SerializationError(e.to_string()))
     }
 
     /// Import script from JSON
     #[staticmethod]
-    pub fn from_json(json_str: &str) -> Result<Self, crate::BuheraError> {
+    pub fn from_json(json_str: &str) -> Result<Self, crate::errors::BuheraError> {
         serde_json::from_str(json_str)
-            .map_err(|e| crate::BuheraError::SerializationError(e.to_string()))
+            .map_err(|e| crate::errors::BuheraError::SerializationError(e.to_string()))
     }
 }
 
@@ -354,9 +356,7 @@ impl BuheraObjective {
 
     /// Check if the objective has minimum required information
     pub fn is_complete(&self) -> bool {
-        !self.name.is_empty() 
-            && !self.target.is_empty() 
-            && !self.evidence_priorities.is_empty()
+        !self.name.is_empty() && !self.target.is_empty() && !self.evidence_priorities.is_empty()
     }
 
     /// Get objective summary for logging
@@ -385,8 +385,6 @@ impl SuccessCriteria {
 
     /// Check if minimum success criteria are defined
     pub fn has_minimum_criteria(&self) -> bool {
-        self.sensitivity.is_some() 
-            || self.specificity.is_some() 
-            || !self.custom_metrics.is_empty()
+        self.sensitivity.is_some() || self.specificity.is_some() || !self.custom_metrics.is_empty()
     }
-} 
+}

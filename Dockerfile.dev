@@ -1,0 +1,55 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    libhdf5-dev \
+    libopencv-dev \
+    libssl-dev \
+    pkg-config \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Rust development tools
+RUN rustup component add rustfmt clippy
+
+WORKDIR /app
+
+# Install Python development dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
+        jupyter \
+        jupyterlab \
+        black \
+        isort \
+        flake8 \
+        mypy \
+        pytest \
+        pytest-cov \
+        pre-commit
+
+# Copy source code
+COPY . .
+
+# Install package in development mode
+RUN pip install -e .
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV RUST_LOG=debug
+ENV LAVOISIER_ENV=development
+
+# Expose ports
+EXPOSE 8000 8888 8501
+
+# Default command for development
+CMD ["bash"] 

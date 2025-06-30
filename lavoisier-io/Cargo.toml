@@ -2,13 +2,18 @@
 name = "lavoisier-io"
 version = "0.1.0"
 edition = "2021"
+description = "High-performance I/O operations for mass spectrometry data"
+license = "MIT"
 
 [lib]
 name = "lavoisier_io"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+# Local dependencies
 lavoisier-core = { path = "../lavoisier-core" }
+
+# Workspace dependencies
 pyo3 = { workspace = true }
 memmap2 = { workspace = true }
 flate2 = { workspace = true }
@@ -22,12 +27,21 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 rayon = { workspace = true }
 crossbeam = { workspace = true }
-quick-xml = "0.31"
-base64 = "0.21"
-regex = "1.10"
 dashmap = { workspace = true }
 parking_lot = { workspace = true }
 
+# External dependencies not in workspace
+quick-xml = "0.31"
+base64 = "0.21"
+regex = "1.10"
+
+[dev-dependencies]
+criterion = { workspace = true }
+
 [features]
 default = ["python-bindings"]
-python-bindings = ["pyo3/extension-module"] 
+python-bindings = ["pyo3/extension-module"]
+
+[[bench]]
+name = "io_benchmark"
+harness = false

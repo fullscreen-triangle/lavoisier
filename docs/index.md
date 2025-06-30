@@ -4,138 +4,147 @@ title: Home
 nav_order: 1
 ---
 
-# Lavoisier: Advanced Mass Spectrometry Analysis
+# Lavoisier Documentation
 
-*Only the extraordinary can beget the extraordinary*
+Welcome to the comprehensive documentation for the Lavoisier mass spectrometry analysis framework. Lavoisier is a high-performance computing framework that combines numerical and visual processing methods with integrated artificial intelligence modules for automated compound identification and structural elucidation.
 
-![Lavoisier Logo](../assets/Antoine_lavoisier-copy.jpg)
+## 🎯 NEW: Buhera Scripting Language
 
-## Overview
+Lavoisier now includes **Buhera**, a revolutionary domain-specific scripting language that transforms mass spectrometry analysis by encoding the actual scientific method as executable scripts.
 
-Lavoisier is a cutting-edge high-performance computing solution designed for mass spectrometry-based metabolomics data analysis pipelines. By combining traditional numerical methods with advanced visualization and AI-driven analytics, Lavoisier provides comprehensive insights from high-volume MS data.
+### Buhera Documentation
 
-## Key Features
+- **[📋 Buhera Overview](README_BUHERA.md)** - Complete introduction to the Buhera scripting language
+- **[📖 Language Reference](buhera-language-reference.md)** - Comprehensive syntax and semantics reference
+- **[🔧 Integration Guide](buhera-integration.md)** - Detailed guide to Buhera-Lavoisier integration
+- **[📚 Tutorials](buhera-tutorials.md)** - Step-by-step tutorials from beginner to advanced
+- **[💼 Script Examples](buhera-examples.md)** - Practical examples for various applications
 
-- **Dual Pipeline Architecture**: Combines numerical and visual analysis approaches
-- **AI-Powered Analysis**: Integrates multiple LLM models for intelligent data interpretation
-- **High Performance**: Processes up to 1000 spectra/second
-- **Comprehensive Analysis**: From raw data processing to pathway analysis
-- **Benchmarked Performance**: Validated against MTBLS1707 study with superior results
+### Key Buhera Features
 
-## Quick Start
+- 🎯 **Objective-First Analysis**: Scripts declare explicit scientific goals before execution
+- ✅ **Pre-flight Validation**: Catch experimental flaws before wasting time and resources
+- 🧠 **Goal-Directed AI**: Bayesian evidence networks optimized for specific objectives
+- 🔬 **Scientific Rigor**: Enforced statistical requirements and biological coherence
+
+## Core Lavoisier Framework
+
+### System Architecture & Installation
+
+- **[🏗️ Architecture Overview](architecture.md)** - System design and component relationships
+- **[⚙️ Installation Guide](installation.md)** - Setup instructions and requirements
+- **[🚀 Performance Benchmarks](performance.md)** - System performance characteristics
+
+### AI Modules & Intelligence
+
+- **[🤖 AI Modules Overview](ai-modules.md)** - Comprehensive guide to all AI modules
+- **[🧠 Specialized Intelligence](specialised.md)** - Domain-specific AI capabilities
+- **[🔗 HuggingFace Integration](huggingface-models.md)** - Machine learning model integration
+- **[📊 Embodied Understanding](embodied-understanding.md)** - 3D molecular reconstruction validation
+
+### Analysis Pipelines
+
+- **[🔢 Numerical Analysis](algorithms.md)** - Mathematical foundations and algorithms
+- **[👁️ Visual Processing](visualization.md)** - Computer vision and image analysis
+- **[📈 Results & Validation](results.md)** - Analysis outputs and validation metrics
+
+### Development & Integration
+
+- **[🔧 Implementation Roadmap](implementation-roadmap.md)** - Development planning and milestones
+- **[🦀 Rust Integration](rust-integration.md)** - High-performance Rust components
+- **[🐍 Python Integration](module-summary.md)** - Python module organization
+- **[🚗 Autobahn Integration](autobahn-integration.md)** - Probabilistic reasoning integration
+
+### Benchmarking & Validation
+
+- **[📊 Benchmarking](benchmarking.md)** - Performance evaluation methodologies
+- **[📋 Task Specifications](tasks.md)** - Analytical task definitions and requirements
+
+## Quick Start Guide
+
+### 1. Traditional Lavoisier Analysis
 
 ```bash
 # Install Lavoisier
 pip install lavoisier
 
-# Basic usage
-from lavoisier import MSAnalyzer
-analyzer = MSAnalyzer()
-results = analyzer.process_file("data.mzML")
+# Run basic analysis
+lavoisier analyze --input sample.mzML --output results/
 ```
 
-## Complete Documentation Index
+### 2. Buhera Script Analysis (NEW!)
 
-### Getting Started
-- [**Installation Guide**](installation.md) - Get up and running quickly
-- [**Analysis Results**](results.md) - View comprehensive analysis outputs
-- [**Tasks & Workflows**](tasks.md) - Common analysis tasks and workflow examples
+```bash
+# Build Buhera language
+cd lavoisier-buhera && cargo build --release
 
-### Deep Technical Documentation
-- [**Architecture Deep Dive**](architecture.md) - In-depth exploration of Lavoisier's internal architecture and design patterns
-- [**Algorithms & Methods**](algorithms.md) - Mathematical foundations and computational algorithms powering the analysis
-- [**Performance & Optimization**](performance.md) - Comprehensive guide to maximizing computational efficiency
+# Create a script
+cat > biomarker_discovery.bh << 'EOF'
+objective DiabetesBiomarkerDiscovery:
+    target: "identify metabolites predictive of diabetes progression"
+    success_criteria: "sensitivity >= 0.85 AND specificity >= 0.85"
 
-### AI & Machine Learning Integration
-- [**AI Module Summary**](module-summary.md) - Complete inventory of all 21+ AI modules and components
-- [**AI Modules Documentation**](ai-modules.md) - Comprehensive technical documentation for all AI systems
-- [**Hugging Face Models**](huggingface-models.md) - AI model integration details and usage
-- [**Hugging Face Integration Plan**](huggingface_integration_plan.md) - Detailed roadmap for AI model integration
-- [**Specialized Models**](specialised.md) - Advanced specialized model configurations
+validate InstrumentCapability:
+    check_instrument_capability
+    if target_concentration < instrument_detection_limit:
+        abort("Instrument cannot detect target concentrations")
 
-### Revolutionary Architecture (2024)
-- [**Rust Integration**](rust-integration.md) - High-performance computing with 100x speedups for large datasets
-- [**Rust Implementation Guide**](RUST_README.md) - Complete Rust codebase documentation, API reference, and usage examples
-- [**Implementation Roadmap**](implementation-roadmap.md) - Comprehensive roadmap for implementing all architectural changes
-- [**Autobahn Consciousness Engine**](autobahn-integration.md) - Biological intelligence and consciousness-aware reasoning system
-- [**Embodied Understanding**](embodied-understanding.md) - Video reconstruction as proof of molecular comprehension
+phase EvidenceBuilding:
+    evidence_network = lavoisier.mzekezeke.build_evidence_network(
+        objective: "diabetes_biomarker_discovery",
+        pathway_focus: ["glycolysis", "gluconeogenesis"]
+    )
+EOF
 
-### Analysis & Validation
-- [**Scientific Benchmarking**](benchmarking.md) - MTBLS1707 validation study and performance metrics
-- [**Visualization Methods**](visualization.md) - Advanced visualization and computer vision techniques
+# Validate and execute
+buhera validate biomarker_discovery.bh
+buhera execute biomarker_discovery.bh
+```
 
-## Novel Approach
+## Use Cases
 
-### Dual Pipeline Architecture
+### 🔬 Scientific Research
+- **Biomarker Discovery**: Identify disease-specific metabolites with clinical utility
+- **Drug Metabolism**: Characterize hepatic metabolism pathways and drug interactions
+- **Environmental Analysis**: Detect contaminants and assess environmental impact
+- **Food Safety**: Monitor pesticide residues and mycotoxin contamination
 
-1. **Numerical Pipeline**: Traditional computational methods enhanced with AI
-   - Feature detection and alignment
-   - Statistical analysis
-   - Compound identification using Hugging Face models
+### 🤖 AI & Machine Learning
+- **Multi-Domain LLM Systems**: Template for combining specialized AI models
+- **Adversarial ML Research**: Framework for testing ML robustness
+- **Bayesian Network Applications**: Probabilistic reasoning in scientific domains
+- **Context Verification**: Novel approaches to AI system integrity
 
-2. **Visual Pipeline**: Innovative video-based analysis
-   - Convert MS data to temporal video sequences
-   - Computer vision-based pattern recognition
-   - Cross-validation with numerical results
+### 🔒 Quality & Validation
+- **Method Validation**: Comprehensive analytical method validation workflows
+- **Instrument QC**: Continuous performance monitoring and predictive maintenance
+- **Regulatory Compliance**: Automated compliance checking and reporting
+- **Data Integrity**: Cryptographic verification of analysis context
 
-### AI Integration
+## Contributing
 
-Lavoisier leverages state-of-the-art models from Hugging Face:
+We welcome contributions to both the core Lavoisier framework and the Buhera scripting language:
 
-- **SpecTUS**: Structure reconstruction from EI-MS spectra
-- **CMSSP**: Joint embedding of chemical structures and spectra
-- **ChemBERTa**: Chemical language understanding and property prediction
+1. **Core Framework**: Python-based AI modules and analysis pipelines
+2. **Buhera Language**: Rust-based language implementation and validation
+3. **Documentation**: Tutorials, examples, and best practices
+4. **Validation**: Test cases and benchmarking datasets
 
-## Performance Highlights
+See our [implementation roadmap](implementation-roadmap.md) for current development priorities.
 
-| Metric | Lavoisier | Industry Standard |
-|--------|-----------|-------------------|
-| Peak Detection Accuracy | 98.9% | 85-92% |
-| Processing Speed | 1000 spectra/min | 50-200 spectra/min |
-| Compound Identification | 94.7% | 70-85% |
-| False Positive Rate | 2.1% | 8-15% |
+## Community
 
-## Scientific Validation
+- **GitHub**: [lavoisier](https://github.com/username/lavoisier)
+- **Issues**: Report bugs and request features
+- **Discussions**: Share use cases and get help
+- **Wiki**: Community-contributed examples and tutorials
 
-Lavoisier has been rigorously tested using the **MTBLS1707** study - a comprehensive metabolomics benchmarking dataset. Our dual-pipeline approach consistently outperforms traditional methods across all key metrics:
+## License
 
-- **15-23% more features detected** compared to conventional tools
-- **89% reduction in false positives**
-- **Superior cross-method compatibility** across different extraction protocols
-- **Proven scalability** with linear performance scaling
-
-[View Complete Benchmarking Results →](benchmarking.md)
-
-## Advanced Technical Documentation
-
-For developers and researchers seeking in-depth technical understanding:
-
-### [Architecture Deep Dive](architecture.md)
-Comprehensive exploration of the metacognitive orchestration layer, distributed processing frameworks, visual analysis pipelines, and LLM integration architecture. Includes detailed implementation examples and design patterns.
-
-### [Algorithms & Methods](algorithms.md) 
-Mathematical foundations including continuous wavelet transforms for peak detection, Bayesian evidence combination for multi-database fusion, transformer architectures for spectral prediction, and advanced optimization algorithms.
-
-### [Performance & Optimization](performance.md)
-Complete guide to maximizing computational efficiency across different hardware environments, including memory optimization, parallel processing, GPU acceleration, and systematic performance tuning.
-
-### [Visualization Methods](visualization.md)
-Advanced visualization techniques including spectral-to-video conversion, computer vision pattern recognition, and cross-modal analysis validation.
-
-## Getting Started
-
-Ready to revolutionize your metabolomics analysis? 
-
-1. **Start Here**: [Installation Guide](installation.md) - Complete setup instructions
-2. **See Results**: [Analysis Results](results.md) - Example outputs and capabilities  
-3. **Follow Workflows**: [Tasks & Workflows](tasks.md) - Step-by-step analysis procedures
-4. **Explore AI Features**: [Hugging Face Models](huggingface-models.md) - AI-powered analysis capabilities
-
-For deep technical insights into the package mechanics, explore our comprehensive technical documentation:
-- [Architecture Documentation](architecture.md) - System design and implementation
-- [Algorithms Guide](algorithms.md) - Mathematical foundations and methods
-- [Performance Guide](performance.md) - Optimization strategies and benchmarks
+Lavoisier is released under the MIT License. See LICENSE file for details.
 
 ---
 
-*Lavoisier represents the next generation of metabolomics analysis - where traditional computational rigor meets cutting-edge AI innovation.* 
+*"Only the extraordinary can beget the extraordinary"* - Antoine Lavoisier
+
+Transform your mass spectrometry analysis with surgical precision using Lavoisier and Buhera. 

@@ -1,5 +1,5 @@
 //! Validator for Buhera Scripts
-//! 
+//!
 //! Pre-flight validation of experimental logic to catch scientific flaws
 //! before execution. This is the core innovation - validating scientific
 //! reasoning before wasting time and resources.
@@ -51,7 +51,7 @@ impl BuheraValidator {
         // 1. Validate objective completeness
         self.validate_objective(&script.objective, &mut issues, &mut recommendations)?;
 
-        // 2. Validate instrument capabilities  
+        // 2. Validate instrument capabilities
         self.validate_instrument_capabilities(script, &mut issues, &mut recommendations)?;
 
         // 3. Validate analysis workflow
@@ -60,8 +60,10 @@ impl BuheraValidator {
         // Calculate success probability
         let success_probability = self.calculate_success_probability(&issues)?;
 
-        let is_valid = issues.is_empty() || 
-            issues.iter().all(|issue| !issue.contains("CRITICAL") && !issue.contains("ERROR"));
+        let is_valid = issues.is_empty()
+            || issues
+                .iter()
+                .all(|issue| !issue.contains("CRITICAL") && !issue.contains("ERROR"));
 
         Ok(ValidationResult {
             is_valid,
@@ -89,7 +91,8 @@ impl BuheraValidator {
         // Check if success criteria are realistic
         if let Some(sensitivity) = objective.success_criteria.sensitivity {
             if sensitivity > 0.99 {
-                issues.push("WARNING: Sensitivity target is unrealistically high (>99%)".to_string());
+                issues
+                    .push("WARNING: Sensitivity target is unrealistically high (>99%)".to_string());
                 recommendations.push("Consider lowering sensitivity target to 80-95%".to_string());
             }
         }
@@ -104,14 +107,23 @@ impl BuheraValidator {
         recommendations: &mut Vec<String>,
     ) -> BuheraResult<()> {
         // Check if MS/MS is required but not available
-        if script.objective.evidence_priorities.contains(&EvidenceType::MS2Fragmentation) {
-            let has_msms = self.instrument_database
+        if script
+            .objective
+            .evidence_priorities
+            .contains(&EvidenceType::MS2Fragmentation)
+        {
+            let has_msms = self
+                .instrument_database
                 .values()
                 .any(|caps| caps.supports_msms);
-                
+
             if !has_msms {
-                issues.push("CRITICAL: MS/MS fragmentation required but no MS/MS instrument available".to_string());
-                recommendations.push("Use tandem MS instrument or remove MS/MS requirement".to_string());
+                issues.push(
+                    "CRITICAL: MS/MS fragmentation required but no MS/MS instrument available"
+                        .to_string(),
+                );
+                recommendations
+                    .push("Use tandem MS instrument or remove MS/MS requirement".to_string());
             }
         }
 
@@ -126,14 +138,15 @@ impl BuheraValidator {
     ) -> BuheraResult<()> {
         // Check for required phases
         let phase_types: Vec<_> = phases.iter().map(|p| &p.phase_type).collect();
-        
+
         if !phase_types.contains(&&PhaseType::DataAcquisition) {
             issues.push("ERROR: Missing data acquisition phase".to_string());
             recommendations.push("Add data acquisition phase to workflow".to_string());
         }
 
         if !phase_types.contains(&&PhaseType::BayesianInference) {
-            recommendations.push("Consider adding Bayesian inference for evidence integration".to_string());
+            recommendations
+                .push("Consider adding Bayesian inference for evidence integration".to_string());
         }
 
         Ok(())
@@ -152,22 +165,34 @@ impl BuheraValidator {
             }
         }
 
-        Ok(base_probability.max(0.01).min(0.99))
+        // Fix for f64.max() issue - use conditional logic instead
+        let clamped_probability = if base_probability < 0.01 {
+            0.01
+        } else if base_probability > 0.99 {
+            0.99
+        } else {
+            base_probability
+        };
+
+        Ok(clamped_probability)
     }
 
     fn build_instrument_database() -> HashMap<String, InstrumentCapabilities> {
         let mut db = HashMap::new();
-        
+
         // Standard LC-MS/MS
         let mut detection_limits = HashMap::new();
         detection_limits.insert("glucose".to_string(), 1e-8);
         detection_limits.insert("lactate".to_string(), 5e-8);
-        
-        db.insert("LC-MS/MS".to_string(), InstrumentCapabilities {
-            detection_limits,
-            mass_accuracy: 5.0,
-            supports_msms: true,
-        });
+
+        db.insert(
+            "LC-MS/MS".to_string(),
+            InstrumentCapabilities {
+                detection_limits,
+                mass_accuracy: 5.0,
+                supports_msms: true,
+            },
+        );
 
         db
     }
@@ -198,4 +223,4 @@ impl ValidationResult {
             self.estimated_success_probability * 100.0
         )
     }
-} 
+}

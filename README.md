@@ -45,7 +45,7 @@ phase EvidenceBuilding:
     )
 ```
 
-See [README_BUHERA.md](README_BUHERA.md) for complete documentation.
+See [README_BUHERA.md](docs/README_BUHERA.md) for complete documentation.
 
 ### Core Processing Layer
 
