@@ -3,7 +3,6 @@
 //! Provides comprehensive error types and handling for parsing, validation,
 //! and execution of Buhera scripts.
 
-use pyo3::prelude::*;
 use thiserror::Error;
 
 /// Main error type for Buhera operations
@@ -49,30 +48,6 @@ impl From<std::io::Error> for BuheraError {
 impl From<serde_json::Error> for BuheraError {
     fn from(err: serde_json::Error) -> Self {
         BuheraError::SerializationError(err.to_string())
-    }
-}
-
-impl From<pyo3::PyErr> for BuheraError {
-    fn from(err: pyo3::PyErr) -> Self {
-        BuheraError::PythonError(err.to_string())
-    }
-}
-
-/// Convert BuheraError to Python exception
-impl From<BuheraError> for PyErr {
-    fn from(err: BuheraError) -> Self {
-        match err {
-            BuheraError::ParseError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::ValidationError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::ExecutionError(msg) => pyo3::exceptions::PyRuntimeError::new_err(msg),
-            BuheraError::PythonError(msg) => pyo3::exceptions::PyRuntimeError::new_err(msg),
-            BuheraError::SerializationError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::IoError(msg) => pyo3::exceptions::PyIOError::new_err(msg),
-            BuheraError::ScientificLogicError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::StatisticalError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::InstrumentError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-            BuheraError::BiologicalError(msg) => pyo3::exceptions::PyValueError::new_err(msg),
-        }
     }
 }
 

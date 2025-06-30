@@ -5,20 +5,14 @@
 
 use crate::ast::*;
 use crate::errors::*;
-use pyo3::prelude::*;
 use std::collections::HashMap;
 
 /// Execution result for a Buhera script
-#[pyclass]
 #[derive(Debug, Clone)]
 pub struct ExecutionResult {
-    #[pyo3(get)]
     pub success: bool,
-    #[pyo3(get)]
     pub annotations: Vec<String>,
-    #[pyo3(get)]
     pub evidence_scores: HashMap<String, f64>,
-    #[pyo3(get)]
     pub execution_time_seconds: f64,
 }
 
@@ -44,19 +38,15 @@ impl BuheraExecutor {
         }
     }
 
-    /// Execute a validated Buhera script with Lavoisier integration
-    pub fn execute(
-        &mut self,
-        script: &BuheraScript,
-        lavoisier_system: &PyAny,
-    ) -> BuheraResult<ExecutionResult> {
+    /// Execute a validated Buhera script in standalone mode
+    pub fn execute_standalone(&mut self, script: &BuheraScript) -> BuheraResult<ExecutionResult> {
         let start_time = std::time::Instant::now();
 
         // Initialize context with objective focus for goal-directed analysis
         self.context.objective_focus = Some(script.objective.target.clone());
 
-        // Execute phases with objective awareness
-        let annotations = self.execute_phases(script, lavoisier_system)?;
+        // Execute phases with objective awareness (standalone mode)
+        let annotations = self.execute_phases_standalone(script)?;
         let evidence_scores = self.calculate_evidence_scores(script)?;
 
         let execution_time = start_time.elapsed().as_secs_f64();
@@ -69,73 +59,27 @@ impl BuheraExecutor {
         })
     }
 
-    fn execute_phases(
-        &mut self,
-        script: &BuheraScript,
-        lavoisier_system: &PyAny,
-    ) -> BuheraResult<Vec<String>> {
+    fn execute_phases_standalone(&mut self, script: &BuheraScript) -> BuheraResult<Vec<String>> {
         let mut annotations = Vec::new();
 
         for phase in &script.phases {
             match phase.phase_type {
                 PhaseType::DataAcquisition => {
-                    self.execute_data_acquisition(phase, lavoisier_system)?;
-                    annotations.push("Data acquisition completed".to_string());
+                    annotations.push("Data acquisition phase (standalone mode)".to_string());
                 }
                 PhaseType::EvidenceBuilding => {
-                    self.execute_evidence_building(phase, lavoisier_system)?;
-                    annotations.push("Evidence network built with objective focus".to_string());
+                    annotations.push("Evidence building phase (standalone mode)".to_string());
                 }
                 PhaseType::BayesianInference => {
-                    self.execute_bayesian_inference(phase, lavoisier_system)?;
-                    annotations.push("Goal-directed Bayesian inference completed".to_string());
+                    annotations.push("Bayesian inference phase (standalone mode)".to_string());
                 }
                 _ => {
-                    annotations.push(format!("Phase {} executed", phase.name));
+                    annotations.push(format!("Phase {} executed (standalone)", phase.name));
                 }
             }
         }
 
         Ok(annotations)
-    }
-
-    fn execute_data_acquisition(
-        &mut self,
-        _phase: &AnalysisPhase,
-        lavoisier_system: &PyAny,
-    ) -> BuheraResult<()> {
-        // Call Lavoisier data loading with context
-        lavoisier_system
-            .call_method("load_dataset", (), None)
-            .map_err(|e| BuheraError::PythonError(e.to_string()))?;
-        Ok(())
-    }
-
-    fn execute_evidence_building(
-        &mut self,
-        _phase: &AnalysisPhase,
-        lavoisier_system: &PyAny,
-    ) -> BuheraResult<()> {
-        // Get objective for goal-directed evidence building
-        let objective = self.context.objective_focus.as_ref().unwrap();
-
-        // Call Lavoisier's Mzekezeke with objective focus
-        lavoisier_system
-            .call_method("mzekezeke.build_evidence_network", (objective,), None)
-            .map_err(|e| BuheraError::PythonError(e.to_string()))?;
-        Ok(())
-    }
-
-    fn execute_bayesian_inference(
-        &mut self,
-        _phase: &AnalysisPhase,
-        lavoisier_system: &PyAny,
-    ) -> BuheraResult<()> {
-        // Call Lavoisier's Hatata for validation
-        lavoisier_system
-            .call_method("hatata.validate_with_objective", (), None)
-            .map_err(|e| BuheraError::PythonError(e.to_string()))?;
-        Ok(())
     }
 
     fn calculate_evidence_scores(
@@ -160,9 +104,8 @@ impl BuheraExecutor {
     }
 }
 
-#[pymethods]
 impl ExecutionResult {
-    #[new]
+    /// Create new ExecutionResult
     pub fn new(
         success: bool,
         annotations: Vec<String>,
@@ -177,6 +120,7 @@ impl ExecutionResult {
         }
     }
 
+    /// Get execution summary
     pub fn summary(&self) -> String {
         format!(
             "Execution: {} | Annotations: {} | Time: {:.1}s",

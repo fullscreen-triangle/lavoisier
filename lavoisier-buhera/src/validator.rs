@@ -6,20 +6,14 @@
 
 use crate::ast::*;
 use crate::errors::*;
-use pyo3::prelude::*;
 use std::collections::HashMap;
 
 /// Validation result for a Buhera script
-#[pyclass]
 #[derive(Debug, Clone)]
 pub struct ValidationResult {
-    #[pyo3(get)]
     pub is_valid: bool,
-    #[pyo3(get)]
     pub issues: Vec<String>,
-    #[pyo3(get)]
     pub recommendations: Vec<String>,
-    #[pyo3(get)]
     pub estimated_success_probability: f64,
 }
 
@@ -165,7 +159,7 @@ impl BuheraValidator {
             }
         }
 
-        // Fix for f64.max() issue - use conditional logic instead
+        // Clamp probability between 0.01 and 0.99
         let clamped_probability = if base_probability < 0.01 {
             0.01
         } else if base_probability > 0.99 {
@@ -198,9 +192,8 @@ impl BuheraValidator {
     }
 }
 
-#[pymethods]
 impl ValidationResult {
-    #[new]
+    /// Create new ValidationResult
     pub fn new(
         is_valid: bool,
         issues: Vec<String>,
@@ -215,6 +208,7 @@ impl ValidationResult {
         }
     }
 
+    /// Get validation summary
     pub fn summary(&self) -> String {
         format!(
             "Validation: {} | Issues: {} | Success Probability: {:.1}%",
