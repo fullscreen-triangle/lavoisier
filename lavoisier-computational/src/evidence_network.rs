@@ -1,610 +1,960 @@
 use crate::{ComputationalConfig, ComputationalError, ComputationalResult};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, RwLock};
 
-/// High-performance evidence network for compound annotation
+/// High-performance evidence network for massive spectral datasets
 pub struct EvidenceNetwork {
     config: ComputationalConfig,
-    evidence_nodes: HashMap<String, EvidenceNode>,
-    evidence_types: Vec<EvidenceType>,
-    fuzzy_processor: FuzzyLogicProcessor,
+    node_pool: Arc<RwLock<NodePool>>,
+    edge_index: Arc<Mutex<EdgeIndex>>,
+    evidence_aggregator: EvidenceAggregator,
+    memory_manager: MemoryManager,
 }
 
 impl EvidenceNetwork {
     pub fn new(config: &ComputationalConfig) -> ComputationalResult<Self> {
+        let node_pool = Arc::new(RwLock::new(NodePool::new(config.num_threads)?));
+        let edge_index = Arc::new(Mutex::new(EdgeIndex::new()?));
+        let evidence_aggregator = EvidenceAggregator::new(config)?;
+        let memory_manager = MemoryManager::new(config.memory_limit_gb)?;
+
         Ok(Self {
             config: config.clone(),
-            evidence_nodes: HashMap::new(),
-            evidence_types: EvidenceType::all_types(),
-            fuzzy_processor: FuzzyLogicProcessor::new(),
+            node_pool,
+            edge_index,
+            evidence_aggregator,
+            memory_manager,
         })
     }
 
-    /// Build evidence network with optimal noise parameters
+    /// Build evidence network from massive spectral data using streaming approach
     pub fn build_evidence_network(
         &mut self,
         mz_data: &[f64],
         intensity_data: &[f64],
         optimal_noise_level: f64,
     ) -> ComputationalResult<EvidenceResult> {
-        if mz_data.len() != intensity_data.len() {
-            return Err(ComputationalError::InvalidInput(
-                "M/Z and intensity arrays must have same length".to_string(),
-            ));
-        }
+        // Calculate processing chunks based on memory constraints
+        let chunk_size = self.memory_manager.calculate_chunk_size(mz_data.len())?;
+        let num_chunks = (mz_data.len() + chunk_size - 1) / chunk_size;
 
-        // Create evidence nodes for different evidence types
-        self.create_evidence_nodes(mz_data, intensity_data, optimal_noise_level)?;
-
-        // Compute evidence scores in parallel
-        let evidence_scores = self.compute_evidence_scores_parallel(mz_data, intensity_data)?;
-
-        // Integrate evidence using multiple methods
-        let integration_results = self.integrate_evidence_multi_method(&evidence_scores)?;
-
-        // Calculate uncertainty bounds
-        let uncertainty_bounds = self.calculate_uncertainty_bounds(&evidence_scores);
-
-        Ok(EvidenceResult {
-            evidence_scores,
-            integration_results,
-            uncertainty_bounds,
-            optimal_noise_level,
-            num_evidence_nodes: self.evidence_nodes.len(),
-            network_density: self.calculate_network_density(),
-        })
-    }
-
-    /// Create evidence nodes for different types of evidence
-    fn create_evidence_nodes(
-        &mut self,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-        noise_level: f64,
-    ) -> ComputationalResult<()> {
-        for evidence_type in &self.evidence_types {
-            let node = match evidence_type {
-                EvidenceType::MassMatch => self.create_mass_match_node(mz_data, noise_level),
-                EvidenceType::Ms2Fragmentation => self.create_ms2_node(mz_data, intensity_data),
-                EvidenceType::IsotopePattern => self.create_isotope_node(mz_data, intensity_data),
-                EvidenceType::RetentionTime => self.create_rt_node(mz_data),
-                EvidenceType::PathwayMembership => self.create_pathway_node(),
-                EvidenceType::SpectralSimilarity => {
-                    self.create_similarity_node(mz_data, intensity_data)
-                }
-                EvidenceType::AdductFormation => self.create_adduct_node(mz_data),
-                EvidenceType::NeutralLoss => self.create_neutral_loss_node(mz_data),
-            }?;
-
-            self.evidence_nodes.insert(evidence_type.to_string(), node);
-        }
-
-        Ok(())
-    }
-
-    /// Compute evidence scores in parallel for performance
-    fn compute_evidence_scores_parallel(
-        &self,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-    ) -> ComputationalResult<HashMap<String, Vec<f64>>> {
-        let scores: HashMap<String, Vec<f64>> = self
-            .evidence_nodes
-            .par_iter()
-            .map(|(evidence_type, node)| {
-                let scores = self.compute_node_scores(node, mz_data, intensity_data);
-                (evidence_type.clone(), scores)
-            })
-            .collect();
-
-        Ok(scores)
-    }
-
-    /// Compute scores for individual evidence node
-    fn compute_node_scores(
-        &self,
-        node: &EvidenceNode,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-    ) -> Vec<f64> {
-        mz_data
-            .par_iter()
-            .zip(intensity_data.par_iter())
-            .map(|(&mz, &intensity)| match node.evidence_type {
-                EvidenceType::MassMatch => self.compute_mass_match_score(mz, &node.reference_data),
-                EvidenceType::Ms2Fragmentation => {
-                    self.compute_ms2_score(mz, intensity, &node.reference_data)
-                }
-                EvidenceType::IsotopePattern => {
-                    self.compute_isotope_score(mz, intensity, &node.reference_data)
-                }
-                EvidenceType::RetentionTime => self.compute_rt_score(mz, &node.reference_data),
-                EvidenceType::PathwayMembership => {
-                    self.compute_pathway_score(mz, &node.reference_data)
-                }
-                EvidenceType::SpectralSimilarity => {
-                    self.compute_similarity_score(mz, intensity, &node.reference_data)
-                }
-                EvidenceType::AdductFormation => {
-                    self.compute_adduct_score(mz, &node.reference_data)
-                }
-                EvidenceType::NeutralLoss => {
-                    self.compute_neutral_loss_score(mz, &node.reference_data)
-                }
-            })
-            .collect()
-    }
-
-    /// Integrate evidence using multiple methods
-    fn integrate_evidence_multi_method(
-        &self,
-        evidence_scores: &HashMap<String, Vec<f64>>,
-    ) -> ComputationalResult<IntegrationResults> {
-        let data_length = evidence_scores
-            .values()
-            .next()
-            .ok_or_else(|| ComputationalError::InvalidInput("No evidence scores".to_string()))?
-            .len();
-
-        // Initialize integration results
-        let mut fuzzy_and_scores = Vec::with_capacity(data_length);
-        let mut probabilistic_scores = Vec::with_capacity(data_length);
-        let mut bayesian_scores = Vec::with_capacity(data_length);
-        let mut weighted_scores = Vec::with_capacity(data_length);
-
-        // Parallel integration across data points
-        let integration_results: Vec<_> = (0..data_length)
+        // Phase 1: Build local evidence networks for each chunk
+        let local_networks: Vec<LocalEvidenceNetwork> = (0..num_chunks)
             .into_par_iter()
-            .map(|i| {
-                let point_scores: Vec<f64> =
-                    evidence_scores.values().map(|scores| scores[i]).collect();
+            .map(|chunk_idx| {
+                let start = chunk_idx * chunk_size;
+                let end = std::cmp::min(start + chunk_size, mz_data.len());
 
-                let fuzzy_result = self.fuzzy_processor.fuzzy_and_integration(&point_scores);
-                let probabilistic_result = self
-                    .fuzzy_processor
-                    .probabilistic_integration(&point_scores);
-                let bayesian_result = self.compute_bayesian_integration(&point_scores);
-                let weighted_result = self.compute_weighted_integration(&point_scores);
-
-                (
-                    fuzzy_result,
-                    probabilistic_result,
-                    bayesian_result,
-                    weighted_result,
+                self.build_local_network(
+                    &mz_data[start..end],
+                    &intensity_data[start..end],
+                    optimal_noise_level,
+                    chunk_idx,
                 )
             })
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
-        // Separate results
-        for (fuzzy, prob, bayes, weighted) in integration_results {
-            fuzzy_and_scores.push(fuzzy);
-            probabilistic_scores.push(prob);
-            bayesian_scores.push(bayes);
-            weighted_scores.push(weighted);
-        }
+        // Phase 2: Merge local networks into global evidence network
+        let global_network = self.merge_local_networks(&local_networks)?;
 
-        Ok(IntegrationResults {
-            fuzzy_and: fuzzy_and_scores,
-            probabilistic: probabilistic_scores,
-            bayesian: bayesian_scores,
-            weighted_average: weighted_scores,
+        // Phase 3: Perform evidence aggregation and scoring
+        let evidence_scores = self
+            .evidence_aggregator
+            .aggregate_evidence(&global_network)?;
+
+        // Phase 4: Extract high-confidence spectral features
+        let spectral_features =
+            self.extract_spectral_features(&global_network, &evidence_scores)?;
+
+        // Phase 5: Calculate network statistics
+        let network_stats = self.calculate_network_statistics(&global_network)?;
+
+        Ok(EvidenceResult {
+            spectral_features,
+            evidence_scores,
+            network_stats,
+            processing_chunks: num_chunks,
+            total_nodes: global_network.nodes.len(),
+            total_edges: global_network.edges.len(),
         })
     }
 
-    /// Calculate uncertainty bounds for evidence scores
-    fn calculate_uncertainty_bounds(
+    /// Build local evidence network for a data chunk
+    fn build_local_network(
         &self,
-        evidence_scores: &HashMap<String, Vec<f64>>,
-    ) -> (Vec<f64>, Vec<f64>) {
-        let data_length = evidence_scores.values().next().unwrap().len();
-
-        let bounds: Vec<_> = (0..data_length)
-            .into_par_iter()
-            .map(|i| {
-                let point_scores: Vec<f64> =
-                    evidence_scores.values().map(|scores| scores[i]).collect();
-
-                let mean = point_scores.iter().sum::<f64>() / point_scores.len() as f64;
-                let variance = point_scores
-                    .iter()
-                    .map(|&x| (x - mean).powi(2))
-                    .sum::<f64>()
-                    / point_scores.len() as f64;
-                let std_dev = variance.sqrt();
-
-                let lower = (mean - 2.0 * std_dev).max(0.0);
-                let upper = (mean + 2.0 * std_dev).min(1.0);
-
-                (lower, upper)
-            })
-            .collect();
-
-        let (lower_bounds, upper_bounds): (Vec<_>, Vec<_>) = bounds.into_iter().unzip();
-        (lower_bounds, upper_bounds)
-    }
-
-    /// Calculate network density metric
-    fn calculate_network_density(&self) -> f64 {
-        let num_nodes = self.evidence_nodes.len() as f64;
-        if num_nodes <= 1.0 {
-            return 0.0;
-        }
-
-        // Simplified density calculation - in real implementation would use graph structure
-        let possible_edges = num_nodes * (num_nodes - 1.0) / 2.0;
-        let actual_edges = num_nodes; // Simplified assumption
-
-        actual_edges / possible_edges
-    }
-
-    // Evidence node creation methods
-    fn create_mass_match_node(
-        &self,
-        mz_data: &[f64],
+        mz_chunk: &[f64],
+        intensity_chunk: &[f64],
         noise_level: f64,
-    ) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::MassMatch,
-            confidence: 0.9,
-            uncertainty: 0.05,
-            prior_probability: 0.7,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.01,
-                intensity_threshold: 1000.0 * noise_level,
-                other_params: HashMap::new(),
-            },
-        })
-    }
+        chunk_idx: usize,
+    ) -> ComputationalResult<LocalEvidenceNetwork> {
+        // Identify significant peaks in this chunk
+        let peaks = self.identify_significant_peaks(mz_chunk, intensity_chunk, noise_level)?;
 
-    fn create_ms2_node(
-        &self,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-    ) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::Ms2Fragmentation,
-            confidence: 0.85,
-            uncertainty: 0.1,
-            prior_probability: 0.6,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.05,
-                intensity_threshold: 100.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_isotope_node(
-        &self,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-    ) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::IsotopePattern,
-            confidence: 0.88,
-            uncertainty: 0.08,
-            prior_probability: 0.65,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.01,
-                intensity_threshold: 500.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_rt_node(&self, mz_data: &[f64]) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::RetentionTime,
-            confidence: 0.75,
-            uncertainty: 0.15,
-            prior_probability: 0.5,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.5, // RT tolerance in minutes
-                intensity_threshold: 0.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_pathway_node(&self) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::PathwayMembership,
-            confidence: 0.8,
-            uncertainty: 0.12,
-            prior_probability: 0.55,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.0,
-                intensity_threshold: 0.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_similarity_node(
-        &self,
-        mz_data: &[f64],
-        intensity_data: &[f64],
-    ) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::SpectralSimilarity,
-            confidence: 0.82,
-            uncertainty: 0.1,
-            prior_probability: 0.6,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.01,
-                intensity_threshold: 100.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_adduct_node(&self, mz_data: &[f64]) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::AdductFormation,
-            confidence: 0.78,
-            uncertainty: 0.15,
-            prior_probability: 0.5,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.01,
-                intensity_threshold: 1000.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    fn create_neutral_loss_node(&self, mz_data: &[f64]) -> ComputationalResult<EvidenceNode> {
-        Ok(EvidenceNode {
-            evidence_type: EvidenceType::NeutralLoss,
-            confidence: 0.76,
-            uncertainty: 0.18,
-            prior_probability: 0.45,
-            reference_data: ReferenceData {
-                mass_tolerance: 0.01,
-                intensity_threshold: 500.0,
-                other_params: HashMap::new(),
-            },
-        })
-    }
-
-    // Score computation methods (simplified implementations)
-    fn compute_mass_match_score(&self, mz: f64, reference: &ReferenceData) -> f64 {
-        // Simplified mass match scoring
-        let theoretical_masses = vec![180.063, 342.116, 191.055]; // Example masses
-
-        theoretical_masses
-            .iter()
-            .map(|&theoretical_mz| {
-                let error = (mz - theoretical_mz).abs();
-                if error < reference.mass_tolerance {
-                    (-error.powi(2) / (2.0 * reference.mass_tolerance.powi(2))).exp()
-                } else {
-                    0.0
-                }
-            })
-            .fold(0.0, f64::max)
-    }
-
-    fn compute_ms2_score(&self, mz: f64, intensity: f64, reference: &ReferenceData) -> f64 {
-        if intensity < reference.intensity_threshold {
-            return 0.0;
+        // Create evidence nodes for each peak
+        let mut nodes = HashMap::new();
+        for peak in &peaks {
+            let node = EvidenceNode {
+                id: format!("chunk_{}_peak_{}", chunk_idx, peak.index),
+                mz: peak.mz,
+                intensity: peak.intensity,
+                evidence_score: peak.significance_score,
+                chunk_id: chunk_idx,
+                local_index: peak.index,
+                isotope_pattern: self.analyze_isotope_pattern(
+                    mz_chunk,
+                    intensity_chunk,
+                    peak.index,
+                )?,
+                fragmentation_evidence: self.analyze_fragmentation_evidence(
+                    mz_chunk,
+                    intensity_chunk,
+                    peak.index,
+                )?,
+            };
+            nodes.insert(node.id.clone(), node);
         }
 
-        // Simplified MS2 scoring based on intensity and common neutral losses
-        let common_losses = vec![18.010565, 44.009925, 46.005479]; // H2O, CO2, HCOOH
+        // Create edges between related peaks
+        let edges = self.create_local_edges(&nodes, mz_chunk, intensity_chunk)?;
 
-        common_losses
-            .iter()
-            .map(|&loss| {
-                let fragment_mz = mz - loss;
-                if fragment_mz > 50.0 {
-                    // Reasonable fragment m/z
-                    0.8
-                } else {
-                    0.2
-                }
-            })
-            .fold(0.0, f64::max)
+        Ok(LocalEvidenceNetwork {
+            chunk_id: chunk_idx,
+            nodes,
+            edges,
+            peak_count: peaks.len(),
+        })
     }
 
-    fn compute_isotope_score(&self, mz: f64, intensity: f64, reference: &ReferenceData) -> f64 {
-        if intensity < reference.intensity_threshold {
-            return 0.0;
+    /// Identify significant peaks using statistical analysis
+    fn identify_significant_peaks(
+        &self,
+        mz_data: &[f64],
+        intensity_data: &[f64],
+        noise_level: f64,
+    ) -> ComputationalResult<Vec<SignificantPeak>> {
+        let mut peaks = Vec::new();
+        let min_peak_separation = 0.01; // m/z units
+
+        // Parallel peak detection with noise filtering
+        let potential_peaks: Vec<_> = (1..mz_data.len() - 1)
+            .into_par_iter()
+            .filter_map(|i| {
+                let current_intensity = intensity_data[i];
+                let noise_threshold = noise_level * current_intensity;
+
+                // Local maxima detection
+                if current_intensity > intensity_data[i - 1]
+                    && current_intensity > intensity_data[i + 1]
+                    && current_intensity > noise_threshold
+                {
+                    // Calculate local signal-to-noise ratio
+                    let local_noise = self.calculate_local_noise(intensity_data, i, 5);
+                    let snr = if local_noise > 0.0 {
+                        current_intensity / local_noise
+                    } else {
+                        0.0
+                    };
+
+                    // Statistical significance test
+                    let significance_score = self.calculate_significance_score(
+                        current_intensity,
+                        local_noise,
+                        intensity_data,
+                        i,
+                    );
+
+                    if snr > 3.0 && significance_score > 0.01 {
+                        Some(SignificantPeak {
+                            index: i,
+                            mz: mz_data[i],
+                            intensity: current_intensity,
+                            snr,
+                            significance_score,
+                            local_noise,
+                        })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // Remove overlapping peaks (keep highest intensity)
+        let mut sorted_peaks = potential_peaks;
+        sorted_peaks.sort_by(|a, b| b.intensity.partial_cmp(&a.intensity).unwrap());
+
+        let mut used_mz = HashSet::new();
+        for peak in sorted_peaks {
+            let mz_key = (peak.mz / min_peak_separation).round() as i64;
+            if !used_mz.contains(&mz_key) {
+                used_mz.insert(mz_key);
+                peaks.push(peak);
+            }
         }
 
-        // Simplified isotope pattern scoring for C13 peak
-        let c13_delta = 1.003355;
-        let expected_c13_mz = mz + c13_delta;
-
-        // This would check against actual observed spectrum in real implementation
-        0.7 // Placeholder score
+        Ok(peaks)
     }
 
-    fn compute_rt_score(&self, mz: f64, reference: &ReferenceData) -> f64 {
-        // Simplified RT prediction based on LogP estimation
-        let estimated_logp = (mz / 100.0).ln() - 2.0; // Very simplified
-        let predicted_rt = 5.0 + estimated_logp * 3.0; // Minutes
+    /// Calculate local noise estimate
+    fn calculate_local_noise(&self, intensity_data: &[f64], center: usize, window: usize) -> f64 {
+        let start = center.saturating_sub(window);
+        let end = std::cmp::min(center + window, intensity_data.len());
 
-        // Would compare against actual RT in real implementation
-        0.6 // Placeholder score
+        let window_data = &intensity_data[start..end];
+        let median = self.calculate_median(window_data);
+        let mad = self.calculate_mad(window_data, median);
+
+        mad * 1.4826 // Convert MAD to standard deviation equivalent
     }
 
-    fn compute_pathway_score(&self, mz: f64, reference: &ReferenceData) -> f64 {
-        // Simplified pathway membership scoring
-        let known_pathway_masses = vec![180.063, 342.116, 191.055, 132.077];
+    /// Calculate median of slice
+    fn calculate_median(&self, data: &[f64]) -> f64 {
+        let mut sorted = data.to_vec();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        known_pathway_masses
-            .iter()
-            .map(|&pathway_mz| {
-                let error = (mz - pathway_mz).abs();
-                if error < 0.01 {
-                    0.9
-                } else {
-                    0.1
-                }
-            })
-            .fold(0.0, f64::max)
-    }
-
-    fn compute_similarity_score(&self, mz: f64, intensity: f64, reference: &ReferenceData) -> f64 {
-        // Simplified spectral similarity
-        if intensity > reference.intensity_threshold {
-            0.75
+        let mid = sorted.len() / 2;
+        if sorted.len() % 2 == 0 {
+            (sorted[mid - 1] + sorted[mid]) / 2.0
         } else {
-            0.3
+            sorted[mid]
         }
     }
 
-    fn compute_adduct_score(&self, mz: f64, reference: &ReferenceData) -> f64 {
-        // Common adducts: [M+H]+, [M+Na]+, [M+K]+, [M+NH4]+
-        let adduct_masses = vec![1.007276, 22.989218, 38.963158, 18.033823];
+    /// Calculate median absolute deviation
+    fn calculate_mad(&self, data: &[f64], median: f64) -> f64 {
+        let mut deviations: Vec<f64> = data.iter().map(|&x| (x - median).abs()).collect();
+        deviations.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        adduct_masses
-            .iter()
-            .map(|&adduct_mass| {
-                let neutral_mass = mz - adduct_mass;
-                if neutral_mass > 50.0 && neutral_mass < 2000.0 {
-                    0.7
-                } else {
-                    0.2
-                }
-            })
-            .fold(0.0, f64::max)
+        let mid = deviations.len() / 2;
+        if deviations.len() % 2 == 0 {
+            (deviations[mid - 1] + deviations[mid]) / 2.0
+        } else {
+            deviations[mid]
+        }
     }
 
-    fn compute_neutral_loss_score(&self, mz: f64, reference: &ReferenceData) -> f64 {
-        // Common neutral losses
-        let neutral_losses = vec![18.010565, 44.009925, 46.005479, 64.016044];
-
-        neutral_losses
-            .iter()
-            .map(|&loss| {
-                let fragment_mz = mz - loss;
-                if fragment_mz > 50.0 {
-                    0.65
-                } else {
-                    0.15
-                }
-            })
-            .fold(0.0, f64::max)
-    }
-
-    fn compute_bayesian_integration(&self, scores: &[f64]) -> f64 {
-        if scores.is_empty() {
+    /// Calculate statistical significance score
+    fn calculate_significance_score(
+        &self,
+        intensity: f64,
+        noise: f64,
+        intensity_data: &[f64],
+        index: usize,
+    ) -> f64 {
+        if noise <= 0.0 {
             return 0.0;
         }
 
-        // Simplified Bayesian integration using product rule
-        let prior = 0.5;
-        let likelihood_product: f64 = scores.iter().product();
+        let z_score = (intensity - noise) / noise;
+        let p_value = 2.0 * (1.0 - self.gaussian_cdf(z_score.abs()));
 
-        // Simplified posterior (would need proper normalization)
-        (likelihood_product * prior).min(1.0)
+        // Convert p-value to significance score (higher is more significant)
+        1.0 - p_value
     }
 
-    fn compute_weighted_integration(&self, scores: &[f64]) -> f64 {
-        if scores.is_empty() {
+    /// Gaussian cumulative distribution function
+    fn gaussian_cdf(&self, x: f64) -> f64 {
+        0.5 * (1.0 + self.erf(x / std::f64::consts::SQRT_2))
+    }
+
+    /// Error function approximation
+    fn erf(&self, x: f64) -> f64 {
+        // Abramowitz and Stegun approximation
+        let a1 = 0.254829592;
+        let a2 = -0.284496736;
+        let a3 = 1.421413741;
+        let a4 = -1.453152027;
+        let a5 = 1.061405429;
+        let p = 0.3275911;
+
+        let sign = if x < 0.0 { -1.0 } else { 1.0 };
+        let x = x.abs();
+
+        let t = 1.0 / (1.0 + p * x);
+        let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-x * x).exp();
+
+        sign * y
+    }
+
+    /// Analyze isotope pattern around a peak
+    fn analyze_isotope_pattern(
+        &self,
+        mz_data: &[f64],
+        intensity_data: &[f64],
+        peak_index: usize,
+    ) -> ComputationalResult<IsotopePattern> {
+        let base_mz = mz_data[peak_index];
+        let base_intensity = intensity_data[peak_index];
+
+        // Look for isotope peaks (+1, +2, +3 Da)
+        let mut isotope_peaks = Vec::new();
+
+        for isotope_offset in 1..=3 {
+            let target_mz = base_mz + isotope_offset as f64;
+
+            // Find closest peak to target m/z
+            if let Some(closest_idx) = self.find_closest_peak(mz_data, target_mz, 0.1) {
+                let intensity_ratio = intensity_data[closest_idx] / base_intensity;
+
+                isotope_peaks.push(IsotopePeak {
+                    offset: isotope_offset,
+                    mz: mz_data[closest_idx],
+                    intensity_ratio,
+                    theoretical_ratio: self.calculate_theoretical_isotope_ratio(isotope_offset),
+                });
+            }
+        }
+
+        Ok(IsotopePattern {
+            base_mz,
+            isotope_peaks,
+            pattern_score: self.score_isotope_pattern(&isotope_peaks),
+        })
+    }
+
+    /// Find closest peak to target m/z
+    fn find_closest_peak(&self, mz_data: &[f64], target_mz: f64, tolerance: f64) -> Option<usize> {
+        let mut best_idx = None;
+        let mut best_distance = f64::INFINITY;
+
+        for (i, &mz) in mz_data.iter().enumerate() {
+            let distance = (mz - target_mz).abs();
+            if distance <= tolerance && distance < best_distance {
+                best_distance = distance;
+                best_idx = Some(i);
+            }
+        }
+
+        best_idx
+    }
+
+    /// Calculate theoretical isotope ratio
+    fn calculate_theoretical_isotope_ratio(&self, offset: usize) -> f64 {
+        // Simplified isotope ratios for organic compounds
+        match offset {
+            1 => 0.011,   // C13 ratio
+            2 => 0.0006,  // C13+C13 ratio
+            3 => 0.00001, // Higher order isotopes
+            _ => 0.0,
+        }
+    }
+
+    /// Score isotope pattern quality
+    fn score_isotope_pattern(&self, isotope_peaks: &[IsotopePeak]) -> f64 {
+        if isotope_peaks.is_empty() {
             return 0.0;
         }
 
-        // Simple weighted average (equal weights)
-        scores.iter().sum::<f64>() / scores.len() as f64
+        let mut score = 0.0;
+        for peak in isotope_peaks {
+            let ratio_error =
+                (peak.intensity_ratio - peak.theoretical_ratio).abs() / peak.theoretical_ratio;
+            let peak_score = (1.0 - ratio_error).max(0.0);
+            score += peak_score;
+        }
+
+        score / isotope_peaks.len() as f64
     }
-}
 
-/// Types of evidence for compound identification
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EvidenceType {
-    MassMatch,
-    Ms2Fragmentation,
-    IsotopePattern,
-    RetentionTime,
-    PathwayMembership,
-    SpectralSimilarity,
-    AdductFormation,
-    NeutralLoss,
-}
+    /// Analyze fragmentation evidence
+    fn analyze_fragmentation_evidence(
+        &self,
+        mz_data: &[f64],
+        intensity_data: &[f64],
+        peak_index: usize,
+    ) -> ComputationalResult<FragmentationEvidence> {
+        let precursor_mz = mz_data[peak_index];
+        let precursor_intensity = intensity_data[peak_index];
 
-impl EvidenceType {
-    pub fn all_types() -> Vec<Self> {
-        vec![
-            Self::MassMatch,
-            Self::Ms2Fragmentation,
-            Self::IsotopePattern,
-            Self::RetentionTime,
-            Self::PathwayMembership,
-            Self::SpectralSimilarity,
-            Self::AdductFormation,
-            Self::NeutralLoss,
-        ]
+        // Look for potential fragment ions (lower m/z)
+        let mut fragment_ions = Vec::new();
+
+        for i in 0..peak_index {
+            let fragment_mz = mz_data[i];
+            let fragment_intensity = intensity_data[i];
+
+            // Check for common neutral losses
+            let mass_diff = precursor_mz - fragment_mz;
+            let neutral_loss = self.identify_neutral_loss(mass_diff);
+
+            if neutral_loss.is_some() && fragment_intensity > precursor_intensity * 0.05 {
+                fragment_ions.push(FragmentIon {
+                    mz: fragment_mz,
+                    intensity_ratio: fragment_intensity / precursor_intensity,
+                    neutral_loss,
+                    mass_difference: mass_diff,
+                });
+            }
+        }
+
+        Ok(FragmentationEvidence {
+            precursor_mz,
+            fragment_ions,
+            fragmentation_score: self.score_fragmentation_pattern(&fragment_ions),
+        })
     }
-}
 
-impl ToString for EvidenceType {
-    fn to_string(&self) -> String {
-        match self {
-            Self::MassMatch => "mass_match".to_string(),
-            Self::Ms2Fragmentation => "ms2_fragmentation".to_string(),
-            Self::IsotopePattern => "isotope_pattern".to_string(),
-            Self::RetentionTime => "retention_time".to_string(),
-            Self::PathwayMembership => "pathway_membership".to_string(),
-            Self::SpectralSimilarity => "spectral_similarity".to_string(),
-            Self::AdductFormation => "adduct_formation".to_string(),
-            Self::NeutralLoss => "neutral_loss".to_string(),
+    /// Identify common neutral losses
+    fn identify_neutral_loss(&self, mass_diff: f64) -> Option<String> {
+        let tolerance = 0.01;
+
+        let common_losses = [
+            (18.0105, "H2O"),
+            (17.0265, "NH3"),
+            (28.0313, "CO"),
+            (44.0262, "CO2"),
+            (46.0055, "COOH"),
+            (32.0262, "CH3OH"),
+        ];
+
+        for (loss_mass, loss_name) in &common_losses {
+            if (mass_diff - loss_mass).abs() < tolerance {
+                return Some(loss_name.to_string());
+            }
+        }
+
+        None
+    }
+
+    /// Score fragmentation pattern
+    fn score_fragmentation_pattern(&self, fragment_ions: &[FragmentIon]) -> f64 {
+        if fragment_ions.is_empty() {
+            return 0.0;
+        }
+
+        let mut score = 0.0;
+        for fragment in fragment_ions {
+            let intensity_score = fragment.intensity_ratio.min(1.0);
+            let neutral_loss_bonus = if fragment.neutral_loss.is_some() {
+                0.5
+            } else {
+                0.0
+            };
+            score += intensity_score + neutral_loss_bonus;
+        }
+
+        score / fragment_ions.len() as f64
+    }
+
+    /// Create edges between related peaks in local network
+    fn create_local_edges(
+        &self,
+        nodes: &HashMap<String, EvidenceNode>,
+        mz_data: &[f64],
+        intensity_data: &[f64],
+    ) -> ComputationalResult<Vec<EvidenceEdge>> {
+        let mut edges = Vec::new();
+        let node_list: Vec<_> = nodes.values().collect();
+
+        // Create edges between nodes with relationships
+        for i in 0..node_list.len() {
+            for j in i + 1..node_list.len() {
+                let node1 = &node_list[i];
+                let node2 = &node_list[j];
+
+                let edge_weight = self.calculate_edge_weight(node1, node2)?;
+
+                if edge_weight > 0.1 {
+                    // Minimum edge weight threshold
+                    edges.push(EvidenceEdge {
+                        from_node: node1.id.clone(),
+                        to_node: node2.id.clone(),
+                        weight: edge_weight,
+                        relationship_type: self.determine_relationship_type(node1, node2),
+                    });
+                }
+            }
+        }
+
+        Ok(edges)
+    }
+
+    /// Calculate edge weight between two nodes
+    fn calculate_edge_weight(
+        &self,
+        node1: &EvidenceNode,
+        node2: &EvidenceNode,
+    ) -> ComputationalResult<f64> {
+        let mz_diff = (node1.mz - node2.mz).abs();
+
+        // Isotope relationship
+        if mz_diff >= 0.99 && mz_diff <= 3.01 {
+            return Ok(0.8);
+        }
+
+        // Fragmentation relationship
+        if mz_diff > 10.0 {
+            let neutral_loss_score = if self.identify_neutral_loss(mz_diff).is_some() {
+                0.7
+            } else {
+                0.3
+            };
+            return Ok(neutral_loss_score);
+        }
+
+        // Intensity correlation
+        let intensity_ratio =
+            (node1.intensity / node2.intensity).min(node2.intensity / node1.intensity);
+        let correlation_score = intensity_ratio * 0.5;
+
+        Ok(correlation_score)
+    }
+
+    /// Determine relationship type between nodes
+    fn determine_relationship_type(
+        &self,
+        node1: &EvidenceNode,
+        node2: &EvidenceNode,
+    ) -> RelationshipType {
+        let mz_diff = (node1.mz - node2.mz).abs();
+
+        if mz_diff >= 0.99 && mz_diff <= 3.01 {
+            RelationshipType::Isotope
+        } else if mz_diff > 10.0 {
+            RelationshipType::Fragmentation
+        } else {
+            RelationshipType::Correlation
+        }
+    }
+
+    /// Merge local networks into global network
+    fn merge_local_networks(
+        &self,
+        local_networks: &[LocalEvidenceNetwork],
+    ) -> ComputationalResult<GlobalEvidenceNetwork> {
+        let mut global_nodes = HashMap::new();
+        let mut global_edges = Vec::new();
+
+        // Merge all local nodes
+        for network in local_networks {
+            for (node_id, node) in &network.nodes {
+                global_nodes.insert(node_id.clone(), node.clone());
+            }
+            global_edges.extend(network.edges.clone());
+        }
+
+        // Create inter-chunk edges
+        let inter_chunk_edges = self.create_inter_chunk_edges(local_networks)?;
+        global_edges.extend(inter_chunk_edges);
+
+        Ok(GlobalEvidenceNetwork {
+            nodes: global_nodes,
+            edges: global_edges,
+        })
+    }
+
+    /// Create edges between chunks
+    fn create_inter_chunk_edges(
+        &self,
+        local_networks: &[LocalEvidenceNetwork],
+    ) -> ComputationalResult<Vec<EvidenceEdge>> {
+        let mut inter_edges = Vec::new();
+
+        // For now, simple approach - could be optimized for 100GB+ datasets
+        for i in 0..local_networks.len() {
+            for j in i + 1..local_networks.len() {
+                let edges =
+                    self.find_cross_chunk_relationships(&local_networks[i], &local_networks[j])?;
+                inter_edges.extend(edges);
+            }
+        }
+
+        Ok(inter_edges)
+    }
+
+    /// Find relationships between nodes in different chunks
+    fn find_cross_chunk_relationships(
+        &self,
+        network1: &LocalEvidenceNetwork,
+        network2: &LocalEvidenceNetwork,
+    ) -> ComputationalResult<Vec<EvidenceEdge>> {
+        let mut edges = Vec::new();
+
+        // Look for isotope and fragmentation relationships across chunks
+        for node1 in network1.nodes.values() {
+            for node2 in network2.nodes.values() {
+                let edge_weight = self.calculate_edge_weight(node1, node2)?;
+
+                if edge_weight > 0.2 {
+                    // Higher threshold for inter-chunk edges
+                    edges.push(EvidenceEdge {
+                        from_node: node1.id.clone(),
+                        to_node: node2.id.clone(),
+                        weight: edge_weight,
+                        relationship_type: self.determine_relationship_type(node1, node2),
+                    });
+                }
+            }
+        }
+
+        Ok(edges)
+    }
+
+    /// Extract high-confidence spectral features
+    fn extract_spectral_features(
+        &self,
+        network: &GlobalEvidenceNetwork,
+        evidence_scores: &HashMap<String, f64>,
+    ) -> ComputationalResult<Vec<SpectralFeature>> {
+        let mut features = Vec::new();
+
+        for (node_id, node) in &network.nodes {
+            let evidence_score = evidence_scores.get(node_id).unwrap_or(&0.0);
+
+            if *evidence_score > 0.5 {
+                // High confidence threshold
+                features.push(SpectralFeature {
+                    mz: node.mz,
+                    intensity: node.intensity,
+                    evidence_score: *evidence_score,
+                    isotope_pattern: node.isotope_pattern.clone(),
+                    fragmentation_evidence: node.fragmentation_evidence.clone(),
+                    confidence_level: self.classify_confidence_level(*evidence_score),
+                });
+            }
+        }
+
+        // Sort by evidence score
+        features.sort_by(|a, b| b.evidence_score.partial_cmp(&a.evidence_score).unwrap());
+
+        Ok(features)
+    }
+
+    /// Classify confidence level
+    fn classify_confidence_level(&self, evidence_score: f64) -> ConfidenceLevel {
+        if evidence_score > 0.9 {
+            ConfidenceLevel::High
+        } else if evidence_score > 0.7 {
+            ConfidenceLevel::Medium
+        } else {
+            ConfidenceLevel::Low
+        }
+    }
+
+    /// Calculate network statistics
+    fn calculate_network_statistics(
+        &self,
+        network: &GlobalEvidenceNetwork,
+    ) -> ComputationalResult<NetworkStatistics> {
+        let node_count = network.nodes.len();
+        let edge_count = network.edges.len();
+
+        let connectivity = if node_count > 1 {
+            edge_count as f64 / (node_count * (node_count - 1) / 2) as f64
+        } else {
+            0.0
+        };
+
+        let avg_evidence_score = if !network.nodes.is_empty() {
+            network
+                .nodes
+                .values()
+                .map(|n| n.evidence_score)
+                .sum::<f64>()
+                / node_count as f64
+        } else {
+            0.0
+        };
+
+        Ok(NetworkStatistics {
+            node_count,
+            edge_count,
+            connectivity,
+            avg_evidence_score,
+            cluster_count: self.count_clusters(network),
+        })
+    }
+
+    /// Count clusters in network
+    fn count_clusters(&self, network: &GlobalEvidenceNetwork) -> usize {
+        // Simple connected components counting
+        let mut visited = HashSet::new();
+        let mut cluster_count = 0;
+
+        for node_id in network.nodes.keys() {
+            if !visited.contains(node_id) {
+                self.dfs_visit(node_id, network, &mut visited);
+                cluster_count += 1;
+            }
+        }
+
+        cluster_count
+    }
+
+    /// Depth-first search for connected components
+    fn dfs_visit(
+        &self,
+        node_id: &str,
+        network: &GlobalEvidenceNetwork,
+        visited: &mut HashSet<String>,
+    ) {
+        visited.insert(node_id.to_string());
+
+        for edge in &network.edges {
+            let neighbor = if edge.from_node == node_id {
+                &edge.to_node
+            } else if edge.to_node == node_id {
+                &edge.from_node
+            } else {
+                continue;
+            };
+
+            if !visited.contains(neighbor) {
+                self.dfs_visit(neighbor, network, visited);
+            }
         }
     }
 }
 
-/// Evidence node in the network
+/// Evidence aggregator for scoring spectral evidence
+struct EvidenceAggregator {
+    config: ComputationalConfig,
+}
+
+impl EvidenceAggregator {
+    fn new(config: &ComputationalConfig) -> ComputationalResult<Self> {
+        Ok(Self {
+            config: config.clone(),
+        })
+    }
+
+    /// Aggregate evidence across the network
+    fn aggregate_evidence(
+        &self,
+        network: &GlobalEvidenceNetwork,
+    ) -> ComputationalResult<HashMap<String, f64>> {
+        let mut evidence_scores = HashMap::new();
+
+        // Parallel computation of evidence scores
+        let scores: Vec<_> = network
+            .nodes
+            .par_iter()
+            .map(|(node_id, node)| {
+                let local_score = self.calculate_local_evidence_score(node);
+                let network_score = self.calculate_network_evidence_score(node, network);
+                let combined_score = (local_score + network_score) / 2.0;
+                (node_id.clone(), combined_score)
+            })
+            .collect();
+
+        for (node_id, score) in scores {
+            evidence_scores.insert(node_id, score);
+        }
+
+        Ok(evidence_scores)
+    }
+
+    /// Calculate local evidence score for a node
+    fn calculate_local_evidence_score(&self, node: &EvidenceNode) -> f64 {
+        let base_score = node.evidence_score;
+        let isotope_bonus = node.isotope_pattern.pattern_score * 0.3;
+        let fragmentation_bonus = node.fragmentation_evidence.fragmentation_score * 0.2;
+
+        (base_score + isotope_bonus + fragmentation_bonus).min(1.0)
+    }
+
+    /// Calculate network evidence score considering connections
+    fn calculate_network_evidence_score(
+        &self,
+        node: &EvidenceNode,
+        network: &GlobalEvidenceNetwork,
+    ) -> f64 {
+        let mut network_score = 0.0;
+        let mut connection_count = 0;
+
+        for edge in &network.edges {
+            if edge.from_node == node.id || edge.to_node == node.id {
+                network_score += edge.weight;
+                connection_count += 1;
+            }
+        }
+
+        if connection_count > 0 {
+            network_score / connection_count as f64
+        } else {
+            0.0
+        }
+    }
+}
+
+/// Memory manager for large dataset processing
+struct MemoryManager {
+    memory_limit_gb: f64,
+}
+
+impl MemoryManager {
+    fn new(memory_limit_gb: f64) -> ComputationalResult<Self> {
+        Ok(Self { memory_limit_gb })
+    }
+
+    fn calculate_chunk_size(&self, total_size: usize) -> ComputationalResult<usize> {
+        let memory_limit_bytes = (self.memory_limit_gb * 1024.0 * 1024.0 * 1024.0) as usize;
+        let bytes_per_point = 16; // 8 bytes for m/z + 8 bytes for intensity
+        let safety_factor = 8; // Account for intermediate calculations and network structures
+
+        let max_chunk_size = memory_limit_bytes / (bytes_per_point * safety_factor);
+        Ok(std::cmp::min(max_chunk_size, total_size))
+    }
+}
+
+/// Node pool for efficient memory management
+struct NodePool {
+    nodes: Vec<EvidenceNode>,
+    free_indices: Vec<usize>,
+}
+
+impl NodePool {
+    fn new(capacity: usize) -> ComputationalResult<Self> {
+        Ok(Self {
+            nodes: Vec::with_capacity(capacity * 1000),
+            free_indices: Vec::new(),
+        })
+    }
+}
+
+/// Edge index for fast edge lookups
+struct EdgeIndex {
+    adjacency_list: HashMap<String, Vec<String>>,
+}
+
+impl EdgeIndex {
+    fn new() -> ComputationalResult<Self> {
+        Ok(Self {
+            adjacency_list: HashMap::new(),
+        })
+    }
+}
+
+/// Evidence node representing a spectral peak
 #[derive(Debug, Clone)]
 pub struct EvidenceNode {
-    pub evidence_type: EvidenceType,
-    pub confidence: f64,
-    pub uncertainty: f64,
-    pub prior_probability: f64,
-    pub reference_data: ReferenceData,
+    pub id: String,
+    pub mz: f64,
+    pub intensity: f64,
+    pub evidence_score: f64,
+    pub chunk_id: usize,
+    pub local_index: usize,
+    pub isotope_pattern: IsotopePattern,
+    pub fragmentation_evidence: FragmentationEvidence,
 }
 
-/// Reference data for evidence computation
+/// Evidence edge connecting related nodes
 #[derive(Debug, Clone)]
-pub struct ReferenceData {
-    pub mass_tolerance: f64,
-    pub intensity_threshold: f64,
-    pub other_params: HashMap<String, f64>,
+pub struct EvidenceEdge {
+    pub from_node: String,
+    pub to_node: String,
+    pub weight: f64,
+    pub relationship_type: RelationshipType,
 }
 
-/// Fuzzy logic processor for evidence integration
-pub struct FuzzyLogicProcessor;
-
-impl FuzzyLogicProcessor {
-    pub fn new() -> Self {
-        Self
-    }
-
-    pub fn fuzzy_and_integration(&self, scores: &[f64]) -> f64 {
-        scores.iter().fold(1.0, |acc, &x| acc.min(x))
-    }
-
-    pub fn probabilistic_integration(&self, scores: &[f64]) -> f64 {
-        scores.iter().fold(1.0, |acc, &x| acc * x)
-    }
-}
-
-/// Integration results using multiple methods
+/// Relationship types between nodes
 #[derive(Debug, Clone)]
-pub struct IntegrationResults {
-    pub fuzzy_and: Vec<f64>,
-    pub probabilistic: Vec<f64>,
-    pub bayesian: Vec<f64>,
-    pub weighted_average: Vec<f64>,
+pub enum RelationshipType {
+    Isotope,
+    Fragmentation,
+    Correlation,
 }
 
-/// Result of evidence network analysis
+/// Local evidence network for a chunk
+#[derive(Debug, Clone)]
+struct LocalEvidenceNetwork {
+    chunk_id: usize,
+    nodes: HashMap<String, EvidenceNode>,
+    edges: Vec<EvidenceEdge>,
+    peak_count: usize,
+}
+
+/// Global evidence network
+#[derive(Debug, Clone)]
+struct GlobalEvidenceNetwork {
+    nodes: HashMap<String, EvidenceNode>,
+    edges: Vec<EvidenceEdge>,
+}
+
+/// Significant peak identified in spectral data
+#[derive(Debug, Clone)]
+struct SignificantPeak {
+    index: usize,
+    mz: f64,
+    intensity: f64,
+    snr: f64,
+    significance_score: f64,
+    local_noise: f64,
+}
+
+/// Isotope pattern analysis
+#[derive(Debug, Clone)]
+pub struct IsotopePattern {
+    pub base_mz: f64,
+    pub isotope_peaks: Vec<IsotopePeak>,
+    pub pattern_score: f64,
+}
+
+/// Individual isotope peak
+#[derive(Debug, Clone)]
+pub struct IsotopePeak {
+    pub offset: usize,
+    pub mz: f64,
+    pub intensity_ratio: f64,
+    pub theoretical_ratio: f64,
+}
+
+/// Fragmentation evidence
+#[derive(Debug, Clone)]
+pub struct FragmentationEvidence {
+    pub precursor_mz: f64,
+    pub fragment_ions: Vec<FragmentIon>,
+    pub fragmentation_score: f64,
+}
+
+/// Fragment ion
+#[derive(Debug, Clone)]
+pub struct FragmentIon {
+    pub mz: f64,
+    pub intensity_ratio: f64,
+    pub neutral_loss: Option<String>,
+    pub mass_difference: f64,
+}
+
+/// Spectral feature extracted from evidence network
+#[derive(Debug, Clone)]
+pub struct SpectralFeature {
+    pub mz: f64,
+    pub intensity: f64,
+    pub evidence_score: f64,
+    pub isotope_pattern: IsotopePattern,
+    pub fragmentation_evidence: FragmentationEvidence,
+    pub confidence_level: ConfidenceLevel,
+}
+
+/// Confidence level classification
+#[derive(Debug, Clone)]
+pub enum ConfidenceLevel {
+    High,
+    Medium,
+    Low,
+}
+
+/// Network statistics
+#[derive(Debug, Clone)]
+pub struct NetworkStatistics {
+    pub node_count: usize,
+    pub edge_count: usize,
+    pub connectivity: f64,
+    pub avg_evidence_score: f64,
+    pub cluster_count: usize,
+}
+
+/// Final evidence network result
 #[derive(Debug, Clone)]
 pub struct EvidenceResult {
-    pub evidence_scores: HashMap<String, Vec<f64>>,
-    pub integration_results: IntegrationResults,
-    pub uncertainty_bounds: (Vec<f64>, Vec<f64>),
-    pub optimal_noise_level: f64,
-    pub num_evidence_nodes: usize,
-    pub network_density: f64,
+    pub spectral_features: Vec<SpectralFeature>,
+    pub evidence_scores: HashMap<String, f64>,
+    pub network_stats: NetworkStatistics,
+    pub processing_chunks: usize,
+    pub total_nodes: usize,
+    pub total_edges: usize,
 }

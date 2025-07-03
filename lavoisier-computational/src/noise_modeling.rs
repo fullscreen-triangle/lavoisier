@@ -1,6 +1,8 @@
 use crate::{ComputationalConfig, ComputationalError, ComputationalResult};
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::f64::consts::PI;
+use std::sync::{Arc, Mutex};
 
 /// High-performance precision noise modeler
 pub struct NoiseModeler {
@@ -8,6 +10,9 @@ pub struct NoiseModeler {
     k_b: f64, // Boltzmann constant
     mains_frequency: f64,
     contamination_peaks: Vec<f64>,
+    noise_distributions: Arc<Mutex<NoiseDistributionCache>>,
+    statistical_models: StatisticalModels,
+    streaming_processor: StreamingProcessor,
 }
 
 impl NoiseModeler {
@@ -17,6 +22,9 @@ impl NoiseModeler {
             k_b: 1.380649e-23,
             mains_frequency: 50.0,
             contamination_peaks: vec![78.9, 149.0, 207.1, 279.2],
+            noise_distributions: Arc::new(Mutex::new(NoiseDistributionCache::new())),
+            statistical_models: StatisticalModels::new(config)?,
+            streaming_processor: StreamingProcessor::new(config)?,
         })
     }
 
@@ -337,4 +345,208 @@ fn erf(x: f64) -> f64 {
     let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-x * x).exp();
 
     sign * y
+}
+
+/// Statistical models for noise analysis
+struct StatisticalModels {
+    config: ComputationalConfig,
+}
+
+impl StatisticalModels {
+    fn new(config: &ComputationalConfig) -> ComputationalResult<Self> {
+        Ok(Self {
+            config: config.clone(),
+        })
+    }
+}
+
+/// Streaming processor for large datasets
+struct StreamingProcessor {
+    config: ComputationalConfig,
+}
+
+impl StreamingProcessor {
+    fn new(config: &ComputationalConfig) -> ComputationalResult<Self> {
+        Ok(Self {
+            config: config.clone(),
+        })
+    }
+}
+
+/// Noise distribution cache for efficiency
+struct NoiseDistributionCache {
+    distributions: HashMap<String, NoiseDistribution>,
+}
+
+impl NoiseDistributionCache {
+    fn new() -> Self {
+        Self {
+            distributions: HashMap::new(),
+        }
+    }
+}
+
+// Data structures for noise analysis results
+#[derive(Debug, Clone)]
+pub struct NoiseModelResult {
+    pub global_noise_model: GlobalNoiseModel,
+    pub noise_statistics: NoiseStatistics,
+    pub noise_sources: Vec<NoiseSource>,
+    pub predictive_model: PredictiveNoiseModel,
+    pub processing_chunks: usize,
+    pub total_data_points: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct GlobalNoiseModel {
+    pub baseline_noise: BaselineNoiseAnalysis,
+    pub chemical_noise: ChemicalNoiseAnalysis,
+    pub electronic_noise: ElectronicNoiseAnalysis,
+    pub thermal_noise: ThermalNoiseAnalysis,
+    pub overall_noise_level: f64,
+    pub model_confidence: f64,
+}
+
+#[derive(Debug, Clone)]
+struct ChunkNoiseAnalysis {
+    chunk_idx: usize,
+    data_points: usize,
+    baseline_noise: BaselineNoiseAnalysis,
+    chemical_noise: ChemicalNoiseAnalysis,
+    electronic_noise: ElectronicNoiseAnalysis,
+    thermal_noise: ThermalNoiseAnalysis,
+    frequency_analysis: FrequencyAnalysis,
+    noise_distribution: NoiseDistribution,
+    temporal_correlation: f64,
+    spatial_correlation: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct BaselineNoiseAnalysis {
+    pub baseline_level: f64,
+    pub baseline_variability: f64,
+    pub noise_level: f64,
+    pub noise_variability: f64,
+    pub stability_metrics: StabilityMetrics,
+    pub baseline_trend: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ChemicalNoiseAnalysis {
+    pub contaminant_peaks: Vec<ContaminantPeak>,
+    pub matrix_effects: MatrixEffects,
+    pub ion_suppression: IonSuppression,
+    pub chemical_noise_level: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ElectronicNoiseAnalysis {
+    pub high_freq_noise: f64,
+    pub detector_noise: f64,
+    pub quantization_noise: f64,
+    pub electronic_noise_level: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ThermalNoiseAnalysis {
+    pub thermal_noise_level: f64,
+    pub temperature_coefficient: f64,
+    pub thermal_stability: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContaminantPeak {
+    pub mz: f64,
+    pub intensity: f64,
+    pub name: String,
+    pub confidence: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct NoiseDistribution {
+    pub distribution_type: DistributionType,
+    pub parameters: Vec<f64>,
+    pub goodness_of_fit: f64,
+}
+
+#[derive(Debug, Clone)]
+pub enum DistributionType {
+    Gaussian,
+    Exponential,
+    Poisson,
+}
+
+#[derive(Debug, Clone)]
+struct FrequencyAnalysis {
+    dominant_frequency: f64,
+    power_spectral_density: Vec<f64>,
+    autocorrelation: Vec<f64>,
+    spectral_entropy: f64,
+}
+
+#[derive(Debug, Clone)]
+struct RobustStatistics {
+    mean: f64,
+    median: f64,
+    std_dev: f64,
+    mad: f64,
+    min: f64,
+    max: f64,
+    q25: f64,
+    q75: f64,
+}
+
+impl Default for RobustStatistics {
+    fn default() -> Self {
+        Self {
+            mean: 0.0,
+            median: 0.0,
+            std_dev: 0.0,
+            mad: 0.0,
+            min: 0.0,
+            max: 0.0,
+            q25: 0.0,
+            q75: 0.0,
+        }
+    }
+}
+
+// Placeholder structs for complex analysis results
+#[derive(Debug, Clone, Default)]
+pub struct StabilityMetrics {
+    pub stability_score: f64,
+    pub drift_rate: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MatrixEffects {
+    pub suppression_factor: f64,
+    pub enhancement_factor: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct IonSuppression {
+    pub suppression_level: f64,
+    pub affected_regions: Vec<(f64, f64)>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NoiseStatistics {
+    pub signal_to_noise_ratio: f64,
+    pub noise_floor: f64,
+    pub dynamic_range: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NoiseSource {
+    pub source_type: String,
+    pub contribution: f64,
+    pub location: String,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PredictiveNoiseModel {
+    pub model_type: String,
+    pub parameters: Vec<f64>,
+    pub prediction_accuracy: f64,
 }
