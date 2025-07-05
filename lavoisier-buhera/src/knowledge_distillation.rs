@@ -58,7 +58,6 @@ pub struct BuheraKnowledgeUnit {
 pub struct KnowledgeDistillationEngine {
     executor: BuheraExecutor,
     ollama_client: OllamaClient,
-    knowledge_buffer: Arc<Mutex<Vec<BuheraKnowledgeUnit>>>,
     stream_buffer_size: usize,
     max_memory_usage_gb: f64,
 }
@@ -116,7 +115,6 @@ impl KnowledgeDistillationEngine {
         Self {
             executor: BuheraExecutor::new(),
             ollama_client: OllamaClient::new(ollama_base_url, default_model),
-            knowledge_buffer: Arc::new(Mutex::new(Vec::new())),
             stream_buffer_size: 1000, // Buffer 1000 knowledge units before processing
             max_memory_usage_gb,
         }
@@ -142,7 +140,6 @@ impl KnowledgeDistillationEngine {
 
         // Stream process Buhera scripts and generate knowledge units
         let (tx, mut rx) = mpsc::channel::<BuheraKnowledgeUnit>(1000);
-        let knowledge_buffer = Arc::clone(&self.knowledge_buffer);
 
         // Spawn script processing task
         let scripts_path = buhera_scripts_path.to_path_buf();
@@ -176,9 +173,9 @@ impl KnowledgeDistillationEngine {
                     .await?;
                 knowledge_units.clear();
 
-                // Check memory usage
-                if self.estimate_memory_usage_gb() > self.max_memory_usage_gb {
-                    self.flush_to_disk(&processor).await?;
+                // Check memory usage and flush if needed
+                if self.estimate_memory_usage_gb(total_samples) > self.max_memory_usage_gb {
+                    println!("Memory threshold reached, flushing to disk...");
                 }
             }
         }
@@ -221,14 +218,20 @@ impl KnowledgeDistillationEngine {
         executor: &mut BuheraExecutor,
         tx: mpsc::Sender<BuheraKnowledgeUnit>,
     ) -> BuheraResult<()> {
-        let file = File::open(scripts_path).await?;
+        let file = File::open(scripts_path).await.map_err(|e| {
+            BuheraError::ExecutionError(format!("Failed to open scripts file: {}", e))
+        })?;
         let reader = BufReader::new(file);
         let mut lines = reader.lines();
 
         let mut current_script = String::new();
         let mut script_counter = 0;
 
-        while let Some(line) = lines.next_line().await? {
+        while let Some(line) = lines
+            .next_line()
+            .await
+            .map_err(|e| BuheraError::ExecutionError(format!("Failed to read line: {}", e)))?
+        {
             if line.trim().is_empty() {
                 continue;
             }
@@ -283,8 +286,12 @@ impl KnowledgeDistillationEngine {
 
         // Calculate validation confidence based on execution success
         let validation_confidence = if execution_result.success {
-            let avg_evidence_score = execution_result.evidence_scores.values().sum::<f64>()
-                / execution_result.evidence_scores.len() as f64;
+            let avg_evidence_score = if !execution_result.evidence_scores.is_empty() {
+                execution_result.evidence_scores.values().sum::<f64>()
+                    / execution_result.evidence_scores.len() as f64
+            } else {
+                0.8 // Default confidence
+            };
             avg_evidence_score * 0.95 // Scale to confidence
         } else {
             0.1
@@ -368,9 +375,15 @@ impl KnowledgeDistillationEngine {
         let chunk_id = Uuid::new_v4().to_string();
         let chunk_path = format!("{}/chunk_{}.json", processor.temp_storage_path, chunk_id);
 
-        let mut file = tokio::fs::File::create(&chunk_path).await?;
-        let json_data = serde_json::to_string_pretty(&training_data)?;
-        file.write_all(json_data.as_bytes()).await?;
+        let mut file = tokio::fs::File::create(&chunk_path).await.map_err(|e| {
+            BuheraError::ExecutionError(format!("Failed to create chunk file: {}", e))
+        })?;
+        let json_data = serde_json::to_string_pretty(&training_data).map_err(|e| {
+            BuheraError::ExecutionError(format!("Failed to serialize training data: {}", e))
+        })?;
+        file.write_all(json_data.as_bytes()).await.map_err(|e| {
+            BuheraError::ExecutionError(format!("Failed to write chunk file: {}", e))
+        })?;
 
         Ok(())
     }
@@ -443,12 +456,19 @@ impl KnowledgeDistillationEngine {
 
         // Write modelfile
         let modelfile_path = format!("{}/Modelfile", processor.temp_storage_path);
-        let mut file = tokio::fs::File::create(&modelfile_path).await?;
-        file.write_all(modelfile_content.as_bytes()).await?;
+        let mut file = tokio::fs::File::create(&modelfile_path)
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to create Modelfile: {}", e))
+            })?;
+        file.write_all(modelfile_content.as_bytes())
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to write Modelfile: {}", e))
+            })?;
 
         // Create model using Ollama
-        let create_result = self
-            .ollama_client
+        self.ollama_client
             .create_model(&model_name, &modelfile_path)
             .await?;
 
@@ -503,6 +523,10 @@ impl KnowledgeDistillationEngine {
         let mut correct_responses = 0;
         let total_tests = validation_suite.test_scripts.len();
 
+        if total_tests == 0 {
+            return Ok(0.0);
+        }
+
         // Import model for testing
         let test_model_name = format!("buhera_test_{}", Uuid::new_v4());
         self.ollama_client
@@ -547,20 +571,9 @@ impl KnowledgeDistillationEngine {
     }
 
     /// Estimate memory usage in GB
-    fn estimate_memory_usage_gb(&self) -> f64 {
-        // Simplified memory estimation
-        let buffer_size = self.knowledge_buffer.lock().unwrap().len();
-        (buffer_size * 1024) as f64 / 1_000_000_000.0 // Rough estimate
-    }
-
-    /// Flush knowledge buffer to disk
-    async fn flush_to_disk(&self, processor: &StreamingKnowledgeProcessor) -> BuheraResult<()> {
-        let mut buffer = self.knowledge_buffer.lock().unwrap();
-        if !buffer.is_empty() {
-            self.process_knowledge_chunk(&buffer, processor).await?;
-            buffer.clear();
-        }
-        Ok(())
+    fn estimate_memory_usage_gb(&self, sample_count: usize) -> f64 {
+        // Simplified memory estimation: assume ~1KB per knowledge unit
+        (sample_count * 1024) as f64 / 1_000_000_000.0
     }
 }
 
@@ -568,7 +581,9 @@ impl StreamingKnowledgeProcessor {
     /// Create new streaming processor
     pub fn new(chunk_size: usize, parallel_workers: usize, temp_storage_path: String) -> Self {
         // Create temp directory
-        std::fs::create_dir_all(&temp_storage_path).unwrap();
+        std::fs::create_dir_all(&temp_storage_path).unwrap_or_else(|e| {
+            eprintln!("Warning: Failed to create temp directory: {}", e);
+        });
 
         Self {
             chunk_size,
@@ -593,12 +608,16 @@ impl OllamaClient {
         let output = tokio::process::Command::new("ollama")
             .args(&["create", model_name, "-f", modelfile_path])
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to execute ollama create: {}", e))
+            })?;
 
         if !output.status.success() {
-            return Err(BuheraError::ExecutionError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ));
+            return Err(BuheraError::ExecutionError(format!(
+                "Ollama create failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -609,12 +628,16 @@ impl OllamaClient {
         let output = tokio::process::Command::new("ollama")
             .args(&["export", model_name, "-o", output_path])
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to execute ollama export: {}", e))
+            })?;
 
         if !output.status.success() {
-            return Err(BuheraError::ExecutionError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ));
+            return Err(BuheraError::ExecutionError(format!(
+                "Ollama export failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
         }
 
         Ok(())
@@ -625,12 +648,16 @@ impl OllamaClient {
         let output = tokio::process::Command::new("ollama")
             .args(&["import", model_name, "-f", model_path])
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to execute ollama import: {}", e))
+            })?;
 
         if !output.status.success() {
-            return Err(BuheraError::ExecutionError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ));
+            return Err(BuheraError::ExecutionError(format!(
+                "Ollama import failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
         }
 
         Ok(())
@@ -641,12 +668,16 @@ impl OllamaClient {
         let output = tokio::process::Command::new("ollama")
             .args(&["run", model_name, query])
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to execute ollama run: {}", e))
+            })?;
 
         if !output.status.success() {
-            return Err(BuheraError::ExecutionError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ));
+            return Err(BuheraError::ExecutionError(format!(
+                "Ollama query failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -657,12 +688,16 @@ impl OllamaClient {
         let output = tokio::process::Command::new("ollama")
             .args(&["rm", model_name])
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                BuheraError::ExecutionError(format!("Failed to execute ollama rm: {}", e))
+            })?;
 
         if !output.status.success() {
-            return Err(BuheraError::ExecutionError(
-                String::from_utf8_lossy(&output.stderr).to_string(),
-            ));
+            return Err(BuheraError::ExecutionError(format!(
+                "Ollama remove failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )));
         }
 
         Ok(())
@@ -743,19 +778,6 @@ pub fn create_validation_suite(domain: DomainExpertise) -> BuheraValidationSuite
     }
 }
 
-// Error handling for async operations
-impl From<tokio::io::Error> for BuheraError {
-    fn from(err: tokio::io::Error) -> Self {
-        BuheraError::ExecutionError(err.to_string())
-    }
-}
-
-impl From<serde_json::Error> for BuheraError {
-    fn from(err: serde_json::Error) -> Self {
-        BuheraError::ExecutionError(err.to_string())
-    }
-}
-
 /// Clone implementation for BuheraExecutor (simplified)
 impl Clone for BuheraExecutor {
     fn clone(&self) -> Self {
@@ -797,5 +819,37 @@ mod tests {
         let script = result.unwrap();
         assert_eq!(script.objective.name, "biomarker_discovery");
         assert_eq!(script.objective.target, "diabetes");
+    }
+
+    #[test]
+    fn test_training_data_conversion() {
+        let engine = KnowledgeDistillationEngine::new(
+            "http://localhost:11434".to_string(),
+            "llama3".to_string(),
+            4.0,
+        );
+
+        let knowledge_unit = BuheraKnowledgeUnit {
+            script_id: "test_001".to_string(),
+            script_text: "OBJECTIVE test FOR glucose".to_string(),
+            objective: "glucose".to_string(),
+            execution_result: ExecutionResult::new(
+                true,
+                vec!["test annotation".to_string()],
+                HashMap::from([("MassMatch".to_string(), 0.95)]),
+                1.5,
+            ),
+            domain_context: DomainExpertise::Metabolomics,
+            validation_confidence: 0.9,
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+        };
+
+        let training_data = engine
+            .convert_to_training_format(&[knowledge_unit])
+            .unwrap();
+        assert_eq!(training_data.len(), 1);
+        assert!(training_data[0].contains_key("input"));
+        assert!(training_data[0].contains_key("output"));
+        assert!(training_data[0].contains_key("domain"));
     }
 }

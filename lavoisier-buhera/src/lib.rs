@@ -10,16 +10,19 @@
 //! - **Goal-Aware Bayesian Networks**: Evidence networks optimized for specific objectives
 //! - **Surgical Analysis Precision**: Target specific research questions with precision
 //! - **Python Integration**: Seamless integration with Lavoisier's AI modules
+//! - **Knowledge Distillation**: Create expert LLMs from Buhera script responses
 
 pub mod ast;
 pub mod errors;
 pub mod executor;
+pub mod knowledge_distillation;
 pub mod parser;
 pub mod validator;
 
 pub use ast::*;
 pub use errors::*;
 pub use executor::*;
+pub use knowledge_distillation::*;
 pub use parser::*;
 pub use validator::*;
 
@@ -58,5 +61,21 @@ mod tests {
 
         assert!(objective.is_complete());
         assert!(objective.summary().contains("Test Objective"));
+    }
+
+    #[test]
+    fn test_knowledge_distillation_integration() {
+        // Test that knowledge distillation components can be created
+        let validation_suite = create_validation_suite(DomainExpertise::Metabolomics);
+        assert_eq!(validation_suite.test_scripts.len(), 2);
+
+        let engine = KnowledgeDistillationEngine::new(
+            "http://localhost:11434".to_string(),
+            "llama3".to_string(),
+            4.0,
+        );
+
+        // Test that the engine can be created without panicking
+        assert_eq!(engine.stream_buffer_size, 1000);
     }
 }
