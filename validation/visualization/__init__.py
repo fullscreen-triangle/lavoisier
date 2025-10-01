@@ -1,22 +1,16 @@
+#!/usr/bin/env python3
 """
-Visualization Module
-
-Provides comprehensive visualization tools for displaying and comparing
-validation results between numerical and visual pipelines.
+Visualization module for Lavoisier Validation Framework
+Integrates oscillatory.py and panel.py visualizations with actual validation results
 """
 
-from .pipeline_comparator import PipelineComparator
-from .statistical_plots import StatisticalPlotter
-from .performance_plots import PerformancePlotter
-from .quality_plots import QualityPlotter
-from .feature_plots import FeaturePlotter
-from .report_generator import ReportGenerator
+from .oscillatory import LavoisierVisualizationSuite
+from .panel import generate_all_panels, print_instructions
+from .validation_visualizer import ValidationVisualizationIntegrator
 
 __all__ = [
-    "PipelineComparator",
-    "StatisticalPlotter",
-    "PerformancePlotter", 
-    "QualityPlotter",
-    "FeaturePlotter",
-    "ReportGenerator"
-] 
+    'LavoisierVisualizationSuite',
+    'generate_all_panels', 
+    'print_instructions',
+    'ValidationVisualizationIntegrator'
+]
