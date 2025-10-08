@@ -16,8 +16,9 @@ import time
 import warnings
 from collections import defaultdict
 
-# Import our standalone components
-from .mzml_reader import StandaloneMzMLReader, Spectrum, load_mzml_file
+from core.mzml_reader import Spectrum, StandaloneMzMLReader
+from core.oscillatory_hierarchy import add_spectra_to_hierarchy, HierarchicalLevel, navigate_hierarchy_o1, \
+    create_oscillatory_hierarchy
 
 warnings.filterwarnings("ignore")
 
@@ -659,8 +660,7 @@ class NumericalPipelineOrchestrator:
         self.quality_control = QualityControlModule()
         self.feature_clustering = FeatureClusteringModule()
         
-        # Revolutionary Oscillatory Hierarchy Integration
-        from .oscillatory_hierarchy import create_oscillatory_hierarchy
+
         self.oscillatory_hierarchy = create_oscillatory_hierarchy()
         self.use_oscillatory_navigation = True
 
@@ -689,7 +689,7 @@ class NumericalPipelineOrchestrator:
         
         # REVOLUTIONARY: Build Oscillatory Hierarchy for O(1) Navigation
         print("Step 1b: Building Oscillatory Hierarchy...")
-        from .oscillatory_hierarchy import add_spectra_to_hierarchy, HierarchicalLevel
+
         spectrum_mapping = add_spectra_to_hierarchy(self.oscillatory_hierarchy, spectra)
         hierarchy_stats = self.oscillatory_hierarchy.get_hierarchy_statistics()
         print(f"✓ Built hierarchy with {hierarchy_stats['total_nodes']} nodes across {len(hierarchy_stats['nodes_per_level'])} levels")
@@ -726,7 +726,7 @@ class NumericalPipelineOrchestrator:
         
         # REVOLUTIONARY OSCILLATORY NAVIGATION (O(1) complexity)
         oscillatory_start = time.time()
-        from .oscillatory_hierarchy import navigate_hierarchy_o1
+
         
         for spectrum in ms1_spectra:
             # Navigate using gear ratios instead of linear search

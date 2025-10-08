@@ -17,7 +17,7 @@ import warnings
 from collections import defaultdict
 
 # Import our standalone components
-from .mzml_reader import StandaloneMzMLReader, Spectrum, load_mzml_file
+from core.mzml_reader import StandaloneMzMLReader, Spectrum, load_mzml_file
 
 warnings.filterwarnings("ignore")
 
@@ -572,14 +572,14 @@ class LipidMapsAnnotator:
 
 class VisualPipelineOrchestrator:
     """Main visual pipeline orchestrator with Oscillatory Hierarchy Integration"""
-    
+
     def __init__(self):
         self.mzml_reader = StandaloneMzMLReader()
         self.ion_drip_converter = IonDripConverter()
         self.lipidmaps_annotator = LipidMapsAnnotator()
-        
+
         # Revolutionary Oscillatory Hierarchy Integration for Visual Pipeline
-        from .oscillatory_hierarchy import create_oscillatory_hierarchy
+        from core.oscillatory_hierarchy import create_oscillatory_hierarchy
         self.oscillatory_hierarchy = create_oscillatory_hierarchy()
         self.use_hierarchical_drip_navigation = True
 
@@ -605,10 +605,10 @@ class VisualPipelineOrchestrator:
         print("Step 1: Loading mzML file...")
         spectra = self.mzml_reader.load_mzml(mzml_filepath)
         dataset_summary = self.mzml_reader.get_dataset_summary(spectra)
-        
+
         # REVOLUTIONARY: Build Oscillatory Hierarchy for Visual Navigation
         print("Step 1b: Building Oscillatory Hierarchy for Drip Spectrum Navigation...")
-        from .oscillatory_hierarchy import add_spectra_to_hierarchy, HierarchicalLevel
+        from core.oscillatory_hierarchy import add_spectra_to_hierarchy, HierarchicalLevel
         spectrum_mapping = add_spectra_to_hierarchy(self.oscillatory_hierarchy, spectra)
         hierarchy_stats = self.oscillatory_hierarchy.get_hierarchy_statistics()
         print(f"✓ Built visual hierarchy with {hierarchy_stats['total_nodes']} nodes for drip navigation")
@@ -647,10 +647,10 @@ class VisualPipelineOrchestrator:
         print("Step 3: Hierarchical Drip Navigation vs Traditional LipidMaps Annotation...")
         traditional_annotation_results = {}
         hierarchical_drip_results = {}
-        
+
         # Annotate subset of drip spectra
         annotation_limit = min(10, len(drip_spectra))
-        
+
         # TRADITIONAL LIPIDMAPS ANNOTATION (Linear Search)
         traditional_start = time.time()
         for drip_spectrum in drip_spectra[:annotation_limit]:
@@ -658,11 +658,11 @@ class VisualPipelineOrchestrator:
             if annotations:
                 traditional_annotation_results[drip_spectrum.spectrum_id] = annotations
         traditional_annotation_time = time.time() - traditional_start
-        
+
         # REVOLUTIONARY HIERARCHICAL DRIP NAVIGATION (O(1) Gear Ratio Navigation)
         hierarchical_start = time.time()
-        from .oscillatory_hierarchy import navigate_hierarchy_o1
-        
+        from core.oscillatory_hierarchy import navigate_hierarchy_o1
+
         for drip_spectrum in drip_spectra[:annotation_limit]:
             # Navigate to similar drip patterns using oscillatory hierarchy
             similar_drip_patterns = navigate_hierarchy_o1(
@@ -671,7 +671,7 @@ class VisualPipelineOrchestrator:
                 {'drip_characteristics': self._extract_drip_characteristics(drip_spectrum)},
                 HierarchicalLevel.PEAK_CLUSTER
             )
-            
+
             # Navigate to molecular class using St-Stellas encoding
             if drip_spectrum.original_spectrum:
                 molecular_encoding = self.oscillatory_hierarchy.stellas_language.encode_molecular_structure({
@@ -680,12 +680,12 @@ class VisualPipelineOrchestrator:
                     'drip_coordinates': drip_spectrum.drip_coordinates.tolist(),
                     'drip_intensities': drip_spectrum.drip_intensities.tolist()
                 })
-                
+
                 # Calculate semantic distance amplification for drip patterns
                 semantic_distance = self._calculate_drip_semantic_distance(
                     drip_spectrum, similar_drip_patterns
                 )
-                
+
                 hierarchical_drip_results[drip_spectrum.spectrum_id] = {
                     'similar_patterns_found': len(similar_drip_patterns),
                     'molecular_encoding': molecular_encoding,
@@ -694,9 +694,9 @@ class VisualPipelineOrchestrator:
                     'hierarchical_navigation_used': True,
                     'visual_overlay_complexity': 'O(1)'
                 }
-        
+
         hierarchical_annotation_time = time.time() - hierarchical_start
-        
+
         # Calculate visual processing performance improvement
         visual_performance_improvement = traditional_annotation_time / max(hierarchical_annotation_time, 0.001)
         print(f"🌟 VISUAL PROCESSING BREAKTHROUGH:")
@@ -746,21 +746,21 @@ class VisualPipelineOrchestrator:
                     'performance_improvement_factor': visual_performance_improvement,
                     'semantic_amplification_stats': {
                         'mean_amplification': np.mean([
-                            result.get('semantic_amplification', 1.0) 
+                            result.get('semantic_amplification', 1.0)
                             for result in hierarchical_drip_results.values()
                         ]) if hierarchical_drip_results else 1.0,
                         'max_amplification': max([
-                            result.get('semantic_amplification', 1.0) 
+                            result.get('semantic_amplification', 1.0)
                             for result in hierarchical_drip_results.values()
                         ]) if hierarchical_drip_results else 1.0
                     },
                     'drip_pattern_navigation': {
                         'total_patterns_found': sum(
-                            result.get('similar_patterns_found', 0) 
+                            result.get('similar_patterns_found', 0)
                             for result in hierarchical_drip_results.values()
                         ),
                         'avg_patterns_per_spectrum': np.mean([
-                            result.get('similar_patterns_found', 0) 
+                            result.get('similar_patterns_found', 0)
                             for result in hierarchical_drip_results.values()
                         ]) if hierarchical_drip_results else 0.0
                     },
@@ -833,15 +833,15 @@ class VisualPipelineOrchestrator:
             ]
 
         return sample_annotations
-    
+
     def _extract_drip_characteristics(self, drip_spectrum: DripSpectrum) -> str:
         """Extract characteristic features from drip spectrum for hierarchical navigation"""
         if drip_spectrum.drip_metadata is None:
             return "unknown_characteristics"
-        
+
         n_ions = drip_spectrum.drip_metadata.get('n_ions', 0)
         ion_types = drip_spectrum.drip_metadata.get('ion_types', {})
-        
+
         # Classify based on ion distribution
         if n_ions < 20:
             size_class = "sparse_drip"
@@ -849,7 +849,7 @@ class VisualPipelineOrchestrator:
             size_class = "moderate_drip"
         else:
             size_class = "dense_drip"
-        
+
         # Classify based on ion type dominance
         if ion_types.get('precursor', 0) > ion_types.get('fragment', 0):
             type_class = "precursor_dominant"
@@ -857,20 +857,20 @@ class VisualPipelineOrchestrator:
             type_class = "fragment_rich"
         else:
             type_class = "adduct_pattern"
-        
+
         return f"{size_class}_{type_class}"
-    
+
     def _infer_lipid_class_from_drip(self, drip_spectrum: DripSpectrum) -> str:
         """Infer lipid class from drip spectrum characteristics"""
         if drip_spectrum.original_spectrum is None:
             return "unknown_lipid"
-        
+
         base_peak_mz, _ = drip_spectrum.original_spectrum.base_peak
         polarity = drip_spectrum.original_spectrum.polarity
-        
+
         # Use drip pattern characteristics
         drip_characteristics = self._extract_drip_characteristics(drip_spectrum)
-        
+
         # Simple heuristic based on mass, polarity, and drip pattern
         if polarity == 'positive':
             if 'dense_drip' in drip_characteristics:
@@ -891,61 +891,61 @@ class VisualPipelineOrchestrator:
                     return 'PA'  # Phosphatidic acid
             else:
                 return 'fatty_acid'
-        
+
         return 'unknown_lipid'
-    
-    def _calculate_drip_semantic_distance(self, drip_spectrum: DripSpectrum, 
+
+    def _calculate_drip_semantic_distance(self, drip_spectrum: DripSpectrum,
                                         similar_patterns: List[str]) -> float:
         """Calculate semantic distance for drip patterns using St-Stellas framework"""
         if not similar_patterns or not drip_spectrum.drip_coordinates.size:
             return float('inf')
-        
+
         # Use the coordinates and intensities to calculate distance
         drip_coords = drip_spectrum.drip_coordinates
         drip_intensities = drip_spectrum.drip_intensities
-        
+
         # Calculate pattern complexity
         coord_entropy = self._calculate_coordinate_entropy(drip_coords)
         intensity_variance = np.var(drip_intensities) if len(drip_intensities) > 1 else 0.0
-        
+
         # Base semantic distance calculation
         base_distance = 1.0 / (1.0 + len(similar_patterns))  # More patterns = lower distance
-        
+
         # Modulate by pattern complexity
         complexity_factor = coord_entropy + np.log10(intensity_variance + 1.0)
-        
+
         semantic_distance = base_distance * complexity_factor
-        
+
         return min(semantic_distance, 10.0)  # Cap at reasonable maximum
-    
+
     def _calculate_coordinate_entropy(self, coordinates: np.ndarray) -> float:
         """Calculate entropy of drip coordinate distribution"""
         if coordinates.size == 0:
             return 0.0
-        
+
         # Bin coordinates for entropy calculation
         try:
             hist_x, _ = np.histogram(coordinates[:, 0], bins=10)
             hist_y, _ = np.histogram(coordinates[:, 1], bins=10)
-            
+
             # Calculate entropy for each dimension
             entropy_x = self._entropy_from_histogram(hist_x)
             entropy_y = self._entropy_from_histogram(hist_y)
-            
+
             return (entropy_x + entropy_y) / 2.0
         except:
             return 0.0
-    
+
     def _entropy_from_histogram(self, histogram: np.ndarray) -> float:
         """Calculate entropy from histogram"""
         # Remove zero bins
         hist_nonzero = histogram[histogram > 0]
         if len(hist_nonzero) == 0:
             return 0.0
-        
+
         # Normalize to probabilities
         probabilities = hist_nonzero / np.sum(hist_nonzero)
-        
+
         # Calculate entropy
         entropy = -np.sum(probabilities * np.log2(probabilities + 1e-10))
         return entropy

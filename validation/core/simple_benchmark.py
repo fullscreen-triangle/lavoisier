@@ -16,8 +16,8 @@ from datetime import datetime
 
 # Standalone validation framework - no external dependencies
 
-from .base_validator import ValidationResult
-from .mzml_reader import StandaloneMzMLReader, Spectrum
+from core.base_validator import ValidationResult
+from core.mzml_reader import StandaloneMzMLReader, Spectrum
 
 class MemoryTracker:
     """Simple memory usage tracker"""
