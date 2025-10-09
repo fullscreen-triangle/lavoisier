@@ -338,7 +338,7 @@ class PipelineComparator:
         axes[1, 1].set_xlabel(f'Numerical Quantiles')
         axes[1, 1].set_ylabel(f'Visual Quantiles')
         
-        # Summary statistics table
+        # Summary statistical_analysis table
         axes[1, 2].axis('tight')
         axes[1, 2].axis('off')
         

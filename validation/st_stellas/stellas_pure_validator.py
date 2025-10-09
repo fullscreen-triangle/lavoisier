@@ -45,7 +45,7 @@ class StellasPureValidator(BaseValidator):
         self.oscillatory_ms = None
         self.image_processor = None
         
-        # Processing statistics
+        # Processing statistical_analysis
         self.processing_stats = {
             'senn_convergence_rate': 0.0,
             'empty_dict_accuracy': 0.0,

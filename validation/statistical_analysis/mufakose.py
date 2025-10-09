@@ -170,7 +170,7 @@ def validate_mufakose():
         plt.title('Pathway Perturbations')
     
     plt.tight_layout()
-    plt.savefig('validation/statistics/mufakose_results.png', dpi=300)
+    plt.savefig('validation/statistical_analysis/mufakose_results.png', dpi=300)
     plt.show()
     
     return {'accuracy': accuracy, 'results': results}

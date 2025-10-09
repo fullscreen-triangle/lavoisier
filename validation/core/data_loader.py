@@ -145,7 +145,7 @@ class MZMLDataLoader:
                 
                 spectra.append(spectrum_info)
                 
-                # Track statistics
+                # Track statistical_analysis
                 if ms_level == 1:
                     ms1_count += 1
                 elif ms_level == 2:

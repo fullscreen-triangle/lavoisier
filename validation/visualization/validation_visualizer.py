@@ -493,7 +493,7 @@ class ValidationVisualizationIntegrator:
     def create_integrated_validation_report(self) -> str:
         """Create comprehensive validation report integrating actual results"""
         
-        # Get summary statistics
+        # Get summary statistical_analysis
         summary_stats = self._generate_summary_statistics()
         
         report_file = self.output_dir / "integrated_validation_report.html"
@@ -622,7 +622,7 @@ class ValidationVisualizationIntegrator:
         return str(report_file)
     
     def _generate_summary_statistics(self) -> Dict[str, Any]:
-        """Generate summary statistics from validation data"""
+        """Generate summary statistical_analysis from validation data"""
         stats = {
             'best_accuracy': 0.0,
             'speed_improvement': 1.0,

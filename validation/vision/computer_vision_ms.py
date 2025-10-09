@@ -36,7 +36,7 @@ class ComputerVisionValidator(BaseValidator, StellasMixin):
         self.spectus_model = None
         self.cmssp_model = None
         
-        # Processing statistics
+        # Processing statistical_analysis
         self.processing_stats = {
             'images_processed': 0,
             'features_extracted': 0,
@@ -421,7 +421,7 @@ class ComputerVisionValidator(BaseValidator, StellasMixin):
         return [], []
     
     def get_processing_statistics(self) -> Dict[str, Any]:
-        """Get detailed processing statistics"""
+        """Get detailed processing statistical_analysis"""
         stats = self.processing_stats.copy()
         
         if stats['processing_times']:
@@ -432,7 +432,7 @@ class ComputerVisionValidator(BaseValidator, StellasMixin):
             stats['mean_similarity'] = np.mean(stats['similarity_scores'])
             stats['similarity_distribution'] = self._get_similarity_distribution(stats['similarity_scores'])
         
-        # Add visual-specific statistics
+        # Add visual-specific statistical_analysis
         stats['database_statistics'] = {
             'total_entries': self.image_database.index.ntotal if self.image_database else 0,
             'feature_dimension': self.image_database.feature_dimension if self.image_database else 0,

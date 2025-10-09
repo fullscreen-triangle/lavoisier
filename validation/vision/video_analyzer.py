@@ -283,7 +283,7 @@ class VideoAnalyzer:
         """
         # Calculate temporal features
         if len(spectrum_sequence.shape) > 2:
-            # For 2D spectra, calculate summary statistics over space
+            # For 2D spectra, calculate summary statistical_analysis over space
             temporal_features = []
             for spectrum in spectrum_sequence:
                 features = [

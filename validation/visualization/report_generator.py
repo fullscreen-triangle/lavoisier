@@ -2,7 +2,7 @@
 Report Generator Module
 
 Automated report generation for pipeline validation results
-including summary statistics, visualizations, and publication-ready outputs.
+including summary statistical_analysis, visualizations, and publication-ready outputs.
 """
 
 import numpy as np
@@ -23,7 +23,7 @@ from jinja2 import Template
 
 @dataclass
 class ValidationSummary:
-    """Data class for validation summary statistics"""
+    """Data class for validation summary statistical_analysis"""
     numerical_performance: Dict[str, float]
     visual_performance: Dict[str, float]
     statistical_tests: Dict[str, Any]

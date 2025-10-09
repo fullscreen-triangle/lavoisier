@@ -350,7 +350,7 @@ class StandaloneMzMLReader:
         return filtered
 
     def get_dataset_summary(self, spectra: List[Spectrum]) -> Dict[str, Any]:
-        """Get summary statistics for the dataset"""
+        """Get summary statistical_analysis for the dataset"""
         if not spectra:
             return {'error': 'No spectra in dataset'}
 

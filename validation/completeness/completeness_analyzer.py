@@ -486,7 +486,7 @@ class CompletenessAnalyzer:
             axes[1, 1].set_title('Pipeline Comparison')
             axes[1, 1].set_ylim(0, 1)
         
-        # Plot 6: Summary statistics
+        # Plot 6: Summary statistical_analysis
         summary_text = f"""
 Completeness Analysis Summary:
 

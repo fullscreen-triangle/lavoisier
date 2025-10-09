@@ -226,7 +226,7 @@ class PerformanceBenchmark:
             pipeline_results: Dictionary of pipeline results
             
         Returns:
-            DataFrame with comparison statistics
+            DataFrame with comparison statistical_analysis
         """
         comparison_data = []
         
@@ -277,7 +277,7 @@ class PerformanceBenchmark:
             'comparisons': {}
         }
         
-        # Generate summary statistics
+        # Generate summary statistical_analysis
         for (pipeline, task), results in grouped_results.items():
             successful_results = [r for r in results if r.success]
             

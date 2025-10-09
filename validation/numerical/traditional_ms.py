@@ -38,7 +38,7 @@ class TraditionalMSValidator(BaseValidator, StellasMixin):
         self.chemical_ner = None
         self.memory_tracker = MemoryTracker(self.logger)
         
-        # Processing statistics
+        # Processing statistical_analysis
         self.processing_stats = {
             'spectra_processed': 0,
             'annotations_found': 0,
@@ -324,7 +324,7 @@ class TraditionalMSValidator(BaseValidator, StellasMixin):
         return [], []
     
     def get_processing_statistics(self) -> Dict[str, Any]:
-        """Get detailed processing statistics"""
+        """Get detailed processing statistical_analysis"""
         stats = self.processing_stats.copy()
         if stats['processing_times']:
             stats['mean_processing_time'] = np.mean(stats['processing_times'])

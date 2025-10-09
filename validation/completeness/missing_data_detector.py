@@ -53,7 +53,7 @@ class MissingDataDetector:
         else:
             df = data.copy()
         
-        # Calculate missing data statistics
+        # Calculate missing data statistical_analysis
         total_cells = df.size
         missing_cells = df.isnull().sum().sum()
         missing_percentage = (missing_cells / total_cells) * 100

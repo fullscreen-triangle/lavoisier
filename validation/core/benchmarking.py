@@ -142,7 +142,7 @@ class BenchmarkRunner:
         # Use the last result for metrics calculation
         final_result = results[-1]
         
-        # Calculate processing statistics
+        # Calculate processing statistical_analysis
         processing_stats = {
             'mean_processing_time': np.mean(processing_times),
             'std_processing_time': np.std(processing_times),

@@ -87,7 +87,7 @@ class StatisticalValidator:
         # 3. Bias Detection
         bias_results = self._detect_biases(numerical_data, visual_data)
         
-        # 4. Generate summary statistics
+        # 4. Generate summary statistical_analysis
         summary_stats = self._generate_summary_statistics(
             numerical_data, visual_data, combined_data
         )
@@ -241,10 +241,10 @@ class StatisticalValidator:
         visual_data: Dict[str, np.ndarray],
         combined_data: Optional[Dict[str, np.ndarray]]
     ) -> Dict[str, Any]:
-        """Generate summary statistics for all data"""
+        """Generate summary statistical_analysis for all data"""
         summary = {}
         
-        # Numerical pipeline statistics
+        # Numerical pipeline statistical_analysis
         summary['numerical'] = {}
         for key, data in numerical_data.items():
             summary['numerical'][key] = {
@@ -256,7 +256,7 @@ class StatisticalValidator:
                 'n_samples': len(data)
             }
         
-        # Visual pipeline statistics
+        # Visual pipeline statistical_analysis
         summary['visual'] = {}
         for key, data in visual_data.items():
             summary['visual'][key] = {
@@ -268,7 +268,7 @@ class StatisticalValidator:
                 'n_samples': len(data)
             }
         
-        # Combined pipeline statistics (if available)
+        # Combined pipeline statistical_analysis (if available)
         if combined_data:
             summary['combined'] = {}
             for key, data in combined_data.items():
@@ -504,7 +504,7 @@ class StatisticalValidator:
             axes[1, 1].set_ylabel('Effect Size Value')
             axes[1, 1].set_title('Effect Size Values')
         
-        # Plot 6: Summary statistics
+        # Plot 6: Summary statistical_analysis
         summary_text = f"""
 Overall Conclusion:
 {self.validation_report.overall_conclusion}

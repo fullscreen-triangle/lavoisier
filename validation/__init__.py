@@ -13,7 +13,7 @@ The validation framework includes:
 - Annotation and identification performance analysis
 """
 
-from .statistics import (
+from .statistical_analysis import (
     HypothesisTestSuite,
     EffectSizeCalculator,
     StatisticalValidator,
