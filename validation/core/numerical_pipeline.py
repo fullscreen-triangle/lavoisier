@@ -802,33 +802,208 @@ def process_mzml_numerical(filepath: str, stellas_transform: bool = True) -> Dic
     return orchestrator.process_dataset(filepath, use_stellas=stellas_transform)
 
 
+def save_results_to_files(results: Dict[str, Any], output_dir: str, dataset_name: str):
+    """Save comprehensive results to multiple file formats"""
+    import json
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+
+    # Create output directory
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True)
+
+    # Save JSON results
+    json_file = output_path / f"{dataset_name}_numerical_results.json"
+    with open(json_file, 'w') as f:
+        # Convert numpy arrays to lists for JSON serialization
+        json_results = {}
+        for key, value in results.items():
+            if isinstance(value, dict):
+                json_results[key] = {k: v for k, v in value.items() if not isinstance(v, np.ndarray)}
+            else:
+                json_results[key] = value
+        json.dump(json_results, f, indent=2)
+
+    print(f"💾 Saved JSON results to: {json_file}")
+
+    # Create visualizations using panel charts
+    try:
+        from visualization.panel import create_performance_panel, create_quality_panel, create_annotation_panel
+
+        # Performance panel
+        performance_data = {
+            'processing_time': results['pipeline_info']['processing_time'],
+            'total_spectra': results['spectra_processed']['total_input'],
+            'high_quality_spectra': results['spectra_processed']['high_quality'],
+            'annotation_rate': results['database_annotations']['total_annotated_spectra'] / max(1, results['spectra_processed']['ms1_count'])
+        }
+
+        perf_fig = create_performance_panel(performance_data, f"Numerical Pipeline Performance - {dataset_name}")
+        perf_file = output_path / f"{dataset_name}_numerical_performance.png"
+        perf_fig.savefig(perf_file, dpi=300, bbox_inches='tight')
+        plt.close(perf_fig)
+        print(f"📊 Saved performance panel to: {perf_file}")
+
+        # Quality panel
+        qc_stats = results.get('quality_control', {})
+        quality_data = {
+            'mean_quality_score': qc_stats.get('quality_metrics', {}).get('mean_quality_score', 0),
+            'high_quality_ratio': results['spectra_processed']['high_quality'] / max(1, results['spectra_processed']['total_input']),
+            'mean_peaks_per_spectrum': qc_stats.get('peak_statistics', {}).get('mean_peaks_per_spectrum', 0)
+        }
+
+        quality_fig = create_quality_panel(quality_data, f"Data Quality Assessment - {dataset_name}")
+        quality_file = output_path / f"{dataset_name}_numerical_quality.png"
+        quality_fig.savefig(quality_file, dpi=300, bbox_inches='tight')
+        plt.close(quality_fig)
+        print(f"📊 Saved quality panel to: {quality_file}")
+
+        # Annotation panel
+        annotations_per_db = results['database_annotations']['annotations_per_database']
+        ann_fig = create_annotation_panel(annotations_per_db, f"Database Annotations - {dataset_name}")
+        ann_file = output_path / f"{dataset_name}_numerical_annotations.png"
+        ann_fig.savefig(ann_file, dpi=300, bbox_inches='tight')
+        plt.close(ann_fig)
+        print(f"📊 Saved annotation panel to: {ann_file}")
+
+    except ImportError as e:
+        print(f"⚠️  Visualization panels not available: {e}")
+
+    # Save CSV summary
+    csv_file = output_path / f"{dataset_name}_numerical_summary.csv"
+    summary_data = {
+        'Dataset': [dataset_name],
+        'Processing_Time_s': [results['pipeline_info']['processing_time']],
+        'Total_Spectra': [results['spectra_processed']['total_input']],
+        'High_Quality_Spectra': [results['spectra_processed']['high_quality']],
+        'MS1_Spectra': [results['spectra_processed']['ms1_count']],
+        'MS2_Spectra': [results['spectra_processed']['ms2_count']],
+        'Annotated_Spectra': [results['database_annotations']['total_annotated_spectra']],
+        'Embedding_Methods': [', '.join(results['spectrum_embeddings']['methods_used'])],
+        'Feature_Clusters': [results.get('feature_clustering', {}).get('n_clusters', 0)]
+    }
+
+    df = pd.DataFrame(summary_data)
+    df.to_csv(csv_file, index=False)
+    print(f"📄 Saved CSV summary to: {csv_file}")
+
+
 if __name__ == "__main__":
-    # Test the numerical pipeline
+    """
+    STANDALONE NUMERICAL PIPELINE EXPERIMENT
+    =======================================
+
+    This script runs as an independent science experiment to validate
+    numerical mass spectrometry processing capabilities.
+
+    Results are saved to files and visualizations are generated.
+    """
+
+    print("🧪 NUMERICAL PIPELINE VALIDATION EXPERIMENT")
+    print("=" * 60)
+    print("STANDALONE EXECUTION - No external dependencies")
+    print("Results will be saved to 'numerical_validation_results/' directory")
+    print("=" * 60)
+
+    # Create output directory
+    output_directory = "numerical_validation_results"
+    Path(output_directory).mkdir(exist_ok=True)
+
+    # Test datasets
     test_files = ["PL_Neg_Waters_qTOF.mzML", "TG_Pos_Thermo_Orbi.mzML"]
 
+    # Initialize orchestrator
+    print("🔧 Initializing numerical pipeline orchestrator...")
     orchestrator = NumericalPipelineOrchestrator()
+    print("✅ Orchestrator initialized successfully")
+    print()
 
-    for test_file in test_files:
-        print(f"\n{'='*60}")
-        print(f"Testing numerical pipeline with: {test_file}")
-        print('='*60)
+    # Process each dataset independently
+    all_results = {}
 
-        results = orchestrator.process_dataset(test_file, use_stellas=True)
+    for i, test_file in enumerate(test_files, 1):
+        print(f"\n📊 EXPERIMENT {i}/{len(test_files)}: {test_file}")
+        print("-" * 50)
 
-        # Print summary
-        print(f"\nProcessing Summary:")
-        print(f"Processing time: {results['pipeline_info']['processing_time']:.2f} seconds")
-        print(f"Input spectra: {results['spectra_processed']['total_input']}")
-        print(f"High-quality spectra: {results['spectra_processed']['high_quality']}")
-        print(f"Annotated spectra: {results['database_annotations']['total_annotated_spectra']}")
+        try:
+            # Process dataset
+            print(f"🔄 Processing dataset: {test_file}")
+            start_time = time.time()
 
-        embedding_info = results['spectrum_embeddings']
-        print(f"Embedding methods: {embedding_info['methods_used']}")
-        for method in embedding_info['methods_used']:
-            count = embedding_info['embeddings_per_method'][method]
-            dim = embedding_info['embedding_dimensions'][method]
-            print(f"  {method}: {count} embeddings (dim={dim})")
+            results = orchestrator.process_dataset(test_file, use_stellas=True)
 
-        clustering_info = results['feature_clustering']
-        if 'n_clusters' in clustering_info:
-            print(f"Clustering: {clustering_info['n_clusters']} clusters for {clustering_info['n_spectra_clustered']} spectra")
+            processing_time = time.time() - start_time
+            print(f"✅ Processing completed in {processing_time:.2f} seconds")
+
+            # Extract dataset name for file naming
+            dataset_name = Path(test_file).stem
+
+            # Print detailed results
+            print(f"\n📋 EXPERIMENT RESULTS:")
+            print(f"Processing time: {results['pipeline_info']['processing_time']:.2f} seconds")
+            print(f"Input spectra: {results['spectra_processed']['total_input']}")
+            print(f"High-quality spectra: {results['spectra_processed']['high_quality']}")
+            print(f"MS1 spectra: {results['spectra_processed']['ms1_count']}")
+            print(f"MS2 spectra: {results['spectra_processed']['ms2_count']}")
+            print(f"Annotated spectra: {results['database_annotations']['total_annotated_spectra']}")
+
+            # Database annotation breakdown
+            annotations_per_db = results['database_annotations']['annotations_per_database']
+            print(f"\n🗃️  DATABASE ANNOTATION BREAKDOWN:")
+            for db_name, count in annotations_per_db.items():
+                if count > 0:
+                    print(f"  {db_name}: {count} annotations")
+
+            # Embedding information
+            embedding_info = results['spectrum_embeddings']
+            print(f"\n🧠 EMBEDDING ANALYSIS:")
+            print(f"Methods used: {embedding_info['methods_used']}")
+            for method in embedding_info['methods_used']:
+                count = embedding_info['embeddings_per_method'][method]
+                dim = embedding_info['embedding_dimensions'][method]
+                print(f"  {method}: {count} embeddings (dimension={dim})")
+
+            # Clustering results
+            clustering_info = results.get('feature_clustering', {})
+            if 'n_clusters' in clustering_info:
+                print(f"\n🔬 CLUSTERING ANALYSIS:")
+                print(f"Clusters: {clustering_info['n_clusters']}")
+                print(f"Spectra clustered: {clustering_info['n_spectra_clustered']}")
+
+            # Save results and generate visualizations
+            print(f"\n💾 SAVING EXPERIMENT RESULTS...")
+            save_results_to_files(results, output_directory, dataset_name)
+
+            # Store for final summary
+            all_results[dataset_name] = results
+
+            print(f"✅ Experiment {i} completed successfully!")
+
+        except Exception as e:
+            print(f"❌ Experiment {i} failed: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # Generate final summary
+    print(f"\n" + "=" * 60)
+    print("📊 NUMERICAL PIPELINE VALIDATION SUMMARY")
+    print("=" * 60)
+
+    if all_results:
+        total_spectra = sum(r['spectra_processed']['total_input'] for r in all_results.values())
+        total_annotations = sum(r['database_annotations']['total_annotated_spectra'] for r in all_results.values())
+        avg_processing_time = np.mean([r['pipeline_info']['processing_time'] for r in all_results.values()])
+
+        print(f"🔢 OVERALL STATISTICS:")
+        print(f"Datasets processed: {len(all_results)}")
+        print(f"Total spectra processed: {total_spectra}")
+        print(f"Total annotations generated: {total_annotations}")
+        print(f"Average processing time: {avg_processing_time:.2f} seconds")
+        print(f"Annotation rate: {(total_annotations/max(1,total_spectra))*100:.1f}%")
+
+        print(f"\n📁 All results saved to: {output_directory}/")
+        print(f"✅ Numerical validation experiment completed successfully!")
+    else:
+        print("❌ No experiments completed successfully")
+
+    print(f"\n🧪 VALIDATION EXPERIMENT COMPLETE 🧪")

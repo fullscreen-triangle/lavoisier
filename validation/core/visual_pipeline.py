@@ -755,39 +755,267 @@ def process_mzml_visual(filepath: str, create_visualizations: bool = True) -> Di
     return orchestrator.process_dataset(filepath, create_visualizations=create_visualizations)
 
 
+def save_visual_results_to_files(results: Dict[str, Any], output_dir: str, dataset_name: str):
+    """Save comprehensive visual processing results to multiple file formats"""
+    import json
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+
+    # Create output directory
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True)
+
+    # Save JSON results
+    json_file = output_path / f"{dataset_name}_visual_results.json"
+    with open(json_file, 'w') as f:
+        # Convert numpy arrays to lists for JSON serialization
+        json_results = {}
+        for key, value in results.items():
+            if isinstance(value, dict):
+                json_results[key] = {k: v for k, v in value.items() if not isinstance(v, np.ndarray)}
+            else:
+                json_results[key] = value
+        json.dump(json_results, f, indent=2)
+
+    print(f"💾 Saved JSON results to: {json_file}")
+
+    # Create visualizations using panel charts
+    try:
+        from visualization.panel import create_ion_conversion_panel, create_drip_analysis_panel, create_lipid_annotation_panel
+
+        # Ion conversion panel
+        ion_stats = results.get('ion_conversion', {}).get('statistics', {})
+        ion_data = {
+            'total_ions_extracted': ion_stats.get('total_ions_extracted', 0),
+            'drip_spectra_created': ion_stats.get('drip_spectra_created', 0),
+            'ion_type_distribution': ion_stats.get('ion_type_distribution', {})
+        }
+
+        ion_fig = create_ion_conversion_panel(ion_data, f"Ion-to-Drip Conversion - {dataset_name}")
+        ion_file = output_path / f"{dataset_name}_ion_conversion.png"
+        ion_fig.savefig(ion_file, dpi=300, bbox_inches='tight')
+        plt.close(ion_fig)
+        print(f"📊 Saved ion conversion panel to: {ion_file}")
+
+        # Drip analysis panel
+        visual_summary = results.get('visual_processing_summary', {})
+        drip_data = {
+            'spectra_processed': visual_summary.get('spectra_processed', 0),
+            'drip_images_created': visual_summary.get('drip_images_created', 0),
+            'processing_time': results.get('pipeline_info', {}).get('processing_time', 0)
+        }
+
+        drip_fig = create_drip_analysis_panel(drip_data, f"Drip Spectrum Analysis - {dataset_name}")
+        drip_file = output_path / f"{dataset_name}_drip_analysis.png"
+        drip_fig.savefig(drip_file, dpi=300, bbox_inches='tight')
+        plt.close(drip_fig)
+        print(f"📊 Saved drip analysis panel to: {drip_file}")
+
+        # LipidMaps annotation panel
+        lipid_annotation = results.get('lipidmaps_annotation', {})
+        annotation_data = {
+            'annotated_spectra': lipid_annotation.get('annotated_spectra', 0),
+            'total_annotations': lipid_annotation.get('total_annotations', 0),
+            'annotation_rate': lipid_annotation.get('annotated_spectra', 0) / max(1, visual_summary.get('drip_images_created', 1))
+        }
+
+        lipid_fig = create_lipid_annotation_panel(annotation_data, f"LipidMaps Annotations - {dataset_name}")
+        lipid_file = output_path / f"{dataset_name}_lipid_annotations.png"
+        lipid_fig.savefig(lipid_file, dpi=300, bbox_inches='tight')
+        plt.close(lipid_fig)
+        print(f"📊 Saved lipid annotation panel to: {lipid_file}")
+
+    except ImportError as e:
+        print(f"⚠️  Visualization panels not available: {e}")
+
+    # Save CSV summary
+    csv_file = output_path / f"{dataset_name}_visual_summary.csv"
+    ion_stats = results.get('ion_conversion', {}).get('statistics', {})
+    visual_summary = results.get('visual_processing_summary', {})
+    lipid_annotation = results.get('lipidmaps_annotation', {})
+
+    summary_data = {
+        'Dataset': [dataset_name],
+        'Processing_Time_s': [results.get('pipeline_info', {}).get('processing_time', 0)],
+        'Spectra_Processed': [visual_summary.get('spectra_processed', 0)],
+        'Ions_Extracted': [visual_summary.get('ions_extracted', 0)],
+        'Drip_Images_Created': [visual_summary.get('drip_images_created', 0)],
+        'LipidMaps_Annotations': [visual_summary.get('annotations_generated', 0)],
+        'Ion_Types_Found': [len(ion_stats.get('ion_type_distribution', {}))],
+        'Annotation_Rate': [lipid_annotation.get('annotated_spectra', 0) / max(1, visual_summary.get('drip_images_created', 1))]
+    }
+
+    df = pd.DataFrame(summary_data)
+    df.to_csv(csv_file, index=False)
+    print(f"📄 Saved CSV summary to: {csv_file}")
+
+
 if __name__ == "__main__":
-    # Test the visual pipeline
+    """
+    STANDALONE VISUAL PIPELINE EXPERIMENT
+    ====================================
+
+    This script runs as an independent science experiment to validate
+    visual mass spectrometry processing capabilities including:
+    - Ion-to-Drip conversion
+    - LipidMaps annotation
+    - Visual spectrum analysis
+
+    Results are saved to files and visualizations are generated.
+    """
+
+    print("🧪 VISUAL PIPELINE VALIDATION EXPERIMENT")
+    print("=" * 60)
+    print("STANDALONE EXECUTION - Ion-to-Drip & Visual Analysis")
+    print("Results will be saved to 'visual_validation_results/' directory")
+    print("=" * 60)
+
+    # Create output directory
+    output_directory = "visual_validation_results"
+    Path(output_directory).mkdir(exist_ok=True)
+
+    # Test datasets
     test_files = ["PL_Neg_Waters_qTOF.mzML", "TG_Pos_Thermo_Orbi.mzML"]
 
+    # Initialize orchestrator
+    print("🔧 Initializing visual pipeline orchestrator...")
     orchestrator = VisualPipelineOrchestrator()
+    print("✅ Orchestrator initialized successfully")
+    print("📊 Ion-to-Drip converter ready")
+    print("🔬 LipidMaps annotator ready")
+    print()
 
-    for test_file in test_files:
-        print(f"\n{'='*60}")
-        print(f"Testing visual pipeline with: {test_file}")
-        print('='*60)
+    # Process each dataset independently
+    all_results = {}
 
-        results = orchestrator.process_dataset(test_file, create_visualizations=True)
+    for i, test_file in enumerate(test_files, 1):
+        print(f"\n🎨 EXPERIMENT {i}/{len(test_files)}: {test_file}")
+        print("-" * 50)
 
-        # Print summary
-        print(f"\nProcessing Summary:")
-        print(f"Processing time: {results['pipeline_info']['processing_time']:.2f} seconds")
-        print(f"Input spectra: {results['dataset_summary']['total_spectra']}")
-        print(f"Spectra processed: {results['visual_processing_summary']['spectra_processed']}")
-        print(f"Ions extracted: {results['visual_processing_summary']['ions_extracted']}")
-        print(f"Drip images created: {results['visual_processing_summary']['drip_images_created']}")
-        print(f"Annotated spectra: {results['visual_processing_summary']['annotations_generated']}")
+        try:
+            # Process dataset
+            print(f"🔄 Processing visual dataset: {test_file}")
+            start_time = time.time()
 
-        # Ion conversion stats
-        ion_stats = results['ion_conversion']['statistical_analysis']
-        print(f"\nIon Type Distribution:")
-        for ion_type, count in ion_stats['ion_type_distribution'].items():
-            print(f"  {ion_type}: {count}")
+            results = orchestrator.process_dataset(
+                test_file,
+                create_visualizations=True,
+                save_drip_images=True
+            )
 
-        # Similarity statistical_analysis
-        sim_stats = results['lipidmaps_annotation']['similarity_statistics']
-        if 'error' not in sim_stats:
-            print(f"\nSimilarity Statistics:")
-            print(f"Visual similarity (mean): {sim_stats['visual_similarity']['mean']:.3f}")
-            print(f"Mathematical similarity (mean): {sim_stats['mathematical_similarity']['mean']:.3f}")
-            print(f"High visual similarity matches: {sim_stats['visual_similarity']['high_similarity_count']}")
-            print(f"High mathematical similarity matches: {sim_stats['mathematical_similarity']['high_similarity_count']}")
+            processing_time = time.time() - start_time
+            print(f"✅ Visual processing completed in {processing_time:.2f} seconds")
+
+            # Extract dataset name for file naming
+            dataset_name = Path(test_file).stem
+
+            # Print detailed results
+            pipeline_info = results.get('pipeline_info', {})
+            ion_conversion = results.get('ion_conversion', {})
+            visual_summary = results.get('visual_processing_summary', {})
+            lipid_annotation = results.get('lipidmaps_annotation', {})
+
+            print(f"\n📋 VISUAL EXPERIMENT RESULTS:")
+            print(f"Processing time: {pipeline_info.get('processing_time', 0):.2f} seconds")
+            print(f"Spectra processed: {visual_summary.get('spectra_processed', 0)}")
+            print(f"Ions extracted: {visual_summary.get('ions_extracted', 0)}")
+            print(f"Drip images created: {visual_summary.get('drip_images_created', 0)}")
+            print(f"LipidMaps annotations: {visual_summary.get('annotations_generated', 0)}")
+
+            # Ion type distribution
+            ion_stats = ion_conversion.get('statistics', {})
+            ion_distribution = ion_stats.get('ion_type_distribution', {})
+            if ion_distribution:
+                print(f"\n⚛️  ION TYPE DISTRIBUTION:")
+                for ion_type, count in ion_distribution.items():
+                    print(f"  {ion_type}: {count}")
+
+            # Drip conversion statistics
+            drip_count = ion_stats.get('drip_spectra_created', 0)
+            total_spectra = ion_stats.get('total_spectra_processed', 0)
+            if total_spectra > 0:
+                conversion_rate = (drip_count / total_spectra) * 100
+                print(f"\n🌊 DRIP CONVERSION ANALYSIS:")
+                print(f"Conversion rate: {conversion_rate:.1f}%")
+                print(f"Drip spectra created: {drip_count}/{total_spectra}")
+
+            # LipidMaps annotation analysis
+            if lipid_annotation.get('annotated_spectra', 0) > 0:
+                print(f"\n🧬 LIPIDMAPS ANNOTATION ANALYSIS:")
+                print(f"Annotated spectra: {lipid_annotation.get('annotated_spectra', 0)}")
+                print(f"Total annotations: {lipid_annotation.get('total_annotations', 0)}")
+
+                # Show sample annotations if available
+                sample_annotations = lipid_annotation.get('sample_annotations', [])
+                if sample_annotations:
+                    print(f"Sample annotations (first few):")
+                    for ann in sample_annotations[:3]:
+                        if isinstance(ann, dict) and 'lipid_name' in ann:
+                            print(f"  - {ann.get('lipid_name', 'Unknown')}: {ann.get('confidence_score', 0):.3f}")
+
+            # Save results and generate visualizations
+            print(f"\n💾 SAVING VISUAL EXPERIMENT RESULTS...")
+            save_visual_results_to_files(results, output_directory, dataset_name)
+
+            # Store for final summary
+            all_results[dataset_name] = results
+
+            print(f"✅ Visual Experiment {i} completed successfully!")
+
+        except Exception as e:
+            print(f"❌ Visual Experiment {i} failed: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # Generate final summary
+    print(f"\n" + "=" * 60)
+    print("📊 VISUAL PIPELINE VALIDATION SUMMARY")
+    print("=" * 60)
+
+    if all_results:
+        total_spectra_processed = sum(
+            r.get('visual_processing_summary', {}).get('spectra_processed', 0)
+            for r in all_results.values()
+        )
+        total_ions_extracted = sum(
+            r.get('visual_processing_summary', {}).get('ions_extracted', 0)
+            for r in all_results.values()
+        )
+        total_drip_images = sum(
+            r.get('visual_processing_summary', {}).get('drip_images_created', 0)
+            for r in all_results.values()
+        )
+        total_lipid_annotations = sum(
+            r.get('visual_processing_summary', {}).get('annotations_generated', 0)
+            for r in all_results.values()
+        )
+        avg_processing_time = np.mean([
+            r.get('pipeline_info', {}).get('processing_time', 0)
+            for r in all_results.values()
+        ])
+
+        print(f"🔢 OVERALL VISUAL STATISTICS:")
+        print(f"Datasets processed: {len(all_results)}")
+        print(f"Total spectra processed: {total_spectra_processed}")
+        print(f"Total ions extracted: {total_ions_extracted}")
+        print(f"Total drip images created: {total_drip_images}")
+        print(f"Total LipidMaps annotations: {total_lipid_annotations}")
+        print(f"Average processing time: {avg_processing_time:.2f} seconds")
+
+        # Calculate rates
+        if total_spectra_processed > 0:
+            ion_extraction_rate = (total_ions_extracted / total_spectra_processed)
+            drip_creation_rate = (total_drip_images / total_spectra_processed) * 100
+            annotation_rate = (total_lipid_annotations / max(1, total_drip_images)) * 100
+
+            print(f"\n📊 CONVERSION & ANNOTATION RATES:")
+            print(f"Ion extraction rate: {ion_extraction_rate:.1f} ions/spectrum")
+            print(f"Drip creation rate: {drip_creation_rate:.1f}%")
+            print(f"LipidMaps annotation rate: {annotation_rate:.1f}%")
+
+        print(f"\n📁 All visual results saved to: {output_directory}/")
+        print(f"✅ Visual validation experiment completed successfully!")
+    else:
+        print("❌ No visual experiments completed successfully")
+
+    print(f"\n🧪 VISUAL VALIDATION EXPERIMENT COMPLETE 🧪")
