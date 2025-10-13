@@ -50,7 +50,7 @@ def main():
     def log_and_print(message):
         """Log message to both console and file"""
         print(message)
-        with open(master_log_file, 'a') as f:
+        with open(master_log_file, 'a', encoding='utf-8') as f:
             f.write(f"{datetime.now().isoformat()}: {message}\n")
 
     log_and_print("🔬 MASTER EXPERIMENTAL SETUP")
