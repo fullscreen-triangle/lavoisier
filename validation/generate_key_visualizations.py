@@ -8,6 +8,9 @@ import sys
 import os
 from pathlib import Path
 
+from visualization.panel import plot_oscillatory_foundations, plot_sentropy_navigation, plot_validation_results, \
+    plot_maxwell_demons, print_instructions
+
 # Add validation to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -124,22 +127,18 @@ def generate_custom_panel(panel_type: str):
     
     try:
         if panel_type.lower() == "oscillatory":
-            from validation.visualization.panel import plot_oscillatory_foundations
             fig = plot_oscillatory_foundations()
             fig.savefig(f'custom_{panel_type.lower()}_panel.png', dpi=300, bbox_inches='tight')
             
         elif panel_type.lower() == "sentropy":
-            from validation.visualization.panel import plot_sentropy_navigation
             fig = plot_sentropy_navigation()
             fig.savefig(f'custom_{panel_type.lower()}_panel.png', dpi=300, bbox_inches='tight')
             
         elif panel_type.lower() == "validation":
-            from validation.visualization.panel import plot_validation_results
             fig = plot_validation_results()
             fig.savefig(f'custom_{panel_type.lower()}_panel.png', dpi=300, bbox_inches='tight')
             
         elif panel_type.lower() == "maxwell":
-            from validation.visualization.panel import plot_maxwell_demons
             fig = plot_maxwell_demons()
             fig.savefig(f'custom_{panel_type.lower()}_panel.png', dpi=300, bbox_inches='tight')
             
@@ -177,7 +176,6 @@ def main():
             return {'status': 'SUCCESS' if success else 'ERROR'}
             
         elif choice == "3":
-            from validation.visualization.panel import print_instructions
             print_instructions()
             return {'status': 'SUCCESS'}
             
