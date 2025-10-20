@@ -88,6 +88,42 @@ class SEntropyFeatures:
     mean_time: float
     mean_entropy: float
 
+    @classmethod
+    def from_array(cls, arr: np.ndarray) -> 'SEntropyFeatures':
+        """
+        Create SEntropyFeatures from 14-dimensional numpy array.
+
+        Args:
+            arr: 14-dimensional feature array
+
+        Returns:
+            SEntropyFeatures instance
+        """
+        if arr.shape != (14,):
+            raise ValueError(f"Expected 14-dimensional array, got shape {arr.shape}")
+
+        return cls(
+            mean_magnitude=arr[0],
+            std_magnitude=arr[1],
+            min_magnitude=arr[2],
+            max_magnitude=arr[3],
+            centroid_magnitude=arr[4],
+            median_magnitude=arr[5],
+            mean_pairwise_distance=arr[6],
+            diameter=arr[7],
+            variance_from_centroid=arr[8],
+            pc1_variance_ratio=arr[9],
+            coordinate_entropy=arr[10],
+            mean_knowledge=arr[11],
+            mean_time=arr[12],
+            mean_entropy=arr[13]
+        )
+
+    @property
+    def features(self) -> np.ndarray:
+        """Return 14-dimensional feature array (property for backward compatibility)."""
+        return self.to_array()
+
     def to_array(self) -> np.ndarray:
         """Convert to 14-dimensional numpy array."""
         return np.array([
