@@ -184,7 +184,7 @@ def extract_mzml(
                         _tmp_spec_df['dda_event_idx'] = dda_event_idx
                         _tmp_spec_df['DDA_rank'] = dda_rank_idx
                         _tmp_spec_df['scan_number'] = _scan_id
-                        ms1_xic_df = ms1_xic_df.append(_tmp_spec_df)
+                        ms1_xic_df = pd.concat([ms1_xic_df, _tmp_spec_df], ignore_index=True)
                     else:
                         print("empty_MS1_spectrum --> index = ", spec_idx)
 

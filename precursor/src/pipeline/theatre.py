@@ -37,6 +37,18 @@ from .stages import (
     ObserverLevel
 )
 
+# Import BMD components
+try:
+    from ..bmd import (
+        BiologicalMaxwellDemonReference,
+        HardwareBMDStream,
+        BMDState,
+        compute_stream_divergence
+    )
+    BMD_AVAILABLE = True
+except ImportError:
+    BMD_AVAILABLE = False
+
 
 class TheatreStatus(Enum):
     """Execution status of the theatre"""
@@ -111,7 +123,9 @@ class Theatre:
         theatre_name: str,
         output_dir: Optional[Path] = None,
         navigation_mode: NavigationMode = NavigationMode.DEPENDENCY,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        enable_bmd_grounding: bool = True,
+        bmd_reference: Optional['BiologicalMaxwellDemonReference'] = None
     ):
         """
         Initialize theatre.
@@ -121,6 +135,8 @@ class Theatre:
             output_dir: Directory for theatre outputs
             navigation_mode: How to navigate through stages
             config: Theatre configuration
+            enable_bmd_grounding: Enable BMD grounding for reality checking
+            bmd_reference: Optional pre-configured BMD reference
         """
         self.theatre_name = theatre_name
         self.output_dir = Path(output_dir) if output_dir else Path(f"./theatre_results/{theatre_name}")
@@ -146,7 +162,28 @@ class Theatre:
         self.execution_order: List[str] = []
         self.navigation_history: List[Tuple[str, str, float]] = []  # (from_stage, to_stage, gear_ratio)
 
+        # BMD grounding
+        self.enable_bmd_grounding = enable_bmd_grounding and BMD_AVAILABLE
+        self.bmd_reference: Optional['BiologicalMaxwellDemonReference'] = None
+        self.hardware_bmd_stream: Optional['HardwareBMDStream'] = None
+        self.network_bmd: Optional['BMDState'] = None
+        self.stream_divergence_threshold = 5.0  # Alert if divergence exceeds this
+
+        if self.enable_bmd_grounding:
+            if bmd_reference:
+                self.bmd_reference = bmd_reference
+            else:
+                try:
+                    from ..bmd import BiologicalMaxwellDemonReference
+                    self.bmd_reference = BiologicalMaxwellDemonReference(enable_all_harvesters=True)
+                    self.logger.info("  BMD grounding enabled with hardware reference")
+                except Exception as e:
+                    self.logger.warning(f"  Could not initialize BMD reference: {e}")
+                    self.enable_bmd_grounding = False
+
         self.logger.info(f"[Theatre '{theatre_name}'] Initialized with mode: {navigation_mode.value}")
+        if self.enable_bmd_grounding:
+            self.logger.info("  BMD Grounding: ENABLED")
 
     # ========================================================================
     # STAGE MANAGEMENT
@@ -476,12 +513,16 @@ class Theatre:
         self.logger.info(f"\n[Stage: {stage.stage_name}]")
 
         try:
-            # Execute stage observation
-            result = stage.observe(
-                input_data=input_data,
-                previous_stage_results=self.stage_results,
-                **kwargs
-            )
+            # Check if BMD grounding is enabled
+            if self.enable_bmd_grounding and self.bmd_reference:
+                result = self._execute_stage_with_bmd_grounding(stage, input_data, **kwargs)
+            else:
+                # Execute stage observation normally
+                result = stage.observe(
+                    input_data=input_data,
+                    previous_stage_results=self.stage_results,
+                    **kwargs
+                )
 
             # Store result
             self.stage_results[stage_id] = result
@@ -494,6 +535,89 @@ class Theatre:
         except Exception as e:
             self.logger.error(f"  Stage execution error: {str(e)}")
             self.failed_stages.add(stage_id)
+
+    def _execute_stage_with_bmd_grounding(self, stage: StageObserver,
+                                         input_data: Any, **kwargs) -> StageResult:
+        """
+        Execute stage with BMD grounding for reality checking.
+
+        This implements hardware-constrained categorical completion:
+        1. Measure hardware BMD stream (reality reference)
+        2. Execute stage with BMD filtering
+        3. Check stream divergence
+        4. Update network BMD through hierarchical integration
+
+        Args:
+            stage: Stage to execute
+            input_data: Input data
+            **kwargs: Additional parameters
+
+        Returns:
+            StageResult with BMD grounding metadata
+        """
+        # 1. Update hardware BMD stream (continuous measurement)
+        if self.bmd_reference:
+            self.hardware_bmd_stream = self.bmd_reference.measure_stream()
+
+            # Initialize network BMD on first measurement
+            if self.network_bmd is None:
+                self.network_bmd = self.hardware_bmd_stream.unified_bmd
+                self.logger.info("  Initialized network BMD from hardware stream")
+
+            # Log stream quality
+            if self.hardware_bmd_stream.is_coherent():
+                self.logger.info(f"  Hardware BMD stream: COHERENT (quality={self.hardware_bmd_stream.phase_lock_quality:.3f})")
+            else:
+                self.logger.warning(f"  Hardware BMD stream: INCOHERENT (quality={self.hardware_bmd_stream.phase_lock_quality:.3f})")
+
+        # 2. Execute stage with BMD grounding (if stage supports it)
+        if hasattr(stage, 'observe_with_bmd_grounding'):
+            result = stage.observe_with_bmd_grounding(
+                input_data=input_data,
+                hardware_bmd=self.hardware_bmd_stream.unified_bmd if self.hardware_bmd_stream else None,
+                network_bmd=self.network_bmd,
+                previous_stage_results=self.stage_results,
+                **kwargs
+            )
+        else:
+            # Fallback to normal observation
+            result = stage.observe(
+                input_data=input_data,
+                previous_stage_results=self.stage_results,
+                **kwargs
+            )
+
+        # 3. Check stream divergence (reality drift detection)
+        if self.hardware_bmd_stream and self.network_bmd:
+            stream_div = compute_stream_divergence(
+                self.network_bmd,
+                self.hardware_bmd_stream.unified_bmd
+            )
+
+            self.logger.info(f"  Stream divergence: {stream_div:.3f}")
+
+            if stream_div > self.stream_divergence_threshold:
+                self.logger.warning(f"  ⚠ Network BMD drifting from hardware reality (D={stream_div:.3f} > {self.stream_divergence_threshold})")
+
+            # Store in result metadata
+            if result.metadata is None:
+                result.metadata = {}
+            result.metadata['stream_divergence'] = stream_div
+            result.metadata['stream_coherent'] = self.hardware_bmd_stream.is_coherent()
+
+        # 4. Update network BMD if stage generated new BMD
+        if hasattr(result, 'generated_bmd') and result.generated_bmd is not None:
+            from ..bmd import integrate_hierarchical
+
+            self.network_bmd = integrate_hierarchical(
+                network_bmd=self.network_bmd,
+                new_bmd=result.generated_bmd,
+                processing_sequence=self.execution_order
+            )
+
+            self.logger.info(f"  Updated network BMD (richness={self.network_bmd.categorical_richness})")
+
+        return result
 
     # ========================================================================
     # VISUALIZATION

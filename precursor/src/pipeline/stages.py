@@ -29,6 +29,18 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import logging
 
+# Import BMD components
+try:
+    from ..bmd import (
+        BMDState,
+        CategoricalState,
+        compute_ambiguity,
+        generate_bmd_from_comparison
+    )
+    BMD_AVAILABLE = True
+except ImportError:
+    BMD_AVAILABLE = False
+
 
 class ObserverLevel(Enum):
     """Hierarchical observer levels"""
@@ -93,6 +105,12 @@ class StageResult:
     metrics: Dict[str, float] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
     error_message: Optional[str] = None
+
+    # BMD grounding fields
+    generated_bmd: Optional['BMDState'] = None  # BMD generated through categorical completion
+    input_filter_count: int = 0  # Number of inputs filtered
+    output_filter_count: int = 0  # Number of outputs filtered
+    ambiguity: float = 0.0  # Final ambiguity measure
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
@@ -363,6 +381,213 @@ class StageObserver:
 
         return self.result
 
+    def observe_with_bmd_grounding(
+        self,
+        input_data: Any,
+        hardware_bmd: Optional['BMDState'] = None,
+        network_bmd: Optional['BMDState'] = None,
+        previous_stage_results: Optional[Dict[str, StageResult]] = None,
+        **kwargs
+    ) -> StageResult:
+        """
+        Observe stage with BMD dual filtering (input + output).
+
+        Implements Biological Maxwell Demon operations:
+        1. Input Filter (ℑ_input): Select signal from noise via phase-lock coherence
+        2. Process with BMD comparison and generation
+        3. Output Filter (ℑ_output): Target physically-grounded interpretations
+
+        Args:
+            input_data: Input data
+            hardware_bmd: Hardware BMD stream (reality reference)
+            network_bmd: Network BMD from processing history
+            previous_stage_results: Results from previous stages
+            **kwargs: Additional parameters
+
+        Returns:
+            StageResult with BMD grounding metadata
+        """
+        self.logger.info(f"[{self.stage_name}] Starting BMD-grounded observation...")
+        start_time = time.perf_counter()
+
+        process_results = []
+        stage_status = StageStatus.COMPLETED
+        stage_error = None
+        current_data = input_data
+
+        # Initialize BMD for this stage
+        current_bmd = hardware_bmd if hardware_bmd else None
+        input_filtered_count = 0
+        output_filtered_count = 0
+
+        try:
+            # STEP 1: INPUT FILTER - Select signal from noise
+            if current_bmd and hasattr(input_data, '__iter__') and not isinstance(input_data, (str, dict)):
+                self.logger.info("  [INPUT FILTER] Applying phase-lock filtering...")
+
+                # Convert input to list if needed
+                input_candidates = list(input_data) if not isinstance(input_data, list) else input_data
+                original_count = len(input_candidates)
+
+                # Apply BMD input filter
+                filtered_inputs = current_bmd.input_filter(
+                    candidates=input_candidates,
+                    criterion='phase_lock'
+                )
+
+                input_filtered_count = original_count - len(filtered_inputs)
+                self.logger.info(f"  Filtered {input_filtered_count}/{original_count} inputs (noise rejection)")
+
+                # Use filtered data
+                current_data = filtered_inputs if filtered_inputs else input_data
+
+            # STEP 2: Process observations with BMD comparison
+            for i, process_observer in enumerate(self.process_observers, 1):
+                self.logger.info(f"  [{i}/{len(self.process_observers)}] Observing process: {process_observer.name}")
+
+                # Compute ambiguity before processing
+                if current_bmd:
+                    try:
+                        ambiguity = compute_ambiguity(current_bmd, current_data)
+                        self.logger.info(f"    Ambiguity: {ambiguity:.3f}")
+                    except:
+                        ambiguity = 0.0
+
+                try:
+                    # Execute process
+                    process_result = process_observer.observe(current_data, **kwargs)
+                    process_results.append(process_result)
+
+                    # Generate new BMD through categorical completion
+                    if current_bmd and process_result.data is not None:
+                        try:
+                            current_bmd = generate_bmd_from_comparison(
+                                bmd=current_bmd,
+                                target=process_result.data,
+                                hardware_bmd=hardware_bmd if hardware_bmd else current_bmd
+                            )
+                            self.logger.info(f"    Generated new BMD (richness={current_bmd.categorical_richness})")
+                        except Exception as e:
+                            self.logger.warning(f"    Could not generate BMD: {e}")
+
+                    # Update current data
+                    if process_result.data is not None:
+                        current_data = process_result.data
+
+                    # Track failures
+                    if process_result.status == StageStatus.FAILED:
+                        stage_status = StageStatus.FAILED
+                        stage_error = process_result.error_message
+                        self.logger.error(f"    Process failed: {process_result.error_message}")
+                        break
+
+                except Exception as e:
+                    self.logger.error(f"    Process observation error: {str(e)}")
+                    process_results.append(ProcessResult(
+                        process_name=process_observer.name,
+                        status=StageStatus.FAILED,
+                        execution_time=0.0,
+                        data=None,
+                        error_message=str(e)
+                    ))
+                    stage_status = StageStatus.FAILED
+                    stage_error = str(e)
+                    break
+
+            # STEP 3: OUTPUT FILTER - Select physically-grounded interpretations
+            if current_bmd and hasattr(current_data, '__iter__') and not isinstance(current_data, (str, dict)):
+                self.logger.info("  [OUTPUT FILTER] Applying stream coherence filtering...")
+
+                # Convert output to list if needed
+                output_candidates = list(current_data) if not isinstance(current_data, list) else current_data
+                original_count = len(output_candidates)
+
+                # Apply BMD output filter
+                filtered_outputs = current_bmd.output_filter(
+                    interpretations=output_candidates,
+                    hardware_bmd=hardware_bmd if hardware_bmd else current_bmd
+                )
+
+                output_filtered_count = original_count - len(filtered_outputs)
+                self.logger.info(f"  Filtered {output_filtered_count}/{original_count} outputs (unphysical interpretations)")
+
+                # Use filtered data
+                current_data = filtered_outputs if filtered_outputs else current_data
+
+            execution_time = time.perf_counter() - start_time
+
+            # Compute final ambiguity
+            final_ambiguity = 0.0
+            if current_bmd:
+                try:
+                    final_ambiguity = compute_ambiguity(current_bmd, current_data)
+                except:
+                    pass
+
+            # Compute stage metrics
+            stage_metrics = {
+                'total_processes': len(self.process_observers),
+                'completed_processes': sum(1 for pr in process_results if pr.status == StageStatus.COMPLETED),
+                'failed_processes': sum(1 for pr in process_results if pr.status == StageStatus.FAILED),
+                'average_process_time': np.mean([pr.execution_time for pr in process_results]) if process_results else 0.0,
+                'input_filtered': input_filtered_count,
+                'output_filtered': output_filtered_count,
+                'final_ambiguity': final_ambiguity,
+                'bmd_categorical_richness': current_bmd.categorical_richness if current_bmd else 0
+            }
+
+            # Create stage result with BMD fields
+            self.result = StageResult(
+                stage_name=self.stage_name,
+                stage_id=self.stage_id,
+                observer_level=ObserverLevel.STAGE,
+                status=stage_status,
+                execution_time=execution_time,
+                process_results=process_results,
+                output_data=current_data,
+                metrics=stage_metrics,
+                metadata={
+                    'dependencies': self.dependencies,
+                    'observers': self.observers,
+                    'config': self.config,
+                    'bmd_grounding': True,
+                    'hardware_bmd_available': hardware_bmd is not None,
+                    'network_bmd_available': network_bmd is not None
+                },
+                error_message=stage_error,
+                generated_bmd=current_bmd,
+                input_filter_count=input_filtered_count,
+                output_filter_count=output_filtered_count,
+                ambiguity=final_ambiguity
+            )
+
+            # Save results
+            self._save_stage_results()
+
+            self.logger.info(f"[{self.stage_name}] BMD-grounded stage complete: {stage_status.value} in {execution_time:.2f}s")
+            self.logger.info(f"  Input filtering: {input_filtered_count} rejected")
+            self.logger.info(f"  Output filtering: {output_filtered_count} rejected")
+            self.logger.info(f"  Final ambiguity: {final_ambiguity:.3f}")
+
+        except Exception as e:
+            execution_time = time.perf_counter() - start_time
+            self.logger.error(f"[{self.stage_name}] BMD-grounded stage failed: {str(e)}")
+
+            self.result = StageResult(
+                stage_name=self.stage_name,
+                stage_id=self.stage_id,
+                observer_level=ObserverLevel.STAGE,
+                status=StageStatus.FAILED,
+                execution_time=execution_time,
+                process_results=process_results,
+                error_message=str(e),
+                generated_bmd=current_bmd
+            )
+
+            self._save_stage_results()
+
+        return self.result
+
     def _save_stage_results(self):
         """
         CRITICAL: Save stage results in both .json and .tab formats.
@@ -390,6 +615,248 @@ class StageObserver:
         process_path = self.save_dir / f"{self.stage_id}_processes.tab"
         process_summary.to_csv(process_path, sep='\t', index=False)
         self.logger.info(f"  Saved process summary: {process_path}")
+
+        # SAVE ACTUAL MS DATA - Stage-specific outputs
+        self._save_ms_data()
+
+    def _save_ms_data(self):
+        """
+        Save actual mass spectrometry data based on stage type.
+
+        This saves the REAL data: spectra, peaks, annotations, etc.
+        """
+        if not self.result or not self.result.output_data:
+            return
+
+        data = self.result.output_data
+
+        # Safety check: data must be a dictionary
+        if not isinstance(data, dict):
+            return
+
+        try:
+            # SPECTRAL DATA (Stage 1)
+            if 'spectra' in data and 'scan_info' in data:
+                self._save_spectral_data(data)
+
+            # FEATURE DATA (Stage 2)
+            if 'sentropy_features' in data or 'categorical_states' in data:
+                self._save_feature_data(data)
+
+            # COMPUTER VISION DATA (Stage 2 CV)
+            if 'cv_images' in data or 'cv_features' in data or 'ion_droplets' in data:
+                self._save_cv_data(data)
+
+            # BMD/GROUNDING DATA (Stage 3)
+            if 'hardware_bmd_stream' in data or 'divergences' in data:
+                self._save_bmd_data(data)
+
+            # ANNOTATION DATA (Stage 4)
+            if 'annotations' in data or 'cv_matches' in data:
+                self._save_annotation_data(data)
+
+        except Exception as e:
+            self.logger.warning(f"  Could not save MS-specific data: {e}")
+
+    def _save_spectral_data(self, data):
+        """Save raw spectral data: scan info, peak lists, XIC"""
+        # Save scan information
+        if 'scan_info' in data:
+            scan_path = self.save_dir / "scan_info.tsv"
+            data['scan_info'].to_csv(scan_path, sep='\t', index=False)
+            self.logger.info(f"  Saved scan info: {scan_path} ({len(data['scan_info'])} scans)")
+
+        # Save XIC data
+        if 'xic' in data:
+            xic_path = self.save_dir / "xic_data.tsv"
+            data['xic'].to_csv(xic_path, sep='\t', index=False)
+            self.logger.info(f"  Saved XIC: {xic_path}")
+
+        # Save individual spectra
+        if 'spectra' in data:
+            spectra_dir = self.save_dir / "spectra"
+            spectra_dir.mkdir(exist_ok=True)
+
+            count = 0
+            for spec_id, spec_df in data['spectra'].items():
+                if isinstance(spec_df, pd.DataFrame) and not spec_df.empty:
+                    spec_path = spectra_dir / f"spectrum_{spec_id}.tsv"
+                    spec_df.to_csv(spec_path, sep='\t', index=False)
+                    count += 1
+
+                    if count <= 5:  # Log first few
+                        self.logger.info(f"    Saved spectrum {spec_id}: {len(spec_df)} peaks")
+
+            self.logger.info(f"  Saved {count} spectra to: {spectra_dir}/")
+
+    def _save_feature_data(self, data):
+        """Save S-Entropy features and categorical states"""
+        # Save S-Entropy features
+        if 'sentropy_features' in data:
+            features_list = []
+            for scan_id, features in data['sentropy_features'].items():
+                if hasattr(features, '__dict__'):
+                    row = {'scan_id': scan_id}
+                    row.update(features.__dict__)
+                    features_list.append(row)
+                elif isinstance(features, dict):
+                    row = {'scan_id': scan_id}
+                    row.update(features)
+                    features_list.append(row)
+
+            if features_list:
+                features_df = pd.DataFrame(features_list)
+                features_path = self.save_dir / "sentropy_features.tsv"
+                features_df.to_csv(features_path, sep='\t', index=False)
+                self.logger.info(f"  Saved S-Entropy features: {features_path} ({len(features_df)} spectra)")
+
+        # Save categorical states
+        if 'categorical_states' in data:
+            states_list = []
+            for scan_id, state in data['categorical_states'].items():
+                if isinstance(state, dict):
+                    row = {'scan_id': scan_id}
+                    row.update(state)
+                    states_list.append(row)
+                elif hasattr(state, '__dict__'):
+                    row = {'scan_id': scan_id}
+                    row.update(state.__dict__)
+                    states_list.append(row)
+
+            if states_list:
+                states_df = pd.DataFrame(states_list)
+                states_path = self.save_dir / "categorical_states.tsv"
+                states_df.to_csv(states_path, sep='\t', index=False)
+                self.logger.info(f"  Saved categorical states: {states_path} ({len(states_df)} states)")
+
+    def _save_bmd_data(self, data):
+        """Save BMD grounding and coherence data"""
+        if 'divergences' in data:
+            div_list = [{'scan_id': k, 'divergence': v} for k, v in data['divergences'].items()]
+            div_df = pd.DataFrame(div_list)
+            div_path = self.save_dir / "stream_divergences.tsv"
+            div_df.to_csv(div_path, sep='\t', index=False)
+            self.logger.info(f"  Saved divergences: {div_path}")
+
+        if 'coherence_scores' in data:
+            coh_list = [{'scan_id': k, 'coherence': v} for k, v in data['coherence_scores'].items()]
+            coh_df = pd.DataFrame(coh_list)
+            coh_path = self.save_dir / "coherence_scores.tsv"
+            coh_df.to_csv(coh_path, sep='\t', index=False)
+            self.logger.info(f"  Saved coherence: {coh_path}")
+
+    def _save_cv_data(self, data):
+        """Save computer vision data: images, features, ion droplets"""
+        try:
+            import cv2
+        except ImportError:
+            self.logger.warning("  OpenCV not available, skipping CV image saving")
+            cv2 = None
+
+        # Save CV images as PNG
+        if 'cv_images' in data and data['cv_images'] and cv2 is not None:
+            cv_images_dir = self.save_dir / "cv_images"
+            cv_images_dir.mkdir(exist_ok=True)
+
+            count = 0
+            for scan_id, image in data['cv_images'].items():
+                image_path = cv_images_dir / f"spectrum_{scan_id}_droplet.png"
+                # Ensure uint8
+                if image.dtype != np.uint8:
+                    image = (image * 255).astype(np.uint8) if image.max() <= 1.0 else image.astype(np.uint8)
+                cv2.imwrite(str(image_path), image)
+                count += 1
+
+            self.logger.info(f"  Saved {count} CV droplet images: {cv_images_dir}/")
+
+        # Save CV features summary
+        if 'cv_features' in data and data['cv_features']:
+            cv_features_path = self.save_dir / "cv_features.tsv"
+
+            cv_records = []
+            for scan_id, features in data['cv_features'].items():
+                record = {
+                    'scan_id': scan_id,
+                    'n_keypoints': features.get('n_keypoints', 0),
+                    'n_droplets': features.get('n_droplets', 0)
+                }
+                cv_records.append(record)
+
+            cv_df = pd.DataFrame(cv_records)
+            cv_df.to_csv(cv_features_path, sep='\t', index=False)
+            self.logger.info(f"  Saved CV features: {cv_features_path} ({len(cv_df)} spectra)")
+
+        # Save ion droplet details
+        if 'ion_droplets' in data and data['ion_droplets']:
+            droplets_path = self.save_dir / "ion_droplets.tsv"
+
+            droplet_records = []
+            for scan_id, droplets in data['ion_droplets'].items():
+                if droplets and len(droplets) > 0:
+                    for i, droplet in enumerate(droplets):
+                        if hasattr(droplet, 'mz'):  # Check it's an IonDroplet object
+                            record = {
+                                'scan_id': scan_id,
+                                'droplet_idx': i,
+                                'mz': droplet.mz,
+                                'intensity': droplet.intensity,
+                                's_knowledge': droplet.s_entropy_coords.s_knowledge,
+                                's_time': droplet.s_entropy_coords.s_time,
+                                's_entropy': droplet.s_entropy_coords.s_entropy,
+                                'velocity': droplet.droplet_params.velocity,
+                                'radius': droplet.droplet_params.radius,
+                                'phase_coherence': droplet.droplet_params.phase_coherence,
+                                'categorical_state': droplet.categorical_state
+                            }
+                            droplet_records.append(record)
+
+            if droplet_records:
+                droplet_df = pd.DataFrame(droplet_records)
+                droplet_df.to_csv(droplets_path, sep='\t', index=False)
+                self.logger.info(f"  Saved ion droplets: {droplets_path} ({len(droplet_records)} droplets)")
+
+    def _save_annotation_data(self, data):
+        """Save metabolite/compound annotations with CV matching details"""
+        # Save main annotations
+        if 'annotations' in data and data['annotations']:
+            annot_list = []
+            for scan_id, annot in data['annotations'].items():
+                if isinstance(annot, dict):
+                    row = {'scan_id': scan_id}
+                    row.update(annot)
+                    annot_list.append(row)
+
+            if annot_list:
+                annot_df = pd.DataFrame(annot_list)
+                annot_path = self.save_dir / "annotations.tsv"
+                annot_df.to_csv(annot_path, sep='\t', index=False)
+                self.logger.info(f"  Saved annotations: {annot_path} ({len(annot_df)} annotations)")
+
+        # Save detailed CV matches
+        if 'cv_matches' in data and data['cv_matches']:
+            cv_matches_path = self.save_dir / "cv_matches_detailed.tsv"
+
+            match_records = []
+            for scan_id, match_data in data['cv_matches'].items():
+                if isinstance(match_data, dict) and 'top_matches' in match_data:
+                    for i, match in enumerate(match_data['top_matches']):
+                        record = {
+                            'scan_id': scan_id,
+                            'match_rank': i + 1,
+                            'database_id': match.get('database_id', ''),
+                            'similarity': match.get('similarity', 0.0),
+                            'structural_similarity': match.get('structural_similarity', 0.0),
+                            'phase_lock_similarity': match.get('phase_lock_similarity', 0.0),
+                            'categorical_match': match.get('categorical_match', 0.0),
+                            's_entropy_distance': match.get('s_entropy_distance', 0.0),
+                            'n_matched_features': match.get('n_matched_features', 0)
+                        }
+                        match_records.append(record)
+
+            if match_records:
+                match_df = pd.DataFrame(match_records)
+                match_df.to_csv(cv_matches_path, sep='\t', index=False)
+                self.logger.info(f"  Saved CV match details: {cv_matches_path} ({len(match_records)} matches)")
 
     def load_stage_result(self, stage_result_path: Optional[Path] = None) -> Optional[StageResult]:
         """
