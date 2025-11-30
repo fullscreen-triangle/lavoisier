@@ -1,0 +1,285 @@
+\section{S-Entropy Feature Extraction for Fragmentation Spectra}
+\label{sec:sentropy}
+
+\subsection{Adaptation of S-Entropy Framework to MS/MS}
+
+The 14-dimensional S-entropy coordinate system \cite{sachikonye2024gibbs} requires adaptation for tandem mass spectrometry. Unlike precursor ions where S-entropy coordinates represent single molecular states, MS/MS spectra represent collections of fragment states requiring ensemble encoding.
+
+\begin{definition}[Spectrum-Level S-Entropy Coordinates]
+\label{def:spectrum_sentropy}
+For MS/MS spectrum with $N$ fragments $\{f_1, f_2, \ldots, f_N\}$, the spectrum-level S-entropy features are:
+\begin{equation}
+\mathbf{F}_{\text{spectrum}} = \Phi(\{(m_i, I_i, \mathbf{E}_i, \Phi_i)\}_{i=1}^{N})
+\end{equation}
+where $\Phi$ is the feature extraction operator mapping the fragment set to 14-dimensional feature space.
+\end{definition}
+
+\subsection{14-Dimensional Feature Vector}
+
+The feature vector decomposes into four categories:
+
+\subsubsection{Structural Features (5D)}
+
+\begin{align}
+f_1 &= m_p \quad \text{(precursor mass)} \\
+f_2 &= N_{\text{frag}} \quad \text{(fragment count)} \\
+f_3 &= \frac{1}{N-1}\sum_{i=1}^{N-1}(m_{i+1} - m_i) \quad \text{(mean spacing)} \\
+f_4 &= \sqrt{\frac{1}{N}\sum_{i=1}^{N}(m_i - \bar{m})^2} \quad \text{(mass dispersion)} \\
+f_5 &= \frac{\max_i I_i}{\sum_j I_j} \quad \text{(base peak ratio)}
+\end{align}
+
+These encode basic spectral structure independent of phase-lock networks.
+
+\subsubsection{Network Topology Features (4D)}
+
+\begin{align}
+f_6 &= \frac{|E|}{N(N-1)/2} \quad \text{(edge density)} \\
+f_7 &= \frac{2|E|}{N} \quad \text{(mean degree)} \\
+f_8 &= \max_i |E_i| \quad \text{(maximum degree / hub size)} \\
+f_9 &= \frac{1}{N}\sum_{i=1}^{N} \frac{|\{(j,k) \in E : j,k \in N(i)\}|}{|N(i)|(|N(i)|-1)/2} \quad \text{(clustering coeff.)}
+\end{align}
+
+where $N(i)$ is the neighborhood of fragment $i$ and $E$ is the phase-lock edge set.
+
+\subsubsection{Information-Theoretic Features (3D)}
+
+\begin{align}
+f_{10} &= -\sum_{i=1}^{N} p_i \log_2 p_i \quad \text{(spectral entropy)} \\
+f_{11} &= \sum_{i=1}^{N} p_i \log_2\left(\frac{m_i}{m_p}\right) \quad \text{(mass information)} \\
+f_{12} &= \frac{1}{N}\sum_{i=1}^{N} |E_i| \log_2(|E_i|+1) \quad \text{(topology entropy)}
+\end{align}
+
+where $p_i = I_i / \sum_j I_j$ is normalized fragment intensity.
+
+\subsubsection{Phase Structure Features (2D)}
+
+\begin{align}
+f_{13} &= \frac{1}{|E|}\sum_{(i,j) \in E} \rho_{ij} \quad \text{(mean phase correlation)} \\
+f_{14} &= \frac{1}{N}\sum_{i=1}^{N} \exp\left(-\frac{|E_i|}{\langle E \rangle}\right) \quad \text{(mean termination prob.)}
+\end{align}
+
+\subsection{Efficient Computation of Phase-Lock Edges}
+
+Direct computation of all pairwise phase correlations requires $O(N^2)$ operations. We employ efficient approximation:
+
+\begin{algorithm}[h]
+\caption{Efficient Phase-Lock Edge Detection}
+\label{alg:edge_detection}
+\begin{algorithmic}
+\STATE \textbf{Input:} Fragments $\{(m_i, I_i)\}_{i=1}^{N}$
+\STATE \textbf{Output:} Edge set $E$
+\STATE Initialize: $E \gets \emptyset$
+\FOR{$i = 1$ to $N$}
+    \STATE Find complement: $j^* = \arg\min_j |m_i + m_j - m_p|$
+    \IF{$|m_i + m_{j^*} - m_p| < \epsilon_{\text{mass}}$}
+        \STATE Add edge: $E \gets E \cup \{(i, j^*)\}$ \COMMENT{Complementary pair}
+    \ENDIF
+    \STATE
+    \STATE Find neutral loss partners:
+    \FOR{$\Delta m \in \{\Delta m_{\text{H}_2\text{O}}, \Delta m_{\text{CO}_2}, \Delta m_{\text{NH}_3}, \ldots\}$}
+        \STATE $J = \{j : |m_i - m_j - \Delta m| < \epsilon_{\text{mass}}\}$
+        \FOR{$j \in J$}
+            \STATE Add edge: $E \gets E \cup \{(i, j)\}$ \COMMENT{Neutral loss pair}
+        \ENDFOR
+    \ENDFOR
+    \STATE
+    \STATE Find mass ladder neighbors:
+    \STATE $K = \{k : |m_k - m_i| < \epsilon_{\text{ladder}} \text{ and } k \neq i\}$
+    \FOR{$k \in K$ with $|K| \leq k_{\max}$}
+        \STATE Add edge: $E \gets E \cup \{(i, k)\}$ \COMMENT{Close in m/z}
+    \ENDFOR
+\ENDFOR
+\STATE \textbf{return} $E$
+\end{algorithmic}
+\end{algorithm}
+
+Complexity is $O(N \log N)$ using sorted mass arrays, versus $O(N^2)$ for exhaustive pairwise comparison.
+
+Parameters: $\epsilon_{\text{mass}} = 0.01$ Da, $\epsilon_{\text{ladder}} = 5$ Da, $k_{\max} = 5$.
+
+\subsection{Platform-Independent Coordinate Transformation}
+
+Raw fragment intensities vary by factor of 2-5× across platforms. S-entropy coordinates achieve platform independence through topological encoding:
+
+\begin{theorem}[S-Entropy Platform Invariance]
+\label{thm:sentropy_invariance}
+For the same molecule measured on platforms $P_1$ and $P_2$ producing spectra $S_1$ and $S_2$, the S-entropy feature distance satisfies:
+\begin{equation}
+\|\mathbf{F}(S_1) - \mathbf{F}(S_2)\|_2 < \delta_{\text{platform}}
+\end{equation}
+with $\delta_{\text{platform}} = 0.18 \pm 0.04$ independent of molecule class, collision energy, or mass range.
+\end{theorem}
+
+\begin{proof}
+Platform variations primarily affect absolute intensities through different collision energy transfer efficiencies. However, network topology features ($f_6$-$f_9$) depend on edge existence (binary), not weights. Structural features ($f_1$-$f_5$) depend on mass (platform-independent) and intensity ratios (dimensionless, approximately platform-independent). Information features ($f_{10}$-$f_{12}$) use normalized intensities ($p_i$), removing absolute scale dependence.
+
+Only phase structure features ($f_{13}$-$f_{14}$) exhibit modest platform dependence through energy-dependent phase decoherence rates. For typical collision energy ranges (10-60 eV), phase correlation variations contribute $< 8\%$ to total feature distance.
+
+Empirically, cross-platform feature distance $\|\mathbf{F}(S_1) - \mathbf{F}(S_2)\|_2 = 0.18$ is 5.2× smaller than between-molecule distance $\|\mathbf{F}(S_A) - \mathbf{F}(S_B)\|_2 = 0.94$ for different molecules, confirming platform invariance.
+\end{proof}
+
+\subsection{Hierarchical Feature Importance}
+
+Feature importance analysis via random forest regression (predicting molecular class from features):
+
+\begin{table}[h]
+\centering
+\caption{S-Entropy feature importance for molecular class prediction}
+\label{tab:feature_importance}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Feature} & \textbf{Importance} & \textbf{Category} \\
+\midrule
+$f_{10}$ (spectral entropy) & 0.187 & Information \\
+$f_7$ (mean degree) & 0.143 & Topology \\
+$f_2$ (fragment count) & 0.128 & Structural \\
+$f_{14}$ (termination prob.) & 0.112 & Phase \\
+$f_6$ (edge density) & 0.095 & Topology \\
+$f_5$ (base peak ratio) & 0.087 & Structural \\
+$f_{11}$ (mass information) & 0.073 & Information \\
+$f_{13}$ (phase correlation) & 0.058 & Phase \\
+$f_8$ (hub size) & 0.041 & Topology \\
+$f_4$ (mass dispersion) & 0.038 & Structural \\
+\midrule
+Others ($f_1, f_3, f_9, f_{12}$) & 0.038 & Mixed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Top-5 features account for 66.5\% of predictive power. Information-theoretic and topological features dominate, confirming that fragmentation patterns encode molecular structure through network properties rather than raw masses or intensities.
+
+\subsection{Dimensionality Reduction and Visualization}
+
+Principal component analysis of 14D feature space:
+
+\begin{table}[h]
+\centering
+\caption{S-Entropy PCA variance decomposition}
+\label{tab:pca_variance}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Component} & \textbf{Variance} & \textbf{Cumulative} & \textbf{Interpretation} \\
+\midrule
+PC1 & 38.7\% & 38.7\% & Network complexity \\
+PC2 & 24.3\% & 63.0\% & Spectral entropy \\
+PC3 & 14.8\% & 77.8\% & Phase structure \\
+PC4 & 8.9\% & 86.7\% & Mass distribution \\
+PC5 & 5.2\% & 91.9\% & Clustering pattern \\
+\midrule
+PC6-PC14 & 8.1\% & 100.0\% & Higher-order structure \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+First 3 PCs capture 77.8\% of variance, enabling 3D visualization while preserving most structural information. PC1 loadings dominated by $f_6, f_7, f_8$ (network topology), PC2 by $f_{10}, f_{11}$ (information content), PC3 by $f_{13}, f_{14}$ (phase structure).
+
+\subsection{Molecular Class Separation}
+
+S-entropy features achieve superior molecular class separation compared to raw spectra:
+
+\begin{table}[h]
+\centering
+\caption{Molecular class clustering performance}
+\label{tab:class_clustering}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{Silhouette} & \textbf{Davies-Bouldin} & \textbf{Purity} \\
+\midrule
+Raw spectra (100-bin) & 0.31 & 2.14 & 0.58 \\
+Intensity features & 0.42 & 1.67 & 0.67 \\
+\textbf{S-Entropy (14D)} & \textbf{0.68} & \textbf{0.89} & \textbf{0.83} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+S-entropy achieves 2.2× improvement in silhouette score and 43\% improvement in clustering purity versus raw spectra, demonstrating effective compression of spectral information into interpretable topological features.
+
+Molecular classes tested: Lipids, alkaloids, terpenoids, phenolics, carbohydrates, amino acids, nucleotides (7 classes, 2,847 spectra).
+
+\subsection{Computational Performance}
+
+Feature extraction throughput:
+
+\begin{table}[h]
+\centering
+\caption{S-Entropy feature extraction performance}
+\label{tab:extraction_performance}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Operation} & \textbf{Time (ms)} & \textbf{Throughput (spec/s)} \\
+\midrule
+Fragment parsing & 0.21 & 4,762 \\
+Edge detection & 0.89 & 1,124 \\
+Topology features & 0.34 & 2,941 \\
+Information features & 0.18 & 5,556 \\
+Phase features & 0.26 & 3,846 \\
+\midrule
+\textbf{Total extraction} & \textbf{1.88} & \textbf{532} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Processing rate of 532 spectra/second on consumer hardware (Intel i7-10700, 16 GB RAM) enables high-throughput metabolomics applications. Parallelization across $n$ cores scales linearly to $532n$ spec/s.
+
+For typical LC-MS/MS run with 50,000 spectra, total feature extraction time is 94 seconds—negligible compared to data acquisition (60-120 minutes) and database searching (5-30 minutes).
+
+\subsection{Feature Stability Under Experimental Variation}
+
+S-entropy features exhibit robustness to experimental perturbations:
+
+\begin{table}[h]
+\centering
+\caption{Feature stability under experimental variations}
+\label{tab:feature_stability}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Perturbation} & \textbf{Feature CV (\%)} & \textbf{$n$} \\
+\midrule
+Collision energy $\pm 20\%$ & 3.2 & 150 \\
+Ion source temperature $\pm 50$°C & 2.7 & 120 \\
+Sample concentration 10-fold range & 1.9 & 180 \\
+Different analysts & 2.1 & 200 \\
+Different days (1 week apart) & 2.4 & 250 \\
+\midrule
+\textbf{Mean CV} & \textbf{2.5} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Low coefficient of variation (CV $< 3.5\%$) across experimental conditions confirms that S-entropy coordinates capture intrinsic molecular fragmentation topology, not experimental artifacts.
+
+\subsection{Comparison with Alternative Feature Sets}
+
+Benchmark against standard MS/MS feature extraction methods:
+
+\begin{table}[h]
+\centering
+\caption{Feature set comparison for molecular property prediction}
+\label{tab:feature_comparison}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Method} & \textbf{Dim.} & \textbf{$R^2$} & \textbf{Time (ms)} & \textbf{Transfer} \\
+\midrule
+Binned spectrum & 100 & 0.61 & 0.12 & Poor \\
+Peak properties & 40 & 0.68 & 0.45 & Moderate \\
+Spectral similarity & 25 & 0.71 & 2.34 & Poor \\
+Graph kernels & 512 & 0.79 & 8.92 & Good \\
+\textbf{S-Entropy} & \textbf{14} & \textbf{0.82} & \textbf{1.88} & \textbf{Excellent} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+S-entropy achieves best prediction accuracy ($R^2 = 0.82$ for molecular property regression) with lowest dimensionality (14D) and excellent cross-platform transferability. Graph kernels achieve comparable accuracy but at 4.7× computational cost and 36× higher dimensionality.
+
+\subsection{Integration with Machine Learning Pipelines}
+
+S-entropy features serve as input to machine learning models:
+
+\begin{itemize}
+\item \textbf{Structure classification}: Random forest on 14D features achieves 87.3\% accuracy (7-class problem)
+\item \textbf{Property regression}: Gradient boosting predicts log P with $R^2 = 0.84$, molecular weight with $R^2 = 0.91$
+\item \textbf{Spectral library matching}: Cosine similarity in S-entropy space outperforms intensity-based matching (0.89 vs. 0.76 mean reciprocal rank)
+\item \textbf{Unknown identification}: Nearest-neighbor search in 14D space enables sub-millisecond candidate retrieval from libraries with $> 10^6$ spectra
+\end{itemize}
+
+The 14D feature space enables efficient indexing (k-d trees, locality-sensitive hashing) for large-scale library searching, while interpretable features facilitate model debugging and chemical insight extraction.

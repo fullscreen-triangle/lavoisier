@@ -21,7 +21,7 @@ This ensures:
 The transformation pipeline:
 Spectrum → S-Entropy (3D) → 14D Features → Vector Embedding
 
-Author: Kundai Chinyamakobvu
+Author: Kundai Sachikonye
 """
 
 import numpy as np

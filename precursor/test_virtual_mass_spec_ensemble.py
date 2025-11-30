@@ -114,9 +114,9 @@ def test_single_spectrum():
     print("  • ~10^6 equivalent paths → same categorical state")
     print("  • Detector reads categorical invariants, not path details")
 
-    # Save results
+    # Save results with detailed steps
     output_dir = precursor_root / "results" / "virtual_ensemble_tests"
-    ensemble.save_results(result, output_dir)
+    ensemble.save_results(result, output_dir, save_detailed_steps=True)
 
     return result
 
@@ -205,9 +205,9 @@ def test_real_data():
     print(f"Sample consumed: 0 molecules (categorical access)")
     print(f"Hardware cost: $0 marginal")
 
-    # Save results
+    # Save results with detailed steps
     output_dir = precursor_root / "results" / "virtual_ensemble_tests"
-    ensemble.save_results(result, output_dir)
+    ensemble.save_results(result, output_dir, save_detailed_steps=True)
 
     return result
 

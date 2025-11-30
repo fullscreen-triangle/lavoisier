@@ -18,7 +18,7 @@ Based on:
 - docs/oscillatory/categorical-completion.tex
 - precursor/src/utils/molecule_to-drip.py
 
-Author: Kundai Chinyamakobvu
+Author: Kundai Sachikonye
 """
 
 import numpy as np

@@ -18,15 +18,15 @@ from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
-from physics.virtual_detectors import (
+from ..physics.virtual_detectors import (
     VirtualMassSpectrometer,
     VirtualIonDetector,
     VirtualPhotodetector,
     VirtualDetectorFactory
 )
 
-from core import MolecularOscillator, HarmonicNetworkGraph
-from physics import MolecularOscillatorGenerator
+from ..core import MolecularOscillator, HarmonicNetworkGraph
+from ..physics import MolecularOscillatorGenerator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

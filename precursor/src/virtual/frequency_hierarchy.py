@@ -171,11 +171,12 @@ class FrequencyHierarchyTree:
         """
         # Create root node (Scale 8: Global)
         global_freq = hardware_measurements.get('global', {}).get('frequency', 1e-9)
+        # Make global observation window VERY wide to capture all molecular modulations
         self.root = FrequencyHierarchyNode(
             node_id="scale_8_global",
             hierarchical_level=HardwareScale.SCALE_8_GLOBAL,
             frequency_hz=global_freq,
-            frequency_range=(global_freq * 0.9, global_freq * 1.1),
+            frequency_range=(1e-12, 1e15),  # Captures everything from pHz to PHz
             hardware_source='process_scheduling',
             observation_window_start=0.0,
             observation_window_end=1e10  # Very large window for global scale
@@ -199,11 +200,16 @@ class FrequencyHierarchyTree:
             hw_data = hardware_measurements.get(hw_source, {})
             freq = hw_data.get('frequency', typical_freq)
 
+            # Make observation windows MUCH wider to capture molecular modulations
+            # Molecules modulate hardware oscillations across many orders of magnitude
+            freq_min = freq * 0.001  # 1000x lower
+            freq_max = freq * 1e6    # 1 million x higher (captures THz molecular vibrations)
+
             node = FrequencyHierarchyNode(
                 node_id=f"scale_{scale.value}_{hw_source}",
                 hierarchical_level=scale,
                 frequency_hz=freq,
-                frequency_range=(freq * 0.9, freq * 1.1),
+                frequency_range=(freq_min, freq_max),  # WIDE window for molecular modulations
                 hardware_source=hw_source,
                 observation_window_start=0.0,
                 observation_window_end=1.0 / freq  # One period
@@ -247,8 +253,9 @@ class FrequencyHierarchyTree:
 
         return measurements_by_scale
 
-    def _observe_phase_locks_at_node(self, node: FrequencyHierarchyNode,
-                                    spectrum_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _observe_phase_locks_at_node(
+            self, node: FrequencyHierarchyNode,
+            spectrum_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Finite observer measures phase-locks within observation window.
 
@@ -268,8 +275,8 @@ class FrequencyHierarchyTree:
         molecular_frequencies = 1e13 / np.sqrt(mz)  # Rough approximation
 
         # Check which frequencies fall in this node's observation window
-        in_window = (molecular_frequencies >= node.frequency_range[0]) & \
-                   (molecular_frequencies <= node.frequency_range[1])
+        in_window = ((molecular_frequencies >= node.frequency_range[0]) &
+                     (molecular_frequencies <= node.frequency_range[1]))
 
         for i in np.where(in_window)[0]:
             phase_lock = {

@@ -59,7 +59,7 @@ except ImportError:
 
 # BMD components
 try:
-    from bmd import BiologicalMaxwellDemonReference, HardwareBMDStream
+    from ..bmd import BiologicalMaxwellDemonReference, HardwareBMDStream
     BMD_AVAILABLE = True
 except ImportError:
     BMD_AVAILABLE = False
@@ -303,6 +303,7 @@ class VirtualMassSpecEnsemble:
         # STEP 1: Harvest hardware oscillations
         print(f"\n[Step 1] Harvesting hardware oscillations (8 scales)...")
         hardware_oscillations = self._harvest_hardware_oscillations()
+        self._last_hardware_oscillations = hardware_oscillations  # Store for saving
         print(f"  ✓ Harvested from {len(hardware_oscillations)} hardware sources")
 
         # STEP 2: Build frequency hierarchy
@@ -326,6 +327,7 @@ class VirtualMassSpecEnsemble:
             'rt': rt or 0.0
         }
         observations_by_scale = self.transcendent_observer.coordinate_observations(molecular_data)
+        self._last_observations_by_scale = observations_by_scale  # Store for saving
 
         phase_locks_by_scale = {
             scale.name: len(sigs) for scale, sigs in observations_by_scale.items()
@@ -342,6 +344,7 @@ class VirtualMassSpecEnsemble:
             observations_by_scale,
             top_fraction=0.1
         )
+        self._last_convergence_sites = convergence_sites  # Store for saving
         print(f"  ✓ Found {len(convergence_sites)} convergence sites (top 10%)")
 
         # STEP 6-10: Materialize MMDs, measure, cross-validate, dissolve
@@ -506,18 +509,154 @@ class VirtualMassSpecEnsemble:
             'n_nodes_agree': n_agree
         }
 
-    def save_results(self, result: MassSpecEnsembleResult, output_dir: Path):
-        """Save ensemble results to JSON"""
+    def save_results(self, result: MassSpecEnsembleResult, output_dir: Path, save_detailed_steps: bool = True):
+        """
+        Save ensemble results with comprehensive step-by-step data.
+
+        Args:
+            result: Ensemble result to save
+            output_dir: Directory to save results
+            save_detailed_steps: If True, save detailed data for each step
+        """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        output_file = output_dir / f"{result.ensemble_id}.json"
-
-        with open(output_file, 'w') as f:
+        # 1. Save main summary (always)
+        summary_file = output_dir / f"{result.ensemble_id}_summary.json"
+        with open(summary_file, 'w') as f:
             json.dump(result.to_dict(), f, indent=2)
+        print(f"✓ Summary saved to: {summary_file}")
 
-        print(f"✓ Results saved to: {output_file}")
-        return output_file
+        if save_detailed_steps:
+            # 2. Save detailed step-by-step data
+            steps_dir = output_dir / result.ensemble_id / "steps"
+            steps_dir.mkdir(parents=True, exist_ok=True)
+
+            # Step 1: Hardware oscillations
+            if hasattr(self, '_last_hardware_oscillations'):
+                step1_file = steps_dir / "step1_hardware_oscillations.json"
+                with open(step1_file, 'w') as f:
+                    json.dump(self._last_hardware_oscillations, f, indent=2)
+                print(f"  ✓ Step 1 (Hardware Oscillations) saved")
+
+            # Step 2: Frequency hierarchy
+            if hasattr(self, 'frequency_hierarchy'):
+                step2_file = steps_dir / "step2_frequency_hierarchy.json"
+                hierarchy_data = {
+                    'statistics': self.frequency_hierarchy.get_statistics(),
+                    'nodes_by_scale': {
+                        scale.name: [
+                            {
+                                'node_id': node.node_id,
+                                'frequency_range': node.frequency_range,
+                                'center_frequency': node.center_frequency,
+                                'observation_window': node.observation_window,
+                                'convergence_score': node.convergence_score,
+                                'is_convergence_node': node.is_convergence_node,
+                                'n_phase_locks': len(node.phase_lock_signatures)
+                            }
+                            for node in nodes
+                        ]
+                        for scale, nodes in self.frequency_hierarchy.nodes_by_level.items()
+                    }
+                }
+                with open(step2_file, 'w') as f:
+                    json.dump(hierarchy_data, f, indent=2)
+                print(f"  ✓ Step 2 (Frequency Hierarchy) saved")
+
+            # Step 3: Finite observers
+            if hasattr(self, 'transcendent_observer'):
+                step3_file = steps_dir / "step3_finite_observers.json"
+                observer_data = {
+                    'transcendent_observer_id': self.transcendent_observer.observer_id,
+                    'n_finite_observers': len(self.transcendent_observer.finite_observers),
+                    'finite_observers': [
+                        {
+                            'observer_id': obs.observer_id,
+                            'scale': obs.hierarchical_level.name if obs.hierarchical_level else 'Unknown',
+                            'observation_window': obs.observation_window,
+                            'n_observations': len(obs.observations)
+                        }
+                        for obs in self.transcendent_observer.finite_observers
+                    ]
+                }
+                with open(step3_file, 'w') as f:
+                    json.dump(observer_data, f, indent=2)
+                print(f"  ✓ Step 3 (Finite Observers) saved")
+
+            # Step 4: Phase-lock detections (detailed!)
+            if hasattr(self, '_last_observations_by_scale'):
+                step4_file = steps_dir / "step4_phase_locks.json"
+                phase_lock_data = {
+                    scale.name: [
+                        {
+                            'signature_id': sig.signature_id,
+                            'mz': sig.mz_value,
+                            'intensity': sig.intensity,
+                            'frequency_hz': sig.frequency_hz,
+                            'phase_rad': sig.phase_rad,
+                            'phase_coherence': sig.phase_coherence,
+                            'scale': sig.scale.name,
+                            'timestamp': sig.detection_timestamp
+                        }
+                        for sig in signatures
+                    ]
+                    for scale, signatures in self._last_observations_by_scale.items()
+                }
+                with open(step4_file, 'w') as f:
+                    json.dump(phase_lock_data, f, indent=2)
+                print(f"  ✓ Step 4 (Phase-Lock Detections) saved")
+
+            # Step 5: Convergence nodes
+            if hasattr(self, '_last_convergence_sites'):
+                step5_file = steps_dir / "step5_convergence_nodes.json"
+                convergence_data = [
+                    {
+                        'rank': i + 1,
+                        'scale': scale.name,
+                        'n_phase_locks': len(signatures),
+                        'signatures': [sig.signature_id for sig in signatures[:10]]  # First 10
+                    }
+                    for i, (scale, signatures) in enumerate(self._last_convergence_sites)
+                ]
+                with open(step5_file, 'w') as f:
+                    json.dump(convergence_data, f, indent=2)
+                print(f"  ✓ Step 5 (Convergence Nodes) saved")
+
+            # Step 6-10: MMD materializations and measurements (detailed!)
+            if result.virtual_instruments:
+                step6_file = steps_dir / "step6-10_mmd_materializations.json"
+                mmd_data = [
+                    {
+                        'instrument_type': vi.instrument_type,
+                        'measurement': vi.measurement,
+                        'categorical_state': {
+                            'S_k': vi.categorical_state.S_k,
+                            'S_t': vi.categorical_state.S_t,
+                            'S_e': vi.categorical_state.S_e,
+                            'frequency_hz': vi.categorical_state.frequency_hz,
+                            'harmonics': vi.categorical_state.harmonics,
+                            'equivalence_class_size': vi.categorical_state.equivalence_class_size,
+                            'information_bits': vi.categorical_state.information_content_bits()
+                        },
+                        'demon_statistics': vi.demon_statistics,
+                        'materialization_time': vi.materialization_time
+                    }
+                    for vi in result.virtual_instruments
+                ]
+                with open(step6_file, 'w') as f:
+                    json.dump(mmd_data, f, indent=2)
+                print(f"  ✓ Steps 6-10 (MMD Materializations) saved")
+
+            # Cross-validation (detailed!)
+            validation_file = steps_dir / "cross_validation_detailed.json"
+            with open(validation_file, 'w') as f:
+                json.dump(result.cross_validation, f, indent=2)
+            print(f"  ✓ Cross-Validation (detailed) saved")
+
+            print(f"\n✓ All detailed steps saved to: {steps_dir}")
+
+        return summary_file
 
 
 # Module exports

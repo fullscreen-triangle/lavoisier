@@ -347,8 +347,14 @@ class SEntropyTransformer:
         for i in range(n):
             # Find k nearest neighbors in m/z space
             distances = np.abs(mz - mz[i])
-            k_actual = min(self.k_neighbors, n)
-            neighbor_indices = np.argpartition(distances, k_actual)[:k_actual]
+            k_actual = min(self.k_neighbors, n - 1)  # -1 because argpartition requires kth < len
+
+            # Handle edge cases
+            if k_actual < 1:
+                # Single peak spectrum - use itself
+                neighbor_indices = np.array([i])
+            else:
+                neighbor_indices = np.argpartition(distances, k_actual)[:k_actual]
 
             # Calculate local entropy
             local_intensities = intensity_norm[neighbor_indices]
