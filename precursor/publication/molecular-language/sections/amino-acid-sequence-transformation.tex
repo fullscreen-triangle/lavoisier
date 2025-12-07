@@ -1,0 +1,203 @@
+\section{S-Entropy Coordinate Transformation for Amino Acids}
+\label{sec:amino-acid-transformation}
+
+\subsection{Mathematical Foundation}
+
+We define the amino acid S-Entropy transformation $\phi_{AA}: \mathcal{A} \rightarrow \mathcal{S}^3$, where $\mathcal{A}$ represents the set of 20 standard amino acids and $\mathcal{S}^3 \subset \mathbb{R}^3$ represents the three-dimensional S-Entropy coordinate space.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/molecular_language_atlas.png}
+\caption{\textbf{Comprehensive atlas of the categorical amino acid molecular language framework.}
+(\textbf{a}) Two-dimensional t-SNE projection of amino acids in S-Entropy space, with
+charge state encoded by marker shape (upward triangles = positive charge, circles =
+neutral, downward triangles = negative charge). Marker size represents molecular mass,
+and color indicates hydrophobicity (viridis colormap: yellow = hydrophobic, blue =
+hydrophilic). Spatial clustering reveals natural organization: charged residues (R, K,
+D, E) cluster at left, hydrophobic residues (F, L, V, I) at right, demonstrating that
+S-Entropy coordinates capture physicochemical similarity. Legend shows charge categories.
+(\textbf{b}) Periodic table organization of 20 standard amino acids arranged by
+hydrophobicity (x-axis, blue to red gradient) and other physicochemical properties.
+Each cell displays single-letter code and molecular mass. Color intensity reflects
+hydrophobicity scale from -4 (hydrophilic, blue) to +4 (hydrophobic, red). This
+organization mirrors the spatial clustering in panel (a), validating the S-Entropy
+transformation.
+(\textbf{c}) Fragment position versus peptide relative position for three example
+sequences (PEPTIDE, SEQUENCE, PROTEIN). Triangles represent fragment observations,
+colored by ion type (blue = b-ions, red = y-ions). Y-axis shows peptide identity,
+x-axis shows normalized position (0 = N-terminus, 1 = C-terminus). Diagonal pattern
+indicates sequential fragment coverage, with gaps representing missing fragments that
+require categorical completion (Section 5.3).
+(\textbf{d}) Peptide trajectories through S-Entropy space. Line plot showing S-Time
+(y-axis) versus S-Knowledge (x-axis) for three peptides (PROTEIN in blue, SAMPLE in
+green, PEPTIDE in red). Each point represents one amino acid position, connected by
+lines showing sequential progression. Distinct trajectory shapes encode sequence
+identity, with labeled points (e.g., "PROTEIN", "SAMPLE") marking specific positions.
+Smooth paths validate that sequences form continuous trajectories (Equation 7).
+(\textbf{e}) Sequence entropy versus sequence complexity scatter plot. Three peptides
+shown as labeled points with rectangular borders: PEPTIDE (red, high entropy 2.24,
+high complexity 0.499), SAMPLE (orange, moderate values), PROTEIN (blue, highest
+entropy 2.8). Color gradient from yellow (high density) to red (low density) indicates
+local density of sequences in entropy-complexity space. Demonstrates that different
+sequences occupy distinct regions, enabling discrimination.
+(\textbf{f}) Amino acid similarity matrix (heatmap) showing pairwise Euclidean
+distances in S-Entropy space. Rows and columns represent amino acids (single-letter
+codes). Color scale from black (distance = 0, identical) through purple, pink, yellow
+to white (distance = 1.0, maximally different). Diagonal is black (self-similarity).
+Block structure reveals equivalence classes: hydrophobic cluster (F, L, I, V, M),
+charged cluster (K, R, D, E), polar cluster (S, T, N, Q). This matrix defines
+equivalence classes (Equation 17) used for categorical completion.
+(\textbf{g}) Fragment type distribution shown as radial sector plot. Large blue sector
+labeled "b" represents b-ion dominance (>90\% of observed fragments). Small white
+wedge indicates other ion types. This distribution validates focusing reconstruction
+on b-ion series (Section 2.2), as they provide most sequence information.
+(\textbf{h}) Categorical completion example showing three amino acids (orange, blue,
+green circles) connected by gray lines in S-Entropy space. Represents gap-filling
+process where missing amino acids are inferred from S-Entropy proximity to observed
+fragments.}
+\label{fig:molecular_atlas}
+\end{figure*}
+
+\begin{definition}[S-Entropy Coordinate Space]
+The S-Entropy coordinate space is defined as:
+\begin{equation}
+\mathcal{S}^3 = \{(S_k, S_t, S_e) \in \mathbb{R}^3 : S_k, S_t, S_e \in [0, 1]\}
+\end{equation}
+where $S_k$ denotes the knowledge dimension, $S_t$ denotes the time dimension, and $S_e$ denotes the entropy dimension.
+\end{definition}
+
+\subsection{Physicochemical Property Mapping}
+
+The transformation $\phi_{AA}$ maps amino acid physicochemical properties to S-Entropy coordinates through the following assignments:
+
+\begin{definition}[Amino Acid S-Entropy Transformation]
+For amino acid $a \in \mathcal{A}$ with hydrophobicity $H(a)$, van der Waals volume $V(a)$, charge $Q(a)$, and polarity $P(a)$, the S-Entropy coordinates are:
+\begin{align}
+S_k(a) &= \frac{H(a) - H_{\min}}{H_{\max} - H_{\min}} \\
+S_t(a) &= \frac{V(a)}{V_{\max}} \\
+S_e(a) &= \frac{|Q(a)| + \mathbf{1}_{P(a)}}{2}
+\end{align}
+where $H_{\min} = -4.5$, $H_{\max} = 4.5$ correspond to the Kyte-Doolittle scale bounds, $V_{\max} = 250$ \AA$^3$, and $\mathbf{1}_{P(a)}$ is the indicator function for polar residues.
+\end{definition}
+
+The knowledge dimension $S_k$ captures information content through hydrophobicity, which correlates with membrane interaction propensity and protein folding energetics. The time dimension $S_t$ encodes molecular size through van der Waals volume. The entropy dimension $S_e$ quantifies electrostatic complexity through the combined effect of formal charge and hydrogen-bonding capacity.
+
+\subsection{Standard Amino Acid Coordinates}
+
+Table~\ref{tab:amino_acid_coords} presents the S-Entropy coordinates for the 20 standard amino acids computed via the transformation $\phi_{AA}$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+Amino Acid & Symbol & Mass (Da) & $S_k$ & $S_t$ & $S_e$ \\
+\midrule
+Alanine & A & 71.037 & 0.700 & 0.268 & 0.000 \\
+Arginine & R & 156.101 & 0.000 & 0.592 & 1.000 \\
+Asparagine & N & 114.043 & 0.111 & 0.384 & 0.500 \\
+Aspartic acid & D & 115.027 & 0.111 & 0.364 & 1.000 \\
+Cysteine & C & 103.009 & 0.778 & 0.344 & 0.500 \\
+Glutamine & Q & 128.059 & 0.111 & 0.456 & 0.500 \\
+Glutamic acid & E & 129.043 & 0.111 & 0.436 & 1.000 \\
+Glycine & G & 57.021 & 0.456 & 0.192 & 0.000 \\
+Histidine & H & 137.059 & 0.144 & 0.472 & 0.500 \\
+Isoleucine & I & 113.084 & 1.000 & 0.496 & 0.000 \\
+Leucine & L & 113.084 & 0.922 & 0.496 & 0.000 \\
+Lysine & K & 128.095 & 0.067 & 0.540 & 1.000 \\
+Methionine & M & 131.040 & 0.711 & 0.496 & 0.000 \\
+Phenylalanine & F & 147.068 & 0.811 & 0.540 & 0.000 \\
+Proline & P & 97.053 & 0.322 & 0.360 & 0.000 \\
+Serine & S & 87.032 & 0.411 & 0.292 & 0.500 \\
+Threonine & T & 101.048 & 0.422 & 0.372 & 0.500 \\
+Tryptophan & W & 186.079 & 0.400 & 0.652 & 0.000 \\
+Tyrosine & Y & 163.063 & 0.356 & 0.564 & 0.500 \\
+Valine & V & 99.068 & 0.967 & 0.420 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{S-Entropy coordinates for standard amino acids.}
+\label{tab:amino_acid_coords}
+\end{table}
+
+\subsection{Post-Translational Modification Shifts}
+
+Post-translational modifications (PTMs) are represented as affine transformations in S-Entropy space.
+
+\begin{definition}[PTM S-Entropy Shift]
+For a post-translational modification $\tau$ applied to amino acid $a$, the modified coordinates are:
+\begin{equation}
+\phi_{AA}(a^\tau) = \phi_{AA}(a) + \Delta\mathbf{S}_\tau
+\end{equation}
+where $\Delta\mathbf{S}_\tau = (\Delta S_k, \Delta S_t, \Delta S_e)$ is the PTM-specific shift vector.
+\end{definition}
+
+The shift components are computed as:
+\begin{align}
+\Delta S_k &= 0.2 \cdot \tanh\left(\frac{\Delta m_\tau}{100}\right) \\
+\Delta S_t &= \frac{\Delta m_\tau}{200} \\
+\Delta S_e &= \text{sgn}(\Delta m_\tau) \cdot 0.1
+\end{align}
+where $\Delta m_\tau$ is the mass shift induced by the modification.
+
+\subsection{Sequence Coordinate Path}
+
+\begin{definition}[Peptide S-Entropy Path]
+For a peptide sequence $\mathbf{s} = (s_1, s_2, \ldots, s_n)$ where $s_i \in \mathcal{A}$, the S-Entropy coordinate path is:
+\begin{equation}
+\mathbf{P}(\mathbf{s}) = (\phi_{AA}(s_1), \phi_{AA}(s_2), \ldots, \phi_{AA}(s_n))
+\end{equation}
+forming a trajectory through $\mathcal{S}^3$.
+\end{definition}
+
+The cumulative path displacement is defined as:
+\begin{equation}
+\mathbf{D}(\mathbf{s}) = \sum_{i=1}^n \phi_{AA}(s_i)
+\end{equation}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/Figure1_SEntropy_Space.png}
+\caption{\textbf{Amino acid representation in tri-dimensional S-Entropy coordinate space.}
+(\textbf{a}) Three-dimensional scatter plot showing all 20 standard amino acids in
+S-Entropy space (S$_k$, S$_t$, S$_e$). Amino acids are colored by chemical category:
+charged (orange), polar (teal), hydrophobic (blue), aromatic (green), and special
+(yellow). Marker shapes encode charge state: upward triangles (positive: K, R, H),
+circles (neutral), downward triangles (negative: D, E). Single-letter codes label
+each amino acid. Spatial separation between categories demonstrates that physicochemical
+properties map to distinct S-Entropy coordinates, enabling categorical identification.
+(\textbf{b}) Two-dimensional projection of amino acids onto S-Knowledge (S$_k$) versus
+S-Time (S$_t$) plane, with points colored by S-Entropy (S$_e$) using viridis colormap
+(yellow = high entropy, purple = low entropy). Hydrophobic residues (F, W, I, L, V, M)
+cluster at high S$_k$ values (right), while charged residues (K, R, D, E) cluster at
+low S$_k$ values (left). Molecular volume correlates with S$_t$ (y-axis).
+(\textbf{c}) S-Entropy distribution across amino acids in (S$_k$, S$_e$) space.
+Charged residues (K, R at top) show high S$_e$ values (electrostatic complexity),
+while special residues (G, P, C at bottom) show low S$_e$ values. Hydrophobic residues
+occupy intermediate S$_e$ range.
+(\textbf{d}) Pearson correlation analysis between physicochemical properties and
+S-Entropy dimensions. Hydrophobicity strongly correlates with S$_k$ (r = 1.000),
+molecular volume with S$_t$ (r = 1.000), and charge with S$_e$ (r = 0.815). High
+correlations validate the coordinate transformation defined in Equations 2-4.
+This comprehensive visualization establishes that the S-Entropy transformation
+(Definition 1) maps amino acids to a well-structured coordinate space where
+physicochemical similarity corresponds to spatial proximity, forming the foundation
+for database-free categorical identification.}
+\label{fig:sentropy_space}
+\end{figure}
+
+\subsection{Sequence S-Entropy}
+
+\begin{definition}[Sequence S-Entropy]
+The sequence S-Entropy measures the information content of the coordinate path:
+\begin{equation}
+H_S(\mathbf{s}) = -\sum_{\mathbf{c} \in \mathcal{B}} p(\mathbf{c}) \log_2 p(\mathbf{c})
+\end{equation}
+where $\mathcal{B}$ is a binning of $\mathcal{S}^3$ into discrete states and $p(\mathbf{c})$ is the empirical probability of coordinate path elements falling in bin $\mathbf{c}$.
+\end{definition}
+
+\begin{definition}[Sequence Complexity]
+The sequence complexity score combines Shannon entropy with a repetition penalty:
+\begin{equation}
+C(\mathbf{s}) = \frac{H(\mathbf{s})}{H_{\max}} \cdot \left(1 - \frac{\ell_{\max}(\mathbf{s})}{n}\right)
+\end{equation}
+where $H(\mathbf{s})$ is the Shannon entropy of amino acid frequencies, $H_{\max} = \log_2(20)$ is the maximum entropy for 20 amino acids, and $\ell_{\max}(\mathbf{s})$ is the length of the longest repeating substring.
+\end{definition}

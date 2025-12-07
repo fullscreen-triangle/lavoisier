@@ -1,0 +1,120 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{physics}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{margin=1in}
+\setlength{\headheight}{14.5pt}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\thepage}
+\lhead{Categorical Amino Acid Molecular Language}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+
+\title{On the Consequences of Categorical Completion on Biological Sequences: Thermodynamic Symbolic Computational Molecular Language for Database-Free Peptide Sequence Reconstruction}
+
+\author{
+Kundai Farai Sachikonye\\
+\texttt{sachikonye@wzw.tum.de}
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a mathematical framework for database-free peptide sequence reconstruction via S-Entropy coordinate transformation. The framework maps amino acids to a three-dimensional S-Entropy coordinate space $(S_k, S_t, S_e)$ derived from physicochemical properties: hydrophobicity maps to the knowledge dimension, molecular volume maps to the time dimension, and electrostatic properties map to the entropy dimension. Peptide fragmentation is formalised as a molecular grammar with production rules generating b/y ion series from precursor sequences. Fragment observations form a directed graph where vertices represent detected ions and edges encode sequential amino acid relationships satisfying mass difference constraints. Sequence reconstruction reduces to finding a minimum-entropy Hamiltonian path through this graph, with categorical completion filling gaps between non-adjacent fragments. A dynamic dictionary architecture supports zero-shot identification of amino acids via KD-tree nearest-neighbor lookup in S-Entropy space and learns novel molecular entities through equilibrium-seeking dynamics. The Molecular Maxwell Demon orchestration system integrates these components through variance minimisation, achieving peptide identification without reference to sequence databases. Cross-modal validation confirms reconstructions by matching theoretical fragment masses against observed spectra.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% Include sections
+\input{sections/amino-acid-sequence-transformation}
+\input{sections/molecular-language-grammar}
+\input{sections/fragment-graph-nodes}
+\input{sections/categorical-empty-dictionary}
+\input{sections/sequence-reconstruction}
+\input{sections/molecular-maxwell-demon}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{S-Entropy Coordinate Space Properties}
+
+The S-Entropy transformation $\phi_{AA}$ maps the discrete amino acid alphabet to a continuous coordinate space with interpretable dimensions. The knowledge dimension $S_k$ captures hydrophobicity, a property central to protein folding and membrane interactions. The time dimension $S_t$ encodes molecular size through van der Waals volume. The entropy dimension $S_e$ quantifies electrostatic complexity.
+
+The coordinate assignments preserve chemical relationships: hydrophobic residues (I, L, V, F, M) cluster in the high-$S_k$ region, charged residues (R, K, D, E) occupy the high-$S_e$ region, and small residues (G, A, S) appear in the low-$S_t$ region. This clustering enables meaningful nearest-neighbour identification.
+
+\subsection{Fragment Graph Structure}
+
+The fragment graph construction encodes both mass relationships and S-Entropy similarity. Edges connect fragments differing by a single amino acid mass within tolerance, with edge weights reflecting coordinate similarity. This dual constraint philtres spurious connexions: mass-matched fragments with dissimilar S-Entropy coordinates receive low edge weights, reducing their influence on pathfinding.
+
+The graph is typically sparse, with edge count $|E| \ll |V|^2$, due to the specificity of amino acid mass matching. Sparsity enables efficient path algorithms.
+
+\subsection{Path Finding Complexity}
+
+Finding the minimum-entropy Hamiltonian path is NP-hard in general. For directed acyclic graphs (DAGs), the longest weighted path can be computed in polynomial time via dynamic programming after topological sorting. When cycles exist, greedy path construction provides an approximation.
+
+The acceptance criterion for partial paths (covering $\geq 70\%$ of fragments) balances reconstruction completeness against computational tractability.
+
+\subsection{Categorical Completion}
+
+Gap filling via categorical completion addresses incomplete fragmentation coverage. The approach enumerates amino acid combinations matching the mass gap and selects candidates minimizing interpolation distance in S-Entropy space. Computational cost grows exponentially with gap size, motivating the maximum gap size parameter $n_{\max}$.
+
+\subsection{Dictionary Architecture}
+
+The KD-tree index provides $O(\log |\mathcal{E}|)$ lookup complexity for nearest-neighbour queries, enabling real-time zero-shot identification. Dynamic learning expands the dictionary with novel entities, with new entries assigned to existing equivalence classes or founding new classes based on coordinate proximity.
+
+\subsection{Cross-Modal Validation}
+
+Cross-modal validation compares theoretical fragment masses derived from reconstructed sequences against observed peaks. The matching score quantifies reconstruction consistency with experimental data. This validation step catches reconstructions that satisfy graph constraints but do not explain observed spectra.
+
+\subsection{System Integration}
+
+The MMD system integrates all components through a sequential pipeline: S-Entropy transformation, optional BMD filtering, fragment graph construction, pathfinding, categorical completion, cross-modal validation, and optional dictionary learning. The modular architecture permits component substitution and parameter tuning.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+This work presents a complete mathematical framework for peptide sequence reconstruction without database search. The S-Entropy coordinate transformation maps amino acids to a tri-dimensional space based on physicochemical properties. Peptide fragmentation follows a formal grammar generating b/y ion series. Fragment observations form a directed graph with edges encoding sequential relationships. Sequence reconstruction finds minimum-entropy paths through this graph, with categorical completion filling coverage gaps. A dynamic dictionary supports zero-shot identification and learns novel entities. The Molecular Maxwell Demon system orchestrates these components through variance minimization. Cross-modal validation confirms reconstructions against observed spectra.
+
+\section*{Acknowledgments}
+
+The author acknowledges the Technical University of Munich for computational resources.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

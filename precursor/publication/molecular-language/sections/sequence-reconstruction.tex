@@ -1,0 +1,182 @@
+\section{Categorical Sequence Reconstruction}
+\label{sec:sequence-reconstruction}
+
+\subsection{Problem Formulation}
+
+\begin{definition}[Sequence Reconstruction Problem]
+Given a set of fragment nodes $V = \{v_1, \ldots, v_n\}$ with S-Entropy coordinates and masses, reconstruct the peptide sequence $\mathbf{s}^* \in \mathcal{A}^+$ that generated these fragments.
+\end{definition}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/sentropy_3d_trajectory.png}
+\caption{\textbf{Three-dimensional peptide trajectories demonstrate sequence-specific
+S-Entropy paths.}
+Three peptide sequences shown as continuous trajectories through S-Entropy space
+(S$_k$, S$_t$, S$_e$): PEPTIDE (red/pink path), SAMPLE (green path), and PROTEIN
+(blue path). Each sphere represents one amino acid position, with sphere size
+proportional to molecular mass and color indicating peptide identity. Line segments
+connect sequential amino acids, forming smooth paths from N-terminus to C-terminus.
+Trajectory topology encodes sequence information: PROTEIN (blue) shows high S$_e$
+excursion (top of plot, indicating charged residues), SAMPLE (green) follows a
+compact path at low S$_t$ (small residues like Glycine), and PEPTIDE (red) traces
+an intermediate path. Spatial separation between trajectories demonstrates that
+different sequences occupy distinct regions of S-Entropy space, enabling sequence
+discrimination without database matching. The continuous, non-intersecting paths
+validate the sequence coordinate path formalism (Equation 7) and support the
+fragment graph reconstruction approach (Section 3), where observed fragments
+constrain the path and categorical completion fills gaps. Smooth trajectory curvature
+indicates that S-Entropy coordinates change gradually along sequences, ensuring that
+adjacent amino acids have similar S-Entropy values—a key assumption for greedy path
+construction (Algorithm in Section 3.6). The three-dimensional visualization reveals
+that S-Entropy space has sufficient dimensionality to separate diverse peptide
+sequences, validating the tri-dimensional coordinate system (Definition 1).}
+\label{fig:3d_trajectories}
+\end{figure}
+
+The reconstruction minimizes total S-Entropy subject to mass and grammatical constraints:
+\begin{equation}
+\mathbf{s}^* = \arg\min_{\mathbf{s} \in \mathcal{A}^+} H_S(\mathbf{s}) \quad \text{s.t.} \quad \mathbf{s} \models \mathcal{G}(V)
+\end{equation}
+where $\mathbf{s} \models \mathcal{G}(V)$ denotes that sequence $\mathbf{s}$ is consistent with the fragment graph.
+
+\subsection{Gap Region Identification}
+
+\begin{definition}[Gap Region]
+A gap region $g$ between consecutive fragments $v_i$ and $v_j$ in the reconstructed path is:
+\begin{equation}
+g = (v_i, v_j, \Delta m, \mathbf{S}_i, \mathbf{S}_j)
+\end{equation}
+where $\Delta m = m(v_j) - m(v_i) - m_{\min}$ is the excess mass beyond a single amino acid, and $m_{\min} = \min_{a \in \mathcal{A}} m(a)$.
+\end{definition}
+
+A gap is identified when:
+\begin{equation}
+\Delta m > m_{\min} \Rightarrow \exists \text{ gap between } v_i \text{ and } v_j
+\end{equation}
+
+\subsection{Categorical Completion}
+
+\begin{definition}[Categorical Completer]
+The categorical completer $\mathcal{K}$ maps gap regions to candidate amino acid sequences:
+\begin{equation}
+\mathcal{K}: \mathcal{G} \rightarrow 2^{\mathcal{A}^* \times [0,1]}
+\end{equation}
+returning pairs of candidate sequences with confidence scores.
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{Categorical Gap Completion}
+\label{alg:categorical_completion}
+\begin{algorithmic}[1]
+\Procedure{FillGap}{$\mathcal{D}$, $g$, $\epsilon_m$}
+    \State Candidates $\gets$ EmptyList()
+    \State $n_{\max} \gets \lfloor \Delta m(g) / m_{\min} \rfloor + 1$
+
+    \For{$n \in \{1, \ldots, n_{\max}\}$}
+        \For{$\mathbf{a} \in \mathcal{A}^n$}
+            \State $m_{\mathbf{a}} \gets \sum_{a \in \mathbf{a}} m(a)$
+            \If{$|m_{\mathbf{a}} - \Delta m(g)| \leq \epsilon_m$}
+                \State $\mathbf{S}_{\mathbf{a}} \gets$ PathMidpoint($\mathbf{a}$)
+                \State $d \gets$ InterpolationDistance($\mathbf{S}_{\mathbf{a}}$, $\mathbf{S}_i(g)$, $\mathbf{S}_j(g)$)
+                \State $c \gets \exp(-d / \sigma)$
+                \State Candidates.Append(($\mathbf{a}$, $c$))
+            \EndIf
+        \EndFor
+    \EndFor
+
+    \State Candidates.SortByConfidence()
+    \State \Return Candidates[$0$]
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reconstruction Algorithm}
+
+\begin{algorithm}[H]
+\caption{Sequence Reconstruction}
+\label{alg:sequence_reconstruction}
+\begin{algorithmic}[1]
+\Procedure{Reconstruct}{$V$, $m_{\text{prec}}$, $z$}
+    \State \textbf{Step 1:} $\mathcal{G} \gets$ BuildFragmentGraph($V$, $m_{\text{prec}}$)
+
+    \State \textbf{Step 2:} ManifoldExtracted (implicit in coordinates)
+
+    \State \textbf{Step 3:} Path $\gets$ FindHamiltonianPath($\mathcal{G}$)
+    \If{Path = null}
+        \State \Return FailedReconstruction
+    \EndIf
+
+    \State \textbf{Step 4-5:} (Identified, Gaps) $\gets$ IdentifyFragmentsAndGaps(Path, $\mathcal{G}$)
+
+    \State \textbf{Step 6:} FilledGaps $\gets \{\}$
+    \For{$g \in$ Gaps}
+        \State FilledGaps[$g$] $\gets$ FillGap($\mathcal{D}$, $g$, $\epsilon_m$)
+    \EndFor
+
+    \State \textbf{Step 7:} $\mathbf{s} \gets$ ConcatenateSequence(Path, Identified, FilledGaps)
+
+    \State \textbf{Step 8:} Metrics $\gets$ ComputeMetrics($\mathbf{s}$, $V$, Gaps)
+
+    \State \Return ReconstructionResult($\mathbf{s}$, Metrics)
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reconstruction Result}
+
+\begin{definition}[Reconstruction Result]
+The reconstruction result is a tuple:
+\begin{equation}
+R = (\mathbf{s}, c, \phi, G, H, V)
+\end{equation}
+where:
+\begin{itemize}
+\item $\mathbf{s}$ is the reconstructed sequence
+\item $c \in [0, 1]$ is the overall confidence
+\item $\phi \in [0, 1]$ is the fragment coverage
+\item $G$ is the list of gap-filled regions
+\item $H$ is the total path entropy
+\item $V$ is the validation score dictionary
+\end{itemize}
+\end{definition}
+
+\subsection{Coverage and Confidence Metrics}
+
+\begin{definition}[Fragment Coverage]
+\begin{equation}
+\phi = \frac{\sum_{v \in \text{Identified}} |\sigma(v)|}{\sum_{v \in \text{Path}} |\sigma(v)| + \sum_{g \in G} |\sigma(g)|}
+\end{equation}
+where $|\sigma(\cdot)|$ denotes sequence length.
+\end{definition}
+
+\begin{definition}[Overall Confidence]
+\begin{equation}
+c = \frac{1}{|V|} \left( \sum_{v \in \text{Identified}} c(v) + \sum_{g \in G} c(g) \right)
+\end{equation}
+\end{definition}
+
+\subsection{Validation Scores}
+
+The validation score dictionary includes:
+\begin{itemize}
+\item \texttt{path\_entropy}: Total S-Entropy of the reconstruction path
+\item \texttt{mean\_fragment\_conf}: Mean confidence of identified fragments
+\item \texttt{mean\_gap\_conf}: Mean confidence of gap completions
+\item \texttt{n\_fragments}: Number of identified fragments
+\item \texttt{n\_gaps}: Number of filled gaps
+\end{itemize}
+
+\subsection{Cross-Modal Validation}
+
+\begin{definition}[Cross-Modal Match Score]
+Given reconstructed sequence $\mathbf{s}$, theoretical fragments $F_{\text{theo}}$ are generated via the molecular grammar. The match score is:
+\begin{equation}
+\text{score}_{\text{CM}} = \frac{|\{f \in F_{\text{theo}} : \exists v \in V, |m(f) - m(v)| \leq \epsilon_m\}|}{|F_{\text{theo}}|}
+\end{equation}
+\end{definition}
+
+The final confidence is updated as:
+\begin{equation}
+c_{\text{final}} = \frac{c + \text{score}_{\text{CM}}}{2}
+\end{equation}

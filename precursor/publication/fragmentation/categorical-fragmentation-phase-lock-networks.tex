@@ -1,13 +1,27 @@
-\documentclass[twocolumn,superscriptaddress,prl,10pt]{revtex4-2}
-
-\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{graphicx}
-\usepackage{float}
-\usepackage{booktabs}
 \usepackage{hyperref}
+\usepackage{float}          % Better figure placement
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \usepackage{physics}
+\usepackage{mathrsfs}
+\usepackage{xcolor}
 \usepackage{siunitx}
-
+\usepackage{titling} % Provides \keywords command
+\usepackage{abstract} % Provides \keywords command
+\usepackage{caption}        % Better captions
+\usepackage{subcaption}     % Subfigures (if needed)
+\usepackage{natbib}        % Better figure placement
+\usepackage{booktabs}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{geometry}
+% Theorem environments
 % Theorem environments
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
@@ -19,68 +33,124 @@
 \theoremstyle{remark}
 \newtheorem{remark}[theorem]{Remark}
 
-\begin{document}
+\newcommand{\Sk}{S_k}           % Kinetic entropy
+\newcommand{\St}{S_t}           % Topological entropy
+\newcommand{\Se}{S_e}           % Evolutionary entropy
+\newcommand{\Sspace}{\mathcal{S}}  % S-space
+\newcommand{\kB}{k_\text{B}}    % Boltzmann constant
+
+
+% Bold vectors
+\renewcommand{\vec}[1]{\mathbf{#1}}
+
+% Expectation value
+\newcommand{\expect}[1]{\langle #1 \rangle}
+
+% Differential operator
+\newcommand{\diff}{\mathrm{d}}
+
+
+
 
 \title{Categorical Fragmentation Networks in Tandem Mass Spectrometry: Phase-Lock Topology and Entropy-Intensity Relations in Small Molecule Fragmentation}
 
-\author{Kundai Farai Sachikonye}
-\email{kundai.sachikonye@wzw.tum.de}
-\affiliation{Independent Researcher, Computational Mass Spectrometry}
 
+\author{Kundai Sachikonye}
 \date{\today}
 
-\begin{abstract}
-Tandem mass spectrometry (MS/MS) fragmentation is conventionally understood as stochastic bond cleavage determined by thermochemical bond strengths and collision energies. We demonstrate that fragmentation is a deterministic categorical state progression governed by phase-lock network topology, where fragment intensities arise from oscillatory termination probabilities rather than statistical populations. The framework resolves three persistent challenges: (1) platform-dependent intensity variations that prevent cross-instrument model transfer, (2) unpredictable neutral loss patterns that confound structure elucidation, and (3) the absence of a first-principles theory connecting fragmentation mechanisms to spectral patterns.
 
-Building on the categorical resolution of Gibbs' paradox, we establish that molecular fragmentation creates phase-lock networks where each fragment occupies a categorical state $\mathcal{C}_i$ characterized by residual phase correlations with sibling fragments and the precursor ion. Fragment intensity follows $I_i \propto \alpha_i = \exp(-|E_i|/\langle E \rangle)$, where $|E_i|$ is the phase-lock edge density of fragment $i$. This topological entropy formulation predicts that simple fragments (low edge density) exhibit high termination probability and thus high intensity, while complex fragments (high edge density) show low intensity—validated across 2,847 MS/MS spectra from Waters Q-TOF and Thermo Orbitrap platforms.
 
-Platform independence emerges naturally: categorical states are invariant to instrument hardware because they encode molecular topology, not energy deposition mechanisms. S-entropy coordinate transformation achieves coefficient of variation CV $< 1.8\%$ for fragmentation pattern features across platforms, enabling zero-shot model transfer. Neutral loss predictions achieve 94.3\% accuracy through phase memory analysis: water loss occurs preferentially from fragments retaining phase correlations with precursor hydroxyl groups, with phase coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns measurable via time-resolved spectroscopy.
-
-Experimental validation on phospholipid fragmentation demonstrates categorical trajectory reconstruction: the progression $\mathcal{C}_0 \to \mathcal{C}_1(184^+) \to \mathcal{C}_2(104^+) \to \mathcal{C}_3(86^+)$ follows deterministic phase-lock cascade with branching ratio determined by local network topology. Fragment-fragment correlations decay as $\rho_{ij}(t) = \rho_0 \exp(-t/\tau_{\phi})$, confirming phase memory hypothesis. Hardware-grounded categorical completion maintains stream divergence $D < 0.12$ for biochemically valid fragmentations versus $D > 0.35$ for impossible structures, providing automatic quality control.
-
-Dual-membrane complementarity reveals that fragmentation information has intrinsic directional structure: precursor (front face) and fragments (back face) are conjugate observables that cannot be measured simultaneously. The intensity-entropy uncertainty relation $\Delta I \cdot \Delta S \geq k_{\text{frag}}$ manifests as approximately constant uncertainty product (0.234 $\pm$ 0.042) across all fragments. Platform independence emerges naturally: categorical states encode the invariant back face (network topology) while instrument details vary the front face (measurement mechanism).
-
-This work establishes MS/MS fragmentation as a topological information problem where entropy is network density, intensity is termination probability, and platform independence arises from categorical invariance. The dual-membrane principle unifies fragmentation theory under a single law: information has two faces that cannot be perfectly observed simultaneously, but their complementarity relation enables complete reconstruction. The framework provides first-principles foundations for computational fragmentation prediction, structure elucidation, and cross-platform data integration in metabolomics.
-\end{abstract}
-
-\keywords{tandem mass spectrometry, categorical states, phase-lock networks, topological entropy, platform independence, fragmentation prediction, metabolomics}
+\begin{document}
 
 \maketitle
+
+\begin{abstract}
+Tandem mass spectrometry (MS/MS) fragmentation is conventionally understood as stochastic bond cleavage determined by thermochemical bond strengths and collision energies. We demonstrate that fragmentation is a deterministic categorical state progression governed by phase-lock network topology, where fragment intensities arise from oscillatory termination probabilities rather than statistical populations. The framework addresses three persistent challenges: (1) platform-dependent intensity variations that prevent cross-instrument model transfer, (2) unpredictable neutral loss patterns that confound structure elucidation, and (3) the absence of a first-principles theory connecting fragmentation mechanisms to spectral patterns.
+
+Building on the categorical resolution of Gibbs' paradox, we establish that molecular fragmentation creates phase-lock networks where each fragment occupies a categorical state $\mathcal{C}_i$ characterised by residual phase correlations with sibling fragments and the precursor ion. Fragment intensity follows $I_i \propto \alpha_i = \exp(-|E_i|/\langle E \rangle)$, where $|E_i|$ is the phase-lock edge density of fragment $i$. This topological entropy formulation predicts that simple fragments (low edge density) exhibit a high termination probability and thus high intensity, while complex fragments (high edge density) show low intensity—validated across 2,847 MS/MS spectra from Waters Q-TOF and Thermo Orbitrap platforms.
+
+Platform independence emerges naturally: categorical states are invariant to instrument hardware because they encode molecular topology, not energy deposition mechanisms. S-entropy coordinate transformation achieves a coefficient of variation (CV) $< 1.8\%$ for fragmentation pattern features across platforms, enabling zero-shot model transfer. Neutral loss predictions achieve 94.3\% accuracy through phase memory analysis: water loss occurs preferentially from fragments retaining phase correlations with precursor hydroxyl groups, with a phase coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns measurable via time-resolved spectroscopy.
+
+Experimental validation on phospholipid fragmentation demonstrates categorical trajectory reconstruction: the progression $\mathcal{C}_0 \to \mathcal{C}_1(184^+) \to \mathcal{C}_2(104^+) \to \mathcal{C}_3(86^+)$ follows a deterministic phase-lock cascade with a branching ratio determined by the local network topology. Fragment-fragment correlations decay as $\rho_{ij}(t) = \rho_0 \exp(-t/\tau_{\phi})$, confirming the phase memory hypothesis. Hardware-grounded categorical completion maintains stream divergence $D < 0.12$ for biochemically valid fragmentations versus $D > 0.35$ for impossible structures, providing automatic quality control.
+
+Dual-membrane complementarity reveals that fragmentation information has intrinsic directional structure: precursor (front face) and fragments (back face) are conjugate observables that cannot be measured simultaneously. The intensity-entropy uncertainty relation $\Delta I \cdot \Delta S \geq k_{\text{frag}}$ manifests as an approximately constant uncertainty product (0.234 $\pm$ 0.042) across all fragments. Platform independence emerges naturally: categorical states encode the invariant back face (network topology) while instrument details vary the front face (measurement mechanism).
+
+This work establishes MS/MS fragmentation as a topological information problem where entropy is network density, intensity is termination probability, and platform independence arises from categorical invariance. The dual-membrane principle unifies fragmentation theory under a single law: information has two faces that cannot be perfectly observed simultaneously, but their complementary relation enables complete reconstruction. The framework provides first-principles foundations for computational fragmentation prediction, structure elucidation, and cross-platform data integration in metabolomics.
+\end{abstract}
+
+\textbf{keywords}{tandem mass spectrometry, categorical states, phase-lock networks, topological entropy, platform independence, fragmentation prediction, metabolomics}
+
+
 
 \section{Introduction}
 
 Tandem mass spectrometry (MS/MS) has become the definitive technique for small molecule structure elucidation in metabolomics, natural products chemistry, and environmental analysis \cite{mclafferty1993tandem,gross2017mass}. In MS/MS, precursor ions undergo collision-induced dissociation (CID), generating fragment ions whose mass-to-charge ratios and relative intensities encode structural information. Despite decades of development, three fundamental challenges persist:
 
-\textbf{Challenge 1: Platform Dependence.} Spectra acquired on different instrument types (quadrupole time-of-flight, Orbitrap, ion trap) exhibit systematic intensity variations preventing cross-platform spectral library matching and model transfer \cite{stein2012mass,horai2010massbank}. The same molecule on different instruments produces recognizable but quantitatively distinct fragmentation patterns.
+\textbf{Challenge 1: Platform Dependence.} Spectra acquired on different instrument types (quadrupole time-of-flight, Orbitrap, ion trap) exhibit systematic intensity variations that prevent cross-platform spectral library matching and model transfer \cite{stein2012mass,horai2010massbank}. The same molecule on different instruments produces recognisable but quantitatively distinct fragmentation patterns.
 
-\textbf{Challenge 2: Intensity Prediction.} No first-principles theory connects molecular structure to fragment intensities. Empirical models achieve limited success through machine learning on large training sets \cite{wei2019rapid,duhrkop2019sirius}, but lack mechanistic insight and fail for novel chemical classes.
+\textbf{Challenge 2: Intensity Prediction.} No first-principles theory connects molecular structure to fragment intensities. Empirical models achieve limited success through machine learning on large training sets \cite{wei2019rapid,duhrkop2019sirius}, but they lack mechanistic insight and fail for novel chemical classes.
 
-\textbf{Challenge 3: Neutral Loss Patterns.} Neutral losses (e.g., $-18$ Da for H$_2$O, $-44$ Da for CO$_2$) occur preferentially from specific precursor structures, yet the physical mechanism determining loss probability remains unclear. Statistical models enumerate possible losses but cannot predict which will dominate \cite{kind2007fiehnlib}.
+\textbf{Challenge 3: Neutral Loss Patterns.} Neutral losses (e.g., $-18$ Da for H$_2$O, $-44$ Da for CO$_2$) occur preferentially from specific precursor structures; yet, the physical mechanism determining loss probability remains unclear. Statistical models enumerate possible losses but cannot predict which will dominate \cite{kind2007fiehnlib}.
 
 We resolve these challenges through \emph{categorical fragmentation theory}, demonstrating that MS/MS is fundamentally a phase-lock network formation process where fragment intensities arise from oscillatory termination probabilities determined by network topology. The approach builds on the categorical resolution of Gibbs' paradox \cite{sachikonye2024gibbs}, which established that entropy is proportional to phase-lock edge density:
 \begin{equation}
 S = k_B \frac{|E|}{\langle E \rangle}
 \label{eq:topological_entropy}
 \end{equation}
-where $|E|$ is the number of phase-lock edges and $\langle E \rangle$ is a reference edge count.
+where $|E|$ is the number of phase-lock edges, and $\langle E \rangle$ is a reference edge count.
 
 \subsection{Fragmentation as Categorical State Progression}
 
-Traditional fragmentation theory treats bond cleavage as independent events governed by bond dissociation energies (BDE) and internal energy distributions \cite{mclafferty1993tandem}. This statistical view predicts that high-energy bonds break rarely while low-energy bonds break frequently—broadly correct but quantitatively inadequate.
+Traditional fragmentation theory treats bond cleavage as independent events governed by bond dissociation energies (BDE) and internal energy distributions \cite{mclafferty1993tandem}. This statistical view predicts that high-energy bonds break rarely, while low-energy bonds break frequently—broadly correct but quantitatively inadequate.
 
-Categorical theory introduces a different perspective: the precursor ion occupies an initial categorical state $\mathcal{C}_0$ characterized by its internal phase-lock network. Upon collision activation, the molecule does not randomly break bonds but progresses through a sequence of categorical states:
+Categorical theory introduces a different perspective: the precursor ion occupies an initial categorical state $\mathcal{C}_0$ characterised by its internal phase-lock network. Upon collision activation, the molecule does not randomly break bonds but progresses through a sequence of categorical states:
 \begin{equation}
 \mathcal{C}_0 \xrightarrow{\text{fragmentation}} \{\mathcal{C}_1, \mathcal{C}_2, \ldots, \mathcal{C}_N\}
 \end{equation}
 
 Each fragment state $\mathcal{C}_i$ is defined by:
 \begin{enumerate}
-\item Its molecular structure (atoms, bonds, charge location)
+\item Its molecular structure (atoms, bonds, and charge location)
 \item Residual phase correlations with other fragments
 \item Position in the irreversible categorical sequence
 \end{enumerate}
 
-Critically, fragments from the same precursor maintain phase correlations analogous to the residual A-B edges observed after gas mixing in the Gibbs' paradox resolution \cite{sachikonye2024gibbs}. These correlations explain why:
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/molecular_maxwell_demon_mass_spec_upper_half.png}
+\caption{\textbf{Molecular Maxwell Demon: Probability Amplification and Multi-Scale Architecture.}
+\textbf{(A)} MMD probability amplification cascade via dual filtering architecture demonstrates exponential state-space reduction across four stages.
+Potential states (red, baseline): $P_{\text{potential}} \sim 10^{-11}$ represents combinatorial molecular configuration space ($\sim 10^{11}$ possible states).
+Input filter (blue): $P_{\text{input}} \sim 10^{-5}$ with amplification factor $1.92 \times 10^{9}\times$ reduces state space via experimental constraints (ionization selectivity, mass range, detection threshold).
+Output filter (green): $P_{\text{output}} \sim 10^{-3}$ with amplification $2.00 \times 10^{-1}\times$ applies S-entropy categorical state extraction, collapsing continuous distributions to discrete manifold.
+Actual observables (purple): $P_{\text{obs}} \sim 10^{-3}$ with final amplification $1.00 \times 10^{0}\times$ represents measured spectrum peaks.
+Total amplification: $10^{-11} \rightarrow 10^{-3}$ yields $10^{8}\times$ probability gain, enabling single-molecule detection from vast chemical space.
+Dual filtering separates: (1) physical constraints (input filter, instrument-dependent), (2) information extraction (output filter, categorical state projection).
+\textbf{(B)} S-entropy coordinate space: 14D $\rightarrow$ 3D projection via $S_{k}$ (knowledge/mass), $S_{t}$ (time/charge), $S_{e}$ (entropy/energy) axes.
+Metabolite trajectory (blue spheres, $n \approx 40$ points) shows continuous manifold from high-entropy precursor ($S_{e} \approx 2.0$, $S_{k} \approx -5$, $S_{t} \approx 0.4$) cascading to low-entropy products ($S_{e} \approx 0$, $S_{k} \approx 10$, $S_{t} \approx -0.4$).
+Dimensionality reduction preserves categorical state topology: original 14D feature vector ($\mu_{S_{K}}$, $\sigma_{S_{K}}$, $\mu_{S_{T}}$, $\sigma_{S_{T}}$, $\mu_{S_{E}}$, $\sigma_{S_{E}}$, plus 8 intensity norms) projects to interpretable 3D manifold via nonlinear embedding.
+Trajectory curvature indicates fragmentation pathway: smooth gradient validates deterministic chemistry, minimal branching confirms dominant reaction channel.
+\textbf{(C)} Hardware oscillation hierarchy: 8-scale phase-lock architecture spanning $10^{1}$ Hz to $10^{9}$ Hz (8 orders of magnitude).
+System interrupts (10 Hz, red bar) set slowest timescale for user interaction.
+Display refresh and LED modulation (60 Hz) synchronize visual output.
+Disk I/O (100 Hz) and GPU streams (1.0 kHz) handle data transfer.
+Network latency (1.0 MHz) bridges computation-communication gap.
+Memory bus (1.6 GHz) and CPU clock (3.0 GHz) define fastest computational timescales.
+Phase-lock architecture ensures: (1) no aliasing between scales (frequency separation $\geq 10\times$), (2) deterministic synchronization (integer frequency ratios), (3) hierarchical information flow (slow scales modulate fast scales).
+MMD computation operates at memory-bus timescale (GHz), enabling real-time categorical state extraction during acquisition.
+\textbf{(D)} Virtual detector ensemble: multi-instrument projections from single categorical state.
+TOF (time-of-flight): mass resolution $R_{m} \approx 2 \times 10^{4}$ (purple bar), typical for quadrupole-TOF hybrid instruments.
+Orbitrap (Fourier-transform): $R_{m} \approx 10^{6}$ (green bar), high-resolution accurate-mass detection.
+FT-ICR (ion cyclotron resonance): $R_{m} \approx 10^{7}$ (blue bar), ultra-high resolution for complex mixture analysis.
+IMS (ion mobility spectrometry): $R_{m} \approx 10^{4}$ (yellow bar), adds conformational dimension orthogonal to $m/z$.
+Resolution span: $10^{4}$ to $10^{7}$ (3 orders of magnitude) demonstrates platform-independent categorical representation.
+Virtual projection enables: (1) cross-platform validation (same categorical state $\rightarrow$ different detector signatures), (2) resolution enhancement (low-res measurement $\rightarrow$ high-res virtual spectrum via categorical prior), (3) missing modality imputation (e.g., predict IMS collision cross-section from TOF $m/z$ data).}
+\label{fig:mmd_architecture}
+\end{figure}
+
+
+
+Critically, fragments from the same precursor maintain phase correlations analogous to the residual A-B edges observed after gas mixing in the resolution of Gibbs' paradox \cite{sachikonye2024gibbs}. These correlations explain why:
 \begin{itemize}
 \item Complementary fragments (summing to precursor mass) often have correlated intensities
 \item Neutral losses occur preferentially from specific fragments
@@ -89,7 +159,7 @@ Critically, fragments from the same precursor maintain phase correlations analog
 
 \subsection{Intensity as Termination Probability}
 
-Fragment intensity does not reflect statistical population but oscillatory termination probability. Following the oscillatory entropy formulation:
+Fragment intensity does not reflect the statistical population but the oscillatory termination probability. Following the oscillatory entropy formulation:
 \begin{equation}
 \alpha_i = \exp\left(-\frac{|E_i|}{\langle E \rangle}\right)
 \label{eq:termination_prob}
@@ -103,6 +173,7 @@ I_i \propto \alpha_i = \exp\left(-\frac{|E_i|}{\langle E \rangle}\right)
 \end{equation}
 
 This explains base peaks: they are fragments with minimal phase-lock constraints, representing stable termination points in the fragmentation cascade.
+
 
 \subsection{Platform Independence Through Categorical Invariance}
 
@@ -119,13 +190,13 @@ captures this topology through information content ($S_k$), temporal ordering ($
 This work establishes five primary results:
 
 \begin{enumerate}
-\item \textbf{Topological fragmentation theory}: Fragment intensity arises from phase-lock network density via Eq.~\eqref{eq:intensity_formula}, providing first-principles connection between structure and spectrum.
+\item \textbf{Topological fragmentation theory}: Fragment intensity arises from phase-locked network density via Eq.~\eqref{eq:intensity_formula}, providing a first-principles connexion between structure and spectrum.
 
 \item \textbf{Platform independence mechanism}: Categorical states exhibit CV $< 1.8\%$ across Waters Q-TOF and Thermo Orbitrap platforms, enabling zero-shot model transfer without retraining.
 
-\item \textbf{Neutral loss prediction}: Phase memory analysis achieves 94.3\% accuracy on water/CO$_2$/ammonia loss predictions with measurable coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns.
+\item \textbf{Neutral loss prediction}: Phase memory analysis achieves 94.3\% accuracy on water/CO$_2$/ammonia loss predictions with a measurable coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns.
 
-\item \textbf{Fragment correlation structure}: Residual phase correlations decay as $\rho_{ij}(t) = \rho_0 \exp(-t/\tau_{\phi})$, confirming phase-lock hypothesis and enabling correlation-based structure elucidation.
+\item \textbf{Fragment correlation structure}: Residual phase correlations decay as $\rho_{ij}(t) = \rho_0 \exp(-t/\tau_{\phi})$, confirming the phase-lock hypothesis and enabling correlation-based structural elucidation.
 
 \item \textbf{Hardware-grounded validation}: Stream divergence $D < 0.12$ for valid fragmentations versus $D > 0.35$ for impossible structures provides automatic quality control without empirical rules.
 \end{enumerate}
@@ -143,27 +214,27 @@ Section~\ref{sec:fragment_states} develops the categorical state framework for f
 
 We have established categorical fragmentation theory as a first-principles framework for tandem mass spectrometry, demonstrating that fragmentation is deterministic categorical state progression governed by phase-lock network topology rather than stochastic bond breaking. The key results validate three core hypotheses:
 
-\textbf{Hypothesis 1: Intensity = Termination Probability.} Fragment intensities follow $I_i \propto \exp(-|E_i|/\langle E \rangle)$ where $|E_i|$ is phase-lock edge density. Validation across 2,847 spectra achieves Pearson $r = 0.87$ between predicted and observed intensities ($p < 10^{-15}$), with base peaks consistently corresponding to minimal edge density fragments. This topological formulation requires no adjustable parameters beyond the reference edge count $\langle E \rangle$, determined from precursor molecular graph.
+\textbf{Hypothesis 1: Intensity = Termination Probability.} Fragment intensities follow $I_i \propto \exp(-|E_i|/\langle E \rangle)$ where $|E_i|$ is phase-lock edge density. Validation across 2,847 spectra achieves Pearson $r = 0.87$ between predicted and observed intensities ($p < 10^{-15}$), with base peaks consistently corresponding to minimal edge density fragments. This topological formulation requires no adjustable parameters beyond the reference edge count $\langle E \rangle$, which is determined from the precursor molecular graph.
 
 \textbf{Hypothesis 2: Categorical Invariance → Platform Independence.} S-entropy coordinates achieve CV $< 1.8\%$ for fragmentation features across Waters Q-TOF and Thermo Orbitrap platforms. Cross-platform model transfer without retraining achieves 91.4\% accuracy on structure class prediction, versus 68.3\% for intensity-based methods requiring per-platform calibration. Platform independence is not empirical but mathematical: categorical states encode molecular topology independent of energy deposition mechanism.
 
-\textbf{Hypothesis 3: Phase Memory → Neutral Loss Patterns.} Fragments exhibiting phase coherence $|\langle e^{i(\phi_i - \phi_{\text{precursor}})}\rangle| > 0.3$ with precursor functional groups show 94.3\% probability of corresponding neutral loss. Phase coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns measured via time-resolved ion mobility spectroscopy validates the phase memory hypothesis, confirming that neutral losses are not independent events but phase-correlated processes.
+\textbf{Hypothesis 3: Phase Memory → Neutral Loss Patterns.} Fragments exhibiting phase coherence $|\langle e^{i(\phi_i - \phi_{\text{precursor}})}\rangle| > 0.3$ with precursor functional groups show 94.3\% probability of corresponding neutral loss. Phase coherence time $\tau_{\phi} = 23.4 \pm 6.7$ ns, measured via time-resolved ion mobility spectroscopy, validates the phase memory hypothesis, confirming that neutral losses are not independent events, but rather phase-correlated processes.
 
 The categorical completion rate formulation:
 \begin{equation}
 \frac{dS}{dt} = k_B \dot{C}(t)
 \end{equation}
-provides a dynamical theory of fragmentation where entropy production rate equals categorical state completion rate. Fast-fragmenting molecules complete many categorical states rapidly (high $\dot{C}$, high entropy production), while stable molecules complete few states (low $\dot{C}$, low entropy production). This connects thermodynamic irreversibility to spectral complexity.
+provides a dynamical theory of fragmentation where the entropy production rate equals the categorical state completion rate. Fast-fragmenting molecules complete many categorical states rapidly (high $\dot{C}$, high entropy production), while stable molecules complete few states (low $\dot{C}$, low entropy production). This connects thermodynamic irreversibility to spectral complexity.
 
-Hardware-grounded categorical completion maintains stream divergence $D < 0.12$ for valid fragmentations. The divergence threshold provides automatic rejection of biochemically impossible structures without hand-crafted rules: impossible fragmentations drift out of phase with hardware oscillations, violating thermodynamic realizability. This implements true Maxwellian selection where hardware acts as a physical demon filtering biochemically valid from invalid structures.
+Hardware-grounded categorical completion maintains stream divergence $D < 0.12$ for valid fragmentations. The divergence threshold provides automatic rejection of biochemically impossible structures without hand-crafted rules: impossible fragmentations drift out of phase with hardware oscillations, violating thermodynamic realisability. This implements true Maxwellian selection, where hardware acts as a physical demon filtering biochemically valid from invalid structures.
 
-\textbf{Hypothesis 4: Dual-Membrane Complementarity.} The discovery that information has intrinsic directional structure---two conjugate faces that cannot be observed simultaneously---unifies the fragmentation framework. The intensity-entropy uncertainty product $\Delta I \cdot \Delta S = 0.234 \pm 0.042$ remains approximately constant across all fragments, validating the complementarity principle $\Delta O_{\text{front}} \cdot \Delta O_{\text{back}} \geq k_{\text{info}}$. Precursor-fragment asymmetry (12.1$\times$ fragments per precursor) confirms the irreversible face switch from MS1 (intact molecule, front face) to MS2 (fragment network, back face). Platform independence emerges as categorical state invariance: the back face (topological features) remains constant while switching front faces (instruments). This resolves the fundamental question: Why do different instruments measuring the same molecule produce identical categorical states? Because categorical states encode the hidden face that is invariant to front-face switching.
+\textbf{Hypothesis 4: Dual-Membrane Complementarity.} The discovery that information has intrinsic directional structure—two conjugate faces that cannot be observed simultaneously—unifies the fragmentation framework. The intensity-entropy uncertainty product $\Delta I \cdot \Delta S = 0.234 \pm 0.042$ remains approximately constant across all fragments, validating the complementarity principle $\Delta O_{\text{front}} \cdot \Delta O_{\text{back}} \geq k_{\text{info}}$. Precursor-fragment asymmetry (12.1$\times$ fragments per precursor) confirms the irreversible face switch from MS1 (intact molecule, front face) to MS2 (fragment network, back face). Platform independence emerges as categorical state invariance: the back face (topological features) remains constant while switching front faces (instruments). This resolves the fundamental question: Why do different instruments measuring the same molecule produce identical categorical states? Because categorical states encode the hidden face that is invariant to front-face switching.
 
 \subsection{Theoretical Implications}
 
 Categorical fragmentation theory establishes three foundational results for mass spectrometry:
 
-\textbf{(1) Fragmentation is Irreversible.} Each categorical state completion is irreversible per Axiom of Categorical Irreversibility. Once fragment $i$ occupies categorical state $\mathcal{C}_i$, the system cannot return to $\mathcal{C}_i$. This explains why fragmentation spectra are reproducible: the categorical sequence is deterministic despite stochastic collision dynamics.
+\textbf{(1) Fragmentation is Irreversible.} Each categorical state completion is irreversible per Axiom of Categorical Irreversibility. Once the fragment $i$ occupies a categorical state $\mathcal{C}_i$, the system cannot return to $\mathcal{C}_i$. This explains why fragmentation spectra are reproducible: the categorical sequence is deterministic despite stochastic collision dynamics.
 
 \textbf{(2) Entropy is Topological.} Spectral entropy:
 \begin{equation}
@@ -251,7 +322,7 @@ Categorical completion maintains stream divergence $D < 0.12$, providing automat
 
 The unification of metabolomics fragmentation, proteomics sequencing, and Gibbs' paradox resolution through categorical state theory suggests a deeper principle: molecular information processing is fundamentally topological, operating through phase-lock network formation rather than classical energy minimization. This topological view may extend beyond mass spectrometry to other molecular analysis techniques (NMR, crystallography, spectroscopy) wherever oscillatory dynamics govern observables.
 
-\bibliographystyle{apsrev4-2}
+\bibliographystyle{plain}
 \bibliography{references}
 
 \end{document}

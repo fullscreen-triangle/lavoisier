@@ -2,9 +2,14 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
+\usepackage{float}          % Better figure placement
+\usepackage{algorithm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{physics}
+\usepackage{booktabs}
 \usepackage{mathrsfs}
 \usepackage{xcolor}
 \usepackage{siunitx}
@@ -102,7 +107,7 @@ We resolve these challenges through \emph{categorical fragmentation theory for p
 
 \subsection{Peptide Fragmentation as Sequential Categorical Progression}
 
-Following the categorical resolution of Gibbs' paradox \cite{sachikonye2024gibbs}, molecular processes proceed through irreversible categorical state sequences. For peptides, backbone cleavage at position $i$ creates categorical state $\mathcal{C}_i$ characterized by:
+Following the categorical resolution of Gibbs' paradox \cite{sachikonye2024gibbs}, molecular processes proceed through irreversible categorical state sequences. For peptides, backbone cleavage at position $i$ creates a categorical state $\mathcal{C}_i$ characterised by:
 
 \begin{definition}[Peptide Categorical State]
 \label{def:peptide_state}
@@ -113,11 +118,23 @@ A peptide categorical state after cleavage at position $i$ is:
 where $b_i$ is the N-terminal fragment mass, $y_i$ is the C-terminal fragment mass ($b_i + y_i = m_{\text{precursor}}$), $\mathbf{E}_i$ is the phase-lock edge set between fragments, $\mathbf{\Phi}_i$ is the phase vector, and $C_{\text{ord}}$ is the ordinal categorical position in the irreversible sequence.
 \end{definition}
 
-Unlike small molecule fragmentation where bond cleavage can occur at any position simultaneously, peptide fragmentation proceeds sequentially along the backbone. This sequential constraint creates correlations: each cleavage event influences subsequent cleavages through phase-lock coupling.
+Unlike small molecule fragmentation, where bond cleavage can occur at any position simultaneously, peptide fragmentation proceeds sequentially along the backbone. This sequential constraint creates correlations: each cleavage event influences subsequent cleavages through phase-lock coupling.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/sentropy_flow_diagram.png}
+\caption{\textbf{S-Entropy flow diagram showing amino acid progression along the knowledge axis.}
+Streamline visualization of three peptide sequences (PROTEIN, SAMPLE, PEPTIDE) represented as flows through S-Entropy space. Each peptide is shown as a horizontal stream (violin plot shape) with amino acid positions marked along the flow direction. The width of the stream at each position indicates the local entropy density, while color encodes $S_k$ (knowledge entropy) value from blue (low, 0.0) to yellow (high, 1.0).
+\textbf{PROTEIN} (top stream): Displays the most complex flow pattern with multiple expansions and contractions. Individual amino acids are labeled (P, R, O, T, E) and positioned according to their $S_k$ values. The stream shows dramatic width variation: narrow at proline P ($S_k \approx 0.2$, low entropy), expanding at arginine R ($S_k \approx 0.9$, high entropy), contracting at O, expanding at T, and widening significantly at E (yellow region, $S_k \approx 1.0$). The color gradient from blue (left, N-terminus) to yellow (right, C-terminus) indicates increasing knowledge entropy along the sequence, characteristic of tryptic peptides with basic residue (R/K) at the C-terminus.
+\textbf{SAMPLE} (middle stream): Shows a more uniform flow with less dramatic width variation. Amino acids S, A, M, P, L, E are evenly spaced along the stream. The stream maintains moderate width throughout, indicating consistent entropy density. Color transitions smoothly from blue-green (S, A) to yellow-green (L, E), reflecting gradual increase in $S_k$ values. The uniform flow suggests balanced amino acid composition without extreme physicochemical transitions.
+\textbf{PEPTIDE} (bottom stream): Exhibits intermediate complexity between PROTEIN and SAMPLE. Amino acids P, E, P, T, I, D, E are labeled. Notable features include: (1) repeated P and E residues creating similar width profiles at positions 0, 2 (P) and 1, 6 (E), (2) narrow constriction at proline positions (blue regions), (3) expansion at glutamic acid positions (yellow regions), and (4) intermediate width at T, I, D. The flow pattern encodes sequence information through shape: repeated amino acids create repeated width profiles, enabling sequence motif detection through pattern matching.
+}
+\label{fig:sentropy_flow_diagram}
+\end{figure*}
 
 \subsection{b/y Complementarity and Phase Correlation}
 
-A central feature of peptide MS/MS is complementarity: b and y ions arising from the same cleavage event have correlated intensities. If b$_i$ is intense, y$_{L-i}$ is typically also intense, where $L$ is peptide length. This correlation is unexplained by independent bond-breaking models but natural in phase-lock theory:
+A central feature of peptide MS/MS is complementarity: b and y ions arising from the same cleavage event have correlated intensities. If b$_i$ is intense, y$_{L-i}$ is typically also intense, where $L$ is the peptide length. This correlation is unexplained by independent bond-breaking models but natural in phase-lock theory:
 
 \begin{theorem}[b/y Phase Correlation]
 \label{thm:by_correlation}
@@ -141,7 +158,7 @@ A PTM at position $k$ creates phase jump:
 \Delta\Phi_k = \Phi(b_{k+1}) - \Phi(b_k) - \Phi_{\text{expected}}(m_{k} \to m_{k+1})
 \end{equation}
 where $\Phi_{\text{expected}}$ is the phase increment for unmodified backbone cleavage between residues $k$ and $k+1$.
-\end{equation}
+
 \end{definition}
 
 Large $|\Delta\Phi_k|$ indicates modification at position $k$. This reduces PTM localization from combinatorial site enumeration ($O(L \cdot N_{\text{sites}})$) to linear scan ($O(L)$), achieving 2–3 orders of magnitude speedup for multiply-modified peptides.
@@ -272,19 +289,19 @@ where $\rho_{\text{phase}}$ is computed from molecular structure. Correlation an
 
 \textbf{Database Search Methods \cite{eng1994approach,perkins1999probability}:} Match observed spectra to theoretical spectra from protein databases. Highly successful for known proteins but fail for novel sequences, non-tryptic digestion, or organisms with incomplete genomes. Categorical trajectory navigation operates database-independently, achieving 93.2\% sequence determination without prior knowledge.
 
-\textbf{De Novo Sequencing Algorithms \cite{ma2003peaks,tanner2005inspect}:} Attempt direct sequence reconstruction from spectra. Accuracy rarely exceeds 70\% for complete sequences due to combinatorial explosion ($20^L$ possible sequences). Categorical navigation reduces complexity to $O(L \log 20)$ through sequential state completion, achieving 89.6\% complete sequence accuracy.
+\textbf{De Novo Sequencing Algorithms \cite{ma2003peaks,tanner2005inspect}:} Attempt to directly reconstruct sequences from spectra. Accuracy rarely exceeds 70\% for complete sequences due to combinatorial explosion ($20^L$ possible sequences). Categorical navigation reduces complexity to $O(L \log 20)$ through sequential state completion, achieving 89.6\% complete sequence accuracy.
 
-\textbf{Machine Learning Predictors \cite{tran2017novo,zhou2017pdeep}:} Train neural networks on large spectral databases to predict fragmentation patterns. Achieve high empirical accuracy but lack mechanistic interpretation and require retraining per platform. Categorical features achieve comparable accuracy with orders of magnitude less training data through topological grounding, and transfer zero-shot across platforms.
+\textbf{Machine Learning Predictors \cite{tran2017novo,zhou2017pdeep}:} Train neural networks on large spectral databases to predict fragmentation patterns. Achieve high empirical accuracy but lack mechanistic interpretation and require retraining per platform. Categorical features achieve comparable accuracy with orders of magnitude less training data through topological grounding and transfer zero-shot across platforms.
 
-\textbf{PTM Scoring Methods \cite{beausoleil2006large,taus2011universal}:} Enumerate possible modification sites and score each through likelihood ratios or Bayesian statistics. Computational cost scales as $O(L \cdot N_{\text{sites}})$ for single PTMs, $O(L^k \cdot N_{\text{sites}}^k)$ for $k$ modifications—intractable for $k > 3$. Phase discontinuity scanning operates in $O(L)$ regardless of modification number, achieving superior accuracy at fraction of computational cost.
+\textbf{PTM Scoring Methods \cite{beausoleil2006large,taus2011universal}:} Enumerate possible modification sites and score each using likelihood ratios or Bayesian statistics. Computational cost scales as $O(L \cdot N_{\text{sites}})$ for single PTMs, $O(L^k \cdot N_{\text{sites}}^k)$ for $k$ modifications—intractable for $k > 3$. Phase discontinuity scanning operates in $O(L)$ regardless of modification number, achieving superior accuracy at fraction of computational cost.
 
 \subsection{Integration with Proteomics Workflows}
 
-Categorical peptide analysis integrates with standard proteomics infrastructure:
+Categorical peptide analysis integrates with the standard proteomics infrastructure:
 
-\textbf{Database Searching:} Categorical trajectory matching provides complementary scoring to traditional methods. Combined scoring (database + categorical) achieves 96.8\% identification sensitivity at 1\% FDR, versus 91.3\% for database alone and 93.2\% for categorical alone. Complementarity arises from orthogonal information: database uses sequence match, categorical uses trajectory coherence.
+\textbf{Database Searching:} Categorical trajectory matching provides complementary scoring to traditional methods. Combined scoring (database + categorical) achieves 96.8\% identification sensitivity at 1\% FDR, compared to 91.3\% for the database alone and 93.2\% for the categorical method alone. Complementarity arises from orthogonal information: the database uses sequence matching, while the categorical approach uses trajectory coherence.
 
-\textbf{Spectral Libraries:} Platform-independent S-entropy coordinates enable truly universal spectral libraries. A library built on Orbitrap transfers to Q-TOF at 89.3\% accuracy without reprocessing, versus 67.4\% for intensity-based libraries requiring per-platform normalization.
+\textbf{Spectral Libraries:} Platform-independent S-entropy coordinates enable truly universal spectral libraries. A library built on Orbitrap transfers to Q-TOF at 89.3\% accuracy without reprocessing, versus 67.4\% for intensity-based libraries requiring per-platform normalisation.
 
 \textbf{Protein Inference:} Peptide categorical trajectories from the same protein exhibit correlated phase signatures. Trajectory clustering improves protein-level FDR estimation and resolves isoforms differing by single amino acids—challenging for traditional graph-based inference.
 

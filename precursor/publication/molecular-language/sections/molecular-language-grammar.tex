@@ -1,0 +1,163 @@
+\section{Molecular Fragmentation Grammar}
+\label{sec:fragmentation-grammar}
+
+\subsection{Formal Grammar Definition}
+
+We define a molecular grammar $G = (\Sigma, N, P, S)$ for peptide fragmentation, where:
+\begin{itemize}
+\item $\Sigma = \mathcal{A}$ is the alphabet of terminal symbols (amino acids)
+\item $N = \{S, B, Y, F\}$ is the set of non-terminal symbols
+\item $P$ is the set of production rules
+\item $S$ is the start symbol (intact peptide)
+\end{itemize}
+
+\subsection{Production Rules for Fragmentation}
+
+\begin{definition}[Fragmentation Production Rule]
+The primary fragmentation production rule is:
+\begin{equation}
+P_{\text{frag}}: S \rightarrow F_N \oplus F_C
+\end{equation}
+where $F_N$ denotes the N-terminal fragment and $F_C$ denotes the C-terminal fragment, with $\oplus$ representing the peptide bond cleavage operator.
+\end{definition}
+
+For a peptide sequence $\mathbf{s} = s_1 s_2 \ldots s_n$, cleavage at bond position $k$ produces:
+\begin{align}
+F_N^{(k)} &= s_1 s_2 \ldots s_k \quad \text{(b-ion)} \\
+F_C^{(k)} &= s_{k+1} s_{k+2} \ldots s_n \quad \text{(y-ion)}
+\end{align}
+
+\subsection{Ion Type Classification}
+
+\begin{definition}[Ion Type Enumeration]
+The fragment ion types are classified as:
+\begin{align}
+\text{b-ion:} \quad &[F_N + H]^+ \\
+\text{y-ion:} \quad &[F_C + H_2O + H]^+ \\
+\text{a-ion:} \quad &[F_N - CO]^+ \\
+\text{c-ion:} \quad &[F_N + NH_3]^+ \\
+\text{x-ion:} \quad &[F_C + CO]^+ \\
+\text{z-ion:} \quad &[F_C - NH_3]^+
+\end{align}
+\end{definition}
+
+\subsection{Neutral Loss Rules}
+
+\begin{definition}[Neutral Loss Production]
+Neutral loss productions extend the grammar with:
+\begin{align}
+P_{\text{H}_2\text{O}}: F &\rightarrow F^* + \text{H}_2\text{O} \quad (\Delta m = -18.011) \\
+P_{\text{NH}_3}: F &\rightarrow F^* + \text{NH}_3 \quad (\Delta m = -17.027) \\
+P_{\text{CO}}: F &\rightarrow F^* + \text{CO} \quad (\Delta m = -27.995)
+\end{align}
+\end{definition}
+
+The neutral loss rules are context-dependent:
+\begin{itemize}
+\item $P_{\text{H}_2\text{O}}$ is applicable when $\exists s_i \in \{S, T, E, D\}$ in the fragment
+\item $P_{\text{NH}_3}$ is applicable when $\exists s_i \in \{R, K, N, Q\}$ in the fragment
+\end{itemize}
+
+\subsection{Fragment Mass Calculation}
+
+\begin{definition}[Theoretical Fragment Mass]
+For fragment sequence $F = f_1 f_2 \ldots f_m$ of ion type $\tau$ with neutral loss $\lambda$:
+\begin{equation}
+m_{\text{theo}}(F, \tau, \lambda, z) = \frac{\sum_{i=1}^m m(f_i) + \delta_\tau - \delta_\lambda + z \cdot m_H}{z}
+\end{equation}
+where $m(f_i)$ is the monoisotopic mass of amino acid $f_i$, $\delta_\tau$ is the ion type mass modifier, $\delta_\lambda$ is the neutral loss mass, $z$ is the charge state, and $m_H = 1.008$ Da is the proton mass.
+\end{definition}
+
+The ion type mass modifiers are:
+\begin{align}
+\delta_\text{b} &= 1.008 \\
+\delta_\text{y} &= 19.018 \\
+\delta_\text{a} &= 1.008 - 27.995 \\
+\delta_\text{c} &= 1.008 + 17.027
+\end{align}
+
+\subsection{Complementarity Constraint}
+
+\begin{theorem}[b/y Complementarity]
+For a peptide of precursor mass $M$, the b-ion at position $k$ and y-ion at position $n-k$ satisfy:
+\begin{equation}
+m(b_k) + m(y_{n-k}) = M + 2 \cdot m_H
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $\mathbf{s} = s_1 \ldots s_n$ with total residue mass $M_r = \sum_{i=1}^n m(s_i)$.
+
+For the b-ion: $m(b_k) = \sum_{i=1}^k m(s_i) + m_H$
+
+For the y-ion: $m(y_{n-k}) = \sum_{i=k+1}^n m(s_i) + m_H + 18.010$
+
+Sum: $m(b_k) + m(y_{n-k}) = M_r + 2m_H + 18.010 = M + 2m_H$ \qed
+\end{proof}
+
+\subsection{Sequential Relationship Constraint}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/Figure4_Fragmentation_Grammar.png}
+\caption{\textbf{Molecular fragmentation grammar generates b-ion and y-ion series.}
+(\textbf{a}) Fragment mass ladder for b-ions (orange circles) and b-ions with water
+loss (blue squares, b-H$_2$O) as a function of fragment position along the peptide
+sequence. Solid orange line shows theoretical b-ion masses calculated via Equation 11.
+Dashed blue line shows b-H$_2$O masses (neutral loss, Equation 14). Fragment positions
+correspond to cleavage sites: b$_1$ at position 1 (m/z = 98.1), b$_2$ at position 2
+(m/z = 228.1), b$_3$ at position 3 (m/z = 325.1). Linear progression validates the
+additive mass model underlying the fragmentation grammar (Section 2).
+(\textbf{b}) Fragment mass ladder for b-ions (teal circles) and b-ions with water
+loss (pink squares) for a different peptide. Similar linear progression confirms
+grammar generalizability. Fragment b$_1$ at m/z = 98.1, b$_2$ at m/z = 218.1,
+b$_3$ at m/z = 345.1. The parallel lines (solid vs. dashed) show consistent
+18.01 Da mass difference for H$_2$O loss.
+(\textbf{c}) Complementarity constraint validation (Equation 15). Scatter plot
+showing m/z of b-ions (x-axis) versus m/z of complementary y-ions (y-axis).
+Text annotation indicates "No complementary ion data" for this particular spectrum,
+demonstrating that not all theoretical fragments are observed experimentally—a key
+motivation for the categorical completion approach (Section 5).
+(\textbf{d}) Fragmentation grammar tree diagram showing production rules (Section 2.2).
+Root node (yellow box) represents precursor peptide "PEPTIDE". First fragmentation
+produces b-ion "P" (orange box, left branch) and complementary y-ion "EPTIDE"
+(blue box, right branch). Subsequent fragmentation of b-ion "P" by adding amino
+acid E produces b-ion "PE" (orange box, lower left). Arrow annotations show the
+production rule: b$_i$ = b$_{i-1}$ + AA$_i$. This tree structure formalizes the
+fragmentation process as a context-free grammar, enabling systematic fragment
+generation and validation.
+This figure demonstrates that peptide fragmentation follows deterministic production
+rules (Equations 10-15), generating predictable b-ion and y-ion series. The grammar
+formalism enables computational fragment prediction and validates the graph-based
+reconstruction approach (Section 3), where fragments are nodes and grammar rules
+define edges.}
+\label{fig:fragmentation_grammar}
+\end{figure}
+
+\begin{definition}[Sequential Ion Series]
+Consecutive ions in the b-series satisfy:
+\begin{equation}
+m(b_{k+1}) - m(b_k) = m(s_{k+1})
+\end{equation}
+and consecutive ions in the y-series satisfy:
+\begin{equation}
+m(y_{k+1}) - m(y_k) = m(s_{n-k})
+\end{equation}
+\end{definition}
+
+These constraints form the basis for sequence tag extraction and de novo sequencing.
+
+\subsection{Complete Fragment Generation}
+
+For a peptide sequence of length $n$, the complete production rule set $P_{\text{complete}}$ generates:
+\begin{itemize}
+\item $n-1$ b-ions: $\{b_1, b_2, \ldots, b_{n-1}\}$
+\item $n-1$ y-ions: $\{y_1, y_2, \ldots, y_{n-1}\}$
+\item Additional neutral loss ions where applicable
+\end{itemize}
+
+The total theoretical fragment count is:
+\begin{equation}
+|P_{\text{complete}}| = 2(n-1) + \sum_{k=1}^{n-1} |\mathcal{L}(b_k)| + \sum_{k=1}^{n-1} |\mathcal{L}(y_k)|
+\end{equation}
+where $|\mathcal{L}(F)|$ is the number of applicable neutral losses for fragment $F$.

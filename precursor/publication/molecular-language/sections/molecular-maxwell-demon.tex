@@ -1,0 +1,200 @@
+\section{Molecular Maxwell Demon System}
+\label{sec:mmd}
+
+\subsection{System Architecture}
+
+The Molecular Maxwell Demon (MMD) system integrates the preceding components into a unified framework for database-free peptide identification. The system comprises six layers:
+
+\begin{enumerate}
+\item S-Entropy Neural Network (SENN)
+\item Empty Dictionary Architecture
+\item Categorical Completion Engine
+\item Sequence Reconstructor
+\item BMD Equivalence Filter
+\item Virtual Detector Interface
+\end{enumerate}
+
+\subsection{Configuration}
+
+\begin{definition}[MMD Configuration]
+The system configuration $\Theta$ specifies:
+\begin{align}
+\Theta = \{&\beta_S, \; \text{(S-Entropy bandwidth)} \\
+&\epsilon_S, \; \text{(dictionary distance threshold)} \\
+&\epsilon_m, \; \text{(mass tolerance)} \\
+&n_{\max}, \; \text{(maximum gap size)} \\
+&c_{\min}, \; \text{(minimum fragment confidence)} \\
+&\texttt{cross\_modal}, \; \text{(enable cross-modal validation)} \\
+&\texttt{dynamic\_learn}\} \; \text{(enable dictionary learning)}
+\end{align}
+\end{definition}
+
+\subsection{Spectrum Analysis Pipeline}
+
+\begin{algorithm}[H]
+\caption{MMD Spectrum Analysis}
+\label{alg:mmd_analysis}
+\begin{algorithmic}[1]
+\Procedure{AnalyzeSpectrum}{$\mathbf{m}$, $\mathbf{I}$, $m_{\text{prec}}$, $z$, $t_R$}
+    \State \textbf{// Step 1: S-Entropy Transformation}
+    \State ($\mathbf{S}$, $M$) $\gets$ SEntropyTransform($\mathbf{m}$, $\mathbf{I}$, $m_{\text{prec}}$, $t_R$)
+
+    \State \textbf{// Step 2: BMD Filtering (optional)}
+    \If{BMD enabled}
+        \State Indices $\gets$ BMDFilter($\mathbf{S}$)
+    \Else
+        \State Indices $\gets \{1, \ldots, |\mathbf{S}|\}$
+    \EndIf
+
+    \State \textbf{// Step 3: Build Fragment Nodes}
+    \State $V \gets \varnothing$
+    \For{$i \in$ Indices}
+        \State $v \gets$ FragmentNode($i$, null, $\mathbf{S}_i$, $\mathbf{m}_i \cdot z$, null, null, 1.0)
+        \State $V \gets V \cup \{v\}$
+    \EndFor
+
+    \State \textbf{// Step 4: Sequence Reconstruction}
+    \State $R \gets$ Reconstruct($V$, $m_{\text{prec}} \cdot z$, $z$)
+
+    \State \textbf{// Step 5: Cross-Modal Validation}
+    \If{cross\_modal enabled}
+        \State $R \gets$ CrossModalValidate($R$, $\mathbf{m}$, $\mathbf{I}$)
+    \EndIf
+
+    \State \textbf{// Step 6: Dynamic Learning}
+    \If{dynamic\_learn enabled}
+        \State UpdateDictionary($R$, $V$)
+    \EndIf
+
+    \State \Return $R$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Batch Processing}
+
+For multiple spectra $\{(\mathbf{m}^{(i)}, \mathbf{I}^{(i)}, m_{\text{prec}}^{(i)}, z^{(i)}, t_R^{(i)})\}_{i=1}^N$:
+
+\begin{algorithm}[H]
+\caption{MMD Batch Analysis}
+\label{alg:mmd_batch}
+\begin{algorithmic}[1]
+\Procedure{BatchAnalyze}{Spectra}
+    \State Results $\gets$ EmptyList()
+
+    \For{$i \in \{1, \ldots, N\}$}
+        \State $R_i \gets$ AnalyzeSpectrum(Spectra[$i$])
+        \State Results.Append($R_i$)
+    \EndFor
+
+    \State \textbf{// Aggregate Statistics}
+    \State Sequences $\gets \{R.\mathbf{s} : R \in \text{Results}, R.\mathbf{s} \neq \varnothing\}$
+    \State $\bar{c} \gets \frac{1}{N} \sum_i R_i.c$
+    \State $N_{\text{high}} \gets |\{R : R.c > 0.7\}|$
+
+    \State \Return (Results, $\bar{c}$, $N_{\text{high}}$)
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Variance Minimization Principle}
+
+The MMD system operates through variance minimization in S-Entropy space, seeking equilibrium states that correspond to valid molecular identifications.
+
+\begin{theorem}[MMD Equilibrium]
+The system state $\xi$ converges to equilibrium:
+\begin{equation}
+\frac{d\xi}{dt} = -\nabla_\xi \mathcal{V}(\xi)
+\end{equation}
+where $\mathcal{V}(\xi) = \text{Var}(\mathbf{S}|\xi)$ is the variance of S-Entropy coordinates given system state $\xi$.
+\end{theorem}
+
+At equilibrium, $\nabla_\xi \mathcal{V} = 0$, corresponding to minimum-entropy molecular configurations consistent with observed data.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/mmd_theory_figure.png}
+\caption{\textbf{Maximum Mean Discrepancy (MMD) validates platform independence of S-Entropy framework.}
+(\textbf{a}) Visual explanation of MMD metric. Two probability distributions shown
+as overlapping filled curves: Distribution 1 (cyan) and Distribution 2 (green).
+MMD quantifies the distance between distributions in reproducing kernel Hilbert
+space (RKHS), providing a rigorous statistical measure of distributional similarity.
+Low MMD value (0.050 in example, yellow annotation box) indicates distributions are
+nearly identical, validating that S-Entropy coordinates are invariant across
+measurement conditions. This is the theoretical foundation for platform independence.
+(\textbf{b}) Comparison of MMD to traditional distribution comparison metrics.
+Horizontal bar chart showing sensitivity to distribution differences: Correlation
+(0.60, orange), Kolmogorov-Smirnov test (0.70, blue), Chi-square test (0.75, blue),
+and MMD (0.95, green). MMD's superior sensitivity (95\% vs. 60-75\% for traditional
+metrics) validates its use for rigorous platform independence validation. Traditional
+metrics fail to capture multi-dimensional distributional differences that MMD detects.
+(\textbf{c}) Platform independence proof via MMD. Overlapping histograms show
+S-Entropy value distributions from two different mass spectrometry platforms
+(Platform 1 in blue, Platform 2 in green). Near-perfect overlap yields MMD = 0.080,
+well below the 0.1 threshold for "excellent" similarity (green annotation box:
+"Platform Independent"). This empirically validates that S-Entropy coordinates
+are invariant across instruments, ionization methods, and acquisition parameters—a
+fundamental requirement for database-free identification. The variance minimization
+principle (Section 6.5) ensures this invariance by normalizing physicochemical
+properties to [0,1] range.
+(\textbf{d}) Categorical equivalence classes in S-Entropy space. Five distinct
+clusters shown as scatter plots in (S$_k$, S$_t$) space, each colored differently
+and surrounded by dashed ellipse: Class 1 (pink, top-right), Class 2 (orange,
+top-left), Class 3 (green, center-left), Class 4 (cyan, bottom-right), Class 5
+(purple, center-right). Points within each cluster represent molecules with similar
+S-Entropy coordinates, forming categorical equivalence classes (Equation 17).
+Spatial separation between clusters (no overlap) enables unambiguous classification
+and validates the categorical completion approach (Section 5.3), where gaps can be
+filled by selecting amino acids from appropriate equivalence classes.
+This figure establishes the theoretical and empirical foundation for platform
+independence, a key advantage of the S-Entropy framework over traditional database
+methods that require platform-specific spectral libraries. MMD validation (MMD < 0.1)
+proves that S-Entropy coordinates are universal molecular descriptors, enabling
+zero-shot identification across diverse experimental conditions without retraining
+or recalibration.}
+\label{fig:mmd_theory}
+\end{figure}
+
+
+\subsection{Cross-Modal Pathway Validation}
+
+\begin{definition}[Cross-Modal Validation]
+Given reconstructed sequence $\mathbf{s}$ and observed spectrum $(\mathbf{m}, \mathbf{I})$:
+\begin{enumerate}
+\item Generate theoretical fragment set $F_{\text{theo}} \gets$ Grammar($\mathbf{s}$)
+\item Compute theoretical m/z values $\{m(f) : f \in F_{\text{theo}}\}$
+\item Match with observed peaks: $N_{\text{match}} = |\{f : \exists m_j, |m(f) - m_j| \leq \epsilon_m\}|$
+\item Validation score: $\text{score} = N_{\text{match}} / |F_{\text{theo}}|$
+\end{enumerate}
+\end{definition}
+
+\subsection{Dictionary Update Protocol}
+
+\begin{algorithm}[H]
+\caption{Dictionary Update}
+\label{alg:dict_update}
+\begin{algorithmic}[1]
+\Procedure{UpdateDictionary}{$R$, $V$}
+    \State $N_{\text{novel}} \gets |\{v \in V : c(v) < 0.5\}|$
+
+    \For{$v \in V$ with $c(v) < 0.5$}
+        \State $(\text{match}, d) \gets$ Lookup($\mathcal{D}$, $\mathbf{S}(v)$, 1, $\epsilon_S$)
+        \If{match = null \textbf{or} $d > \epsilon_S$}
+            \State LearnNovel($\mathcal{D}$, $\mathbf{S}(v)$, $m(v)$, 0.5)
+        \EndIf
+    \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{System Output}
+
+The MMD system produces:
+\begin{itemize}
+\item Reconstructed peptide sequences
+\item Per-sequence confidence scores
+\item Fragment coverage metrics
+\item Gap-filled regions with confidence
+\item Cross-modal validation scores
+\item Updated dictionary (if learning enabled)
+\end{itemize}

@@ -1,0 +1,207 @@
+\section{Fragment Graph Construction}
+\label{sec:fragment-graph}
+
+\subsection{Graph Formalism}
+
+We construct a directed graph $\mathcal{G} = (V, E)$ where vertices represent observed fragments and edges represent sequential relationships consistent with peptide bond cleavage patterns.
+
+\begin{definition}[Fragment Node]
+A fragment node $v \in V$ is a tuple:
+\begin{equation}
+v = (id, \sigma, \mathbf{S}, m, \tau, k, c)
+\end{equation}
+where:
+\begin{itemize}
+\item $id$ is a unique identifier
+\item $\sigma \in \mathcal{A}^*$ is the partial sequence (if identified)
+\item $\mathbf{S} \in \mathcal{S}^3$ is the S-Entropy coordinate vector
+\item $m \in \mathbb{R}^+$ is the fragment mass
+\item $\tau \in \{b, y, a, c, x, z, \varnothing\}$ is the ion type
+\item $k \in \mathbb{Z}^+$ is the sequence position (if known)
+\item $c \in [0, 1]$ is the identification confidence
+\end{itemize}
+\end{definition}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/Figure2_Sequence_Trajectories.png}
+\caption{\textbf{Peptide sequences as continuous paths in S-Entropy space.}
+(\textbf{a}) Three-dimensional trajectory of the peptide "PEPTIDE" through S-Entropy
+space (S$_k$, S$_t$, S$_e$). Each sphere represents one amino acid position, connected
+by line segments showing sequential progression from N-terminus to C-terminus. Spheres
+are colored by amino acid type (orange for charged, blue for hydrophobic, etc.).
+The smooth, continuous path demonstrates that peptide sequences form coherent
+trajectories in S-Entropy space, validating the sequence coordinate path concept
+(Equation 7).
+(\textbf{b}) Three-dimensional trajectory of the peptide "SAMPLE" in S-Entropy space,
+showing a different path topology. The distinct trajectory shape reflects the unique
+amino acid composition and sequence order, demonstrating that different peptides
+occupy different regions of S-Entropy space.
+(\textbf{c}) Sequence entropy and complexity metrics for both peptides. Bar chart
+comparing sequence entropy (orange, calculated via Equation 8) and complexity
+(blue, scaled ×5 for visualization). PEPTIDE shows higher entropy (2.24) and
+complexity (2.58) than SAMPLE (0.444 and 0.499 respectively), reflecting greater
+amino acid diversity and physicochemical heterogeneity.
+(\textbf{d}) S-Entropy magnitude evolution along sequence positions. Line plot
+showing how total S-Entropy magnitude (Equation 9) varies across positions for
+PEPTIDE (orange) and SAMPLE (blue). Peaks correspond to amino acids with extreme
+physicochemical properties (e.g., charged residues), while valleys indicate neutral
+residues. The distinct patterns enable sequence discrimination.
+This figure demonstrates that peptide sequences trace unique, continuous paths
+through S-Entropy space, with path topology encoding sequence identity. The smooth
+trajectories validate using S-Entropy coordinates for sequence reconstruction, as
+fragments from the same peptide will lie on the same continuous path.}
+\label{fig:sequence_trajectories}
+\end{figure}
+
+
+
+\subsection{Edge Construction}
+
+\begin{definition}[Sequential Edge]
+An edge $e = (v_i, v_j) \in E$ connects fragments if they satisfy the sequential relationship constraint:
+\begin{equation}
+\exists a \in \mathcal{A}: |m(v_j) - m(v_i) - m(a)| \leq \epsilon_m
+\end{equation}
+where $\epsilon_m$ is the mass tolerance (typically 0.5 Da).
+\end{definition}
+
+\begin{definition}[Edge Weight]
+The edge weight incorporates S-Entropy similarity:
+\begin{equation}
+w(v_i, v_j) = \exp\left(-\frac{\|\mathbf{S}(v_i) - \mathbf{S}(v_j)\|}{\sigma_S}\right)
+\end{equation}
+where $\sigma_S$ is a bandwidth parameter (default 0.3).
+\end{definition}
+
+\subsection{Graph Construction Algorithm}
+
+\begin{algorithm}[H]
+\caption{Fragment Graph Construction}
+\label{alg:graph_construction}
+\begin{algorithmic}[1]
+\Procedure{BuildFragmentGraph}{FragmentList, $\epsilon_m$}
+    \State $\mathcal{G} \gets$ EmptyDirectedGraph()
+    \State $\mathcal{M}_{AA} \gets \{m(a) : a \in \mathcal{A}\}$
+
+    \For{$v \in$ FragmentList}
+        \State $\mathcal{G}$.AddNode($v$)
+    \EndFor
+
+    \For{$v_i \in \mathcal{G}$.Nodes()}
+        \For{$v_j \in \mathcal{G}$.Nodes(), $v_j \neq v_i$}
+            \State $\Delta m \gets m(v_j) - m(v_i)$
+            \For{$m_a \in \mathcal{M}_{AA}$}
+                \If{$|\Delta m - m_a| \leq \epsilon_m$}
+                    \State $w \gets$ ComputeSEntropySimilarity($v_i$, $v_j$)
+                    \If{$m(v_j) > m(v_i)$}
+                        \State $\mathcal{G}$.AddEdge($v_i$, $v_j$, $w$)
+                    \EndIf
+                    \State \textbf{break}
+                \EndIf
+            \EndFor
+        \EndFor
+    \EndFor
+
+    \State \Return $\mathcal{G}$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{S-Entropy Magnitude}
+
+\begin{definition}[Fragment Entropy]
+The S-Entropy magnitude for a fragment node is:
+\begin{equation}
+H(v) = \|\mathbf{S}(v)\|_2 = \sqrt{S_k^2 + S_t^2 + S_e^2}
+\end{equation}
+\end{definition}
+
+\subsection{Path Finding}
+
+\begin{definition}[Hamiltonian Path Problem]
+The sequence reconstruction problem reduces to finding a Hamiltonian path through $\mathcal{G}$ that minimizes total S-Entropy:
+\begin{equation}
+\mathbf{p}^* = \arg\min_{\mathbf{p} \in \mathcal{H}(\mathcal{G})} \sum_{v \in \mathbf{p}} H(v)
+\end{equation}
+where $\mathcal{H}(\mathcal{G})$ is the set of Hamiltonian paths in $\mathcal{G}$.
+\end{definition}
+
+For directed acyclic graphs, the longest path can be computed via dynamic programming in $O(|V| + |E|)$ time.
+
+\begin{algorithm}[H]
+\caption{Longest Path in DAG}
+\label{alg:longest_path}
+\begin{algorithmic}[1]
+\Procedure{FindLongestPath}{$\mathcal{G}$}
+    \State $d[v] \gets -\infty$ for all $v \in V$
+    \State $\pi[v] \gets$ null for all $v \in V$
+    \State TopologicalOrder $\gets$ TopologicalSort($\mathcal{G}$)
+
+    \For{$v$ with in-degree = 0}
+        \State $d[v] \gets 0$
+    \EndFor
+
+    \For{$v \in$ TopologicalOrder}
+        \For{$u \in$ Successors($v$)}
+            \If{$d[v] + w(v, u) > d[u]$}
+                \State $d[u] \gets d[v] + w(v, u)$
+                \State $\pi[u] \gets v$
+            \EndIf
+        \EndFor
+    \EndFor
+
+    \State $v_{\text{end}} \gets \arg\max_v d[v]$
+    \State Path $\gets$ ReconstructPath($\pi$, $v_{\text{end}}$)
+    \State \Return Path
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Greedy Path Construction}
+
+When the graph contains cycles, we employ greedy path construction:
+
+\begin{algorithm}[H]
+\caption{Greedy Path Construction}
+\label{alg:greedy_path}
+\begin{algorithmic}[1]
+\Procedure{GreedyPath}{$\mathcal{G}$}
+    \State $v_0 \gets \arg\min_{v \in V} m(v)$
+    \State Path $\gets [v_0]$
+    \State Visited $\gets \{v_0\}$
+    \State $v_c \gets v_0$
+
+    \While{$|$Visited$| < |V|$}
+        \State $v_{\text{next}} \gets$ null
+        \State $w_{\text{best}} \gets -\infty$
+        \For{$u \in$ Successors($v_c$), $u \notin$ Visited}
+            \If{$w(v_c, u) > w_{\text{best}}$}
+                \State $w_{\text{best}} \gets w(v_c, u)$
+                \State $v_{\text{next}} \gets u$
+            \EndIf
+        \EndFor
+        \If{$v_{\text{next}} =$ null}
+            \State \textbf{break}
+        \EndIf
+        \State Path.Append($v_{\text{next}}$)
+        \State Visited.Add($v_{\text{next}}$)
+        \State $v_c \gets v_{\text{next}}$
+    \EndWhile
+
+    \State \Return Path
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Path Entropy Calculation}
+
+\begin{definition}[Total Path Entropy]
+For a path $\mathbf{p} = (v_1, v_2, \ldots, v_\ell)$:
+\begin{equation}
+H_{\text{total}}(\mathbf{p}) = \sum_{i=1}^\ell H(v_i)
+\end{equation}
+\end{definition}
+
+Lower path entropy indicates greater structural organization and higher reconstruction confidence.

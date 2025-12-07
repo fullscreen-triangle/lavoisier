@@ -8,9 +8,37 @@ nav_order: 1
 
 Welcome to the comprehensive documentation for the Lavoisier mass spectrometry analysis framework. Lavoisier is a high-performance computing framework that combines numerical and visual processing methods with integrated artificial intelligence modules for automated compound identification and structural elucidation.
 
-## 🎯 NEW: Buhera Scripting Language
+## 🎯 NEW: Precursor Framework
 
-Lavoisier now includes **Buhera**, a revolutionary domain-specific scripting language that transforms mass spectrometry analysis by encoding the actual scientific method as executable scripts.
+The **Precursor** module introduces a revolutionary approach to mass spectrometry analysis through **S-Entropy Coordinates** and **Virtual Instruments**.
+
+### Key Innovations
+
+- **S-Entropy Coordinates**: 3D categorical coordinate system (S_knowledge, S_time, S_entropy) for platform-independent spectral representation
+- **Ion-to-Droplet Computer Vision**: Bijective transformation of mass spectra into thermodynamic droplet images
+- **Virtual Instrument Ensemble**: Hardware-grounded virtual mass spectrometers with phase-lock networks
+- **Molecular Maxwell Demon**: Information-theoretic fragmentation analysis using categorical states
+- **Categorical Completion**: Gap-filling and annotation through S-entropy trajectory analysis
+
+### Precursor Pipeline
+
+```
+Spectral Acquisition → S-Entropy Transform → Computer Vision
+                                              ↓
+Virtual Instruments ← Categorical Completion ← BMD Grounding
+```
+
+### Validated on UC Davis Metabolomics Dataset
+
+The Precursor framework has been validated on the UC Davis metabolomics dataset (10 mzML files, ~16,000 spectra total), demonstrating:
+
+- **S-Entropy transformation**: 800+ spectra/second
+- **Physics-validated droplet conversion**: 50-100 spectra/second
+- **Cross-platform categorical consistency**: Coherence > 0.85
+
+## 🎯 Buhera Scripting Language
+
+Lavoisier includes **Buhera**, a domain-specific scripting language that transforms mass spectrometry analysis by encoding the scientific method as executable scripts.
 
 ### Buhera Documentation
 
@@ -27,7 +55,7 @@ Lavoisier now includes **Buhera**, a revolutionary domain-specific scripting lan
 - 🧠 **Goal-Directed AI**: Bayesian evidence networks optimized for specific objectives
 - 🔬 **Scientific Rigor**: Enforced statistical requirements and biological coherence
 
-## Core Lavoisier Framework
+## Core Framework
 
 ### System Architecture & Installation
 
@@ -55,78 +83,134 @@ Lavoisier now includes **Buhera**, a revolutionary domain-specific scripting lan
 - **[🐍 Python Integration](module-summary.md)** - Python module organization
 - **[🚗 Autobahn Integration](autobahn-integration.md)** - Probabilistic reasoning integration
 
-### Benchmarking & Validation
-
-- **[📊 Benchmarking](benchmarking.md)** - Performance evaluation methodologies
-- **[📋 Task Specifications](tasks.md)** - Analytical task definitions and requirements
-
 ## Quick Start Guide
 
-### 1. Traditional Lavoisier Analysis
+### 1. Precursor Analysis (NEW!)
 
-```bash
-# Install Lavoisier
-pip install lavoisier
+```python
+from precursor.src.core.SpectraReader import extract_mzml
+from precursor.src.core.EntropyTransformation import SEntropyTransformer
+from precursor.src.core.IonToDropletConverter import IonToDropletConverter
 
-# Run basic analysis
-lavoisier analyze --input sample.mzML --output results/
+# Load data
+scan_info, spectra, xic = extract_mzml("your_data.mzML")
+
+# Transform to S-Entropy coordinates
+transformer = SEntropyTransformer()
+coords, matrix = transformer.transform_spectrum(mz, intensity)
+
+# Generate droplet images with physics validation
+converter = IonToDropletConverter(resolution=(512, 512))
+image, droplets = converter.convert_spectrum_to_image(mz, intensity)
+
+# Access categorical coordinates
+for droplet in droplets:
+    s_k = droplet.s_entropy_coords.s_knowledge  # Structural knowledge
+    s_t = droplet.s_entropy_coords.s_time       # Temporal position
+    s_e = droplet.s_entropy_coords.s_entropy    # Thermodynamic entropy
 ```
 
-### 2. Buhera Script Analysis (NEW!)
+### 2. Virtual Instrument Ensemble
+
+```python
+from precursor.src.virtual import VirtualMassSpecEnsemble
+
+# Create ensemble with all instruments
+ensemble = VirtualMassSpecEnsemble(
+    enable_all_instruments=True,
+    enable_hardware_grounding=True
+)
+
+# Measure with cross-platform consensus
+result = ensemble.measure_spectrum(mz, intensity, rt)
+print(f"Phase-locks: {result.total_phase_locks}")
+print(f"Convergence: {result.convergence_nodes_count}")
+```
+
+### 3. Complete Pipeline
+
+```bash
+cd precursor
+
+# Run complete analysis on UC Davis dataset
+python run_ucdavis_complete_analysis.py
+
+# Or resume from Stage 2B (faster)
+python run_ucdavis_resume.py
+```
+
+### 4. Buhera Script Analysis
 
 ```bash
 # Build Buhera language
 cd lavoisier-buhera && cargo build --release
 
-# Create a script
-cat > biomarker_discovery.bh << 'EOF'
-objective DiabetesBiomarkerDiscovery:
-    target: "identify metabolites predictive of diabetes progression"
-    success_criteria: "sensitivity >= 0.85 AND specificity >= 0.85"
-
-validate InstrumentCapability:
-    check_instrument_capability
-    if target_concentration < instrument_detection_limit:
-        abort("Instrument cannot detect target concentrations")
-
-phase EvidenceBuilding:
-    evidence_network = lavoisier.mzekezeke.build_evidence_network(
-        objective: "diabetes_biomarker_discovery",
-        pathway_focus: ["glycolysis", "gluconeogenesis"]
-    )
-EOF
-
-# Validate and execute
+# Create and execute a script
 buhera validate biomarker_discovery.bh
 buhera execute biomarker_discovery.bh
+```
+
+## Pipeline Results Structure
+
+After running Precursor analysis:
+
+```
+results/
+├── ucdavis_complete_analysis/
+│   ├── {file_name}/
+│   │   ├── stage_01_preprocessing/
+│   │   │   ├── scan_info.csv
+│   │   │   └── spectra/
+│   │   ├── stage_02_sentropy/
+│   │   │   ├── sentropy_features.csv
+│   │   │   └── matrices/
+│   │   ├── stage_02_cv/
+│   │   │   ├── images/        # Droplet images
+│   │   │   └── droplets/      # Physics-validated data
+│   │   ├── stage_02_5_fragmentation/
+│   │   ├── stage_03_bmd/
+│   │   ├── stage_04_completion/
+│   │   └── stage_05_virtual/
+│   └── analysis_summary.csv
+└── visualizations/
+    ├── entropy_space/
+    ├── molecular_language/
+    └── phase_lock/
 ```
 
 ## Use Cases
 
 ### 🔬 Scientific Research
-- **Biomarker Discovery**: Identify disease-specific metabolites with clinical utility
-- **Drug Metabolism**: Characterize hepatic metabolism pathways and drug interactions
-- **Environmental Analysis**: Detect contaminants and assess environmental impact
-- **Food Safety**: Monitor pesticide residues and mycotoxin contamination
+- **Metabolomics**: S-Entropy coordinate analysis for metabolite identification
+- **Proteomics**: Fragmentation pattern analysis with categorical completion
+- **Biomarker Discovery**: Virtual instrument consensus for robust markers
+- **Cross-Platform Studies**: Platform-independent categorical representation
 
-### 🤖 AI & Machine Learning
-- **Multi-Domain LLM Systems**: Template for combining specialized AI models
-- **Adversarial ML Research**: Framework for testing ML robustness
-- **Bayesian Network Applications**: Probabilistic reasoning in scientific domains
-- **Context Verification**: Novel approaches to AI system integrity
+### 🤖 Computer Vision
+- **Ion-to-Droplet Conversion**: Thermodynamic image generation
+- **Physics Validation**: Navier-Stokes constrained droplet parameters
+- **Multi-Modal Analysis**: Spectral + visual feature fusion
 
-### 🔒 Quality & Validation
-- **Method Validation**: Comprehensive analytical method validation workflows
-- **Instrument QC**: Continuous performance monitoring and predictive maintenance
-- **Regulatory Compliance**: Automated compliance checking and reporting
-- **Data Integrity**: Cryptographic verification of analysis context
+### 🔗 Virtual Instruments
+- **Ensemble Consensus**: Multi-instrument agreement scoring
+- **Hardware Grounding**: Reality validation through oscillation harvesting
+- **Phase-Lock Networks**: Molecular ensemble detection
+
+## Publications
+
+The framework is documented in several publications under `precursor/publication/`:
+
+- **S-Entropy Coordinates**: Categorical coordinate system for mass spectrometry
+- **Ion-to-Droplet Computer Vision**: Bijective thermodynamic image generation
+- **Virtual Instruments**: Hardware-grounded virtual mass spectrometers
+- **Molecular Language**: Categorical amino acid alphabet and fragmentation grammar
 
 ## Contributing
 
-We welcome contributions to both the core Lavoisier framework and the Buhera scripting language:
+We welcome contributions to:
 
-1. **Core Framework**: Python-based AI modules and analysis pipelines
-2. **Buhera Language**: Rust-based language implementation and validation
+1. **Precursor Framework**: S-Entropy, virtual instruments, computer vision
+2. **Buhera Language**: Rust-based language implementation
 3. **Documentation**: Tutorials, examples, and best practices
 4. **Validation**: Test cases and benchmarking datasets
 
@@ -134,10 +218,9 @@ See our [implementation roadmap](implementation-roadmap.md) for current developm
 
 ## Community
 
-- **GitHub**: [lavoisier](https://github.com/username/lavoisier)
+- **GitHub**: [lavoisier](https://github.com/fullscreen-triangle/lavoisier)
 - **Issues**: Report bugs and request features
 - **Discussions**: Share use cases and get help
-- **Wiki**: Community-contributed examples and tutorials
 
 ## License
 
@@ -147,4 +230,4 @@ Lavoisier is released under the MIT License. See LICENSE file for details.
 
 *"Only the extraordinary can beget the extraordinary"* - Antoine Lavoisier
 
-Transform your mass spectrometry analysis with surgical precision using Lavoisier and Buhera. 
+Transform your mass spectrometry analysis with S-Entropy coordinates and virtual instruments.
