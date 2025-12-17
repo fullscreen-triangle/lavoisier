@@ -1,0 +1,111 @@
+% ============================================================================
+% S-ENTROPY TRANSFORMATION
+% ============================================================================
+\subsection{S-Entropy Coordinate Transformation}
+
+\subsubsection{Mathematical Framework}
+
+The S-Entropy transformation maps each mass spectral peak to a three-dimensional coordinate space. For a peak with mass-to-charge ratio $m/z$ and intensity $I$, the transformation is defined as:
+
+\begin{equation}
+\mathbf{S}(m/z, I) = \begin{pmatrix} S_k \\ S_t \\ S_e \end{pmatrix}
+\end{equation}
+
+\noindent where the individual coordinates are computed as:
+
+\begin{align}
+S_k &= f_k(m/z, I) = \frac{\log(m/z)}{\log(m/z_{\max})} \cdot \frac{I}{I_{\max}} \\
+S_t &= f_t(m/z) = \frac{m/z - m/z_{\min}}{m/z_{\max} - m/z_{\min}} \\
+S_e &= f_e(I) = -\frac{I}{I_{\text{total}}} \log_2\left(\frac{I}{I_{\text{total}}}\right)
+\end{align}
+
+The $S_k$ coordinate encodes the structural information content, combining mass and intensity information. The $S_t$ coordinate provides normalized temporal (mass) positioning within the spectrum. The $S_e$ coordinate captures the Shannon entropy contribution of each peak to the total spectral entropy.
+
+\subsubsection{Transformation Results}
+
+The S-Entropy transformation was applied to all 46,458 spectra in the dataset. Table~\ref{tab:sentropy} summarizes the transformation results by sample and ionization mode.
+
+\begin{table}[H]
+\centering
+\caption{S-Entropy transformation summary by sample.}
+\label{tab:sentropy}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Sample} & \textbf{Spectra} & \textbf{$\bar{S}_k$ (mean $\pm$ SD)} & \textbf{$\bar{S}_t$ (mean $\pm$ SD)} & \textbf{$\bar{S}_e$ (mean $\pm$ SD)} & \textbf{Throughput} \\
+\midrule
+M3 Negative & 9,169 & 2.79 $\pm$ 5.44 & 0.51 $\pm$ 0.25 & 0.04 $\pm$ 0.06 & 3.9 \\
+M3 Positive & 9,075 & 2.64 $\pm$ 5.01 & 0.50 $\pm$ 0.25 & 0.04 $\pm$ 0.07 & 4.8 \\
+M4 Negative & 4,958 & 2.68 $\pm$ 5.02 & 0.49 $\pm$ 0.24 & 0.04 $\pm$ 0.06 & 7.2 \\
+M4 Positive & 9,258 & 2.87 $\pm$ 5.17 & 0.50 $\pm$ 0.25 & 0.05 $\pm$ 0.07 & 5.5 \\
+M5 Negative & 9,208 & 2.75 $\pm$ 5.15 & 0.50 $\pm$ 0.25 & 0.04 $\pm$ 0.07 & 6.1 \\
+M5 Positive & 4,790 & 2.84 $\pm$ 5.13 & 0.50 $\pm$ 0.25 & 0.05 $\pm$ 0.07 & 5.3 \\
+\midrule
+\textbf{Total} & \textbf{46,458} & \textbf{2.76 $\pm$ 5.15} & \textbf{0.50 $\pm$ 0.25} & \textbf{0.04 $\pm$ 0.07} & \textbf{5.3} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mean $S_k$ values ranged from 2.64 to 2.87, with positive ionisation mode samples exhibiting slightly higher values on average. The $S_t$ coordinate showed remarkable consistency across all samples (mean 0.50 $\pm$ 0.25), reflecting the normalised nature of the temporal positioning. The $S_e$ coordinate remained low (mean 0.04) with limited variance, indicating that individual peaks contribute modest entropy to the overall spectral distribution.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure6_trajectories.png}
+    \caption{S-Entropy coordinate trajectories across chromatographic separation.
+    (A) $S_k$ trajectory (first 200 scans). (B) $S_t$ trajectory. (C) $S_e$ trajectory.
+    One representative file shown per biological sample.}
+    \label{fig:trajectories}
+\end{figure}
+
+\subsubsection{Ionization Mode Effects}
+
+Comparison of S-Entropy coordinates between ionisation modes revealed systematic differences:
+
+\begin{itemize}
+    \item \textbf{$S_k$ Distribution}: Positive mode spectra exhibited higher mean $S_k$ (2.78 $\pm$ 5.10) compared to negative mode (2.74 $\pm$ 5.20), consistent with the preferential ionization of protonated species.
+
+    \item \textbf{Peak Counts}: Positive mode spectra contained more peaks on average (387 $\pm$ 102) than negative mode spectra (341 $\pm$ 98), reflecting the broader range of compounds amenable to positive electrospray ionisation.
+
+    \item \textbf{Variance Structure}: The standard deviation of $S_k$ was slightly lower in positive mode, suggesting more homogeneous ionisation efficiency.
+\end{itemize}
+
+\subsection{Fragmentation Network Analysis}
+
+\subsubsection{Network Construction}
+
+The fragmentation network analysis (Stage 2.5) identified precursor ions from MS1 spectra and attempted to construct precursor-fragment relationships. Due to the predominance of MS1 data in the dataset, the network primarily characterized precursor ion distributions.
+
+\begin{table}[H]
+\centering
+\caption{Fragmentation network statistics.}
+\label{tab:fragmentation}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Sample} & \textbf{Precursors Identified} & \textbf{Processing Time (s)} \\
+\midrule
+A\_M3\_negPFP\_03 & 1,702 & 11.5 \\
+A\_M3\_negPFP\_04 & 1,749 & 8.8 \\
+A\_M3\_posPFP\_01 & 1,597 & 8.2 \\
+A\_M3\_posPFP\_02 & 1,578 & 5.9 \\
+A\_M4\_negPFP\_03 & 1,711 & 7.0 \\
+A\_M4\_posPFP\_01 & 1,536 & 8.0 \\
+A\_M4\_posPFP\_02 & 1,497 & 4.4 \\
+A\_M5\_negPFP\_03 & 1,795 & 6.7 \\
+A\_M5\_negPFP\_04 & 1,831 & 5.1 \\
+A\_M5\_posPFP\_01 & 1,569 & 7.8 \\
+\midrule
+\textbf{Total} & \textbf{16,565} & \textbf{73.4} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A total of 16,565 precursor ions were identified across all files. Negative ionization mode samples yielded slightly more precursors (1,757 average) than positive mode samples (1,555 average), potentially reflecting differences in the ionization efficiency of acidic metabolites.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure3_ionization_mode.png}
+    \caption{Comparison of positive and negative electrospray ionization modes.
+    (A) $S_k$ vs $S_t$ scatter plot. (B) $S_k$ vs $S_e$ scatter plot.
+    (C) $S_k$ distribution by mode. (D) Summary statistics table.
+    Blue: positive ESI; coral: negative ESI.}
+    \label{fig:ionization_mode}
+\end{figure}

@@ -1,0 +1,82 @@
+% ============================================================================
+% MATERIALS AND METHODS: PREPROCESSING STAGE
+% ============================================================================
+\section{Materials and Methods}
+
+\subsection{Dataset Description}
+
+The UC Davis metabolomics dataset comprises 10 mzML files from three biological samples (designated M3, M4, and M5) acquired using a Thermo Scientific mass spectrometer. Each sample was analyzed in both positive and negative electrospray ionization (ESI) modes, with technical replicates for selected conditions. The complete file inventory is presented in Table~\ref{tab:dataset}.
+
+\begin{table}[H]
+\centering
+\caption{UC Davis metabolomics dataset composition.}
+\label{tab:dataset}
+\begin{tabular}{llllrr}
+\toprule
+\textbf{File} & \textbf{Sample} & \textbf{Mode} & \textbf{MS1 Scans} & \textbf{MS2 Scans} & \textbf{Total Peaks} \\
+\midrule
+A\_M3\_negPFP\_03 & M3 & Negative & 4,183 & 549 & 1,438,749 \\
+A\_M3\_negPFP\_04 & M3 & Negative & 4,384 & 53 & 1,445,139 \\
+A\_M3\_posPFP\_01 & M3 & Positive & 4,188 & 447 & 1,846,307 \\
+A\_M3\_posPFP\_02 & M3 & Positive & 4,396 & 44 & 1,724,886 \\
+A\_M4\_negPFP\_03 & M4 & Negative & 4,019 & 939 & 1,357,935 \\
+A\_M4\_posPFP\_01 & M4 & Positive & 4,018 & 787 & 1,713,035 \\
+A\_M4\_posPFP\_02 & M4 & Positive & 4,392 & 61 & 1,659,232 \\
+A\_M5\_negPFP\_03 & M5 & Negative & 4,159 & 596 & 1,487,140 \\
+A\_M5\_negPFP\_04 & M5 & Negative & 4,369 & 84 & 1,550,471 \\
+A\_M5\_posPFP\_01 & M5 & Positive & 4,063 & 727 & 1,798,289 \\
+\midrule
+\textbf{Total} & & & \textbf{42,171} & \textbf{4,287} & \textbf{16,045,368} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dataset represents a total of 46,458 spectra (42,171 MS1 and 4,287 MS2) containing 16,045,368 individual mass spectral peaks. The predominance of MS1 scans reflects the untargeted metabolomics acquisition strategy employed.
+
+\subsection{Data Preprocessing}
+
+Raw mzML files were processed using the Lavoisier Precursor framework (version 2.0.0). The preprocessing pipeline consisted of the following stages:
+
+\subsubsection{Stage 1: Spectral Acquisition}
+
+Mass spectral data were extracted from mzML files using a custom parser optimized for high-throughput processing. For each file, the following operations were performed:
+
+\begin{enumerate}
+    \item \textbf{Spectrum Extraction}: Individual spectra were parsed from the mzML container, preserving scan-level metadata including retention time, precursor mass (for MS2 scans), and DDA rank.
+
+    \item \textbf{Peak Detection}: Centroided peak lists were extracted for each spectrum. MS1 spectra were filtered using an intensity threshold of 1,000 counts, while MS2 spectra used a threshold of 10 counts to preserve low-abundance fragment ions.
+
+    \item \textbf{Quality Control}: Spectra with fewer than 10 peaks were flagged but retained for completeness. Extracted ion chromatograms (XICs) were computed for MS1 data to enable retention time alignment.
+\end{enumerate}
+
+Preprocessing times ranged from 111 to 340 seconds per file, depending on file size and spectral complexity. The mean preprocessing throughput was 24.3 spectra per second.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/figure1_sentropy_3d.png}
+    \caption{Three-dimensional S-Entropy coordinate space showing the distribution of
+    spectral features from the UC Davis metabolomics dataset. Points are colored by
+    biological sample (M3: red, M4: cyan, M5: teal). The coordinate axes represent
+    $S_{\text{knowledge}}$ (structural information), $S_{\text{time}}$ (temporal positioning),
+    and $S_{\text{entropy}}$ (thermodynamic state). Total: 46,458 spectra.}
+    \label{fig:sentropy_3d}
+\end{figure}
+
+\subsubsection{Retention Time Range}
+
+All files were processed using a retention time window of 0--100 minutes to capture the complete chromatographic separation. The effective retention time range varied between files based on the acquisition protocol.
+
+\subsection{Analytical Pipeline Architecture}
+
+The complete analytical pipeline comprises six stages executed sequentially:
+
+\begin{enumerate}
+    \item \textbf{Stage 1 (Preprocessing)}: mzML extraction, peak detection, quality control
+    \item \textbf{Stage 2 (S-Entropy Transformation)}: Bijective mapping to categorical coordinates
+    \item \textbf{Stage 2.5 (Fragmentation Network)}: Precursor-fragment relationship analysis
+    \item \textbf{Stage 3 (BMD Grounding)}: Hardware coherence validation
+    \item \textbf{Stage 4 (Categorical Completion)}: Gap-filling and confidence scoring
+    \item \textbf{Stage 5 (Virtual Instruments)}: Cross-platform validation ensemble
+\end{enumerate}
+
+Each stage produces structured output files (CSV and JSON) enabling intermediate inspection and pipeline resumption from any checkpoint.

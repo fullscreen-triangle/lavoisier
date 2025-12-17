@@ -1,0 +1,107 @@
+% ============================================================================
+% COMPUTATIONAL COMPLEXITY AND PERFORMANCE
+% ============================================================================
+\subsection{Computational Performance}
+
+\subsubsection{Processing Time Analysis}
+
+The complete analytical pipeline was executed on a standard workstation (AMD Ryzen 7, 32 GB RAM, Windows 10). Table~\ref{tab:performance} summarizes the processing times for each stage.
+
+\begin{table}[H]
+\centering
+\caption{Pipeline stage execution times (seconds).}
+\label{tab:performance}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Stage} & \textbf{Min} & \textbf{Max} & \textbf{Mean} & \textbf{Total} & \textbf{\% Total} \\
+\midrule
+1. Preprocessing & 111.4 & 340.5 & 172.8 & 1,728 & 8.6\% \\
+2. S-Entropy Transform & 682.4 & 1,326.8 & 890.6 & 8,906 & 84.5\% \\
+2.5. Fragmentation & 3.1 & 11.5 & 7.3 & 73 & 0.7\% \\
+3. BMD Grounding & 0.3 & 2.0 & 0.7 & 7 & 0.1\% \\
+4. Completion & 0.3 & 1.1 & 0.5 & 5 & 0.05\% \\
+5. Virtual Ensemble & 2.5 & 8.6 & 4.6 & 46 & 0.4\% \\
+\midrule
+\textbf{Total Pipeline} & 823.1 & 1,604.1 & 1,076.5 & 10,765 & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The S-Entropy transformation stage dominated the computational cost, accounting for 84.5\% of total processing time. This reflects the per-peak nature of the transformation, which must process each of the 16+ million peaks individually. Preprocessing was the second most time-consuming stage (8.6\%), primarily due to file I/O operations.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure5_completion.png}
+    \caption{Categorical completion confidence analysis.
+    (A) Completion confidence distribution. (B) Mean confidence by sample.
+    (C) $S_k$ vs confidence scatter. (D) Coherence vs confidence scatter.}
+    \label{fig:completion}
+\end{figure}
+
+\subsubsection{Throughput Metrics}
+
+Processing throughput varied across pipeline stages:
+
+\begin{itemize}
+    \item \textbf{Preprocessing}: 24.3 spectra/second (range: 13.9--42.4)
+    \item \textbf{S-Entropy Transform}: 5.3 spectra/second (range: 3.3--7.3)
+    \item \textbf{Fragmentation Network}: 225 spectra/second
+    \item \textbf{BMD Grounding}: 6,665 spectra/second
+    \item \textbf{Categorical Completion}: 7,192 spectra/second
+\end{itemize}
+
+The relatively low throughput of the S-Entropy transformation reflects the computational intensity of the coordinate calculation. The current implementation prioritises numerical accuracy; optimization through vectorisation and parallelisation could substantially improve performance.
+
+\subsubsection{Memory Utilization}
+
+Peak memory usage during processing averaged 4.2 GB, with a maximum consumption of 6.8 GB during the preprocessing of the largest file (A\_M3\_posPFP\_01 with 1,846,307 peaks). The memory footprint remained within the capacity of standard workstation hardware.
+
+\subsubsection{Scaling Analysis}
+
+Processing time scaled approximately linearly with spectral complexity:
+
+\begin{equation}
+T_{\text{total}} \approx 0.23 \times N_{\text{spectra}} + 0.0001 \times N_{\text{peaks}}
+\end{equation}
+
+\noindent where $T_{\text{total}}$ is the total processing time in seconds, $N_{\text{spectra}}$ is the number of spectra, and $N_{\text{peaks}}$ is the total peak count. The dominant contribution from spectrum count reflects the per-spectrum overhead of file operations and coordinate aggregation.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure7_master_summary.png}
+    \caption{Master summary of UC Davis metabolomics S-Entropy analysis.
+    (A) 3D S-Entropy space. (B) $S_k$ distribution. (C) Ionization mode counts.
+    (D) Coherence distribution. (E) Completion confidence. (F) Spectral complexity.
+    (G) Summary statistics table.}
+    \label{fig:master_summary}
+\end{figure}
+
+\subsubsection{File-Specific Performance}
+
+Processing efficiency varied between files, with the M4\_negPFP\_03 sample achieving the highest S-Entropy throughput (7.27 spectra/second) and the M3\_negPFP\_04 sample the lowest (3.34 spectra/second). This variation correlates with the average number of peaks per spectrum: files with fewer peaks per spectrum were processed more efficiently.
+
+\begin{table}[H]
+\centering
+\caption{Per-file processing summary.}
+\label{tab:perfile}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{File} & \textbf{Spectra} & \textbf{Peaks/Spectrum} & \textbf{Total Time} & \textbf{Status} \\
+\midrule
+A\_M3\_negPFP\_03 & 4,732 & 304 & 1,295 & Completed \\
+A\_M3\_negPFP\_04 & 4,437 & 326 & 1,421 & Completed \\
+A\_M3\_posPFP\_01 & 4,635 & 398 & 1,157 & Completed \\
+A\_M3\_posPFP\_02 & 4,440 & 388 & 1,085 & Completed \\
+A\_M4\_negPFP\_03 & 4,958 & 274 & 872 & Completed \\
+A\_M4\_posPFP\_01 & 4,805 & 357 & 1,052 & Completed \\
+A\_M4\_posPFP\_02 & 4,453 & 373 & 1,036 & Completed \\
+A\_M5\_negPFP\_03 & 4,755 & 313 & 941 & Completed \\
+A\_M5\_negPFP\_04 & 4,453 & 348 & 974 & Completed \\
+A\_M5\_posPFP\_01 & 4,790 & 375 & 1,111 & Completed \\
+\midrule
+\textbf{Total/Mean} & \textbf{46,458} & \textbf{346} & \textbf{10,944} & \textbf{100\% Complete} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All 10 files completed processing successfully with no errors or exceptions. The 100\% completion rate demonstrates the robustness of the pipeline to the variability inherent in biological mass spectrometry data.

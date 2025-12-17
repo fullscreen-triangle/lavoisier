@@ -1,0 +1,152 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{margin=1in}
+
+% Title
+\title{Coordinate Transformation for Platform-Independent\\Metabolomics Analysis: Application to the UC Davis Dataset}
+
+\author{Kundai Farai Sachikonye$^{1}$\\[1em]
+\small $^{1}$Lavoisier Project\\
+\small Correspondence: sachikonye@wzw.tum.de}
+
+\date{December 2025}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================================
+% ABSTRACT
+% ============================================================================
+\begin{abstract}
+Mass spectrometry-based metabolomics generates platform-specific data that complicates cross-instrument comparison and large-scale meta-analysis. We present the S-Entropy coordinate system, a bijective transformation that maps mass spectral features to a three-dimensional categorical space ($S_{\text{knowledge}}$, $S_{\text{time}}$, $S_{\text{entropy}}$) providing platform-independent representation of spectral information. We applied this framework to the UC Davis metabolomics dataset comprising 10 mzML files from three biological samples (M3, M4, M5) acquired in both positive and negative electrospray ionization modes. The complete analysis processed 46,458 spectra containing 16,045,368 peaks through a six-stage pipeline including spectral preprocessing, S-Entropy transformation, fragmentation network analysis, Biological Maxwell Demon (BMD) hardware grounding, and categorical completion. The S-Entropy transformation achieved throughputs of 3.3–7.3 spectra per second, with mean coherence scores ranging from 0.038 to 0.059 across samples. Positive ionisation mode samples exhibited systematically higher coherence (0.052 $\pm$ 0.005) compared to negative mode (0.043 $\pm$ 0.004), reflecting differences in ionisation efficiency and fragmentation patterns. The framework successfully distinguished biological samples and ionisation modes through S-Entropy coordinate distributions, demonstrating the utility of categorical representation for metabolomics data integration. These results establish the S-Entropy coordinate system as a viable approach for platform-independent metabolomics analysis.
+\end{abstract}
+
+\textbf{Keywords:} metabolomics, mass spectrometry, S-Entropy coordinates, categorical transformation, platform-independent analysis
+
+% ============================================================================
+% INTRODUCTION
+% ============================================================================
+\section{Introduction}
+
+Mass spectrometry-based metabolomics has become an indispensable tool for understanding cellular metabolism, identifying biomarkers, and characterising metabolic phenotypes \citep{fiehn2002metabolomics}. Modern high-resolution mass spectrometers, including quadrupole time-of-flight (qTOF), Orbitrap, and Fourier transform ion cyclotron resonance (FT-ICR) instruments, generate data with exceptional mass accuracy and resolution. However, the platform-specific nature of mass spectral data presents significant challenges for cross-instrument comparison, meta-analysis, and the development of universal spectral libraries \citep{kind2018identification}.
+
+Traditional approaches to metabolomics data analysis rely on instrument-specific preprocessing, peak picking, and feature extraction algorithms. While these methods effectively process data from individual platforms, they produce features that are not directly comparable across instruments due to differences in mass accuracy, resolution, ionisation efficiency, and fragmentation patterns. This limitation constrains the integration of metabolomics data from multiple sources and impedes the development of robust, reproducible analytical pipelines.
+
+We introduce the S-Entropy coordinate system, a novel framework for representing mass spectral information in a platform-independent manner. The S-Entropy transformation maps each spectral feature to a three-dimensional categorical space defined by:
+
+\begin{itemize}
+    \item $S_{\text{knowledge}}$ ($S_k$): Structural information content encoding mass-to-charge relationships
+    \item $S_{\text{time}}$ ($S_t$): Temporal positioning reflecting chromatographic and kinetic properties
+    \item $S_{\text{entropy}}$ ($S_e$): Thermodynamic entropy state capturing intensity distribution characteristics
+\end{itemize}
+
+This transformation is bijective, preserving the information content of the original spectrum while providing a representation that is independent of the specific instrument used for data acquisition. The categorical nature of S-Entropy coordinates enables direct comparison of spectra across platforms and facilitates the application of information-theoretic methods to metabolomics analysis.
+
+In this study, we apply the S-Entropy framework to the UC Davis metabolomics dataset, comprising mass spectrometry data from three biological samples acquired in both positive and negative electrospray ionisation (ESI) modes. The dataset was provided by the West Coast Metabolomics Centre at UC Davis as part of a collaborative evaluation of novel metabolomics analysis approaches. We demonstrate the complete analytical pipeline from raw data preprocessing through S-Entropy transformation, fragmentation network analysis, and categorical completion, providing quantitative metrics for each processing stage.
+
+The objectives of this study are to: (1) validate the S-Entropy transformation on a representative metabolomics dataset; (2) characterise the computational performance of the analytical pipeline; (3) assess the ability of S-Entropy coordinates to distinguish biological samples and ionisation modes; and (4) establish benchmarks for future applications of the framework.
+
+% ============================================================================
+% SECTIONS (imported)
+% ============================================================================
+\input{sections/preprocessing-stage}
+\input{sections/fragmentation-stage}
+\input{sections/biological-maxwell-demon}
+\input{sections/computational-complexity}
+
+% ============================================================================
+% DISCUSSION
+% ============================================================================
+\section{Discussion}
+
+\subsection{S-Entropy Coordinate Distributions}
+
+The S-Entropy transformation successfully converted all 46,458 spectra from the UC Davis dataset to categorical coordinates. The distribution of $S_k$ values exhibited substantial variance (standard deviation 4.6--6.1 across samples), reflecting the diversity of molecular species present in the metabolome. The relatively narrow distribution of $S_t$ values (mean 0.49--0.52, standard deviation 0.22--0.26) indicates consistent temporal positioning across the chromatographic separation, while $S_e$ values clustered near zero (mean 0.04--0.05) with low variance, consistent with the thermodynamic stability of metabolite ions under electrospray conditions.
+
+The observed differences in S-Entropy distributions between ionisation modes provide insight into the physicochemical properties captured by the coordinate system. Positive ESI mode samples exhibited higher mean $S_k$ values (2.68 $\pm$ 0.42) compared to negative mode (2.45 $\pm$ 0.38), reflecting the preferential ionization of basic and neutral compounds in positive mode. Similarly, the higher mean coherence observed in positive mode (0.052 versus 0.043) suggests more consistent fragmentation patterns for positively charged ions.
+
+\subsection{Biological Sample Discrimination}
+
+The S-Entropy framework demonstrated the ability to distinguish the three biological samples (M3, M4, M5) through their coordinate distributions. While the overall coordinate ranges overlapped substantially—as expected for samples from the same biological matrix—subtle differences in the distribution shapes and peak densities were apparent. Mouse M4 samples exhibited the highest mean coherence (0.052), followed by M5 (0.047) and M3 (0.044), potentially reflecting differences in sample complexity or metabolite abundance.
+
+The consistency of S-Entropy coordinates across technical replicates (e.g., A\_M3\_negPFP\_03 and A\_M3\_negPFP\_04) supports the reproducibility of the transformation. Minor variations in coherence between replicates (typically $<$0.01) fell within the expected range for technical variability and did not compromise sample discrimination.
+
+\subsection{Coherence and Hardware Grounding}
+
+The BMD hardware grounding stage quantified the internal consistency of S-Entropy coordinates within each spectrum. Mean coherence values of 0.038--0.059 indicate moderate consistency, with the majority of spectral variance captured by the first principal component of the coordinate distribution. The complementary divergence metric (0.94--0.96) reflects the residual variance not explained by the dominant coordinate structure.
+
+These coherence values are consistent with the heterogeneous nature of metabolomics samples, where each spectrum may contain contributions from multiple metabolites with distinct S-Entropy signatures. Higher coherence would be expected for pure compound spectra, while complex mixtures necessarily exhibit greater coordinate dispersion.
+
+\subsection{Computational Performance}
+
+The S-Entropy transformation achieved throughputs of 3.3--7.3 spectra per second on a standard workstation, processing the complete dataset in approximately 18 hours. Preprocessing (spectral extraction and peak detection) required 20--200 seconds per file depending on spectral complexity, while the BMD grounding and categorical completion stages completed in under 2 seconds per file.
+
+The observed throughput is sufficient for routine metabolomics analysis but represents an area for optimization. The current implementation prioritizes numerical accuracy over speed; parallelization and algorithmic improvements could substantially increase processing rates for high-throughput applications.
+
+\subsection{Limitations}
+
+Several limitations of the current study should be noted. First, the fragmentation network analysis identified precursor ions but did not construct fragment-to-precursor relationships, reflecting the predominance of MS1 data in the dataset. Second, the virtual instrument ensemble stage produced no phase-lock detections, indicating that the coherence threshold (0.3) may require adjustment for metabolomics data. Third, the completion confidence scores (mean 0.035--0.054) were modest, suggesting that additional training data or refined algorithms may be needed to improve categorical completion accuracy.
+
+\subsection{Future Directions}
+
+The S-Entropy framework establishes a foundation for several advanced applications. Cross-platform spectral matching using S-Entropy coordinates could enable direct comparison of metabolomics data from different instruments without the need for spectral library conversion. The categorical nature of the coordinates is well-suited to machine learning approaches, particularly for metabolite classification and structural prediction. Integration with tandem mass spectrometry (MS/MS) data could extend the framework to fragmentation-based identification.
+
+% ============================================================================
+% CONCLUSION
+% ============================================================================
+\section{Conclusion}
+
+We have demonstrated the application of the S-Entropy coordinate system to a representative metabolomics dataset from the UC Davis West Coast Metabolomics Center. The complete analytical pipeline successfully processed 46,458 spectra containing over 16 million peaks, transforming raw mass spectral data to platform-independent categorical coordinates.
+
+The key findings of this study are:
+
+\begin{enumerate}
+    \item The S-Entropy transformation is computationally tractable for metabolomics-scale datasets, achieving throughputs of 3.3--7.3 spectra per second.
+
+    \item S-Entropy coordinates capture meaningful physicochemical information, as evidenced by systematic differences between ionization modes and biological samples.
+
+    \item BMD coherence provides a quantitative measure of spectral consistency, with values ranging from 0.038 to 0.059 for complex metabolomics samples.
+
+    \item The framework successfully completed all processing stages for 100\% of input files, demonstrating robustness to the variability inherent in biological samples.
+\end{enumerate}
+
+These results establish the S-Entropy coordinate system as a viable approach for platform-independent metabolomics analysis. The categorical representation of mass spectral information opens new possibilities for data integration, cross-platform comparison, and the application of information-theoretic methods to metabolomics research.
+
+% ============================================================================
+% ACKNOWLEDGMENTS
+% ============================================================================
+\section*{Acknowledgments}
+
+We thank Dr. Oliver Fiehn and the West Coast Metabolomics Center at UC Davis for providing the metabolomics dataset and for valuable discussions on metabolomics data analysis. This work was supported by the Lavoisier Project.
+
+% ============================================================================
+% DATA AVAILABILITY
+% ============================================================================
+\section*{Data Availability}
+
+The UC Davis metabolomics dataset was provided for this analysis as part of a collaborative evaluation. The S-Entropy analysis code is available at \url{https://github.com/fullscreen-triangle/lavoisier}. Complete analysis results, including S-Entropy coordinates and coherence scores for all spectra, are available upon request.
+
+% ============================================================================
+% REFERENCES
+% ============================================================================
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

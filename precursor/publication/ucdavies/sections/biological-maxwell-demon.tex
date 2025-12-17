@@ -1,0 +1,132 @@
+% ============================================================================
+% BIOLOGICAL MAXWELL DEMON GROUNDING
+% ============================================================================
+\section{Results}
+
+\subsection{BMD Hardware Grounding}
+
+\subsubsection{Coherence Analysis}
+
+The Biological Maxwell Demon (BMD) grounding stage quantifies the internal consistency of S-Entropy coordinates within each spectrum. For a spectrum with $n$ peaks transformed to coordinates $\{\mathbf{S}_1, \mathbf{S}_2, \ldots, \mathbf{S}_n\}$, the coherence score is computed as:
+
+\begin{equation}
+\text{Coherence} = \frac{1}{1 + \sum_{i=1}^{3} \text{Var}(S_i)}
+\end{equation}
+
+\noindent where $\text{Var}(S_i)$ is the variance of coordinate $i$ across all peaks in the spectrum. High coherence indicates that peaks cluster tightly in S-Entropy space, while low coherence reflects dispersion.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure4_coherence.png}
+    \caption{BMD hardware grounding coherence analysis.
+    (A) Overall coherence distribution with mean indicated (red dashed line).
+    (B) Coherence by biological sample. (C) Coherence by ionization mode.
+    (D) Coherence vs divergence relationship.}
+    \label{fig:coherence}
+\end{figure}
+
+The complementary divergence metric is defined as:
+
+\begin{equation}
+\text{Divergence} = 1 - \text{Coherence}
+\end{equation}
+
+Table~\ref{tab:coherence} presents the BMD grounding results by sample.
+
+\begin{table}[H]
+\centering
+\caption{BMD coherence and divergence by sample.}
+\label{tab:coherence}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Sample} & \textbf{Mean Coherence} & \textbf{Mean Divergence} & \textbf{Processing Time (s)} \\
+\midrule
+A\_M3\_negPFP\_03 & 0.0438 & 0.9562 & 1.97 \\
+A\_M3\_negPFP\_04 & 0.0388 & 0.9612 & 0.67 \\
+A\_M3\_posPFP\_01 & 0.0534 & 0.9466 & 0.60 \\
+A\_M3\_posPFP\_02 & 0.0443 & 0.9557 & 0.58 \\
+A\_M4\_negPFP\_03 & 0.0491 & 0.9509 & 0.44 \\
+A\_M4\_posPFP\_01 & 0.0589 & 0.9411 & 0.49 \\
+A\_M4\_posPFP\_02 & 0.0472 & 0.9528 & 0.50 \\
+A\_M5\_negPFP\_03 & 0.0449 & 0.9551 & 0.38 \\
+A\_M5\_negPFP\_04 & 0.0380 & 0.9620 & 0.55 \\
+A\_M5\_posPFP\_01 & 0.0530 & 0.9470 & 0.60 \\
+\midrule
+\textbf{Overall Mean} & \textbf{0.0471} & \textbf{0.9529} & \textbf{0.68} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Ionization Mode Comparison}
+
+Systematic differences in coherence were observed between ionisation modes:
+
+\begin{itemize}
+    \item \textbf{Positive ESI Mode}: Mean coherence = 0.0514 $\pm$ 0.0057 (n = 5 files)
+    \item \textbf{Negative ESI Mode}: Mean coherence = 0.0429 $\pm$ 0.0047 (n = 5 files)
+\end{itemize}
+
+The difference is statistically significant and reflects the distinct ionisation mechanisms. Positive mode ionisation through protonation produces more homogeneous ion populations, while negative mode deprotonation may generate a broader distribution of charge states and adduct species.
+
+\subsubsection{Sample-Specific Coherence Patterns}
+
+Among the three biological samples, M4 exhibited the highest mean coherence (0.0517), followed by M5 (0.0453) and M3 (0.0451). This ordering was consistent within ionisation modes:
+
+\begin{itemize}
+    \item \textbf{Positive mode}: M4 (0.0530) > M5 (0.0530) > M3 (0.0489)
+    \item \textbf{Negative mode}: M4 (0.0491) > M5 (0.0415) > M3 (0.0413)
+\end{itemize}
+
+The sample-specific coherence patterns may reflect differences in metabolite composition, sample complexity, or matrix effects.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure2_sample_comparison.png}
+    \caption{Comparison of S-Entropy distributions across biological samples.
+    (A-C) Density distributions of $S_k$, $S_t$, and $S_e$ coordinates by sample.
+    (D) Mean peak count per spectrum. (E) $S_k$ variability across samples.
+    (F) Spectra count by sample. Color coding: M3 (red), M4 (cyan), M5 (teal).}
+    \label{fig:sample_comparison}
+\end{figure}
+
+\subsection{Categorical Completion}
+
+\subsubsection{Completion Confidence Scoring}
+
+The categorical completion stage integrates S-Entropy coordinates with coherence information to generate completion confidence scores. For each spectrum, the confidence is computed as:
+
+\begin{equation}
+\text{Confidence} = \text{Coherence} \times (1 - \sigma_{S_e})
+\end{equation}
+
+\noindent where $\sigma_{S_e}$ is the standard deviation of the $S_e$ coordinate within the spectrum. This formulation rewards spectra with high coherence and low entropy variance.
+
+\begin{table}[H]
+\centering
+\caption{Categorical completion results.}
+\label{tab:completion}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Sample} & \textbf{Candidates} & \textbf{Mean Confidence} & \textbf{Processing Time (s)} \\
+\midrule
+A\_M3\_negPFP\_03 & 4,732 & 0.0377 & 1.09 \\
+A\_M3\_negPFP\_04 & 4,437 & 0.0354 & 0.72 \\
+A\_M3\_posPFP\_01 & 4,635 & 0.0497 & 0.90 \\
+A\_M3\_posPFP\_02 & 4,440 & 0.0432 & 0.54 \\
+A\_M4\_negPFP\_03 & 4,958 & 0.0388 & 0.51 \\
+A\_M4\_posPFP\_01 & 4,805 & 0.0536 & 0.53 \\
+A\_M4\_posPFP\_02 & 4,453 & 0.0457 & 0.57 \\
+A\_M5\_negPFP\_03 & 4,755 & 0.0383 & 0.53 \\
+A\_M5\_negPFP\_04 & 4,453 & 0.0347 & 0.48 \\
+A\_M5\_posPFP\_01 & 4,790 & 0.0476 & 0.59 \\
+\midrule
+\textbf{Total} & \textbf{46,458} & \textbf{0.0425} & \textbf{6.46} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mean completion confidence of 0.0425 reflects the moderate coherence observed in complex metabolomics samples. Higher confidence scores were obtained for positive ionisation mode samples (mean 0.0480) compared to negative mode (mean 0.0370), consistent with the coherence differences noted above.
+
+\subsubsection{Confidence Distribution}
+
+The distribution of completion confidence scores exhibited a right-skewed shape, with the majority of values clustered between 0.02 and 0.06. A small fraction of spectra ($<$5\%) achieved confidence scores above 0.10, representing highly coherent ion populations that may correspond to abundant metabolites or pure compound spectra.

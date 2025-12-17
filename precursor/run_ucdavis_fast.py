@@ -1,0 +1,695 @@
+#!/usr/bin/env python3
+"""
+UC DAVIS METABOLOMICS - FAST ANALYSIS (SKIPS CV)
+=================================================
+
+This script runs the metabolomics framework on ALL UC Davis files,
+SKIPPING the CV stage which hangs on large datasets.
+
+Pipeline:
+  Stage 1: Spectral Acquisition
+  Stage 2: S-Entropy Transformation
+  Stage 2.5: Fragmentation Network
+  Stage 3: BMD Hardware Grounding
+  Stage 4: Categorical Completion
+  Stage 5: Virtual Instruments
+
+Author: Kundai Farai Sachikonye
+Date: 2025
+"""
+
+import sys
+import os
+from pathlib import Path
+import logging
+import json
+import time
+from datetime import datetime
+import traceback
+
+# Add precursor root to path
+precursor_root = Path(__file__).parent
+sys.path.insert(0, str(precursor_root))
+sys.path.insert(0, str(precursor_root / 'src'))
+
+import numpy as np
+import pandas as pd
+
+# Configure logging
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+log_file = precursor_root / f'ucdavis_fast_{timestamp}.log'
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+
+def save_dataframe(df: pd.DataFrame, path: Path, formats: list = ['csv']):
+    """Save DataFrame (CSV only to avoid large TSV files)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path.with_suffix('.csv'), index=False)
+    logger.info(f"Saved: {path.stem}.csv ({len(df)} rows)")
+
+
+def save_json(data: dict, path: Path):
+    """Save dictionary as JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    def convert(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.float64, np.float32)):
+            return float(obj)
+        elif isinstance(obj, dict):
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert(v) for v in obj]
+        elif hasattr(obj, '__dict__'):
+            return convert(obj.__dict__)
+        return obj
+
+    with open(path, 'w') as f:
+        json.dump(convert(data), f, indent=2, default=str)
+
+    logger.info(f"Saved: {path.name}")
+
+
+def run_stage1_preprocessing(mzml_path: Path, output_dir: Path, config: dict) -> dict:
+    """Stage 1: Spectral Acquisition and Preprocessing"""
+    from src.core.SpectraReader import extract_mzml
+
+    logger.info("=" * 60)
+    logger.info("STAGE 1: SPECTRAL ACQUISITION & PREPROCESSING")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    vendor = 'thermo'
+    if 'waters' in mzml_path.stem.lower():
+        vendor = 'waters'
+
+    logger.info(f"Loading: {mzml_path.name}")
+    scan_info_df, spectra_dict, ms1_xic_df = extract_mzml(
+        mzml=str(mzml_path),
+        rt_range=config.get('rt_range', [0, 100]),
+        ms1_threshold=config.get('ms1_threshold', 1000),
+        ms2_threshold=config.get('ms2_threshold', 10),
+        vendor=vendor
+    )
+
+    n_ms1 = len(scan_info_df[scan_info_df['DDA_rank'] == 0])
+    n_ms2 = len(scan_info_df[scan_info_df['DDA_rank'] > 0])
+    n_spectra = len(spectra_dict)
+
+    total_peaks = 0
+    for scan_id, spectrum_df in spectra_dict.items():
+        if spectrum_df is not None:
+            total_peaks += len(spectrum_df)
+
+    execution_time = time.time() - start_time
+
+    logger.info(f"MS1 scans: {n_ms1}")
+    logger.info(f"MS2 scans: {n_ms2}")
+    logger.info(f"Total spectra: {n_spectra}")
+    logger.info(f"Total peaks: {total_peaks}")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_01_preprocessing'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save scan info only (not individual spectra to save space)
+    save_dataframe(scan_info_df, stage_dir / 'scan_info')
+
+    if not ms1_xic_df.empty:
+        save_dataframe(ms1_xic_df, stage_dir / 'ms1_xic')
+
+    # Save spectra summary only (not individual spectra)
+    spectra_summary = []
+    for scan_id, spectrum_df in spectra_dict.items():
+        if spectrum_df is not None and len(spectrum_df) > 0:
+            int_col = 'intensity' if 'intensity' in spectrum_df.columns else 'i'
+            spectra_summary.append({
+                'scan_id': scan_id,
+                'n_peaks': len(spectrum_df),
+                'mz_min': float(spectrum_df['mz'].min()),
+                'mz_max': float(spectrum_df['mz'].max()),
+                'intensity_max': float(spectrum_df[int_col].max())
+            })
+
+    spectra_summary_df = pd.DataFrame(spectra_summary)
+    save_dataframe(spectra_summary_df, stage_dir / 'spectra_summary')
+
+    metrics = {
+        'n_ms1': n_ms1,
+        'n_ms2': n_ms2,
+        'n_spectra': n_spectra,
+        'total_peaks': total_peaks,
+        'execution_time': execution_time,
+        'vendor': vendor
+    }
+    save_json(metrics, stage_dir / 'stage_01_metrics.json')
+
+    return {
+        'scan_info': scan_info_df,
+        'spectra': spectra_dict,
+        'xic': ms1_xic_df,
+        'metrics': metrics
+    }
+
+
+def run_stage2_sentropy(stage1_data: dict, output_dir: Path) -> dict:
+    """Stage 2: S-Entropy Transformation"""
+    from src.core.EntropyTransformation import SEntropyTransformer
+
+    logger.info("=" * 60)
+    logger.info("STAGE 2: S-ENTROPY TRANSFORMATION")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    spectra_dict = stage1_data['spectra']
+    transformer = SEntropyTransformer()
+
+    sentropy_results = []
+    sentropy_features = {}
+
+    for scan_id, spectrum_df in spectra_dict.items():
+        if spectrum_df is None or len(spectrum_df) == 0:
+            continue
+
+        mz_array = spectrum_df['mz'].values
+        intensity_col = 'intensity' if 'intensity' in spectrum_df.columns else 'i'
+        intensity_array = spectrum_df[intensity_col].values
+
+        try:
+            coords_list, coord_matrix = transformer.transform_spectrum(mz_array, intensity_array)
+            sentropy_features[scan_id] = coord_matrix
+
+            if len(coord_matrix) > 0:
+                mean_coords = np.mean(coord_matrix, axis=0) if len(coord_matrix.shape) > 1 else coord_matrix
+                std_coords = np.std(coord_matrix, axis=0) if len(coord_matrix.shape) > 1 and coord_matrix.shape[0] > 1 else np.zeros(3)
+
+                sentropy_results.append({
+                    'scan_id': scan_id,
+                    'n_peaks': len(coord_matrix),
+                    's_k_mean': float(mean_coords[0]) if len(mean_coords) > 0 else 0,
+                    's_t_mean': float(mean_coords[1]) if len(mean_coords) > 1 else 0,
+                    's_e_mean': float(mean_coords[2]) if len(mean_coords) > 2 else 0,
+                    's_k_std': float(std_coords[0]) if len(std_coords) > 0 else 0,
+                    's_t_std': float(std_coords[1]) if len(std_coords) > 1 else 0,
+                    's_e_std': float(std_coords[2]) if len(std_coords) > 2 else 0
+                })
+        except Exception as e:
+            logger.warning(f"Failed to transform scan {scan_id}: {e}")
+
+    execution_time = time.time() - start_time
+
+    logger.info(f"Transformed {len(sentropy_results)} spectra")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_02_sentropy'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    sentropy_df = pd.DataFrame(sentropy_results)
+    save_dataframe(sentropy_df, stage_dir / 'sentropy_features')
+
+    metrics = {
+        'n_transformed': len(sentropy_results),
+        'execution_time': execution_time,
+        'throughput': len(sentropy_results) / execution_time if execution_time > 0 else 0
+    }
+    save_json(metrics, stage_dir / 'stage_02_metrics.json')
+
+    return {
+        'sentropy_features': sentropy_features,
+        'sentropy_df': sentropy_df,
+        'metrics': metrics
+    }
+
+
+def run_stage25_fragmentation(stage1_data: dict, stage2_data: dict, output_dir: Path) -> dict:
+    """Stage 2.5: Fragmentation Network Analysis"""
+    logger.info("=" * 60)
+    logger.info("STAGE 2.5: FRAGMENTATION NETWORK ANALYSIS")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    try:
+        from src.metabolomics.FragmentationTrees import (
+            SEntropyFragmentationNetwork,
+            PrecursorIon,
+            FragmentIon
+        )
+        frag_available = True
+    except ImportError as e:
+        logger.warning(f"Fragmentation module not available: {e}")
+        frag_available = False
+
+    if not frag_available:
+        return {'fragmentation_available': False, 'metrics': {'fragmentation_available': False}}
+
+    spectra_dict = stage1_data['spectra']
+    scan_info = stage1_data['scan_info']
+
+    network = SEntropyFragmentationNetwork(similarity_threshold=0.5, sigma=0.2)
+
+    n_precursors = 0
+    n_fragments = 0
+
+    for scan_id in spectra_dict.keys():
+        scan_row = scan_info[scan_info['spec_index'] == scan_id]
+        if len(scan_row) == 0:
+            continue
+
+        scan_data = scan_row.iloc[0]
+        dda_rank = scan_data.get('DDA_rank', 0)
+        spectrum_df = spectra_dict[scan_id]
+
+        if spectrum_df is None or len(spectrum_df) == 0:
+            continue
+
+        intensity_col = 'intensity' if 'intensity' in spectrum_df.columns else 'i'
+
+        if dda_rank == 0:
+            precursor_mz = spectrum_df['mz'].values[0]
+            precursor = PrecursorIon(
+                mz=precursor_mz,
+                intensity=spectrum_df[intensity_col].max(),
+                rt=scan_data.get('scan_time', 0),
+                fragments=[]
+            )
+            network.add_precursor(precursor, compute_s_entropy=True)
+            n_precursors += 1
+        else:
+            for _, row in spectrum_df.iterrows():
+                fragment = FragmentIon(
+                    mz=row['mz'],
+                    intensity=row[intensity_col],
+                    precursor_mz=scan_data.get('MS2_PR_mz', 0)
+                )
+                n_fragments += 1
+
+    if n_precursors > 0:
+        try:
+            network.build_network()
+            stats = network.get_network_statistics()
+        except Exception as e:
+            logger.warning(f"Network build failed: {e}")
+            stats = {'num_precursors': n_precursors, 'num_fragments': n_fragments, 'num_edges': 0}
+    else:
+        stats = {'num_precursors': 0, 'num_fragments': 0, 'num_edges': 0}
+
+    execution_time = time.time() - start_time
+
+    logger.info(f"Precursors: {stats['num_precursors']}")
+    logger.info(f"Fragments: {stats['num_fragments']}")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_02_5_fragmentation'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics = {
+        'n_precursors': stats['num_precursors'],
+        'n_fragments': stats['num_fragments'],
+        'n_edges': stats.get('num_edges', 0),
+        'execution_time': execution_time
+    }
+    save_json(metrics, stage_dir / 'stage_02_5_metrics.json')
+
+    return {'network_stats': stats, 'metrics': metrics}
+
+
+def run_stage3_bmd(stage1_data: dict, stage2_data: dict, output_dir: Path) -> dict:
+    """Stage 3: Hardware BMD Grounding"""
+    logger.info("=" * 60)
+    logger.info("STAGE 3: HARDWARE BMD GROUNDING")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    sentropy_features = stage2_data.get('sentropy_features', {})
+    coherence_results = []
+
+    for scan_id, features in sentropy_features.items():
+        if features is None or len(features) == 0:
+            continue
+
+        if len(features.shape) > 1 and features.shape[0] > 1:
+            variance = np.var(features, axis=0)
+            coherence = 1.0 / (1.0 + np.sum(variance))
+        else:
+            coherence = 1.0
+
+        coherence_results.append({
+            'scan_id': scan_id,
+            'coherence': coherence,
+            'divergence': 1.0 - coherence
+        })
+
+    execution_time = time.time() - start_time
+
+    coherence_df = pd.DataFrame(coherence_results)
+
+    mean_coherence = coherence_df['coherence'].mean() if len(coherence_df) > 0 else 0
+    mean_divergence = coherence_df['divergence'].mean() if len(coherence_df) > 0 else 0
+
+    logger.info(f"Mean coherence: {mean_coherence:.4f}")
+    logger.info(f"Mean divergence: {mean_divergence:.4f}")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_03_bmd'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    if len(coherence_df) > 0:
+        save_dataframe(coherence_df, stage_dir / 'coherence_results')
+
+    metrics = {
+        'n_analyzed': len(coherence_results),
+        'mean_coherence': mean_coherence,
+        'mean_divergence': mean_divergence,
+        'execution_time': execution_time
+    }
+    save_json(metrics, stage_dir / 'stage_03_metrics.json')
+
+    return {'coherence_df': coherence_df, 'metrics': metrics}
+
+
+def run_stage4_completion(stage1_data: dict, stage2_data: dict, stage3_data: dict, output_dir: Path) -> dict:
+    """Stage 4: Categorical Completion"""
+    logger.info("=" * 60)
+    logger.info("STAGE 4: CATEGORICAL COMPLETION")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    sentropy_df = stage2_data.get('sentropy_df', pd.DataFrame())
+    coherence_df = stage3_data.get('coherence_df', pd.DataFrame())
+
+    if len(sentropy_df) > 0 and len(coherence_df) > 0:
+        completion_df = sentropy_df.merge(coherence_df, on='scan_id', how='left')
+    else:
+        completion_df = sentropy_df.copy() if len(sentropy_df) > 0 else pd.DataFrame()
+
+    completion_results = []
+
+    for _, row in completion_df.iterrows():
+        s_k = row.get('s_k_mean', 0)
+        s_t = row.get('s_t_mean', 0)
+        s_e = row.get('s_e_mean', 0)
+        coherence = row.get('coherence', 1.0)
+
+        confidence = coherence * (1.0 - row.get('s_e_std', 0))
+
+        completion_results.append({
+            'scan_id': row['scan_id'],
+            's_k': s_k,
+            's_t': s_t,
+            's_e': s_e,
+            'coherence': coherence,
+            'completion_confidence': confidence
+        })
+
+    execution_time = time.time() - start_time
+
+    completion_df = pd.DataFrame(completion_results)
+
+    logger.info(f"Completion candidates: {len(completion_results)}")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_04_completion'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    if len(completion_df) > 0:
+        save_dataframe(completion_df, stage_dir / 'completion_results')
+
+    metrics = {
+        'n_candidates': len(completion_results),
+        'avg_confidence': float(completion_df['completion_confidence'].mean()) if len(completion_df) > 0 else 0,
+        'execution_time': execution_time
+    }
+    save_json(metrics, stage_dir / 'stage_04_metrics.json')
+
+    return {'completion_df': completion_df, 'metrics': metrics}
+
+
+def run_stage5_virtual(stage1_data: dict, stage2_data: dict, output_dir: Path) -> dict:
+    """Stage 5: Virtual Instrument Ensemble (limited to 100 spectra)"""
+    logger.info("=" * 60)
+    logger.info("STAGE 5: VIRTUAL INSTRUMENT ENSEMBLE")
+    logger.info("=" * 60)
+
+    start_time = time.time()
+
+    try:
+        from src.virtual import VirtualMassSpecEnsemble
+        virtual_available = True
+    except ImportError as e:
+        logger.warning(f"Virtual module not available: {e}")
+        virtual_available = False
+
+    if not virtual_available:
+        return {'virtual_available': False, 'metrics': {'virtual_available': False}}
+
+    spectra_dict = stage1_data['spectra']
+    scan_info = stage1_data['scan_info']
+
+    # Limit to 100 spectra for speed
+    scan_ids = list(spectra_dict.keys())[:100]
+    logger.info(f"Processing {len(scan_ids)} of {len(spectra_dict)} spectra")
+
+    ensemble = VirtualMassSpecEnsemble(
+        enable_all_instruments=True,
+        enable_hardware_grounding=True,
+        coherence_threshold=0.3
+    )
+
+    virtual_results = []
+
+    for scan_id in scan_ids:
+        spectrum_df = spectra_dict.get(scan_id)
+        if spectrum_df is None or len(spectrum_df) == 0:
+            continue
+
+        mz_array = spectrum_df['mz'].values
+        intensity_col = 'intensity' if 'intensity' in spectrum_df.columns else 'i'
+        intensity_array = spectrum_df[intensity_col].values
+
+        scan_row = scan_info[scan_info['spec_index'] == scan_id]
+        rt = scan_row.iloc[0]['scan_time'] if len(scan_row) > 0 else 0
+
+        try:
+            result = ensemble.measure_spectrum(
+                mz=mz_array,
+                intensity=intensity_array,
+                rt=rt,
+                metadata={'scan_id': int(scan_id)}
+            )
+
+            virtual_results.append({
+                'scan_id': scan_id,
+                'n_instruments': result.n_instruments,
+                'phase_locks': result.total_phase_locks,
+                'convergence_nodes': result.convergence_nodes_count
+            })
+        except Exception as e:
+            logger.warning(f"Virtual measurement failed for scan {scan_id}: {e}")
+
+    execution_time = time.time() - start_time
+
+    virtual_df = pd.DataFrame(virtual_results)
+
+    logger.info(f"Virtual measurements: {len(virtual_results)}")
+    if len(virtual_df) > 0:
+        logger.info(f"Total phase-locks: {virtual_df['phase_locks'].sum()}")
+    logger.info(f"Execution time: {execution_time:.2f}s")
+
+    stage_dir = output_dir / 'stage_05_virtual'
+    stage_dir.mkdir(parents=True, exist_ok=True)
+
+    if len(virtual_df) > 0:
+        save_dataframe(virtual_df, stage_dir / 'virtual_results')
+
+    metrics = {
+        'n_measurements': len(virtual_results),
+        'total_phase_locks': int(virtual_df['phase_locks'].sum()) if len(virtual_df) > 0 else 0,
+        'execution_time': execution_time
+    }
+    save_json(metrics, stage_dir / 'stage_05_metrics.json')
+
+    return {'virtual_df': virtual_df, 'metrics': metrics}
+
+
+def process_single_file(mzml_path: Path, output_base: Path, config: dict) -> dict:
+    """Process a single mzML file (NO CV stage)."""
+
+    file_stem = mzml_path.stem
+    output_dir = output_base / file_stem
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info("\n" + "=" * 80)
+    logger.info(f"PROCESSING: {file_stem}")
+    logger.info("=" * 80 + "\n")
+
+    file_start = time.time()
+
+    results = {
+        'file': file_stem,
+        'path': str(mzml_path),
+        'stages': {}
+    }
+
+    try:
+        # Stage 1: Preprocessing
+        stage1_data = run_stage1_preprocessing(mzml_path, output_dir, config)
+        results['stages']['preprocessing'] = stage1_data['metrics']
+
+        # Stage 2: S-Entropy
+        stage2_data = run_stage2_sentropy(stage1_data, output_dir)
+        results['stages']['sentropy'] = stage2_data['metrics']
+
+        # SKIP Stage 2B: Computer Vision (hangs on large datasets)
+        logger.info("=" * 60)
+        logger.info("STAGE 2B: COMPUTER VISION - SKIPPED (use run_cv_only.py)")
+        logger.info("=" * 60)
+        results['stages']['cv'] = {'skipped': True}
+
+        # Stage 2.5: Fragmentation
+        frag_data = run_stage25_fragmentation(stage1_data, stage2_data, output_dir)
+        results['stages']['fragmentation'] = frag_data.get('metrics', {})
+
+        # Stage 3: BMD Grounding
+        stage3_data = run_stage3_bmd(stage1_data, stage2_data, output_dir)
+        results['stages']['bmd'] = stage3_data['metrics']
+
+        # Stage 4: Completion
+        stage4_data = run_stage4_completion(stage1_data, stage2_data, stage3_data, output_dir)
+        results['stages']['completion'] = stage4_data['metrics']
+
+        # Stage 5: Virtual Instruments
+        stage5_data = run_stage5_virtual(stage1_data, stage2_data, output_dir)
+        results['stages']['virtual'] = stage5_data.get('metrics', {})
+
+        results['status'] = 'completed'
+        results['total_time'] = time.time() - file_start
+
+    except Exception as e:
+        logger.error(f"Processing failed: {e}")
+        logger.error(traceback.format_exc())
+        results['status'] = 'failed'
+        results['error'] = str(e)
+        results['total_time'] = time.time() - file_start
+
+    save_json(results, output_dir / 'pipeline_results.json')
+
+    return results
+
+
+def main():
+    """Run fast analysis on all UC Davis files (skips CV stage)."""
+
+    print("=" * 80)
+    print("UC DAVIS METABOLOMICS - FAST ANALYSIS")
+    print("(Skips CV stage which hangs on large datasets)")
+    print("=" * 80)
+    print(f"\nStarted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Log file: {log_file}\n")
+
+    project_root = Path(__file__).parent
+    data_dir = project_root / 'public' / 'ucdavis'
+    output_dir = project_root / 'results' / 'ucdavis_fast_analysis'
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    mzml_files = sorted(list(data_dir.glob('*.mzml')) + list(data_dir.glob('*.mzML')))
+
+    if not mzml_files:
+        logger.error(f"No mzML files found in {data_dir}")
+        return 1
+
+    logger.info(f"Found {len(mzml_files)} mzML files:")
+    for f in mzml_files:
+        logger.info(f"  - {f.name}")
+
+    config = {
+        'rt_range': [0, 100],
+        'ms1_threshold': 1000,
+        'ms2_threshold': 10
+    }
+
+    all_results = []
+
+    for i, mzml_path in enumerate(mzml_files):
+        logger.info(f"\n{'#' * 80}")
+        logger.info(f"FILE {i + 1}/{len(mzml_files)}: {mzml_path.name}")
+        logger.info(f"{'#' * 80}\n")
+
+        result = process_single_file(mzml_path, output_dir, config)
+        all_results.append(result)
+
+    # Generate summary report
+    logger.info("\n" + "=" * 80)
+    logger.info("SUMMARY REPORT")
+    logger.info("=" * 80 + "\n")
+
+    summary_data = []
+    for result in all_results:
+        summary = {
+            'file': result['file'],
+            'status': result['status'],
+            'total_time': result.get('total_time', 0)
+        }
+
+        for stage_name, stage_metrics in result.get('stages', {}).items():
+            if isinstance(stage_metrics, dict):
+                for key, value in stage_metrics.items():
+                    if isinstance(value, (int, float)):
+                        summary[f"{stage_name}_{key}"] = value
+
+        summary_data.append(summary)
+
+    summary_df = pd.DataFrame(summary_data)
+    save_dataframe(summary_df, output_dir / 'analysis_summary')
+
+    print("\n" + "=" * 80)
+    print("ANALYSIS COMPLETE")
+    print("=" * 80)
+
+    for result in all_results:
+        status_icon = "✓" if result['status'] == 'completed' else "✗"
+        print(f"\n{status_icon} {result['file']}")
+        print(f"  Status: {result['status']}")
+        print(f"  Time: {result.get('total_time', 0):.2f}s")
+
+        if 'stages' in result:
+            for stage_name, metrics in result['stages'].items():
+                if isinstance(metrics, dict) and metrics:
+                    key_metric = list(metrics.values())[0]
+                    print(f"  {stage_name}: {key_metric}")
+
+    print(f"\n{'=' * 80}")
+    print(f"Results saved to: {output_dir}")
+    print(f"Log file: {log_file}")
+    print(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 80)
+
+    save_json({
+        'timestamp': timestamp,
+        'n_files': len(mzml_files),
+        'cv_skipped': True,
+        'results': all_results
+    }, output_dir / 'master_results.json')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
