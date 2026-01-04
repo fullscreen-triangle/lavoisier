@@ -1,0 +1,458 @@
+\section{The Categorical Compiler and Asymptotic Solution Recognition}
+\label{sec:compiler}
+
+The preceding sections have established Poincaré Computing as a computational framework based on continuous trajectory evolution in categorical space, governed by irreversible completion dynamics and characterized by asymptotic exhaustive exploration. However, we have not yet addressed the practical question: how are computational problems introduced into this system, and how are solutions extracted? This section establishes the architecture of the \textbf{categorical compiler}, which operates as a bidirectional translator between problem representations and categorical dynamics.
+
+We prove that the compiler does not follow the traditional compile-then-execute paradigm but instead operates through three concurrent phases: forward translation (problem to categorical state), categorical evolution (trajectory dynamics), and backward translation (categorical state to result). We establish that categorical irreversibility (Axiom~\ref{axiom:irreversibility_formal}) implies solutions are recognized at the $\epsilon$-boundary---one categorical step from closure---and that this asymptotic nature is not a limitation but a fundamental structural property. We prove the \textbf{Penultimate State Theorem} (Theorem~\ref{thm:penultimate}), which establishes that solutions are recognized at the state immediately preceding would-be closure, and we develop the theory of problem introduction through gas dynamics, showing how new problems are introduced through molecular addition, separation, and joining without requiring system restart.
+
+\subsection{Bidirectional Translation Architecture}
+
+The categorical compiler mediates between the problem domain (where computational tasks are specified) and the categorical domain (where trajectories evolve). Unlike traditional compilers that perform a one-time translation from source code to machine code, the categorical compiler operates continuously and bidirectionally.
+
+\begin{definition}[Categorical Compiler]
+\label{def:categorical_compiler}
+The \textbf{categorical compiler} $\mathcal{K}$ is a pair of concurrent operators:
+\begin{equation}
+\mathcal{K} = (\mathcal{T}_{\text{in}}, \mathcal{T}_{\text{out}})
+\end{equation}
+where:
+\begin{itemize}
+    \item $\mathcal{T}_{\text{in}}: \mathcal{P} \to \Sspace$ is the \textbf{forward translator}, mapping problem specifications to categorical states;
+    \item $\mathcal{T}_{\text{out}}: \Sspace \to \mathcal{R}$ is the \textbf{backward translator}, mapping categorical states to result representations.
+\end{itemize}
+Both operators execute concurrently and continuously throughout the computation.
+\end{definition}
+
+The forward translator $\mathcal{T}_{\text{in}}$ encodes problem constraints, objectives, and data into an initial categorical state $\Scoord_0 \in \Sspace$. This encoding uses the problem encoding framework developed in Section~\ref{sec:encoding}. The backward translator $\mathcal{T}_{\text{out}}$ decodes the current categorical state $\gamma(t)$ into a result representation $r(t) \in \mathcal{R}$, which may be a partial solution (if the trajectory has not yet converged) or a final solution (if convergence has been detected).
+
+\begin{theorem}[Concurrent Bidirectional Operation]
+\label{thm:bidirectional}
+The categorical compiler does not compile-then-execute. Instead, it operates in three concurrent phases:
+\begin{enumerate}[(i)]
+    \item \textbf{Forward translation}: $\mathcal{T}_{\text{in}}$ continuously maps problem updates to categorical perturbations;
+    \item \textbf{Categorical dynamics}: The trajectory $\gamma(t)$ evolves in $\Sspace$ according to the dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt};
+    \item \textbf{Backward translation}: $\mathcal{T}_{\text{out}}$ continuously maps categorical states to intermediate results.
+\end{enumerate}
+All three phases execute simultaneously, with convergence detected when $\mathcal{T}_{\text{out}}(\gamma(t))$ stabilizes.
+\end{theorem}
+
+\begin{proof}
+Traditional compilation separates phases sequentially: parse $\to$ compile $\to$ execute $\to$ return. In Poincaré Computing, there is no such separation because the problem, dynamics, and results are coupled throughout the computation.
+
+\textbf{(i) Problem specification is not fixed:} The problem $P$ may be refined during execution. Each refinement is a perturbation to the categorical state:
+\begin{equation}
+P \to P' \implies \Scoord_0 \to \Scoord_0 + \delta\Scoord
+\end{equation}
+The dynamics incorporate this perturbation without restarting. By Theorem~\ref{thm:continuous_refinement} (proven below), perturbations can be applied at any time $t_0$, and the trajectory $\gamma(t)$ for $t > t_0$ reflects the new configuration.
+
+\textbf{(ii) Results emerge continuously:} Intermediate categorical states $\gamma(t)$ have semantic meaning---they represent partial solutions. The backward translator $\mathcal{T}_{\text{out}}$ extracts this meaning:
+\begin{equation}
+r(t) = \mathcal{T}_{\text{out}}(\gamma(t))
+\end{equation}
+As $t$ increases and the trajectory explores more of the categorical space, $r(t)$ converges to the final result. The convergence is gradual, not instantaneous.
+
+\textbf{(iii) Convergence replaces termination:} The system never halts (Corollary~\ref{cor:no_halt}). Instead, convergence is detected by monitoring the stability of $r(t)$:
+\begin{equation}
+\|r(t) - r(t-\Delta t)\| < \delta \quad \text{for sufficiently many consecutive intervals } \Delta t
+\end{equation}
+This is waiting for convergence, not waiting for completion. Once convergence is detected, the result $r(t)$ is emitted, but the dynamics continue (accumulating capability for future problems, by Theorem~\ref{thm:capability_monotonicity}).
+
+Therefore, the three phases are concurrent, not sequential, establishing the bidirectional operation.
+\end{proof}
+
+\begin{definition}[Convergence Detection]
+\label{def:convergence_detection}
+The \textbf{convergence detector} $\mathcal{D}$ monitors the backward translation output:
+\begin{equation}
+\mathcal{D}(t) = \begin{cases}
+1 & \text{if } \|r(t) - r(t-\Delta t)\| < \delta \text{ for } k \text{ consecutive intervals} \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+where $\delta > 0$ is the convergence threshold and $k \geq 1$ is the stability window (typically $k = 3$ to $5$ to avoid false positives from transient fluctuations).
+
+When $\mathcal{D}(t) = 1$, the result $r(t)$ is returned as the solution.
+\end{definition}
+
+\begin{remark}[Non-Halting Convergence]
+\label{rem:non_halting_convergence}
+The convergence detector does not stop the dynamics---it extracts a snapshot. The trajectory continues evolving after convergence is detected, potentially improving the result precision or discovering solutions to related problems. This is a key distinction from traditional computation, where detecting the answer terminates the program. In Poincaré Computing, detecting the answer is an observation event, not a termination event.
+\end{remark}
+
+\subsection{Categorical Irreversibility and the One-Step Boundary}
+
+We now establish the fundamental theorem governing solution recognition in Poincaré Computing: solutions are recognized at the $\epsilon$-boundary, one categorical step from closure, and this is not an approximation but the structural nature of solutions.
+
+\begin{theorem}[Asymptotic Solution Theorem]
+\label{thm:asymptotic_solution}
+Due to categorical irreversibility (Axiom~\ref{axiom:irreversibility_formal}), the system can approach but never exactly reach the initial categorical state. The closest achievable configuration is one categorical step from closure:
+\begin{equation}
+\min_{t > 0} d_{\text{cat}}(\gamma(t), C_0) = 1
+\end{equation}
+where $d_{\text{cat}}$ is the categorical distance (number of completion steps between states) and $C_0$ is the initial categorical state.
+\end{theorem}
+
+\begin{proof}
+Let $C_0$ be the initial categorical state encoding problem $P$. By Axiom~\ref{axiom:irreversibility_formal}, once a categorical state is completed, it remains completed for all future times:
+\begin{equation}
+\mu(C_0, 0) = 1 \implies \mu(C_0, t) = 1 \quad \forall t > 0
+\end{equation}
+At $t = 0$, the state $C_0$ is completed (the problem is "observed" by the system). For all $t > 0$, $C_0$ remains completed, meaning it cannot be re-completed.
+
+The Poincaré recurrence theorem (Theorem~\ref{thm:poincare_recurrence}) guarantees that the trajectory returns to an $\epsilon$-neighborhood of the initial state in the metric topology:
+\begin{equation}
+\exists T > 0: \|\gamma(T) - \Scoord_0\| < \epsilon
+\end{equation}
+where $\Scoord_0 \in \Sspace$ is the S-entropy coordinate of $C_0$.
+
+However, this return occupies a \textit{different} categorical state $C_T \neq C_0$. The states are distinct in the categorical space $\mathcal{C}$ but close in the metric space $\Sspace$:
+\begin{equation}
+C_0 \prec C_T \quad \text{and} \quad \mathcal{O}(C_T) \approx \mathcal{O}(C_0)
+\end{equation}
+The observable values (extracted by the backward translator $\mathcal{T}_{\text{out}}$) are approximately equal, but the categorical states are distinct in the completion order.
+
+The categorical distance $d_{\text{cat}}(C_i, C_j)$ counts the minimum number of completion steps required to go from $C_i$ to $C_j$ along the partial order $\prec$. Since $C_0$ is already completed and cannot be re-completed, the minimum distance is:
+\begin{equation}
+d_{\text{cat}}(C_T, C_0) \geq 1
+\end{equation}
+
+We now show that this minimum is achieved. By the construction of the categorical space (Theorem~\ref{thm:s_space_poincare}), there exists a state $C_{\text{penultimate}}$ satisfying:
+\begin{equation}
+C_{\text{penultimate}} \prec C_0' \quad \text{and} \quad \mathcal{O}(C_0') = \mathcal{O}(C_0)
+\end{equation}
+where $C_0'$ is the "would-be closure" state (observationally equivalent to $C_0$ but occurring later in the completion order). The state $C_{\text{penultimate}}$ is immediately before $C_0'$:
+\begin{equation}
+\nexists C: C_{\text{penultimate}} \prec C \prec C_0'
+\end{equation}
+
+The trajectory can reach $C_{\text{penultimate}}$, achieving $d_{\text{cat}}(C_{\text{penultimate}}, C_0') = 1$. Since $C_0'$ is observationally equivalent to $C_0$, we have:
+\begin{equation}
+\min_{t > 0} d_{\text{cat}}(\gamma(t), C_0) = 1
+\end{equation}
+
+Therefore, the closest the system can get is one categorical step from the initial state.
+\end{proof}
+
+\begin{corollary}[Solution at the $\epsilon$-Boundary]
+\label{cor:epsilon_boundary}
+The solution IS being one step away from closure. The $\epsilon$-neighborhood is not an approximation---it is the solution itself.
+\end{corollary}
+
+\begin{proof}
+Since exact return to $C_0$ is forbidden by irreversibility (Axiom~\ref{axiom:irreversibility_formal}), the solution cannot be defined as exact return. The only consistent definition within the categorical framework is:
+\begin{equation}
+\text{Solution} \equiv \gamma(T) \text{ such that } \|\gamma(T) - \Scoord_0\| < \epsilon \text{ AND } C_T \neq C_0
+\end{equation}
+The inequality $C_T \neq C_0$ is mandatory, not optional. The $\epsilon$-neighborhood is not an approximation to some "true" solution at $\epsilon = 0$; rather, the $\epsilon$-neighborhood \textit{is} the solution.
+
+In traditional numerical computation, $\epsilon$-approximation is a limitation imposed by finite precision: we cannot represent the exact answer, so we accept an error of size $\epsilon$. In Poincaré Computing, $\epsilon$-proximity is the fundamental nature of solutions: there is no "exact" answer to approximate, only the $\epsilon$-boundary to reach.
+
+Therefore, being one step away from closure IS the solution, not an approximation to it.
+\end{proof}
+
+\begin{theorem}[The Penultimate State]
+\label{thm:penultimate}
+Let $\gamma^*$ be a solution trajectory. The final recognized state is the \textbf{penultimate state}---one step before would-be closure:
+\begin{equation}
+\gamma^*(T) = C_{\text{penultimate}} \quad \text{where} \quad C_{\text{penultimate}} \prec C_0' \text{ (would-be closure)}
+\end{equation}
+The step from $C_{\text{penultimate}}$ to $C_0'$ cannot be taken because $C_0'$ would require re-occupying $C_0$'s observational equivalence class after $C_0$ has been completed.
+\end{theorem}
+
+\begin{proof}
+Define the would-be closure state $C_0'$ as the categorical state satisfying:
+\begin{equation}
+\mathcal{O}(C_0') = \mathcal{O}(C_0) \quad \text{and} \quad C_0 \prec C_0'
+\end{equation}
+where $\mathcal{O}$ is the observable projection (Definition~\ref{def:observable_formal}). This state exists by the fiber bundle structure (Theorem~\ref{thm:fiber_bundle_formal}): the fiber $\mathcal{O}^{-1}(\mathcal{O}(C_0))$ contains multiple categorical states with the same observable value, and $C_0'$ is the element of this fiber that comes after $C_0$ in the completion order.
+
+Occupying $C_0'$ would mean:
+\begin{enumerate}[(i)]
+    \item $C_0'$ produces observables identical to $C_0$: $\mathcal{O}(C_0') = \mathcal{O}(C_0)$;
+    \item $C_0'$ comes after $C_0$ in the completion order: $C_0 \prec C_0'$;
+    \item Therefore, $C_0'$ represents "returning to the same observable configuration."
+\end{enumerate}
+
+The categorical dynamics evolve the trajectory toward $C_0'$ (by the recurrence property, Theorem~\ref{thm:poincare_recurrence}). However, the final step from $C_{\text{penultimate}}$ to $C_0'$ would complete a category observationally equivalent to the starting category $C_0$. By the irreversibility axiom (Axiom~\ref{axiom:irreversibility_formal}), this is forbidden.
+
+The system recognizes this impending closure and stops at the penultimate state $C_{\text{penultimate}}$ satisfying:
+\begin{equation}
+C_{\text{penultimate}} \prec C_0' \quad \text{and} \quad \nexists C: C_{\text{penultimate}} \prec C \prec C_0'
+\end{equation}
+This is the immediately preceding state---one step from closure. The convergence detector $\mathcal{D}$ (Definition~\ref{def:convergence_detection}) recognizes that the trajectory has entered the $\epsilon$-neighborhood:
+\begin{equation}
+\|\gamma(T) - \Scoord_0\| < \epsilon \quad \text{where } \gamma(T) = C_{\text{penultimate}}
+\end{equation}
+and emits the result $r(T) = \mathcal{T}_{\text{out}}(C_{\text{penultimate}})$.
+
+Therefore, the penultimate state is the final recognized state, one step before would-be closure.
+\end{proof}
+
+\begin{remark}[Geometric Interpretation]
+\label{rem:geometric_penultimate}
+The Penultimate State Theorem has a geometric interpretation in $\Sspace$. The initial state $\Scoord_0$ is a point in $[0,1]^3$. The would-be closure state $\Scoord_0'$ is a nearby point (within $\epsilon$) that is observationally equivalent but categorically distinct. The penultimate state $\Scoord_{\text{penultimate}}$ is on the boundary of the $\epsilon$-ball around $\Scoord_0$, at the point where the trajectory is about to enter but cannot due to irreversibility. This boundary is the solution surface.
+\end{remark}
+
+\subsection{Problem Introduction Through Gas Dynamics}
+
+Having established how solutions are recognized, we now address how problems are introduced. In Poincaré Computing, problems are not "loaded" into memory but are introduced through perturbations to the virtual gas ensemble.
+
+\begin{theorem}[Problem Introduction by Molecular Configuration]
+\label{thm:problem_introduction}
+New problems are introduced to the system through three mechanisms:
+\begin{enumerate}[(i)]
+    \item \textbf{Addition}: Adding gas molecules (expanding categorical space);
+    \item \textbf{Separation}: Splitting molecule clusters (partitioning categorical space);
+    \item \textbf{Joining}: Merging molecule clusters (unifying categorical regions).
+\end{enumerate}
+Each mechanism perturbs the categorical configuration, creating new initial states without requiring system restart.
+\end{theorem}
+
+\begin{proof}
+The virtual gas ensemble (Section~\ref{sec:virtual_instrument}) maps hardware oscillations to molecular configurations. Each molecule corresponds to a categorical state, and the interactions between molecules correspond to the partial order $\prec$ on $\mathcal{C}$.
+
+\textbf{(i) Addition:} Adding $n$ molecules expands the categorical space:
+\begin{equation}
+\mathcal{C} \to \mathcal{C}' = \mathcal{C} \cup \{C_{\text{new},1}, \ldots, C_{\text{new},n}\}
+\end{equation}
+The new states $C_{\text{new},i}$ are initially uncompleted: $\mu(C_{\text{new},i}, t_0) = 0$ where $t_0$ is the time of addition. The partial order $\prec$ is extended to include the new states:
+\begin{equation}
+\prec' = \prec \cup \{(C_i, C_{\text{new},j}) : C_i \in \mathcal{C}, C_i \prec' C_{\text{new},j}\}
+\end{equation}
+This introduces new reachable states, potentially creating new solution trajectories. The dynamics continue from the current state $\gamma(t_0)$, now exploring the expanded space $\mathcal{C}'$.
+
+\textbf{(ii) Separation:} Separating a cluster of $m$ molecules partitions their interactions. Before separation, the molecules $\{C_1, \ldots, C_m\}$ are coupled: their completion order is constrained by inter-molecular interactions. After separation, the cluster is partitioned into two sub-clusters:
+\begin{equation}
+\{C_1, \ldots, C_m\}_{\text{coupled}} \to \{C_1, \ldots, C_k\}_A \cup \{C_{k+1}, \ldots, C_m\}_B
+\end{equation}
+The coupling constraints between sets $A$ and $B$ are removed:
+\begin{equation}
+\prec' = \prec \setminus \{(C_i, C_j) : C_i \in A, C_j \in B\}
+\end{equation}
+This changes the accessible trajectories: paths that were forbidden due to inter-cluster constraints become accessible. The dynamics adapt to the new partial order without restarting.
+
+\textbf{(iii) Joining:} Merging two clusters introduces new coupling constraints. Before joining, clusters $A$ and $B$ evolve independently. After joining:
+\begin{equation}
+\{C_1, \ldots, C_k\}_A \cup \{C_{k+1}, \ldots, C_m\}_B \to \{C_1, \ldots, C_m\}_{\text{coupled}}
+\end{equation}
+New precedence relations are added:
+\begin{equation}
+\prec' = \prec \cup \{(C_i, C_j) : C_i \in A, C_j \in B, \text{interaction exists}\}
+\end{equation}
+New harmonic coincidences become possible (Section~\ref{sec:solution_trajectory}), creating new solution paths. The dynamics incorporate these new constraints, potentially converging faster to solutions that require coordination between $A$ and $B$.
+
+Each mechanism changes the categorical configuration $(\mathcal{C}, \prec, \mu)$ without requiring a restart. The ongoing dynamics incorporate the change, and the trajectory $\gamma(t)$ for $t > t_0$ (where $t_0$ is the time of perturbation) reflects the new configuration.
+\end{proof}
+
+\begin{definition}[Problem Perturbation]
+\label{def:problem_perturbation}
+A \textbf{problem perturbation} is a modification to the categorical configuration:
+\begin{equation}
+\delta P: (\mathcal{C}, \Scoord_0, \prec) \to (\mathcal{C}', \Scoord_0', \prec')
+\end{equation}
+The perturbation can be:
+\begin{itemize}
+    \item \textbf{Additive}: $|\mathcal{C}'| > |\mathcal{C}|$ (new categorical states added);
+    \item \textbf{Subtractive}: $|\mathcal{C}'| < |\mathcal{C}|$ (categorical states removed);
+    \item \textbf{Structural}: $|\mathcal{C}'| = |\mathcal{C}|$ but $\prec' \neq \prec$ (connectivity changed).
+\end{itemize}
+\end{definition}
+
+\begin{theorem}[Continuous Problem Refinement]
+\label{thm:continuous_refinement}
+Problem perturbations can be introduced at any time $t_0$ without restarting the computation. The dynamics continuously adapt:
+\begin{equation}
+\gamma(t) \text{ adapts to } \delta P \text{ applied at } t_0 \implies \gamma(t > t_0) \text{ reflects new configuration}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The categorical dynamics (equations~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}) depend on the current configuration $(\mathcal{C}(t), \gamma(t), \prec(t))$. When a perturbation $\delta P$ is applied at time $t_0$:
+\begin{equation}
+(\mathcal{C}(t_0^-), \gamma(t_0^-), \prec(t_0^-)) \xrightarrow{\delta P} (\mathcal{C}(t_0^+), \gamma(t_0^+), \prec(t_0^+))
+\end{equation}
+where $t_0^-$ denotes the instant before perturbation and $t_0^+$ denotes the instant after.
+
+The trajectory $\gamma$ is adjusted to account for the new configuration:
+\begin{itemize}
+    \item For additive perturbations: new states are added to $\mathcal{C}'$ with $\mu(C_{\text{new}}, t_0^+) = 0$ (uncompleted). The trajectory continues from $\gamma(t_0^-)$, now exploring the expanded space.
+    
+    \item For subtractive perturbations: removed states are deleted from $\mathcal{C}'$. If any removed state was in $\gamma(t_0^-)$ (already completed), the completion is retained in memory, but the state is no longer active. The trajectory continues in the reduced space.
+    
+    \item For structural perturbations: the partial order $\prec$ is modified. The trajectory $\gamma(t_0^-)$ is checked for consistency with $\prec'$. If inconsistent (e.g., a completed state now has an uncompleted predecessor), the inconsistency is resolved by re-completing the necessary predecessors (which is allowed because they are different categorical states, not re-completions of the same state).
+\end{itemize}
+
+The dynamics continue from the adjusted state $\gamma(t_0^+)$ without loss of progress. Already completed categories remain completed (by Axiom~\ref{axiom:irreversibility_formal}), so the exploration memory $\mathcal{M}(t_0^-)$ is preserved (modulo removed states).
+
+Therefore, perturbations can be applied at any time, and the dynamics adapt continuously.
+\end{proof}
+
+\begin{remark}[Interactive Computation]
+\label{rem:interactive_computation}
+Theorem~\ref{thm:continuous_refinement} enables interactive computation: the user can refine the problem specification during execution, and the system adapts without restarting. This is analogous to interactive theorem provers (e.g., Coq, Isabelle), where the user guides the proof search; however, in Poincaré Computing, the guidance comes through problem perturbations rather than proof tactics.
+\end{remark}
+
+\subsection{The Compiler Runtime Loop}
+
+We now formalise the operational behaviour of the categorical compiler as a non-terminating runtime loop.
+
+\begin{definition}[Compiler Runtime]
+\label{def:compiler_runtime}
+The \textbf{categorical compiler runtime} executes the following concurrent loop:
+\begin{enumerate}
+    \item \textbf{Monitor}: Watch for problem perturbations $\delta P$ (from user input or external events);
+    \item \textbf{Translate-In}: Apply the forward translator $\mathcal{T}_{\text{in}}$ to any new problem components, producing categorical perturbations;
+    \item \textbf{Evolve}: Advance categorical dynamics by time step $\Delta t$, updating $\gamma(t) \to \gamma(t + \Delta t)$;
+    \item \textbf{Translate-Out}: Apply the backward translator $\mathcal{T}_{\text{out}}$ to the current state $\gamma(t + \Delta t)$, producing result $r(t + \Delta t)$;
+    \item \textbf{Check}: Test convergence via detector $\mathcal{D}(t + \Delta t)$;
+    \item \textbf{Continue}: If $\mathcal{D}(t + \Delta t) = 0$ (not converged), goto step 1; if $\mathcal{D}(t + \Delta t) = 1$ (converged), emit result $r(t + \Delta t)$ and goto step 1.
+\end{enumerate}
+This loop never terminates—it continuously processes problems.
+\end{definition}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/categorical_compiler_panel.png}
+\caption{\textbf{Categorical Compiler Validation.} 
+\textbf{(A) Bidirectional Translation:} The compiler operates through three concurrent phases---forward translation ($\mathcal{T}_{\text{in}}: \mathcal{P} \to \Sspace$), categorical dynamics ($\gamma(t)$ evolution), and backward translation ($\mathcal{T}_{\text{out}}: \Sspace \to \mathcal{R}$)---without sequential compile-then-execute separation (Theorem~\ref{thm:bidirectional}). 
+\textbf{(B) Convergence Detection:} Observable $r(t) = \mathcal{T}_{\text{out}}(\gamma(t))$ converges to stable value (dashed line) after trajectory exploration. Convergence detector $\mathcal{D}(t)$ identifies when $\|r(t) - r(t-\Delta t)\| < \delta$ for $k$ consecutive intervals (green shaded region), triggering result emission without halting dynamics (Definition~\ref{def:convergence_detection}). 
+\textbf{(C) Asymptotic Solutions (Never Exact Return):} Final distance to initial state $\|\gamma(T) - \Scoord_0\|$ is always positive across 20 independent runs. Exact return (vertical line at zero) is impossible due to categorical irreversibility (Axiom~\ref{axiom:irreversibility_formal}). All solutions satisfy $\|\gamma(T) - \Scoord_0\| > 0$, confirming Theorem~\ref{thm:asymptotic_solution}. 
+\textbf{(D) $\epsilon$-Boundary Recognition:} Solution recognition occurs at progressively smaller $\epsilon$ thresholds (Test 1: $\epsilon = 0.1$, Test 2: $\epsilon = 0.15$, Test 3: $\epsilon = 0.2$) with final distances approaching but never reaching zero (dashed lines show targets). The $\epsilon$-boundary IS the solution (Corollary~\ref{cor:epsilon_boundary}), not an approximation. 
+\textbf{(E) Penultimate State (One Step From Closure):} Trajectory approaches initial state along completion order, reaching minimum distance at penultimate state (yellow marker) one categorical step from would-be closure (red marker at distance $\approx 0$). The final step cannot be taken due to irreversibility, confirming Theorem~\ref{thm:penultimate}. 
+\textbf{(F) Non-Terminating Runtime:} System remains active (normalized activity = 1.0) throughout computation. Convergence detection (orange dashed line) emits result but does not halt dynamics. Runtime continues after convergence (green region), accumulating capability for future problems (Theorem~\ref{thm:non_terminating_runtime}).}
+\label{fig:categorical_compiler_validation}
+\end{figure}
+
+\begin{theorem}[Non-Terminating Runtime]
+\label{thm:non_terminating_runtime}
+The compiler runtime is non-terminating by design:
+\begin{equation}
+\forall t \geq 0: \text{Runtime is active at } t
+\end{equation}
+Convergence detection emits results but does not halt the loop.
+\end{theorem}
+
+\begin{proof}
+From Theorem~\ref{thm:inexhaustibility}, the categorical dynamics have no halt state: there is no configuration from which no further exploration is possible. The runtime mirrors this property.
+
+When convergence is detected ($\mathcal{D}(t) = 1$), the following occurs:
+\begin{enumerate}[(i)]
+    \item Result $r(t)$ is emitted to the user or calling process;
+    \item Dynamics continue exploring the categorical space;
+    \item System capability increases (Theorem~\ref{thm:capability_monotonicity}): the exploration memory $\mathcal{M}(t)$ grows, reducing conditional complexity for future problems;
+    \item Future related problems benefit from the accumulated exploration (Theorem~\ref{thm:related_acceleration}): if a new problem $P'$ is introduced that is related to the solved problem $P$, the system converges faster.
+\end{enumerate}
+
+Halting the runtime after convergence would forfeit these benefits. The system would need to restart from scratch for each new problem, losing the accumulated capability. By remaining active, the runtime accumulates capability continuously, improving performance over time.
+
+Therefore, the runtime is non-terminating by design, not by accident.
+\end{proof}
+
+\begin{corollary}[Always One Step Away]
+\label{cor:always_one_step}
+At any moment, the system is at most one categorical step from recognizing a solution to some problem:
+\begin{equation}
+\forall t \geq 0, \exists P: d_{\text{cat}}(\gamma(t), \Scoord_P^{\text{solution}}) \leq 1
+\end{equation}
+The continuous exploration ensures proximity to solutions for a growing set of problems.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:asymptotic_exhaustion}, the exploration eventually visits all categories (in the limit $t \to \infty$). At any finite time $t$, the current state $\gamma(t)$ is adjacent to multiple categories in the partial order $\prec$:
+\begin{equation}
+\text{Adjacent}(\gamma(t)) = \{C \in \mathcal{C} : \gamma(t) \prec C \text{ and } \nexists C': \gamma(t) \prec C' \prec C\}
+\end{equation}
+
+Each adjacent category $C \in \text{Adjacent}(\gamma(t))$ is potentially a solution to some problem $P$. As exploration progresses, the set of problems for which the current state is adjacent to a solution grows:
+\begin{equation}
+|\{P : d_{\text{cat}}(\gamma(t), \Scoord_P^{\text{solution}}) \leq 1\}| \text{ increases with } t
+\end{equation}
+
+Therefore, at any moment, there exists at least one problem $P$ for which the current state is one step from solution. The system is always "close" to solving something, and the set of "somethings" grows over time.
+\end{proof}
+
+\subsection{Implications for Computation}
+
+We conclude by establishing the fundamental principles of computation in the Poincaré Computing framework.
+
+\begin{theorem}[Asymptotic Computation Principle]
+\label{thm:asymptotic_computation}
+Computation in Poincaré Computing is fundamentally asymptotic:
+\begin{enumerate}[(i)]
+    \item Problems are never ``solved exactly''---they are approached to within $\epsilon$;
+    \item Solutions are recognized, not reached;
+    \item The $\epsilon$-boundary is the solution, not an approximation;
+    \item Continuing past recognition improves precision for related problems.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i) No exact solutions:} Exact solution would require re-occupying the initial category $C_0$, which is forbidden by irreversibility (Axiom~\ref{axiom:irreversibility_formal}). By Theorem~\ref{thm:asymptotic_solution}, the closest achievable configuration is one categorical step from closure, corresponding to $\epsilon$-proximity in the metric topology.
+
+\textbf{(ii) Recognition vs. reaching:} The convergence detector $\mathcal{D}$ (Definition~\ref{def:convergence_detection}) recognizes when the trajectory has entered the $\epsilon$-neighborhood:
+\begin{equation}
+\mathcal{D}(t) = 1 \iff \|\gamma(t) - \Scoord_0\| < \epsilon
+\end{equation}
+Recognition is observation of proximity, not attainment of identity. The system observes that it is close to the initial state, not that it has returned to the initial state.
+
+\textbf{(iii) $\epsilon$-boundary is the solution:} By Corollary~\ref{cor:epsilon_boundary}, the $\epsilon$-boundary is definitionally the solution within the categorical framework. There is no "truer" solution at $\epsilon = 0$ to approximate. The solution IS being within $\epsilon$ of the initial state while remaining categorically distinct.
+
+\textbf{(iv) Continued improvement:} By Theorem~\ref{thm:complexity_reduction}, continued exploration after recognition decreases conditional complexity:
+\begin{equation}
+\Pi(P' \mid \mathcal{M}(T)) < \Pi(P' \mid \mathcal{M}(T'))
+\end{equation}
+for $T' > T$ (where $T$ is the recognition time) and related problems $P'$. The exploration memory $\mathcal{M}(T')$ contains more completed categories, providing more "context" for solving $P'$. This improves precision: the $\epsilon$ required for convergence decreases, and the convergence time decreases.
+
+Therefore, computation is fundamentally asymptotic, with recognition (not reaching) as the solution concept.
+\end{proof}
+
+\begin{remark}[Comparison to Numerical Computation]
+\label{rem:numerical_comparison}
+In numerical computation, $\epsilon$-approximation is a limitation imposed by finite precision. Real numbers are approximated by floating-point numbers with finite mantissa, introducing rounding errors of size $\epsilon \sim 10^{-16}$ (for double precision). We accept this error because exact representation is impossible.
+
+In Poincaré Computing, $\epsilon$-proximity is the fundamental nature of solutions, not a limitation. The distinction:
+\begin{itemize}
+    \item \textbf{Numerical}: ``We cannot reach the exact answer, so we accept $\epsilon$-error as an unavoidable compromise.''
+    \item \textbf{Poincaré}: ``The answer IS being within $\epsilon$; there is no `exact' to reach. The $\epsilon$-boundary is the solution itself.''
+\end{itemize}
+
+This is not a philosophical reframing but a structural consequence of categorical irreversibility. The irreversibility axiom (Axiom~\ref{axiom:irreversibility_formal}) forbids exact return, making $\epsilon$-proximity the only possible solution concept.
+\end{remark}
+
+\begin{theorem}[Problem-Solution Proximity]
+\label{thm:problem_solution_proximity}
+At the moment of solution recognition, problem and solution are one categorical step apart:
+\begin{equation}
+d_{\text{cat}}(\Scoord_{\text{problem}}, \Scoord_{\text{solution}}) = 1
+\end{equation}
+They are as close as categorically possible while remaining distinct.
+\end{theorem}
+
+\begin{proof}
+The problem is encoded in the initial state $\Scoord_0 = \mathcal{T}_{\text{in}}(P)$ (forward translation). The solution is the penultimate state $C_{\text{penultimate}}$ (Theorem~\ref{thm:penultimate}). By definition of the penultimate state:
+\begin{equation}
+C_{\text{penultimate}} \prec C_0' \quad \text{with no intermediate state}
+\end{equation}
+where $C_0'$ is observationally equivalent to $C_0$: $\mathcal{O}(C_0') = \mathcal{O}(C_0)$.
+
+The categorical distance is:
+\begin{equation}
+d_{\text{cat}}(C_{\text{penultimate}}, C_0') = 1
+\end{equation}
+Since $C_0'$ is observationally equivalent to $C_0$, we have:
+\begin{equation}
+d_{\text{cat}}(\Scoord_{\text{solution}}, \Scoord_{\text{problem}}) = d_{\text{cat}}(C_{\text{penultimate}}, C_0') = 1
+\end{equation}
+
+Therefore, problem and solution are exactly one categorical step apart---as close as possible while remaining distinct. This is the minimum separation allowed by categorical irreversibility.
+\end{proof}
+
+\begin{remark}[Philosophical Implications]
+\label{rem:philosophical_implications}
+Theorem~\ref{thm:problem_solution_proximity} has philosophical implications: in Poincaré Computing, problems and solutions are not separate entities but are adjacent points in a continuous space. The "distance" from problem to solution is minimal (one categorical step), suggesting that problems contain their solutions implicitly. The computation is not a search for a distant solution but a recognition of an adjacent configuration.
+
+This resonates with the philosophical view that problems and solutions are dual aspects of the same structure, and that "solving" a problem is recognizing this duality rather than constructing something new.
+\end{remark}
+
+This section has established the categorical compiler as the bidirectional interface between problem representations and categorical dynamics, proven that solutions are recognized at the penultimate state (one categorical step from closure), developed the theory of problem introduction through gas dynamics, and formalized the non-terminating runtime loop. These results establish that Poincaré Computing is fundamentally asymptotic, with recognition (not reaching) as the solution concept, and that this asymptotic nature is a structural property, not a limitation.
+

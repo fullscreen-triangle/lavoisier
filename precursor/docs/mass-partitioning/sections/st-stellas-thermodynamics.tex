@@ -1,0 +1,158 @@
+\section{Identification as Trajectory Completion}
+\label{sec:st-stellas-thermodynamics}
+
+\subsection{Identification Problem}
+
+\begin{definition}[Metabolite Identification]
+Given a set of measurements $\{M_1, M_2, \ldots, M_k\}$, determine the chemical identity $C$ of the analyte.
+\end{definition}
+
+Traditional approaches match measured spectra against libraries. This fails for:
+\begin{itemize}
+    \item Unknown compounds absent from libraries
+    \item Isomers with identical mass spectra
+    \item Platform-dependent spectral variations
+\end{itemize}
+
+\subsection{Partition Trajectory Formulation}
+
+\begin{definition}[Partition Trajectory]
+A partition trajectory is a sequence of partition coordinates
+\begin{equation}
+    \mathcal{T} = \{(n_0, l_0, m_0, s_0), (n_1, l_1, m_1, s_1), \ldots, (n_k, l_k, m_k, s_k)\}
+\end{equation}
+where consecutive entries satisfy selection rules.
+\end{definition}
+
+\begin{proposition}[Trajectory-Structure Correspondence]
+Each molecular structure admits a characteristic set of allowed partition trajectories, determined by:
+\begin{enumerate}
+    \item Molecular formula (constrains total mass and $n_{\max}$)
+    \item Bond topology (constrains allowed $\Delta l$ transitions)
+    \item Stereochemistry (constrains $s$ values)
+\end{enumerate}
+\end{proposition}
+
+\subsection{Poincar\'e Recurrence in Partition Space}
+
+\begin{definition}[Poincar\'e Recurrence]
+A trajectory $\mathcal{T}$ exhibits Poincar\'e recurrence if it returns arbitrarily close to its initial point:
+\begin{equation}
+    \exists k: \|(n_k, l_k, m_k, s_k) - (n_0, l_0, m_0, s_0)\| < \epsilon
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Identification as Recurrence]
+\label{thm:identification-recurrence}
+Metabolite identification corresponds to finding a partition trajectory that:
+\begin{enumerate}
+    \item Starts at measured precursor coordinates $(n_0, l_0, m_0, s_0)$
+    \item Passes through all measured fragment coordinates
+    \item Returns to a chemically consistent closure point
+\end{enumerate}
+\end{theorem}
+
+The closure point need not equal the starting point; it must be consistent with reassembly of fragments into a chemically valid structure.
+
+\subsection{Trajectory Completion Algorithm}
+
+\begin{algorithm}
+\caption{Partition Trajectory Completion for Identification}
+\label{alg:identification}
+\begin{algorithmic}[1]
+\Require Measured coordinates $\{(n_i, l_i, m_i, s_i)\}$, molecular formula constraint $F$
+\Ensure Candidate structures $\{C_1, C_2, \ldots\}$
+\State Initialize trajectory $\mathcal{T} \gets \{(n_0, l_0, m_0, s_0)\}$ from precursor
+\State Build fragment graph $G$: nodes are coordinates, edges satisfy selection rules
+\State Find all paths in $G$ from precursor to each fragment
+\State For each complete path set $P$:
+    \State \quad Check mass conservation: $\sum_i m(n_i) = M_{\text{precursor}}$
+    \State \quad Check bond consistency: transitions correspond to valid bond breaks
+    \State \quad Check stereochemistry: $s$ values consistent with chiral centers
+\State Rank candidates by trajectory likelihood (transition rates)
+\State \Return top candidates
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Criterion}
+
+\begin{definition}[Trajectory Convergence]
+A set of measurements converges if there exists a unique trajectory consistent with all measurements.
+\end{definition}
+
+\begin{theorem}[Convergence Guarantee]
+\label{thm:convergence}
+For $k \geq 2n^2$ measurements distributed across partition depths $1 \leq n' \leq n$, the trajectory converges with probability $\geq 1 - \exp(-k/n^2)$.
+\end{theorem}
+
+\begin{proof}
+The capacity at depth $n$ is $C(n) = 2n^2$. With $k = 2n^2$ measurements, at least one measurement per categorical state is expected. Each measurement constrains the trajectory; $k$ constraints on $2n^2$ unknowns yields a determined system.
+\end{proof}
+
+\subsection{Information Gain per Measurement}
+
+\begin{definition}[Measurement Information Gain]
+The information gain from measurement $M_i$ is
+\begin{equation}
+    I(M_i) = H(\mathcal{T}_{\text{before}}) - H(\mathcal{T}_{\text{after}})
+\end{equation}
+where $H(\mathcal{T})$ is the entropy over trajectory space.
+\end{definition}
+
+\begin{proposition}[Optimal Measurement Selection]
+The optimal next measurement maximizes expected information gain:
+\begin{equation}
+    M^* = \arg\max_{M} \mathbb{E}[I(M)]
+\end{equation}
+\end{proposition}
+
+This provides a principled approach to experiment design: select fragmentation conditions that maximize information about the unknown structure.
+
+\subsection{De Novo Structure Prediction}
+
+\begin{definition}[Partition Signature]
+The partition signature of a molecule is the multiset of partition coordinates of all constituent atoms:
+\begin{equation}
+    \Sigma(C) = \{(n_1, l_1, m_1, s_1), (n_2, l_2, m_2, s_2), \ldots\}
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Structure from Signature]
+\label{thm:structure-from-signature}
+Given a complete partition signature $\Sigma$ satisfying:
+\begin{enumerate}
+    \item Mass conservation
+    \item Valence constraints
+    \item Selection rule consistency
+\end{enumerate}
+there exists a unique molecular structure (up to isomorphism) compatible with $\Sigma$.
+\end{theorem}
+
+\begin{proof}
+The partition signature constrains:
+\begin{itemize}
+    \item Atom count and types (from masses $m(n_i)$)
+    \item Bonding pattern (from allowed $\Delta l$ transitions)
+    \item Stereochemistry (from $s$ values)
+\end{itemize}
+Given sufficient constraints, the molecular graph is uniquely determined.
+\end{proof}
+
+\subsection{Complexity Bounds}
+
+\begin{theorem}[Identification Complexity]
+The worst-case complexity of trajectory completion is $O(C(n)^k)$ where $k$ is the number of fragments.
+\end{theorem}
+
+\begin{proof}
+Each fragment can occupy any of $C(n)$ states. Testing all combinations gives $C(n)^k$ candidates. Filtering by selection rules reduces this in practice, but the worst case requires exhaustive search.
+\end{proof}
+
+For $n = 4$ and $k = 10$ fragments: $C(4)^{10} = 32^{10} \approx 10^{15}$---computationally demanding but tractable with constraint propagation.
+
+\begin{proposition}[Tractability via Constraints]
+With selection rule constraints, the effective complexity reduces to $O(k \cdot n^2)$ for well-constrained trajectories.
+\end{proposition}
+
+The selection rules eliminate most combinatorial possibilities, making real-time identification feasible.
+

@@ -1,0 +1,377 @@
+\section{Identity Unification: Processor, Memory, and Semantics}
+\label{sec:identity_unification}
+
+The von Neumann architecture, which has dominated computing for over seven decades, is predicated on a fundamental separation: the processor (which executes instructions) and the memory (which stores data and instructions) are distinct entities connected by a communication channel \citep{vonneumann1945first}. This separation creates the well-known "von Neumann bottleneck," in which the bandwidth of the processor-memory interconnect limits computational throughput \citep{backus1978can}. Moreover, the separation necessitates explicit address translation, instruction decoding, and data movement operations that consume energy and time.
+
+Poincaré Computing eliminates this separation through a profound unification: \textbf{a single categorical state $\Scoord \in \Sspace$ simultaneously encodes memory address, processor state, and semantic content}. These three aspects are not separate entities requiring transformation and communication, but rather are different \textit{projections} of the same underlying geometric structure. The memory address is obtained by projecting $\Scoord$ onto a discrete address space, the processor state is obtained by projecting $\Scoord$ onto a frequency-phase space, and the semantic content is obtained by projecting $\Scoord$ onto a vector space. All three projections are computed simultaneously from the same categorical state without sequential dependency or data transfer.
+
+This identity unification has profound architectural implications. It eliminates the processor-memory bottleneck because there is no communication channel to bottleneck: the processor state and memory address are the same entity viewed through different lenses. It unifies memory access, instruction fetch, and semantic lookup into a single operation: evaluating the categorical state. It enables content-addressable computation in which the meaning of data is intrinsic to its location in S-entropy space rather than being stored separately. And it provides a natural framework for neuromorphic and quantum-inspired computing architectures in which state, operation, and meaning are inseparable.
+
+This section formalizes the identity unification through three projection operators $\pi_M$, $\pi_P$, and $\pi_S$ that map categorical states to memory addresses, processor configurations, and semantic vectors respectively. We prove that these projections are well-defined, deterministic, and simultaneously computable (Theorem~\ref{thm:projection_welldef}). We establish the Identity Unification Theorem (Theorem~\ref{thm:identity_unification}), which proves that the three projections are bijectively related through the categorical state, enabling invertible transformations between memory, processor, and semantic spaces without external computation. We prove that the projections are computed simultaneously rather than sequentially (Theorem~\ref{thm:simultaneity}), and we derive the architectural implications including the elimination of the von Neumann bottleneck (Proposition~\ref{prop:bottleneck_elimination}).
+
+\subsection{Projection Operators}
+
+We begin by defining three projection operators that extract different aspects of a categorical state. Each projection maps the continuous three-dimensional S-entropy space $\Sspace = [0,1]^3$ to a different target space representing memory addresses, processor configurations, or semantic content.
+
+\begin{definition}[Memory Projection]
+\label{def:memory_projection}
+The \textbf{memory projection} $\pi_M: \Sspace \to \mathcal{M}$ maps a categorical state $\Scoord = (\Sk, \St, \Se)$ to a discrete memory address in the address space $\mathcal{M} = \{0, 1, 2, \ldots, 3^{3k} - 1\}$, where $k$ is the hierarchical depth of the discretization (Section~\ref{sec:finite_space}). The projection is defined by:
+\begin{equation}
+\pi_M(\Scoord) = \left\lfloor 3^k \Sk \right\rfloor + 3^k \left\lfloor 3^k \St \right\rfloor + 3^{2k} \left\lfloor 3^k \Se \right\rfloor
+\label{eq:memory_projection}
+\end{equation}
+where $\lfloor \cdot \rfloor$ denotes the floor function (rounding down to the nearest integer).
+\end{definition}
+
+The memory projection discretizes each S-entropy coordinate into $3^k$ levels and combines them using a ternary (base-3) encoding. The knowledge entropy $\Sk$ contributes the least significant ternary digits, the temporal entropy $\St$ contributes the middle digits, and the evolution entropy $\Se$ contributes the most significant digits. This encoding partitions the continuous space $\Sspace$ into $3^{3k}$ discrete cells, each corresponding to a unique memory address.
+
+\begin{example}[Memory Address Calculation]
+\label{ex:memory_address}
+For hierarchical depth $k = 2$ (giving $3^2 = 9$ levels per coordinate and $3^6 = 729$ total addresses), consider the categorical state $\Scoord = (0.35, 0.67, 0.89)$. The memory address is:
+\begin{align}
+\pi_M(\Scoord) &= \lfloor 9 \cdot 0.35 \rfloor + 9 \cdot \lfloor 9 \cdot 0.67 \rfloor + 81 \cdot \lfloor 9 \cdot 0.89 \rfloor \\
+&= \lfloor 3.15 \rfloor + 9 \cdot \lfloor 6.03 \rfloor + 81 \cdot \lfloor 8.01 \rfloor \\
+&= 3 + 9 \cdot 6 + 81 \cdot 8 \\
+&= 3 + 54 + 648 = 705
+\end{align}
+Thus, the categorical state $\Scoord = (0.35, 0.67, 0.89)$ corresponds to memory address 705 in a 729-address space.
+\end{example}
+
+\begin{definition}[Processor Projection]
+\label{def:processor_projection}
+The \textbf{processor projection} $\pi_P: \Sspace \to \mathcal{P}$ maps a categorical state to a processor configuration consisting of three oscillator frequencies and a global phase. The processor state space is $\mathcal{P} = [0, \omega_{\max}]^3 \times [0, 2\pi)$, and the projection is defined by:
+\begin{equation}
+\pi_P(\Scoord) = \left( \omega_k(\Scoord), \omega_t(\Scoord), \omega_e(\Scoord), \phi(\Scoord) \right)
+\label{eq:processor_projection}
+\end{equation}
+where the frequency components are:
+\begin{align}
+\omega_k(\Scoord) &= \omega_{\max} \cdot \Sk \label{eq:omega_k} \\
+\omega_t(\Scoord) &= \omega_{\max} \cdot \St \label{eq:omega_t} \\
+\omega_e(\Scoord) &= \omega_{\max} \cdot \Se \label{eq:omega_e}
+\end{align}
+and the global phase is:
+\begin{equation}
+\phi(\Scoord) = 2\pi(\Sk + \St + \Se) \mod 2\pi
+\label{eq:global_phase}
+\end{equation}
+Here, $\omega_{\max}$ is the maximum oscillator frequency (typically the CPU clock frequency, e.g., $\omega_{\max} \approx 10^{10}$ Hz for a 10 GHz processor).
+\end{definition}
+
+The processor projection interprets the S-entropy coordinates as normalized frequencies: each coordinate value in $[0,1]$ is scaled to a frequency in $[0, \omega_{\max}]$. The global phase $\phi$ encodes the sum of the coordinates modulo $2\pi$, providing additional information about the processor's oscillatory state. This projection connects the abstract categorical state to the physical oscillator dynamics discussed in Section~\ref{sec:virtual_instrument}.
+
+\begin{remark}[Physical Interpretation]
+\label{rem:processor_physical}
+The processor projection has a direct physical interpretation: the frequencies $(\omega_k, \omega_t, \omega_e)$ correspond to the instantaneous frequencies of three hardware oscillators (e.g., CPU clock, memory bus, peripheral timing), and the phase $\phi$ corresponds to the relative phase between these oscillators. The categorical dynamics (Section~\ref{sec:categorical_dynamics}) govern how these frequencies evolve over time, with the modular condition (Theorem~\ref{thm:measure_preservation}) ensuring that the total "energy" (related to the sum of frequencies) is conserved.
+\end{remark}
+
+\begin{definition}[Semantic Projection]
+\label{def:semantic_projection}
+The \textbf{semantic projection} $\pi_S: \Sspace \to \mathcal{V}$ maps a categorical state to a semantic vector in a three-dimensional semantic vector space $\mathcal{V} = \mathbb{R}^3$. The projection is defined by:
+\begin{equation}
+\pi_S(\Scoord) = \Sk \cdot \mathbf{e}_1 + \St \cdot \mathbf{e}_2 + \Se \cdot \mathbf{e}_3 = \sum_{j=1}^{3} S_j \cdot \mathbf{e}_j
+\label{eq:semantic_projection}
+\end{equation}
+where $\{\mathbf{e}_1, \mathbf{e}_2, \mathbf{e}_3\}$ is an orthonormal basis for $\mathcal{V}$.
+\end{definition}
+
+The semantic projection embeds the categorical state into a vector space, enabling the use of vector space operations (inner products, norms, linear transformations) to reason about semantic relationships. Two categorical states with similar semantic vectors (small Euclidean distance $\|\pi_S(\Scoord_1) - \pi_S(\Scoord_2)\|$) represent computationally or semantically related concepts, while states with dissimilar semantic vectors represent unrelated concepts.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/processor_benchmark_energy.png}
+\caption{\textbf{Processor Benchmark: Energy \& Complexity Analysis---Landauer-Optimal Information Processing.} 
+\textbf{(A) Energy Efficiency (Categorical/Classical):} Bar chart shows energy ratio (categorical/classical, log scale) for 14 computational tasks. Categorical operations achieve $10^{-2}$--$10^{-5}$ energy consumption relative to classical: dot product $n = 10$ ($\approx 10^{-1}$), dot product $n = 100$ ($\approx 10^{-2}$), dot product $n = 1000$ ($\approx 10^{-4}$), dot product $n = 10000$ ($\approx 10^{-5}$), matrix multiply $4 \times 4$ ($\approx 10^{-2}$), matrix multiply $8 \times 8$ ($\approx 10^{-4}$), matrix multiply $16 \times 16$ ($\approx 10^{-4}$), matrix multiply $32 \times 32$ ($\approx 10^{-5}$), sort $n = 100$ ($\approx 10^{-3}$), sort $n = 1000$ ($\approx 10^{-4}$), sort $n = 10000$ ($\approx 10^{-5}$), search $n = 1000$ ($\approx 10^{-1}$), search $n = 10000$ ($\approx 10^{-1}$), search $n = 100000$ ($\approx 10^{-1}$). 
+\textbf{(B) Theoretical Complexity:} Log-log plot shows operation count vs. problem size $n$ for six complexity classes. Classical algorithms: $O(n^3)$ (purple, steepest growth, $10^{15}$ ops at $n = 10^5$), $O(n^2)$ (red, $10^{10}$ ops at $n = 10^5$), $O(n \log n)$ (orange, $10^6$ ops at $n = 10^5$), $O(n)$ (cyan, $10^5$ ops at $n = 10^5$), $O(\log n)$ (blue dashed, $10^1$ ops at $n = 10^5$). Categorical completion: $O(1)$ (green, constant $\approx 10^1$ ops for all $n$). The horizontal green line demonstrates complexity independence (Theorem~\ref{thm:complexity_independence}): categorical operations require constant work regardless of problem size.
+\textbf{(C) Landauer Limit Analysis:} Bar chart shows energy consumption (J, log scale, Landauer minimum) for 8 tasks. Classical (red bars): task 0 ($\approx 10^{-19}$ J), task 1 ($\approx 10^{-18}$ J), task 2 ($\approx 10^{-17}$ J), task 3 ($\approx 10^{-16}$ J), task 4 ($\approx 10^{-18}$ J), task 5 ($\approx 10^{-17}$ J), task 6 ($\approx 10^{-16}$ J), task 7 ($\approx 10^{-15}$ J). Categorical (green bars): all tasks $\approx 10^{-20}$ J (at Landauer limit $k_B T \ln 2 \approx 3 \times 10^{-21}$ J at $T = 300$ K). Categorical operations approach thermodynamic minimum, while classical operations exceed it by $10^1$--$10^5$ factors.
+\textbf{(D) Scaling Advantage:} Speedup factor vs. problem size (log-log scale) for three task types. Dot product (cyan circles, dashed line): flat at $\approx 1\times$ speedup (no advantage due to overhead). Matrix multiply (magenta circles, solid line): grows from $1\times$ at $n = 10^2$ to $3.5\times$ at $n = 10^3$. Sorting (orange circles, solid line): grows from $2\times$ at $n = 10^1$ to $13.5\times$ at $n = 10^4$. Sorting shows strongest scaling advantage, achieving order-of-magnitude speedup for large $n$.
+\textbf{(E) Task Type Efficiency:} Horizontal bar chart shows speedup range (min to max) for four task types. Dot Product: narrow range $[2.5, 3.5]$ (teal bar). Matrix Multiply: medium range $[4, 6.5]$ (magenta bar). Sorting: wide range $[6, 10]$ (orange bar). Search: narrow range $[1, 2]$ (yellow bar). Vertical dashed line at speedup $= 1$ marks break-even; all tasks exceed this threshold. Sorting achieves highest speedup ($10\times$), validating that categorical navigation is most effective for order-dependent problems.
+\textbf{(F) Performance Crossover Analysis:} Speedup factor vs. problem size showing crossover point where categorical becomes faster than classical. Matrix multiply (magenta circles): starts at $\approx 1\times$ for $n = 10^1$, crosses break-even (black dashed line) at $n \approx 10^2$, reaches $3.5\times$ at $n = 10^3$. Sorting (orange squares): starts at $\approx 2\times$ for $n = 10^1$, reaches $13\times$ at $n = 10^3$. Green shaded region (right) indicates ``Categorical FASTER'' regime.}
+\label{fig:processor_benchmark_energy}
+\end{figure}
+
+\begin{remark}[Semantic Space Structure]
+\label{rem:semantic_structure}
+The semantic vector space $\mathcal{V}$ can be equipped with additional structure to capture domain-specific semantic relationships. For example, one could define a non-Euclidean metric on $\mathcal{V}$ that reflects the problem-specific notion of similarity, or one could embed $\mathcal{V}$ into a higher-dimensional space with learned semantic structure (as in word embeddings or knowledge graphs). The semantic projection provides the interface between the geometric structure of $\Sspace$ and the semantic structure of the problem domain.
+\end{remark}
+
+\subsection{Well-Definedness and Independence of Projections}
+
+Having defined the three projection operators, we now establish that they are well-defined (produce outputs in the correct target spaces) and independent (computable from the categorical state alone without requiring each other).
+
+\begin{theorem}[Projection Well-Definedness]
+\label{thm:projection_welldef}
+Each projection operator is well-defined and deterministic: for any categorical state $\Scoord \in \Sspace$, the projections satisfy:
+\begin{align}
+\pi_M(\Scoord) &\in \mathcal{M} = \{0, 1, \ldots, 3^{3k} - 1\} \label{eq:welldef_M} \\
+\pi_P(\Scoord) &\in \mathcal{P} = [0, \omega_{\max}]^3 \times [0, 2\pi) \label{eq:welldef_P} \\
+\pi_S(\Scoord) &\in \mathcal{V} = \mathbb{R}^3 \label{eq:welldef_S}
+\end{align}
+Moreover, the projections are deterministic: identical categorical states produce identical projections.
+\end{theorem}
+
+\begin{proof}
+We verify that each projection maps into its declared target space.
+
+\textbf{Memory projection $\pi_M$:} For $\Scoord = (\Sk, \St, \Se)$ with each coordinate in $[0,1]$, we have:
+\begin{equation}
+0 \leq 3^k S_i < 3^k \quad \Rightarrow \quad \lfloor 3^k S_i \rfloor \in \{0, 1, 2, \ldots, 3^k - 1\}
+\end{equation}
+for each $i \in \{k, t, e\}$. The memory address is:
+\begin{align}
+\pi_M(\Scoord) &= \lfloor 3^k \Sk \rfloor + 3^k \lfloor 3^k \St \rfloor + 3^{2k} \lfloor 3^k \Se \rfloor \\
+&\in \{0, \ldots, 3^k-1\} + 3^k \{0, \ldots, 3^k-1\} + 3^{2k} \{0, \ldots, 3^k-1\} \\
+&= \{0, 1, 2, \ldots, 3^{3k} - 1\} = \mathcal{M}
+\end{align}
+This is a standard ternary (base-3) representation, ensuring that every address in $\mathcal{M}$ is represented exactly once. Therefore, $\pi_M(\Scoord) \in \mathcal{M}$.
+
+\textbf{Processor projection $\pi_P$:} For each coordinate $S_i \in [0,1]$, the frequency is:
+\begin{equation}
+\omega_i(\Scoord) = \omega_{\max} \cdot S_i \in [0, \omega_{\max}]
+\end{equation}
+The global phase is:
+\begin{equation}
+\phi(\Scoord) = 2\pi(\Sk + \St + \Se) \mod 2\pi \in [0, 2\pi)
+\end{equation}
+where the modulo operation ensures $\phi \in [0, 2\pi)$. Therefore, $\pi_P(\Scoord) = (\omega_k, \omega_t, \omega_e, \phi) \in [0,\omega_{\max}]^3 \times [0, 2\pi) = \mathcal{P}$.
+
+\textbf{Semantic projection $\pi_S$:} The semantic vector is a linear combination of orthonormal basis vectors with coefficients in $[0,1]$:
+\begin{equation}
+\pi_S(\Scoord) = \sum_{j=1}^3 S_j \mathbf{e}_j \in \text{span}\{\mathbf{e}_1, \mathbf{e}_2, \mathbf{e}_3\} = \mathbb{R}^3 = \mathcal{V}
+\end{equation}
+Therefore, $\pi_S(\Scoord) \in \mathcal{V}$.
+
+\textbf{Determinism:} Each projection is defined by explicit formulas involving only arithmetic operations (scaling, addition, floor, modulo) and the coordinates of $\Scoord$. Arithmetic operations are deterministic, so identical inputs $\Scoord$ produce identical outputs $\pi_M(\Scoord)$, $\pi_P(\Scoord)$, $\pi_S(\Scoord)$.
+\end{proof}
+
+\begin{proposition}[Projection Independence]
+\label{prop:projection_independence}
+The three projections are mutually independent: each can be computed from the categorical state $\Scoord$ alone without requiring the outputs of the other projections. Formally, for any $\Scoord \in \Sspace$:
+\begin{align}
+\pi_M(\Scoord) &= f_M(\Sk, \St, \Se) \quad \text{(depends only on } \Scoord\text{)} \\
+\pi_P(\Scoord) &= f_P(\Sk, \St, \Se) \quad \text{(depends only on } \Scoord\text{)} \\
+\pi_S(\Scoord) &= f_S(\Sk, \St, \Se) \quad \text{(depends only on } \Scoord\text{)}
+\end{align}
+where $f_M$, $f_P$, $f_S$ are the explicit formulas in Definitions~\ref{def:memory_projection}--\ref{def:semantic_projection}.
+\end{proposition}
+
+\begin{proof}
+By inspection of the definitions:
+\begin{itemize}
+    \item $\pi_M(\Scoord)$ is computed from $(\Sk, \St, \Se)$ using floor functions and arithmetic;
+    \item $\pi_P(\Scoord)$ is computed from $(\Sk, \St, \Se)$ using scaling and modulo;
+    \item $\pi_S(\Scoord)$ is computed from $(\Sk, \St, \Se)$ using linear combination.
+\end{itemize}
+None of these computations requires the output of another projection. The projections are independent functions of the same input.
+\end{proof}
+
+\subsection{Identity Unification Theorem}
+
+The central result of this section is that the three projections are not merely independent views of the categorical state but are \textit{bijectively related} through that state. This means that knowing any one projection (together with the discretization parameters) allows reconstruction of the categorical state and hence computation of the other two projections, without requiring external data structures or transformations.
+
+\begin{theorem}[Identity Unification]
+\label{thm:identity_unification}
+The three projection operators $\pi_M$, $\pi_P$, $\pi_S$ are bijectively related through the categorical state $\Scoord$. Specifically, there exist invertible transformations:
+\begin{align}
+\tau_{MP} &: \mathcal{M} \to \mathcal{P} \quad \text{defined by} \quad \tau_{MP}(m) = \pi_P(\pi_M^{-1}(m)) \label{eq:tau_MP} \\
+\tau_{PM} &: \mathcal{P} \to \mathcal{M} \quad \text{defined by} \quad \tau_{PM}(p) = \pi_M(\pi_P^{-1}(p)) \label{eq:tau_PM} \\
+\tau_{MS} &: \mathcal{M} \to \mathcal{V} \quad \text{defined by} \quad \tau_{MS}(m) = \pi_S(\pi_M^{-1}(m)) \label{eq:tau_MS} \\
+\tau_{SM} &: \mathcal{V} \to \mathcal{M} \quad \text{defined by} \quad \tau_{SM}(v) = \pi_M(\pi_S^{-1}(v)) \label{eq:tau_SM} \\
+\tau_{PS} &: \mathcal{P} \to \mathcal{V} \quad \text{defined by} \quad \tau_{PS}(p) = \pi_S(\pi_P^{-1}(p)) \label{eq:tau_PS} \\
+\tau_{SP} &: \mathcal{V} \to \mathcal{P} \quad \text{defined by} \quad \tau_{SP}(v) = \pi_P(\pi_S^{-1}(v)) \label{eq:tau_SP}
+\end{align}
+These transformations factor through the categorical state space $\Sspace$: they do not require external computation beyond the projection and inverse projection operations.
+\end{theorem}
+
+\begin{proof}
+We establish the theorem by proving that each projection has a well-defined inverse (or pseudo-inverse) that reconstructs the categorical state from the projected representation.
+
+\textbf{Inverse of memory projection $\pi_M^{-1}$:} Given a memory address $m \in \mathcal{M}$, we can uniquely decompose it into ternary digits:
+\begin{equation}
+m = d_0 + 3^k d_1 + 3^{2k} d_2
+\end{equation}
+where $d_0, d_1, d_2 \in \{0, 1, \ldots, 3^k - 1\}$. These digits are obtained by:
+\begin{align}
+d_0 &= m \mod 3^k \\
+d_1 &= \left\lfloor \frac{m}{3^k} \right\rfloor \mod 3^k \\
+d_2 &= \left\lfloor \frac{m}{3^{2k}} \right\rfloor
+\end{align}
+
+The categorical state is reconstructed (up to discretization) as:
+\begin{equation}
+\pi_M^{-1}(m) = \left( \frac{d_0 + 0.5}{3^k}, \frac{d_1 + 0.5}{3^k}, \frac{d_2 + 0.5}{3^k} \right)
+\label{eq:pi_M_inverse}
+\end{equation}
+where the $+0.5$ term centers the reconstructed coordinate in the middle of the discretization cell. This inverse is well-defined for all $m \in \mathcal{M}$.
+
+\textbf{Inverse of processor projection $\pi_P^{-1}$:} Given a processor state $(\omega_k, \omega_t, \omega_e, \phi) \in \mathcal{P}$, the categorical state is reconstructed as:
+\begin{equation}
+\pi_P^{-1}(\omega_k, \omega_t, \omega_e, \phi) = \left( \frac{\omega_k}{\omega_{\max}}, \frac{\omega_t}{\omega_{\max}}, \frac{\omega_e}{\omega_{\max}} \right)
+\label{eq:pi_P_inverse}
+\end{equation}
+Note that the phase $\phi$ is redundant (it can be computed from the coordinates) and is not needed for the inverse. This inverse is well-defined for all $(\omega_k, \omega_t, \omega_e, \phi) \in \mathcal{P}$.
+
+\textbf{Inverse of semantic projection $\pi_S^{-1}$:} Given a semantic vector $\mathbf{v} = \sum_{j=1}^3 v_j \mathbf{e}_j \in \mathcal{V}$, the categorical state is reconstructed as:
+\begin{equation}
+\pi_S^{-1}(\mathbf{v}) = (v_1, v_2, v_3)
+\label{eq:pi_S_inverse}
+\end{equation}
+This inverse is well-defined for all $\mathbf{v} \in \mathcal{V}$ (though it may produce coordinates outside $[0,1]$ if $\mathbf{v}$ is outside the unit cube; in practice, we restrict to $\mathbf{v}$ with $v_j \in [0,1]$).
+
+\textbf{Existence of transformations $\tau_{ij}$:} Given the inverses $\pi_M^{-1}$, $\pi_P^{-1}$, $\pi_S^{-1}$, the transformations $\tau_{ij}$ are defined by composition. For example:
+\begin{equation}
+\tau_{MP}(m) = \pi_P(\pi_M^{-1}(m))
+\end{equation}
+takes a memory address $m$, reconstructs the categorical state $\Scoord = \pi_M^{-1}(m)$, and then computes the processor state $\pi_P(\Scoord)$. This composition is well-defined because $\pi_M^{-1}(m) \in \Sspace$ and $\pi_P: \Sspace \to \mathcal{P}$.
+
+The key property is that these transformations \textit{factor through $\Sspace$}: they are not arbitrary mappings between $\mathcal{M}$, $\mathcal{P}$, and $\mathcal{V}$, but rather are compositions of projections and inverses that pass through the common categorical state space. This factorisation is the essence of the identity unification: memory, processor, and semantics are unified because they are all projections of the same underlying state.
+\end{proof}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_unified_ensemble.png}
+\caption{\textbf{Virtual Gas Ensemble: Unified Categorical Framework---Molecule = Address = Oscillator = Meaning.} 
+\textbf{Window $t_1$: Molecule $\alpha$:} Left diagram shows observation window selecting molecule $\alpha$ (blue circle) from ensemble ($\beta$, $\gamma$ excluded). Center radar chart shows hexagonal profile (six hardware dimensions active). Right panel shows three interpretations: (1) \textbf{Categorical Memory}: Address $[1.000, 1.000, 0.995]$ in S-entropy space (purple boxes show hierarchical memory structure with root node and three children); (2) \textbf{Categorical Processor}: Oscillator frequency $\omega = 8.26 \times 10^{15}$ Hz with phase lock state $\phi = 0.00$ rad (green waveform shows sinusoidal oscillation); (3) \textbf{Semantic Processor}: Word embedding with harmonic overtones (red bars show decreasing amplitudes for higher harmonics, implementing semantic similarity via frequency proximity). 
+\textbf{Window $t_2$: Molecule $\beta$:} Left diagram shows window shifted to molecule $\beta$ (magenta circle, with $\alpha$ and $\gamma$ visible). Center radar chart shows triangular profile (three dominant dimensions). Right panels show same three interpretations for molecule $\beta$: different memory address, different oscillator frequency, different semantic encoding. The molecule identity changes, but the three-way unification (memory = processor = semantics) remains. 
+\textbf{Window $t_3$: Molecule $\gamma$:} Left diagram shows window shifted to molecule $\gamma$ (orange circle, with $\alpha$ and $\beta$ visible). Center radar chart shows pentagonal profile (five active dimensions). Right panels show third set of interpretations: yet another memory address, oscillator frequency, and semantic encoding. 
+\textbf{Complete Ensemble (Bottom):} Left diagram shows all three molecules in ensemble ($\alpha$, $\beta$, $\gamma$ as triangle vertices). Center radar chart shows overlaid profiles (blue, magenta, orange hexagons), demonstrating that the three molecules are the same categorical state observed at different S-coordinates. Right panel shows unified interpretation: \textbf{M} (molecule, blue circle) connects to three aspects: Memory (purple, ``S = Address''), Processor (green, ``Oscillator = Processing''), Semantics (red, ``F = Meaning''). Caption: ``One measurement = Three categorical views of the same categorical state.'' 
+\textbf{Key Insight (Bottom Text):} ``Each row shows the same categorical state viewed through different lenses: Row 1: Memory view (S-coordinates as hierarchical addresses); Row 2: Processor view (oscillator frequency as processing rate); Row 3: Semantic view (vibrational modes as meaning encoding); Row 4: Unified view (all three are the same underlying structure).'' This demonstrates the fundamental unification: a single categorical state simultaneously IS a memory address (location in $\Sspace$), a processor (oscillator with frequency $\omega$), and a semantic token (meaning encoded in harmonic overtones). The three interpretations are not analogies but identities: memory = processor = semantics in categorical space.}
+\label{fig:unified_ensemble}
+\end{figure}
+
+\begin{corollary}[No Processor-Memory Distinction]
+\label{cor:no_pm_distinction}
+In Poincaré Computing, there is no structural separation between processor state and memory address. A single categorical state $\Scoord$ serves both roles simultaneously: it is both the memory address (via $\pi_M$) and the processor configuration (via $\pi_P$) without requiring transformation or communication between separate entities.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:identity_unification}, the memory address $\pi_M(\Scoord)$ and the processor state $\pi_P(\Scoord)$ are both determined by the same categorical state $\Scoord$. There is no separate "processor" entity that must communicate with a separate "memory" entity to obtain data. Instead, the categorical state $\Scoord$ encodes both the location of data (memory address) and the operational configuration (processor state) as different projections of the same geometric point in S-entropy space.
+
+This unification eliminates the need for address buses, data buses, and the associated communication protocols that characterise von Neumann architectures. The categorical state evolves according to the dynamics (Section~\ref{sec:categorical_dynamics}), and both the memory address and processor state evolve simultaneously as projections of that evolving state.
+\end{proof}
+
+\begin{remark}[Content-Addressable Computation]
+\label{rem:content_addressable}
+The identity unification enables a form of content-addressable computation in which the semantic content of data (via $\pi_S$) directly determines its memory address (via $\tau_{SM} = \pi_M \circ \pi_S^{-1}$). This contrasts with traditional architectures, where memory addresses are arbitrary labels unrelated to content, requiring separate hash tables or search structures to implement content-addressable lookup. In Poincaré Computing, content-addressability is intrinsic to the geometric structure of $\Sspace$.
+\end{remark}
+
+\subsection{Simultaneity of Projections}
+
+Having established that the three projections are unified through the categorical state, we now prove that they can be computed simultaneously rather than sequentially. This simultaneity is crucial for the architectural advantages of Poincaré Computing.
+
+\begin{theorem}[Projection Simultaneity]
+\label{thm:simultaneity}
+For any categorical state $\Scoord(t)$ at time $t$, the three projections can be computed simultaneously without sequential dependency. Formally, the triple:
+\begin{equation}
+\left( \pi_M(\Scoord(t)), \pi_P(\Scoord(t)), \pi_S(\Scoord(t)) \right)
+\label{eq:simultaneous_projections}
+\end{equation}
+is computable as a single parallel operation with a time complexity of $O(1)$ (constant time, independent of the number of projections).
+\end{theorem}
+
+\begin{proof}
+We analyse the computational complexity of each projection given the categorical state $\Scoord(t) = (\Sk(t), \St(t), \Se(t))$.
+
+\textbf{Memory projection $\pi_M$:} Computing $\pi_M(\Scoord)$ requires:
+\begin{itemize}
+    \item Three multiplications: $3^k \Sk$, $3^k \St$, $3^k \Se$ (can be precomputed if $3^k$ is fixed);
+    \item Three floor operations: $\lfloor 3^k \Sk \rfloor$, $\lfloor 3^k \St \rfloor$, $\lfloor 3^k \Se \rfloor$;
+    \item Three multiplications: $3^k \lfloor 3^k \St \rfloor$, $3^{2k} \lfloor 3^k \Se \rfloor$ (again, powers of 3 can be precomputed);
+    \item Two additions: summing the three terms.
+\end{itemize}
+Total: $O(1)$ arithmetic operations (constant number of operations independent of $k$ if powers of 3 are precomputed).
+
+\textbf{Processor projection $\pi_P$:} Computing $\pi_P(\Scoord)$ requires:
+\begin{itemize}
+    \item Three multiplications: $\omega_{\max} \Sk$, $\omega_{\max} \St$, $\omega_{\max} \Se$;
+    \item One addition and one modulo: $2\pi(\Sk + \St + \Se) \mod 2\pi$.
+\end{itemize}
+Total: $O(1)$ arithmetic operations.
+
+\textbf{Semantic projection $\pi_S$:} Computing $\pi_S(\Scoord)$ requires:
+\begin{itemize}
+    \item Three scalar-vector multiplications: $\Sk \mathbf{e}_1$, $\St \mathbf{e}_2$, $\Se \mathbf{e}_3$ (trivial if basis vectors are coordinate axes);
+    \item Two vector additions: summing the three terms.
+\end{itemize}
+Total: $O(1)$ arithmetic operations.
+
+\textbf{Parallelizability:} Crucially, none of these operations depend on the outputs of the others. All three projections read the same input $(\Sk, \St, \Se)$ and perform independent arithmetic operations. Therefore, they can be computed in parallel on separate hardware units (e.g., three ALUs or three functional units in a superscalar processor).
+
+The total time complexity is $O(1)$ per projection, and since the projections are parallelizable, the time complexity for computing all three simultaneously is also $O(1)$ (the maximum of the individual times, not the sum).
+\end{proof}
+
+\begin{remark}[Hardware Implementation]
+\label{rem:hardware_implementation}
+The simultaneity of projections can be exploited in hardware through dedicated projection units. A Poincaré Computing processor could contain three parallel projection pipelines that continuously compute $\pi_M(\Scoord(t))$, $\pi_P(\Scoord(t))$, and $\pi_S(\Scoord(t))$ as the categorical state evolves. These projections would be available simultaneously at every clock cycle, enabling the processor to access memory (via $\pi_M$), adjust its operational parameters (via $\pi_P$), and reason about semantic content (via $\pi_S$) without sequential overhead.
+\end{remark}
+
+\subsection{Architectural Implications}
+
+The identity unification and simultaneity of projections have profound implications for computer architecture, fundamentally altering the relationship between the processor, memory, and semantics.
+
+\begin{proposition}[Von Neumann Bottleneck Elimination]
+\label{prop:bottleneck_elimination}
+The Poincaré Computing architecture eliminates the von Neumann bottleneck \citep{backus1978can}: there is no communication channel between the processor and memory because they are projections of the same state, not separate entities requiring data transfer.
+\end{proposition}
+
+\begin{proof}
+The von Neumann bottleneck arises from the limited bandwidth of the bus connecting the CPU and memory \citep{vonneumann1945first}. In a traditional architecture, the CPU must send an address over the address bus, wait for the memory to retrieve the data, and receive the data over the data bus. This sequential communication limits throughput to the bus bandwidth.
+
+In Poincaré Computing:
+\begin{itemize}
+    \item The memory address is $\pi_M(\Scoord(t))$;
+    \item The processor state is $\pi_P(\Scoord(t))$;
+    \item Both are derived from the same categorical state $\Scoord(t)$ without data transfer.
+\end{itemize}
+
+As the categorical state evolves according to the dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}, both projections update simultaneously. There is no communication channel because there are no separate entities to communicate. The "processor" and "memory" are unified as different views of the same evolving geometric state.
+
+This elimination of the bottleneck does not mean that memory access is instantaneous (the categorical state must still evolve to reach the desired address), but it means that the bandwidth limitation of a physical bus is replaced by the dynamical evolution rate of the categorical state, which can be much faster.
+\end{proof}
+
+\begin{proposition}[Unified Addressing]
+\label{prop:unified_addressing}
+Memory access, instruction fetch, and semantic lookup are unified into a single operation: evaluating the categorical state and its projections. Formally:
+\begin{equation}
+\text{access}(\Scoord) = \left( \text{data}(\pi_M(\Scoord)), \text{instruction}(\pi_P(\Scoord)), \text{meaning}(\pi_S(\Scoord)) \right)
+\label{eq:unified_access}
+\end{equation}
+where $\text{data}$, $\text{instruction}$, and $\text{meaning}$ are domain-specific interpretation functions.
+\end{proposition}
+
+\begin{proof}
+Each access type is a composition of a projection with a domain-specific interpretation:
+\begin{itemize}
+    \item \textbf{Memory access:} The memory address $\pi_M(\Scoord)$ identifies a storage location, and the $\text{data}$ function retrieves the value stored at that location;
+    \item \textbf{Instruction fetch:} The processor state $\pi_P(\Scoord)$ identifies an operational configuration, and the $\text{instruction}$ function interprets this configuration as a computational operation (e.g., a particular frequency ratio might correspond to an "add" operation);
+    \item \textbf{Semantic lookup:} The semantic vector $\pi_S(\Scoord)$ identifies a point in semantic space, and the $\text{meaning}$ function interprets this point as a conceptual entity (e.g., a particular region of semantic space might correspond to "sorting" operations).
+\end{itemize}
+
+All three interpretations are derived from the same categorical state $\Scoord$, making them simultaneous and unified. The interpretation functions $\text{data}$, $\text{instruction}$, $\text{meaning}$ are external to the categorical dynamics (they depend on the problem encoding and the hardware implementation), but the projections themselves are intrinsic to the geometric structure.
+\end{proof}
+
+\begin{remark}[Comparison with Harvard Architecture]
+\label{rem:harvard_comparison}
+The Harvard architecture \citep{harvard1944mark} separates instruction memory from data memory to allow simultaneous instruction fetch and data access. Poincaré Computing goes further: it unifies not only instruction and data memory but also the processor state and semantic content, all as projections of a single categorical state. This unification is more radical than the Harvard architecture's separation, as it eliminates the distinction between memory and processor entirely.
+\end{remark}
+
+\begin{proposition}[Energy Efficiency]
+\label{prop:energy_efficiency}
+The identity unification reduces energy consumption by eliminating data movement. In traditional architectures, moving data between the processor and memory dominates energy costs \citep{horowitz2014energy}. In Poincaré Computing, the categorical state evolves in place, and projections are computed locally without data transfer.
+\end{proposition}
+
+\begin{proof}
+Energy consumption in digital circuits is dominated by charging and discharging capacitances when signals transition. In a von Neumann architecture, every memory access requires:
+\begin{itemize}
+    \item Driving the address bus (high capacitance due to long wires);
+    \item Driving the data bus (high capacitance);
+    \item Switching memory cell transistors.
+\end{itemize}
+
+Studies show that data movement can consume 100-1000× more energy than arithmetic operations \citep{horowitz2014energy}.
+
+In Poincaré Computing, the categorical state $\Scoord(t)$ evolves according to local dynamics (the differential equations~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}), which can be implemented with analogue or mixed-signal circuits that evolve continuously without discrete switching. The projections $\pi_M$, $\pi_P$, $\pi_S$ are computed from the local state without long-distance data transfer. This eliminates the energy cost of bus communication, potentially reducing energy consumption by orders of magnitude for memory-intensive computations.
+\end{proof}
+
+This section has established the identity unification at the heart of Poincaré Computing: memory address, processor state, and semantic content are not separate entities but unified as projections of a single categorical state. This unification eliminates the von Neumann bottleneck, enables the simultaneous computation of all three projections, and provides a foundation for energy-efficient, content-addressable computation. In the following sections, we develop the complexity theory (Section~\ref{sec:complexity}), topological structure (Section~\ref{sec:topology}), and exhaustive computing properties (Section~\ref{sec:exhaustive}) that complete the mathematical framework.
+

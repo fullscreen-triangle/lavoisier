@@ -1,0 +1,158 @@
+\section{The Recognition Problem}
+
+\subsection{Finding versus Recognizing}
+
+Navigation can bring us to a location in S-entropy space, but how do we know when we have arrived at the \textit{correct} location? This question connects to fundamental issues in epistemology \cite{gettier1963} and the logic of scientific discovery \cite{popper1959}. This is the Recognition Problem: distinguishing $g = 9.81$ from $g = 9.82$.
+
+\subsection{Consistency as Recognition Criterion}
+
+The answer lies in consistency. The correct value is the unique fixed point where all navigation paths converge.
+
+\begin{definition}[Consistency Function]
+For a candidate value $v$ and a set of constraints $\mathcal{C} = \{c_1, c_2, \ldots, c_n\}$, the consistency function is:
+\begin{equation}
+\mathcal{K}(v) = \sum_{i=1}^{n} \left| c_i(v) - c_i^{\text{observed}} \right|^2
+\end{equation}
+where $c_i(v)$ is the prediction of constraint $i$ given value $v$, and $c_i^{\text{observed}}$ is the observed value.
+\end{definition}
+
+\begin{theorem}[Recognition Criterion]
+The correct value $v^*$ minimizes the consistency function:
+\begin{equation}
+v^* = \arg\min_v \mathcal{K}(v)
+\end{equation}
+At $v^*$, all constraints are simultaneously satisfied: $\mathcal{K}(v^*) = 0$.
+\end{theorem}
+
+\subsection{Example: Recognizing $g = 9.81$}
+
+Consider the constraints on gravitational acceleration:
+
+\begin{enumerate}
+    \item Pendulum period: $T = 2\pi\sqrt{L/g}$
+    \item Free fall: $d = \frac{1}{2}gt^2$
+    \item Orbital mechanics: $g = GM/R^2$
+    \item Weight: $W = mg$
+    \item Tidal forces: $\Delta g = 2GMr/R^3$
+\end{enumerate}
+
+For $g = 9.81$:
+\begin{itemize}
+    \item Pendulum periods match observations
+    \item Free fall distances match observations
+    \item Orbital calculations work
+    \item Weights are consistent
+    \item Tidal predictions are accurate
+\end{itemize}
+
+For $g = 9.82$:
+\begin{itemize}
+    \item Pendulum periods are slightly off
+    \item Free fall predictions accumulate error
+    \item Orbital mechanics diverge
+    \item Weights miscalculated
+    \item Tidal predictions fail
+\end{itemize}
+
+The value $g = 9.81$ is recognized by its unique consistency across all constraints.
+
+\subsection{S-Distance Gradient Information}
+
+During navigation, the S-distance provides gradient information---a sense of ``warmer'' or ``colder'':
+
+\begin{definition}[S-Gradient]
+The S-gradient at position $\mathbf{r}$ is:
+\begin{equation}
+\nabla_S d_S = \left( \frac{\partial d_S}{\partial S_k}, \frac{\partial d_S}{\partial S_t}, \frac{\partial d_S}{\partial S_e} \right)
+\end{equation}
+\end{definition}
+
+Moving in the direction of negative gradient reduces S-distance:
+\begin{equation}
+\mathbf{r}_{n+1} = \mathbf{r}_n - \eta \nabla_S d_S
+\end{equation}
+
+where $\eta$ is the step size. As $d_S \to 0$, the navigator approaches the target.
+
+\subsection{Fixed Points in S-Space}
+
+Correct answers are fixed points: locations where further navigation produces no change.
+
+\begin{definition}[Fixed Point]
+A location $\mathbf{r}^*$ is a fixed point if:
+\begin{equation}
+\nabla_S d_S(\mathbf{r}^*) = \mathbf{0}
+\end{equation}
+and $d_S(\mathbf{r}^*) = 0$.
+\end{definition}
+
+\begin{theorem}[Uniqueness of Fixed Points]
+For well-posed problems, the fixed point is unique. Multiple inconsistent values cannot all satisfy $\mathcal{K}(v) = 0$.
+\end{theorem}
+
+\subsection{Convergence Dynamics}
+
+Navigation converges to fixed points through iterative consistency-checking:
+
+\begin{algorithm}[H]
+\caption{Fixed Point Recognition}
+\begin{algorithmic}[1]
+\State Initialize candidate $v_0$
+\Repeat
+    \State Compute consistency $\mathcal{K}(v_n)$
+    \State Compute gradient $\nabla_v \mathcal{K}$
+    \State Update $v_{n+1} = v_n - \eta \nabla_v \mathcal{K}$
+\Until{$\mathcal{K}(v_n) < \epsilon$ (convergence threshold)}
+\State \Return $v_n$ as recognized answer
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Local Minima and Escape}
+
+A concern is convergence to local minima---values that locally minimize inconsistency but are not globally correct.
+
+\begin{proposition}[Local Minimum Escape]
+The infinite recursion structure provides escape mechanisms from local minima. If navigation is stuck at a local minimum at recursion level $n$, shifting to level $n+1$ or $n-1$ reveals structure that enables escape.
+\end{proposition}
+
+This is analogous to simulated annealing \cite{kirkpatrick1983}: the multi-scale structure provides perturbation mechanisms that prevent permanent trapping.
+
+\subsection{Recognition Without Understanding}
+
+A crucial feature of the recognition criterion is that it operates without requiring understanding:
+
+\begin{quote}
+\textit{The navigator need not know \textbf{why} $g = 9.81$ is correct. It suffices to recognize that at $g = 9.81$, all constraints are satisfied simultaneously.}
+\end{quote}
+
+Recognition is pattern-matching: does this value fit all the constraints? Understanding is explanation: why does this value fit? These are independent operations.
+
+\subsection{The Viability Threshold}
+
+Not all problems require exact recognition. Many admit a viability range:
+
+\begin{definition}[Viability Threshold]
+A value $v$ is viable if $\mathcal{K}(v) < \mathcal{K}_{\text{max}}$ for some acceptable threshold $\mathcal{K}_{\text{max}}$.
+\end{definition}
+
+For practical problems, viability often suffices \cite{simon1955}:
+\begin{itemize}
+    \item Engineering: $g \approx 10$ m/s$^2$ is often good enough
+    \item Navigation: Approximate coordinates reach the destination
+    \item Decision-making: ``Roughly correct'' enables action
+\end{itemize}
+
+The Moon Landing Algorithm exploits viability: it seeks viable solutions rather than demanding perfect recognition. This enables earlier termination and greater efficiency.
+
+\subsection{Recognition in the $3 \times 3$ Matrix}
+
+Recognition can be performed using any column of the structural matrix:
+
+\begin{itemize}
+    \item \textbf{Oscillatory recognition}: Does the value produce consistent frequencies?
+    \item \textbf{Categorical recognition}: Does the value produce consistent category counts?
+    \item \textbf{Partition recognition}: Does the value produce consistent selectivities?
+\end{itemize}
+
+By the triple equivalence, all three produce the same recognition outcome. The choice is one of convenience.
+

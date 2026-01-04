@@ -1,0 +1,172 @@
+\section{Applications}
+\label{sec:applications}
+
+\subsection{Structural Classification}
+
+\begin{definition}[Terminator Projection]
+The terminator projection of configuration $\rho$ is the vector:
+\begin{equation}
+    \mathbf{T}(\rho) = (w_1, w_2, \ldots, w_K)
+\end{equation}
+where $w_j$ is the probability that a cascade starting from $\rho$ terminates at $\rho_j^*$.
+\end{definition}
+
+\begin{theorem}[Classification by Terminator Projection]
+\label{thm:classification}
+Two configurations $\rho_1, \rho_2$ belong to the same structural class if and only if:
+\begin{equation}
+    \|\mathbf{T}(\rho_1) - \mathbf{T}(\rho_2)\| < \epsilon
+\end{equation}
+for sufficiently small $\epsilon > 0$.
+\end{theorem}
+
+\begin{proof}
+The terminator projection encodes the structural information of $\rho$ in compressed form: which cascade endpoints are reachable and with what probability. Configurations with identical projections have identical reachable terminators, implying they share the same structural features that determine cascade pathways.
+\end{proof}
+
+\begin{corollary}[Reduced-Dimensional Classification]
+Classification in terminator projection space has dimension $K$ (number of terminators), which is $O(n^2/\log n)$ compared to full configuration space dimension $O(n^2)$.
+\end{corollary}
+
+\subsection{Database Construction}
+
+\begin{definition}[Terminator-Anchored Database]
+A terminator-anchored database $\mathcal{D}$ is a collection of entries $(S, \mathbf{T}_S)$ where $S$ is a structural identifier and $\mathbf{T}_S$ is the terminator projection.
+\end{definition}
+
+\begin{proposition}[Database Query Efficiency]
+Query by terminator projection has complexity $O(K \cdot |\mathcal{D}|)$ compared to $O(n^2 \cdot |\mathcal{D}|)$ for full configuration matching.
+\end{proposition}
+
+\begin{algorithm}
+\caption{Terminator-Anchored Database Query}
+\label{alg:database-query}
+\begin{algorithmic}[1]
+\Require Query observation $\mathcal{O}_q$, database $\mathcal{D}$, threshold $\tau$
+\Ensure Matched structures $\{S_i\}$ with scores $\{s_i\}$
+\State Extract terminators from $\mathcal{O}_q$: $\{\rho_j^*\}$
+\State Compute query projection: $\mathbf{T}_q = (f_1, f_2, \ldots, f_K)$ where $f_j = f_{\text{obs}}(\rho_j^*)$
+\State Normalize: $\hat{\mathbf{T}}_q = \mathbf{T}_q / \|\mathbf{T}_q\|$
+\For{each entry $(S, \mathbf{T}_S) \in \mathcal{D}$}
+    \State Compute similarity: $s = \hat{\mathbf{T}}_q \cdot \hat{\mathbf{T}}_S$
+    \If{$s > \tau$}
+        \State Add $(S, s)$ to matches
+    \EndIf
+\EndFor
+\State Sort matches by score
+\State \Return top matches
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{De Novo Structure Inference}
+
+\begin{definition}[Inverse Terminator Problem]
+Given observed terminator distribution $\{(\rho_j^*, f_j)\}$, find parent configurations $\{\rho_0\}$ consistent with the observations.
+\end{definition}
+
+\begin{theorem}[Structural Constraints from Terminators]
+\label{thm:structural-constraints}
+Each observed terminator $\rho_j^*$ with frequency $f_j$ implies:
+\begin{enumerate}
+    \item Parent contains structural motif $M_j$ that cascades to $\rho_j^*$
+    \item The motif has multiplicity $\propto f_j / g(\rho_j^*)$
+    \item Motifs must be spatially compatible in the parent structure
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(1) By definition of cascade, $\rho_j^*$ is reachable only from parents containing appropriate structural features. (2) The observed frequency is $f_j = g(\rho_j^*) \cdot P(M_j)$, where $P(M_j)$ is the probability of the motif. (3) All motifs must fit within a single connected parent structure.
+\end{proof}
+
+\begin{algorithm}
+\caption{De Novo Inference from Terminators}
+\label{alg:denovo}
+\begin{algorithmic}[1]
+\Require Observed terminators $\{(\rho_j^*, f_j)\}$, structural motif library $\mathcal{M}$
+\Ensure Candidate parent structures $\{\rho_0\}$
+\State \textbf{Step 1: Motif Identification}
+\For{each terminator $\rho_j^*$}
+    \State Look up compatible motifs: $M_j \gets \mathcal{M}[\rho_j^*]$
+\EndFor
+\State \textbf{Step 2: Motif Combination}
+\State Generate candidate parents by combining motifs
+\For{each combination $C = (M_{j_1}, M_{j_2}, \ldots)$}
+    \If{motifs spatially compatible}
+        \State Construct parent $\rho_0$ from $C$
+        \State Score: $s = \prod_j P(f_j | \rho_0)$
+    \EndIf
+\EndFor
+\State \textbf{Step 3: Ranking}
+\State Sort candidates by score
+\State \Return top candidates
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Quality Assessment}
+
+\begin{definition}[Terminator Completeness]
+The completeness of observation $\mathcal{O}$ relative to reference structure $S$ is:
+\begin{equation}
+    C(\mathcal{O}; S) = \frac{|\{\rho_j^* \in \mathcal{O} : \rho_j^* \in \mathcal{T}(S)\}|}{|\mathcal{T}(S)|}
+\end{equation}
+where $\mathcal{T}(S)$ is the set of expected terminators for structure $S$.
+\end{definition}
+
+\begin{proposition}[Quality from Completeness]
+Low completeness $C < C_{\text{threshold}}$ indicates:
+\begin{enumerate}
+    \item Incomplete cascade (insufficient activation)
+    \item Incorrect structural assignment
+    \item Mixture or contamination
+\end{enumerate}
+\end{proposition}
+
+\begin{definition}[Terminator Consistency]
+The consistency of observation $\mathcal{O}$ is:
+\begin{equation}
+    K(\mathcal{O}) = 1 - \frac{|\{\rho^* \in \mathcal{O} : \rho^* \text{ not in any } \mathcal{T}(S)\}|}{|\mathcal{O}|}
+\end{equation}
+for matched structure $S$.
+\end{definition}
+
+\begin{proposition}[Quality from Consistency]
+Low consistency $K < K_{\text{threshold}}$ indicates:
+\begin{enumerate}
+    \item Unexpected cascade pathways (novel chemistry)
+    \item Incorrect structural assignment
+    \item Artifact or noise
+\end{enumerate}
+\end{proposition}
+
+\subsection{Mixture Analysis}
+
+\begin{theorem}[Mixture Decomposition]
+\label{thm:mixture}
+For a mixture of $M$ components with mole fractions $\{x_m\}$, the observed terminator distribution is:
+\begin{equation}
+    f_{\text{obs}}(\rho_j^*) = \sum_{m=1}^M x_m \cdot f_m(\rho_j^*)
+\end{equation}
+where $f_m(\rho_j^*)$ is the terminator frequency for pure component $m$.
+\end{theorem}
+
+\begin{proof}
+Linearity of terminator observation: each component contributes independently to the observed terminator pool, weighted by its mole fraction.
+\end{proof}
+
+\begin{corollary}[Mixture Deconvolution]
+Given reference terminator distributions $\{f_m\}$ for candidate components, the mole fractions can be estimated by non-negative least squares:
+\begin{equation}
+    \hat{\mathbf{x}} = \arg\min_{\mathbf{x} \geq 0, \sum x_m = 1} \| \mathbf{f}_{\text{obs}} - \mathbf{F} \mathbf{x} \|^2
+\end{equation}
+where $\mathbf{F}$ is the matrix with columns $\mathbf{f}_m$.
+\end{corollary}
+
+In mass spectrometry, these applications translate to:
+\begin{itemize}
+    \item Structural classification by fragment ion fingerprinting
+    \item Spectral library construction anchored on diagnostic ions
+    \item De novo structure elucidation from fragmentation patterns
+    \item Spectral quality assessment by expected fragment coverage
+    \item Mixture deconvolution by fragment intensity fitting
+\end{itemize}
+

@@ -1,0 +1,115 @@
+\section{Partition Terminators}
+\label{sec:information-catalyst-definition}
+
+\subsection{Stability Criterion}
+
+\begin{definition}[Partition Potential]
+The partition potential $\Pspace: \Cspace \to \mathbb{R}$ assigns to each configuration the minimum energy required to execute any partition:
+\begin{equation}
+    \Pspace(\rho) = \min_{\Pi} E_\Pi^{\ddagger}(\rho)
+\end{equation}
+where the minimum is over all possible partition operators.
+\end{definition}
+
+\begin{definition}[Partition Terminator]
+A configuration $\rho^*$ is a partition terminator if it is a local minimum of the partition potential:
+\begin{equation}
+    \frac{\delta \Pspace}{\delta \rho}\bigg|_{\rho = \rho^*} = 0, \quad \frac{\delta^2 \Pspace}{\delta \rho^2}\bigg|_{\rho = \rho^*} > 0
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Terminator Characterization]
+\label{thm:terminator-characterization}
+A configuration $\rho^*$ is a partition terminator if and only if:
+\begin{enumerate}
+    \item All accessible partition axes have activation energy exceeding threshold $E_{\text{th}}$
+    \item The charge distribution achieves local electrostatic equilibrium: $\nabla \cdot \mathbf{E} = \rho^* / \epsilon_0$ with $\mathbf{E} = -\nabla \phi$ and $\nabla \phi|_{\partial \Omega} = 0$
+    \item The configuration is connected (cannot be decomposed into non-interacting subsystems)
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Condition 1 ensures that no partition has favorable kinetics. Condition 2 ensures electrostatic stability---any perturbation from this equilibrium increases energy. Condition 3 ensures the configuration is irreducible; reducible configurations would partition spontaneously into non-interacting components.
+\end{proof}
+
+\subsection{Terminator Classification}
+
+\begin{definition}[Terminator Charge Topology]
+The charge topology of a terminator $\rho^*$ is characterized by:
+\begin{itemize}
+    \item Total charge $Q^* = \int \rho^* \, d^3r$
+    \item Multipole moments $Q_{lm}^* = \int \rho^* r^l Y_{lm}(\theta, \phi) \, d^3r$
+    \item Charge centroid $\mathbf{r}^* = Q^{*-1} \int \mathbf{r} \rho^* \, d^3r$
+    \item Charge radius $R^* = (Q^{*-1} \int |\mathbf{r} - \mathbf{r}^*|^2 \rho^* \, d^3r)^{1/2}$
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Terminator Index]
+The terminator index $\tau(\rho^*)$ is the minimum partition depth at which $\rho^*$ first appears in a cascade:
+\begin{equation}
+    \tau(\rho^*) = \min \{ n : \exists \mathcal{S}_n, \rho_0 \text{ s.t. } \rho^* \in \text{leaves}(\mathcal{T}(\rho_0, \mathcal{S}_n)) \}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Terminator Index Bounds]
+For a terminator with charge $Q^*$ produced from a parent with charge $Q_0$:
+\begin{equation}
+    \tau(\rho^*) \geq \lceil \log_2(Q_0 / Q^*) \rceil
+\end{equation}
+with equality when the cascade follows a binary partition tree with equal charge splits at each level.
+\end{proposition}
+
+\subsection{Frequency Enrichment}
+
+\begin{theorem}[Terminator Frequency Enrichment]
+\label{thm:frequency-enrichment}
+In an ensemble of cascades starting from diverse parent configurations, terminators appear with frequency enrichment factor:
+\begin{equation}
+    \alpha(\rho^*) = \frac{f_{\text{observed}}(\rho^*)}{f_{\text{random}}(\rho^*)} = \exp\left(\frac{\Delta S_{\text{cat}}(\rho^*)}{k_B}\right)
+\end{equation}
+where $\Delta S_{\text{cat}}(\rho^*) = k_B \ln g(\rho^*)$ is the categorical entropy gained by reaching terminator $\rho^*$, and $g(\rho^*)$ is the number of distinct pathways that terminate at $\rho^*$.
+\end{theorem}
+
+\begin{proof}
+Random frequency: If configurations were uniformly distributed, the probability of observing $\rho^*$ would be $f_{\text{random}} = 1/|\Cspace|$.
+
+Observed frequency: The actual probability is enhanced by the number of pathways $g(\rho^*)$ leading to $\rho^*$:
+\begin{equation}
+    f_{\text{observed}} = \frac{g(\rho^*)}{|\Cspace|}
+\end{equation}
+
+The ratio is:
+\begin{equation}
+    \alpha = \frac{f_{\text{observed}}}{f_{\text{random}}} = g(\rho^*) = \exp\left(\frac{k_B \ln g(\rho^*)}{k_B}\right) = \exp\left(\frac{\Delta S_{\text{cat}}}{k_B}\right)
+\end{equation}
+\end{proof}
+
+\begin{corollary}[High-Degeneracy Terminators Dominate]
+Terminators with high pathway degeneracy $g(\rho^*)$ dominate the observed distribution. The most frequently observed terminators are those reachable by the largest number of distinct cascade pathways.
+\end{corollary}
+
+\subsection{Completeness of Terminator Basis}
+
+\begin{theorem}[Terminator Basis Completeness]
+\label{thm:completeness-terminators}
+The set of partition terminators $\{\rho_i^*\}$ forms a complete basis for the configuration space in the following sense: any configuration $\rho$ can be expressed as:
+\begin{equation}
+    \rho = \sum_i w_i \rho_i^* + \rho_{\text{transient}}
+\end{equation}
+where $w_i \geq 0$ are pathway weights and $\rho_{\text{transient}}$ represents configurations that will undergo further partitioning.
+\end{theorem}
+
+\begin{proof}
+Every cascade trajectory terminates at some terminator (by definition of terminator as a partition potential minimum). The trajectory from $\rho$ to its terminal state $\rho_i^*$ defines a pathway with weight $w_i$ proportional to the pathway probability. The sum over all possible terminal states, weighted by pathway probabilities, recovers the original configuration's structural information. The transient component represents the intermediate cascade population that has not yet reached termination.
+\end{proof}
+
+\begin{corollary}[Dimensional Reduction]
+For a system with partition depth $n$ and terminator count $T$, the configuration space dimension is $\dim(\Cspace) \sim 2n^2$ while the terminator basis dimension is $\dim(\text{span}\{\rho_i^*\}) = T \sim n^2/\log n$. The reduction factor is $\sim \log n$.
+\end{corollary}
+
+\begin{proof}
+Partition depth $n$ admits $C(n) = 2n^2$ distinct configurations (from partition coordinate theory). Terminators are configurations at local minima of the partition potential; the number of such minima scales as $T \sim n^2/\log n$ for generic smooth potentials on $n^2$-dimensional spaces (Morse theory).
+\end{proof}
+
+In molecular ion fragmentation, partition terminators correspond to stable fragment ions. The frequency enrichment theorem explains why certain fragment masses (tropylium at $m/z$ 91, immonium ions at characteristic masses) appear with disproportionate frequency across diverse precursors: they have high pathway degeneracy $g(\rho^*)$.
+

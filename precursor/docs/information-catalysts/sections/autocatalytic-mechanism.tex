@@ -1,0 +1,122 @@
+\section{Autocatalytic Partition Dynamics}
+\label{sec:autocatalytic-mechanism}
+
+\subsection{Partition Rate Dependence on Prior Partitions}
+
+\begin{definition}[Partition Rate]
+The rate of partition $\Pi_k$ acting on configuration $\rho$ is:
+\begin{equation}
+    r_k(\rho) = A_k \exp\left(-\frac{E_k^{\ddagger}(\rho)}{k_B T}\right)
+\end{equation}
+where $A_k$ is the pre-exponential factor and $E_k^{\ddagger}(\rho)$ is the activation energy, which depends on the configuration $\rho$.
+\end{definition}
+
+\begin{theorem}[Activation Energy Modification by Prior Partitions]
+\label{thm:activation-modification}
+For a configuration $\rho$ produced by prior partition sequence $\mathcal{S}_{k-1}$, the activation energy for partition $\Pi_k$ is:
+\begin{equation}
+    E_k^{\ddagger}(\rho) = E_k^{(0)} - \sum_{j=1}^{k-1} \Delta E_j \cdot \cos^2\theta_{jk}
+\end{equation}
+where $E_k^{(0)}$ is the unmodified activation energy, $\Delta E_j = Q_{j,1} Q_{j,2} / |\mathbf{r}_{j,1} - \mathbf{r}_{j,2}|$ is the electrostatic perturbation from partition $j$, and $\theta_{jk}$ is the angle between partition axes $\mathbf{a}_j$ and $\mathbf{a}_k$.
+\end{theorem}
+
+\begin{proof}
+The activation energy is determined by the potential energy surface along the partition coordinate. Prior partitions create charge separations that modify the electrostatic potential:
+\begin{equation}
+    \Delta \phi_j(\mathbf{r}) = \frac{Q_{j,1}}{|\mathbf{r} - \mathbf{r}_{j,1}|} + \frac{Q_{j,2}}{|\mathbf{r} - \mathbf{r}_{j,2}|}
+\end{equation}
+
+The activation energy for partition $\Pi_k$ along axis $\mathbf{a}_k$ is modified by the component of $\Delta \phi_j$ projected onto $\mathbf{a}_k$. The projection factor is $\cos^2\theta_{jk}$ for the quadrupole contribution, which dominates at distances large compared to the charge separation.
+\end{proof}
+
+\begin{corollary}[Aligned Partitions are Favored]
+Partitions with axes aligned to prior partitions ($\theta_{jk} \approx 0$) have reduced activation energies and therefore enhanced rates.
+\end{corollary}
+
+\subsection{Positive Feedback Dynamics}
+
+\begin{definition}[Partition Feedback Coefficient]
+The feedback coefficient $\beta_{jk}$ quantifies how partition $j$ affects the rate of partition $k$:
+\begin{equation}
+    \beta_{jk} = \frac{\Delta E_j}{k_B T} \cdot \cos^2\theta_{jk}
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Autocatalytic Rate Equation]
+\label{thm:autocatalytic-rate}
+The rate of partition $\Pi_k$ in a system that has undergone partitions $\Pi_1, \ldots, \Pi_{k-1}$ is:
+\begin{equation}
+    r_k = r_k^{(0)} \exp\left(\sum_{j=1}^{k-1} \beta_{jk}\right)
+\end{equation}
+where $r_k^{(0)} = A_k \exp(-E_k^{(0)}/k_B T)$ is the unmodified rate.
+\end{theorem}
+
+\begin{proof}
+Direct substitution of Theorem~\ref{thm:activation-modification} into the Arrhenius rate expression.
+\end{proof}
+
+\begin{corollary}[Exponential Rate Enhancement]
+For $n$ prior partitions with average feedback coefficient $\bar{\beta}$ and average alignment $\langle \cos^2\theta \rangle$:
+\begin{equation}
+    \frac{r_n}{r_n^{(0)}} = \exp(n \bar{\beta} \langle \cos^2\theta \rangle)
+\end{equation}
+The rate enhancement is exponential in the number of prior partitions.
+\end{corollary}
+
+\subsection{Cascade Equations}
+
+Let $P_n(t)$ denote the population of configurations that have undergone exactly $n$ partitions at time $t$.
+
+\begin{theorem}[Cascade Rate Equations]
+\label{thm:cascade-equations}
+The population dynamics are governed by:
+\begin{align}
+    \frac{dP_0}{dt} &= -r_1^{(0)} P_0 \\
+    \frac{dP_n}{dt} &= r_n^{(0)} e^{(n-1)\bar{\beta}} P_{n-1} - r_{n+1}^{(0)} e^{n\bar{\beta}} P_n, \quad n \geq 1
+\end{align}
+where we have assumed uniform alignment for simplicity.
+\end{theorem}
+
+\begin{proof}
+The rate into level $n$ is the population at level $n-1$ times the rate of the $n$-th partition, which is enhanced by the $(n-1)$ prior partitions. The rate out of level $n$ is the population at level $n$ times the rate of the $(n+1)$-th partition, enhanced by $n$ prior partitions.
+\end{proof}
+
+\begin{proposition}[Asymptotic Behavior]
+For $t \to \infty$, the cascade equations have the asymptotic solution:
+\begin{equation}
+    P_n(t) \propto \frac{(r_1^{(0)} t)^n}{n!} e^{n(n-1)\bar{\beta}/2}
+\end{equation}
+at early times, transitioning to terminator accumulation at late times.
+\end{proposition}
+
+\subsection{Comparison with Simple Kinetics}
+
+\begin{proposition}[Distinguishing Autocatalytic from Simple Kinetics]
+In simple (non-autocatalytic) sequential kinetics, all rates are constant:
+\begin{equation}
+    \frac{dP_n}{dt} = r P_{n-1} - r P_n
+\end{equation}
+yielding Poisson-distributed populations:
+\begin{equation}
+    P_n(t) = \frac{(rt)^n}{n!} e^{-rt}
+\end{equation}
+
+In autocatalytic kinetics, the exponential enhancement factor $e^{n(n-1)\bar{\beta}/2}$ causes:
+\begin{enumerate}
+    \item Steeper rise at intermediate times
+    \item Faster approach to terminal states
+    \item Higher population of deep partition levels relative to Poisson
+\end{enumerate}
+\end{proposition}
+
+\begin{theorem}[Kinetic Signature of Autocatalysis]
+\label{thm:kinetic-signature}
+The ratio of populations at adjacent levels provides a diagnostic:
+\begin{equation}
+    \frac{P_{n+1}}{P_n} = \frac{r_{n+1}^{(0)} t}{n+1} e^{n\bar{\beta}}
+\end{equation}
+For simple kinetics, $\bar{\beta} = 0$ and the ratio is $rt/(n+1)$. For autocatalytic kinetics, the ratio is enhanced by $e^{n\bar{\beta}}$, growing exponentially with partition depth.
+\end{theorem}
+
+This exponential growth in the population ratio is the kinetic signature of autocatalytic dynamics. In molecular fragmentation, it manifests as anomalously high abundance of deeply fragmented species compared to Poisson expectations.
+

@@ -1,0 +1,134 @@
+\section{Hardware Mapping to Partition Coordinates}
+\label{sec:hardware-mapping}
+
+\subsection{Quadrupole Mass Filter}
+
+The quadrupole mass filter employs a 2D RF field to establish stability regions for ion trajectories.
+
+\begin{definition}[Mathieu Parameters]
+Ion motion in a quadrupole is governed by the Mathieu equation with parameters
+\begin{equation}
+    a = \frac{8eU}{m r_0^2 \Omega^2}, \quad q = \frac{4eV}{m r_0^2 \Omega^2}
+\end{equation}
+where $U$ is the DC voltage, $V$ is the RF amplitude, $r_0$ is the field radius, and $\Omega$ is the RF frequency.
+\end{definition}
+
+\begin{proposition}[Quadrupole Partition Mapping]
+The quadrupole extracts partition coordinates as follows:
+\begin{align}
+    n &= \text{stability zone index (determined by } a/q \text{ ratio)} \\
+    l &= \text{number of oscillation nodes in secular motion} \\
+    m &= \text{phase relationship between } x \text{ and } y \text{ secular motions}
+\end{align}
+\end{proposition}
+
+The stability diagram partitions the $(a, q)$ plane into discrete zones. Each zone corresponds to a partition depth $n$. The first stability zone ($0 < q < 0.908$, $a \approx 0$) corresponds to $n = 1$; higher zones correspond to higher $n$.
+
+\subsection{Linear Ion Trap}
+
+\begin{definition}[Trap Secular Frequency]
+The secular frequency of an ion in a linear trap is
+\begin{equation}
+    \omega_s = \frac{q\Omega}{2\sqrt{2}}
+\end{equation}
+for the fundamental mode.
+\end{definition}
+
+\begin{proposition}[Ion Trap Partition Mapping]
+The linear ion trap provides partition coordinates through:
+\begin{align}
+    n &: \text{Axial secular frequency ratio } \omega_z / \omega_0 \\
+    l &: \text{Radial secular frequency ratio } \omega_r / \omega_z \\
+    m &: \text{Micromotion phase relative to RF drive} \\
+    s &: \text{Rotation sense of ion cloud under tickle excitation}
+\end{align}
+\end{proposition}
+
+The hierarchical frequency structure of the ion trap directly maps to the partition coordinate hierarchy.
+
+\subsection{Orbitrap Mass Analyzer}
+
+\begin{definition}[Orbitrap Axial Frequency]
+Ion axial oscillation in the Orbitrap follows
+\begin{equation}
+    \omega = \sqrt{\frac{ek}{m}}
+\end{equation}
+where $k$ is the electrode curvature parameter.
+\end{definition}
+
+\begin{proposition}[Orbitrap Partition Mapping]
+The Orbitrap extracts partition coordinates through image current analysis:
+\begin{align}
+    n &: \text{Fundamental axial frequency } \omega \\
+    l &: \text{Harmonic content (higher harmonics indicate higher } l \text{)} \\
+    m &: \text{Phase of injection relative to electrode potential} \\
+    s &: \text{Orbital plane orientation}
+\end{align}
+\end{proposition}
+
+The high resolution of the Orbitrap ($R > 100,000$) enables extraction of multiple partition coordinates from a single transient through Fourier analysis.
+
+\subsection{Time-of-Flight Analyzer}
+
+\begin{definition}[TOF Flight Time]
+The flight time for an ion of mass $m$ and charge $z$ accelerated through potential $V$ over path length $L$ is
+\begin{equation}
+    t = L\sqrt{\frac{m}{2zeV}}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[TOF Partition Mapping]
+Time-of-flight analyzers extract partition coordinates through timing distribution analysis:
+\begin{align}
+    n &: \text{Flight time bin (discretized to detector resolution)} \\
+    l &: \text{Spatial focusing aberration order} \\
+    m &: \text{Angular distribution at detector} \\
+    s &: \text{Requires separate chiral selection (e.g., photoionization)}
+\end{align}
+\end{proposition}
+
+\subsection{Ion Mobility Spectrometry}
+
+\begin{definition}[Ion Mobility]
+The mobility $K$ relates drift velocity to electric field:
+\begin{equation}
+    v_d = K \cdot E
+\end{equation}
+The collisional cross section $\Omega_D$ is related to mobility by
+\begin{equation}
+    K = \frac{3ze}{16N} \sqrt{\frac{2\pi}{\mu k_B T}} \frac{1}{\Omega_D}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[IMS Partition Mapping]
+Ion mobility provides complementary partition coordinates:
+\begin{align}
+    n &: \text{Collisional cross section bin} \\
+    l &: \text{Shape anisotropy (deviation from spherical)} \\
+    m &: \text{Orientation distribution relative to drift axis} \\
+    s &: \text{Chiral drift time separation}
+\end{align}
+\end{proposition}
+
+The orientation parameter $m$ from IMS provides information not accessible from mass-only measurements, making IMS-MS hyphenation valuable for partition coordinate determination.
+
+\subsection{Unified Hardware Table}
+
+\begin{table}[h]
+\centering
+\caption{Partition coordinate extraction by hardware platform}
+\begin{tabular}{lcccc}
+\toprule
+Platform & $n$ source & $l$ source & $m$ source & $s$ source \\
+\midrule
+Quadrupole & Stability zone & Secular nodes & $xy$ phase & --- \\
+Ion Trap & $\omega_z / \omega_0$ & $\omega_r / \omega_z$ & Micromotion phase & Tickle rotation \\
+Orbitrap & $\omega$ & Harmonics & Injection phase & Orbit plane \\
+TOF & Flight time & Aberration & Angular dist. & --- \\
+IMS & $\Omega_D$ & Shape & Orientation & Chiral drift \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dashes indicate that the platform does not directly measure the coordinate; supplementary techniques (e.g., chiral chromatography, polarized photoionization) are required.
+

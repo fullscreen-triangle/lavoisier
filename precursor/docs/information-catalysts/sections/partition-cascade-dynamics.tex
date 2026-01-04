@@ -1,0 +1,133 @@
+\section{Cascade Dynamics}
+\label{sec:partition-cascade-dynamics}
+
+\subsection{Master Equation}
+
+\begin{definition}[Cascade State]
+A cascade state is a pair $(n, \rho)$ where $n \in \mathbb{Z}_{\geq 0}$ is the partition depth and $\rho \in \Cspace$ is the current configuration.
+\end{definition}
+
+\begin{definition}[Cascade Propagator]
+The cascade propagator $G(n', \rho'; n, \rho; t)$ is the probability of being in state $(n', \rho')$ at time $t$ given initial state $(n, \rho)$ at time $0$.
+\end{definition}
+
+\begin{theorem}[Master Equation]
+\label{thm:master-equation}
+The cascade propagator satisfies:
+\begin{equation}
+    \frac{\partial G}{\partial t} = \sum_{\Pi} \left[ r_\Pi(\rho) G(n, \rho'; n-1, \rho_{\text{parent}}; t) - r_\Pi(\rho') G(n', \rho'; n, \rho; t) \right]
+\end{equation}
+where the sum is over all partition operators $\Pi$ that connect $(n-1, \rho_{\text{parent}})$ to $(n, \rho)$.
+\end{theorem}
+
+\begin{proof}
+Standard derivation for continuous-time Markov processes on state spaces with birth-death dynamics. The first term represents gain from partitions producing state $(n', \rho')$; the second represents loss from partitions removing population from $(n', \rho')$.
+\end{proof}
+
+\subsection{Moment Equations}
+
+\begin{definition}[Partition Depth Moments]
+The $k$-th moment of the partition depth distribution at time $t$ is:
+\begin{equation}
+    \langle n^k \rangle(t) = \sum_n \int_\Cspace n^k P(n, \rho; t) \, d\rho
+\end{equation}
+where $P(n, \rho; t)$ is the probability density over cascade states.
+\end{definition}
+
+\begin{theorem}[Mean Depth Evolution]
+\label{thm:mean-depth}
+The mean partition depth evolves as:
+\begin{equation}
+    \frac{d\langle n \rangle}{dt} = \langle r(\rho) \rangle
+\end{equation}
+where $\langle r(\rho) \rangle$ is the configuration-averaged partition rate.
+\end{theorem}
+
+\begin{proof}
+\begin{align}
+    \frac{d\langle n \rangle}{dt} &= \sum_n \int n \frac{\partial P}{\partial t} \, d\rho \\
+    &= \sum_n \int n \left[ r(\rho') P(n-1, \rho') - r(\rho) P(n, \rho) \right] d\rho \\
+    &= \sum_n \int (n+1) r(\rho) P(n, \rho) \, d\rho - \sum_n \int n r(\rho) P(n, \rho) \, d\rho \\
+    &= \sum_n \int r(\rho) P(n, \rho) \, d\rho = \langle r(\rho) \rangle
+\end{align}
+\end{proof}
+
+\begin{theorem}[Variance Evolution]
+\label{thm:variance}
+The variance $\sigma_n^2 = \langle n^2 \rangle - \langle n \rangle^2$ evolves as:
+\begin{equation}
+    \frac{d\sigma_n^2}{dt} = \langle r(\rho) \rangle + 2 \text{Cov}(n, r(\rho))
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Differentiate $\langle n^2 \rangle$ using the master equation and subtract $2\langle n \rangle d\langle n \rangle/dt$.
+\end{proof}
+
+\begin{corollary}[Autocatalytic Variance Enhancement]
+For autocatalytic dynamics where $r(\rho)$ increases with partition depth $n$, the covariance $\text{Cov}(n, r) > 0$, leading to enhanced variance:
+\begin{equation}
+    \sigma_n^2 > \langle n \rangle \quad \text{(overdispersion)}
+\end{equation}
+In contrast, simple kinetics has $\sigma_n^2 = \langle n \rangle$ (Poisson).
+\end{corollary}
+
+\subsection{Lag-Exponential-Saturation Profile}
+
+\begin{theorem}[Three-Phase Kinetics]
+\label{thm:three-phase}
+Autocatalytic cascade dynamics exhibit three distinct phases:
+\begin{enumerate}
+    \item \textbf{Lag phase} ($t < t_{\text{lag}}$): Mean depth grows linearly, $\langle n \rangle \approx r_1^{(0)} t$
+    \item \textbf{Exponential phase} ($t_{\text{lag}} < t < t_{\text{sat}}$): Mean depth grows exponentially, $\langle n \rangle \propto e^{\bar{\beta} r_1^{(0)} t}$
+    \item \textbf{Saturation phase} ($t > t_{\text{sat}}$): Mean depth approaches limiting value, $\langle n \rangle \to n_{\max}$
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{Lag phase:} At early times, few partitions have occurred, so the autocatalytic enhancement $e^{n\bar{\beta}}$ is negligible. The dynamics reduce to simple first-order kinetics with $d\langle n \rangle/dt \approx r_1^{(0)}$.
+
+\textbf{Exponential phase:} Once sufficient partitions have occurred, the autocatalytic enhancement becomes significant. With $r_n \approx r_1^{(0)} e^{n\bar{\beta}}$:
+\begin{equation}
+    \frac{d\langle n \rangle}{dt} \approx r_1^{(0)} e^{\langle n \rangle \bar{\beta}}
+\end{equation}
+This has solution $\langle n \rangle = \bar{\beta}^{-1} \ln(1 + \bar{\beta} r_1^{(0)} t)$, which approximates $e^{\bar{\beta} r_1^{(0)} t}$ for moderate $t$.
+
+\textbf{Saturation phase:} The cascade terminates when all pathways reach terminators. The maximum depth $n_{\max}$ is set by the terminator distribution.
+\end{proof}
+
+\begin{definition}[Characteristic Times]
+\begin{align}
+    t_{\text{lag}} &= \frac{1}{\bar{\beta} r_1^{(0)}} \quad \text{(time to onset of autocatalysis)} \\
+    t_{\text{sat}} &= \frac{n_{\max}}{\bar{\beta} r_1^{(0)}} \quad \text{(time to terminator saturation)}
+\end{align}
+\end{definition}
+
+\subsection{Terminator Accumulation}
+
+\begin{theorem}[Terminator Population Dynamics]
+\label{thm:terminator-accumulation}
+The population of terminator $\rho_i^*$ at time $t$ is:
+\begin{equation}
+    P_i^*(t) = \int_0^t J_i^*(t') \, dt'
+\end{equation}
+where $J_i^*(t)$ is the flux into terminator $i$:
+\begin{equation}
+    J_i^*(t) = \sum_{\rho \to \rho_i^*} r_{\text{term}}(\rho) P(\tau(\rho_i^*) - 1, \rho; t)
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The terminator population increases by the flux of configurations partitioning into the terminator and does not decrease (terminators are stable). The flux is the sum over all configurations $\rho$ that can partition into $\rho_i^*$, weighted by their population and partition rate.
+\end{proof}
+
+\begin{corollary}[Steady-State Terminator Distribution]
+At long times ($t \gg t_{\text{sat}}$), the terminator population ratio is:
+\begin{equation}
+    \frac{P_i^*}{P_j^*} = \frac{g(\rho_i^*)}{g(\rho_j^*)}
+\end{equation}
+where $g(\rho_i^*)$ is the pathway degeneracy (number of distinct cascade pathways leading to $\rho_i^*$).
+\end{corollary}
+
+The three-phase kinetic profile and overdispersion provide experimental signatures distinguishing autocatalytic cascades from simple sequential dissociation. In mass spectrometry, these signatures manifest in collision energy-dependent fragmentation patterns.
+

@@ -1,0 +1,128 @@
+\section{Charge Partition Spaces}
+\label{sec:charge-partitioning}
+
+\subsection{Configuration Space}
+
+\begin{definition}[Charge Configuration]
+A charge configuration on a bounded region $\Omega \subset \mathbb{R}^3$ is a signed measure $\rho: \Omega \to \mathbb{R}$ satisfying:
+\begin{equation}
+    Q = \int_\Omega \rho(\mathbf{r}) \, d^3r
+\end{equation}
+where $Q$ is the total charge.
+\end{definition}
+
+\begin{definition}[Configuration Space]
+The configuration space $\Cspace(Q)$ is the set of all charge configurations with total charge $Q$:
+\begin{equation}
+    \Cspace(Q) = \left\{ \rho: \Omega \to \mathbb{R} \,\middle|\, \int_\Omega \rho \, d^3r = Q \right\}
+\end{equation}
+\end{definition}
+
+The configuration space admits a metric structure induced by the electrostatic energy functional.
+
+\begin{definition}[Electrostatic Distance]
+The electrostatic distance between configurations $\rho_1, \rho_2 \in \Cspace(Q)$ is:
+\begin{equation}
+    d_E(\rho_1, \rho_2) = \left( \int_\Omega \int_\Omega \frac{(\rho_1(\mathbf{r}) - \rho_2(\mathbf{r}))(\rho_1(\mathbf{r}') - \rho_2(\mathbf{r}'))}{|\mathbf{r} - \mathbf{r}'|} \, d^3r \, d^3r' \right)^{1/2}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[$\Cspace(Q)$ is a Metric Space]
+The pair $(\Cspace(Q), d_E)$ is a complete metric space.
+\end{proposition}
+
+\begin{proof}
+Positive definiteness: $d_E(\rho_1, \rho_2) \geq 0$ with equality iff $\rho_1 = \rho_2$ almost everywhere (by uniqueness of the Coulomb potential). Symmetry: immediate from the definition. Triangle inequality: follows from the Minkowski inequality for the $L^2$ norm of the difference charge distribution weighted by the Coulomb kernel. Completeness: $\Cspace(Q)$ is a closed subset of $L^2(\Omega)$, which is complete.
+\end{proof}
+
+\subsection{Partition Operators}
+
+\begin{definition}[Partition Operator]
+A partition operator $\Pi: \Cspace(Q) \to \Cspace(Q_1) \times \Cspace(Q_2)$ maps a configuration to a pair of daughter configurations:
+\begin{equation}
+    \Pi(\rho) = (\rho_1, \rho_2)
+\end{equation}
+subject to the conservation constraint:
+\begin{equation}
+    \rho_1 + \rho_2 = \rho, \quad Q_1 + Q_2 = Q
+\end{equation}
+\end{definition}
+
+\begin{definition}[Partition Axis]
+The partition axis $\mathbf{a} \in S^2$ specifies the direction along which charge is separated. For a partition with axis $\mathbf{a}$:
+\begin{equation}
+    \rho_1(\mathbf{r}) = \rho(\mathbf{r}) \cdot \Theta(\mathbf{a} \cdot \mathbf{r} - c), \quad \rho_2(\mathbf{r}) = \rho(\mathbf{r}) \cdot \Theta(c - \mathbf{a} \cdot \mathbf{r})
+\end{equation}
+where $\Theta$ is the Heaviside function and $c$ is the partition plane offset.
+\end{definition}
+
+\begin{definition}[Charge Separation]
+The charge separation induced by partition $\Pi$ is:
+\begin{equation}
+    \Delta Q = |Q_1 - Q_2|
+\end{equation}
+The dipole moment created is:
+\begin{equation}
+    \mathbf{p} = Q_1 \mathbf{r}_1 - Q_2 \mathbf{r}_2
+\end{equation}
+where $\mathbf{r}_1, \mathbf{r}_2$ are the centroids of the daughter distributions.
+\end{definition}
+
+\subsection{Partition Energy}
+
+\begin{proposition}[Partition Energy Cost]
+The electrostatic energy cost of partition $\Pi$ is:
+\begin{equation}
+    \Delta E_\Pi = \frac{Q_1 Q_2}{|\mathbf{r}_1 - \mathbf{r}_2|} - E_{\text{int}}(\rho)
+\end{equation}
+where $E_{\text{int}}(\rho)$ is the internal electrostatic energy of the parent configuration.
+\end{proposition}
+
+\begin{proof}
+Before partition, the electrostatic energy is:
+\begin{equation}
+    E_{\text{before}} = \frac{1}{2} \int \int \frac{\rho(\mathbf{r}) \rho(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} \, d^3r \, d^3r' = E_{\text{int}}(\rho)
+\end{equation}
+
+After partition, the energy is the sum of self-energies and interaction energy:
+\begin{equation}
+    E_{\text{after}} = E_{\text{int}}(\rho_1) + E_{\text{int}}(\rho_2) + \frac{Q_1 Q_2}{|\mathbf{r}_1 - \mathbf{r}_2|}
+\end{equation}
+
+For a sharp partition, $E_{\text{int}}(\rho_1) + E_{\text{int}}(\rho_2) \approx E_{\text{int}}(\rho)$, yielding the stated result.
+\end{proof}
+
+\begin{corollary}[Partition Favorability]
+Partition $\Pi$ is energetically favorable if:
+\begin{equation}
+    \frac{Q_1 Q_2}{|\mathbf{r}_1 - \mathbf{r}_2|} < E_{\text{int}}(\rho)
+\end{equation}
+Partitions that create large spatial separation $|\mathbf{r}_1 - \mathbf{r}_2|$ are favored.
+\end{corollary}
+
+\subsection{Sequential Partitions}
+
+\begin{definition}[Partition Sequence]
+A partition sequence of depth $n$ is an ordered sequence of partition operators:
+\begin{equation}
+    \mathcal{S}_n = (\Pi_1, \Pi_2, \ldots, \Pi_n)
+\end{equation}
+The $n$-fold composition $\mathcal{S}_n(\rho_0)$ generates a tree of $2^n$ terminal configurations.
+\end{definition}
+
+\begin{definition}[Partition Tree]
+The partition tree $\mathcal{T}(\rho_0, \mathcal{S}_n)$ is the directed graph where:
+\begin{itemize}
+    \item Nodes are configurations reached during the sequence
+    \item Edges are partition operations
+    \item The root is $\rho_0$
+    \item Leaves are terminal configurations at depth $n$
+\end{itemize}
+\end{definition}
+
+\begin{proposition}[Leaf Count]
+The partition tree has exactly $2^n$ leaves for depth $n$, but the number of distinct configurations may be smaller due to convergent pathways.
+\end{proposition}
+
+In molecular ion fragmentation, the partition operator corresponds to bond cleavage. The parent charge configuration is the precursor ion; daughter configurations are fragment ions and neutrals. The partition axis corresponds to the breaking bond. The charge separation $\Delta Q$ is typically $\pm e$ for singly charged systems.
+

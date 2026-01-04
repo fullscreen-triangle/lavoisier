@@ -1,0 +1,119 @@
+\section{Platform Independence as Categorical Invariance}
+\label{sec:platform-independence}
+
+\subsection{The Platform Dependence Problem}
+
+Mass spectrometry exhibits apparent platform dependence: different instruments yield different spectra for the same compound. This manifests as:
+\begin{itemize}
+    \item Different relative intensities of fragment peaks
+    \item Different fragmentation patterns under nominally identical conditions
+    \item Poor spectral library matching across instrument platforms
+\end{itemize}
+
+\begin{definition}[Platform Dependence]
+A measurement protocol exhibits platform dependence if the output $O$ depends on both the target system $T$ and the measurement apparatus $A$:
+\begin{equation}
+    O = f(T, A)
+\end{equation}
+rather than $O = f(T)$ alone.
+\end{definition}
+
+\subsection{Categorical Invariants}
+
+\begin{definition}[Categorical Invariant]
+A quantity $I$ is a categorical invariant if it depends only on the categorical state, not on the measurement protocol:
+\begin{equation}
+    I(T, A_1) = I(T, A_2) \quad \forall A_1, A_2
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Partition Coordinates are Invariant]
+\label{thm:invariance}
+The partition coordinates $(n, l, m, s)$ of a categorical state are platform-independent: any measurement apparatus extracting these coordinates from the same target yields identical values.
+\end{theorem}
+
+\begin{proof}
+Partition coordinates are defined by geometric constraints (Section~\ref{sec:geometric-partitioning}) that depend only on the bounded phase space $\Omega$ of the target, not on the measurement apparatus. The apparatus determines only the extraction protocol (Section~\ref{sec:hardware-mapping}), not the coordinates themselves.
+
+Suppose apparatus $A_1$ measures $(n_1, l_1, m_1, s_1)$ and $A_2$ measures $(n_2, l_2, m_2, s_2)$ for the same target in the same categorical state. By the completeness theorem (Theorem~\ref{thm:completeness}), identical coordinates imply identical categorical states. If $n_1 \neq n_2$ (or similarly for other coordinates), the apparatuses would be detecting different categorical states of the same target---a contradiction, since the target is in a single well-defined state.
+\end{proof}
+
+\subsection{Apparent Dependence from Projection}
+
+The apparent platform dependence of mass spectra arises from different projections of the same partition coordinates.
+
+\begin{definition}[Partition Projection]
+A partition projection is a map $\pi: (n, l, m, s) \to \mathbb{R}^k$ that extracts $k$ observable quantities from the coordinates. Different apparatuses implement different projections.
+\end{definition}
+
+\begin{example}[Mass-Only Projection]
+A unit-resolution quadrupole implements the projection
+\begin{equation}
+    \pi_{\text{quad}}(n, l, m, s) = m(n)
+\end{equation}
+mapping to mass alone, discarding $(l, m, s)$ information.
+\end{example}
+
+\begin{example}[Mass-Intensity Projection]
+A high-resolution mass spectrometer with intensity information implements
+\begin{equation}
+    \pi_{\text{HR}}(n, l, m, s) = (m(n), I(n, l))
+\end{equation}
+where $I(n, l)$ is the intensity determined by the transition rate (Section~\ref{sec:categorical-dynamics}).
+\end{example}
+
+\begin{proposition}[Projection Reconciliation]
+Given two projections $\pi_1$ and $\pi_2$, the underlying partition coordinates can be recovered if the combined projection $(\pi_1, \pi_2)$ is invertible.
+\end{proposition}
+
+This proposition underlies multi-platform data fusion: combining mass spectra from different instruments provides more complete partition coordinate determination than any single instrument alone.
+
+\subsection{Standardization Protocol}
+
+\begin{algorithm}
+\caption{Platform-Independent Coordinate Extraction}
+\label{alg:standardization}
+\begin{algorithmic}[1]
+\Require Raw spectrum $S$, hardware characterization $H$, extraction protocol $P$
+\Ensure Platform-independent partition coordinates $(n, l, m, s)$
+\State Identify oscillation hierarchy from $H$: $\{\nu_1, \nu_2, \ldots\}$
+\State Decompose $S$ into frequency-resolved components $\{S_i\}$
+\State Apply timing analysis (Algorithm~\ref{alg:timing}) to extract raw coordinates
+\State Correct for apparatus-specific factors (efficiency, transmission, detection)
+\State Normalize to canonical coordinate system
+\State \Return $(n, l, m, s)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Experimental Validation}
+
+Platform independence is testable. For a reference compound with known partition coordinates:
+
+\begin{enumerate}
+    \item Measure on platform $A_1$, extract $(n, l, m, s)_{A_1}$
+    \item Measure on platform $A_2$, extract $(n, l, m, s)_{A_2}$
+    \item Compare: $\|(n, l, m, s)_{A_1} - (n, l, m, s)_{A_2}\| < \epsilon$
+\end{enumerate}
+
+\begin{proposition}[Convergence Criterion]
+Platforms $A_1$ and $A_2$ are correctly calibrated if and only if their partition coordinate extractions agree within resolution limits for all test compounds.
+\end{proposition}
+
+This provides a principled calibration protocol: rather than matching raw spectral features, match the underlying partition coordinates.
+
+\subsection{Information-Theoretic Interpretation}
+
+\begin{theorem}[Information Preservation]
+The mutual information between target $T$ and measurement $O$ is maximized when the measurement extracts all partition coordinates:
+\begin{equation}
+    I(T; O) \leq H(n, l, m, s)
+\end{equation}
+with equality when $O = (n, l, m, s)$.
+\end{theorem}
+
+\begin{proof}
+The partition coordinates constitute a sufficient statistic for the categorical state (Theorem~\ref{thm:completeness}). Any measurement retaining less information has strictly lower mutual information.
+\end{proof}
+
+Platform-independent measurements are thus optimal in the information-theoretic sense: they extract the maximum information about the target system.
+

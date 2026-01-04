@@ -1,0 +1,417 @@
+\section{Kirchhoff's Laws from Categorical Conservation}
+\label{sec:kirchhoff_laws}
+
+\subsection{From Single Conductors to Circuit Networks}
+
+Section 4 derived Ohm's law for a single uniform conductor. Real circuits contain multiple conductors connected at junctions, forming networks. How do these networks behave?
+
+Classical circuit theory is governed by Kirchhoff's two laws:
+
+\begin{itemize}
+\item \textbf{Kirchhoff's Current Law (KCL):} The sum of currents entering any junction equals zero:
+\begin{equation}
+\sum_i I_i = 0
+\label{eq:kcl_classical}
+\end{equation}
+
+\item \textbf{Kirchhoff's Voltage Law (KVL):} The sum of voltages around any closed loop equals zero:
+\begin{equation}
+\sum_j V_j = 0
+\label{eq:kvl_classical}
+\end{equation}
+\end{itemize}
+
+These laws are typically justified by appealing to charge conservation (for KCL) and energy conservation (for KVL). But in the S-transformation framework, they must emerge from categorical state conservation. This section derives both laws from first principles.
+
+\subsection{Kirchhoff's Current Law: Categorical State Conservation}
+
+Consider a junction where $N$ conductors meet. Let $I_k$ denote the current in conductor $k$, with the sign convention that $I_k > 0$ for current flowing into the junction and $I_k < 0$ for current flowing out.
+
+Current is the rate of categorical state change (Definition 2.4.1):
+\begin{equation}
+I_k = e \cdot \frac{d}{dt}\left[\sum_i C_i^{(k)}(t)\right]
+\label{eq:current_categorical_reminder}
+\end{equation}
+where $C_i^{(k)}(t) \in \{0, 1\}$ denotes the categorical state of the electron $i$ in the conductor $k$.
+
+At the junction, electrons from all incoming conductors must be redistributed to all outgoing conductors. The total number of electrons in the junction region remains constant (electrons are neither created nor destroyed). Therefore:
+\begin{equation}
+\frac{d}{dt}\left[\sum_{k=1}^N \sum_i C_i^{(k)}(t)\right] = 0
+\label{eq:junction_conservation}
+\end{equation}
+
+Multiplying by the electron charge $e$:
+\begin{equation}
+\sum_{k=1}^N e \cdot \frac{d}{dt}\left[\sum_i C_i^{(k)}(t)\right] = \sum_{k=1}^N I_k = 0
+\label{eq:kcl_derived}
+\end{equation}
+
+This is Kirchhoff's Current Law.
+
+\begin{theorem}[Kirchhoff's Current Law from Categorical Conservation]
+\label{thm:kcl}
+At any junction in a circuit network:
+\begin{equation}
+\sum_{k=1}^N I_k = 0
+\end{equation}
+where the sum is over all conductors meeting at the junction.
+\end{theorem}
+
+\begin{proof}
+Categorical states are conserved: electrons cannot be created or destroyed. At a junction, the total categorical state change must be zero:
+\begin{equation}
+\frac{d}{dt}\left[\text{Total categorical states}\right] = 0
+\end{equation}
+
+Since current is the rate of categorical state change, this implies:
+\begin{equation}
+\sum_k I_k = 0
+\end{equation}
+\qed
+\end{proof}
+
+\textbf{Physical interpretation:} KCL is not merely charge conservation—it is categorical state conservation. Electrons entering the junction change the categorical state of the junction region. Electrons leaving the junction change it back. The net categorical state change must be zero because categorical states are conserved quantities in the phase-lock network.
+
+This explains why KCL holds even at high frequencies where displacement currents become important. Categorical states are conserved regardless of whether current is carried by electron motion or by electromagnetic field changes.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_ohm_kirchhoff.png}
+\caption{\textbf{Ohm's Law and Kirchhoff's Laws from Categorical Dynamics.} 
+(\textbf{A}) Ohm's law $V = IR$: Voltage versus current for four resistances: $R = 1~\Omega$ (blue), $R = 2~\Omega$ (orange), $R = 5~\Omega$ (green), and $R = 10~\Omega$ (red). All curves are linear, passing through the origin. The slope equals the resistance. The microscopic formula $V = IR = (\tau_s g L/A) I$ shows that voltage arises from scattering partition lag $\tau_s$ and coupling $g$ over length $L$ and cross-section $A$. 
+(\textbf{B}) Resistivity from scattering partition lag: Resistivity $\rho$ versus scattering time $\tau_s$ on a log-log plot. Silicon (blue) has resistivity proportional to $1/\tau_s$. Metals (copper, aluminum, iron) cluster at $\rho \sim 10^{-8}$ to $10^{-6}~\Omega\cdot$m with $\tau_s \sim 10^{-14}$ to $10^{-13}$ s. Graphite (black) has intermediate resistivity. The red dashed line shows the theoretical $\rho \propto 1/\tau_s$ relationship. 
+(\textbf{C}) Kirchhoff's current law: Conservation at a circuit node (yellow circle labeled N). Four currents meet: $I_1$ (blue, incoming), $I_2$ (blue, incoming), $I_3$ (red, outgoing), and $I_4$ (red, outgoing). The conservation law $\sum I_{\text{in}} = \sum I_{\text{out}}$ gives $I_1 + I_2 = I_3 + I_4$. This follows from categorical state conservation: states are neither created nor destroyed at junctions. 
+(\textbf{D}) Kirchhoff's voltage law: Loop closure in a circuit with voltage source $V_s$ (yellow circle) and three resistors with voltage drops $V_1$, $V_2$, $V_3$ (gray rectangles). A load (green) is included. Traversing the loop clockwise: $V_s - V_1 - V_2 - V_3 = 0$, or $\sum V_{\text{loop}} = 0$. This follows from single-valuedness of the S-potential: the potential must return to its initial value after completing a closed loop.}
+\label{fig:ohm_kirchhoff}
+\end{figure*}
+
+\subsection{Kirchhoff's Voltage Law: S-Potential Single-Valuedness}
+
+Consider a closed loop in a circuit network, consisting of conductors $1, 2, \ldots, M$ connected in series. Let $V_j$ denote the voltage across conductor $j$, defined as:
+\begin{equation}
+V_j = \Phi_S(\Svec_{\text{in}}^{(j)}) - \Phi_S(\Svec_{\text{out}}^{(j)})
+\label{eq:voltage_s_potential}
+\end{equation}
+where $\Svec_{\text{in}}^{(j)}$ and $\Svec_{\text{out}}^{(j)}$ are the S-coordinates at the input and output terminals of conductor $j$.
+
+In a closed loop, the output of conductor $j$ is connected to the input of conductor $j+1$:
+\begin{equation}
+\Svec_{\text{out}}^{(j)} = \Svec_{\text{in}}^{(j+1)} \quad \text{for } j = 1, 2, \ldots, M
+\label{eq:loop_continuity}
+\end{equation}
+with the convention that conductor $M+1$ is conductor $1$ (closing the loop).
+
+The sum of voltages around the loop is:
+\begin{align}
+\sum_{j=1}^M V_j &= \sum_{j=1}^M \left[\Phi_S(\Svec_{\text{in}}^{(j)}) - \Phi_S(\Svec_{\text{out}}^{(j)})\right] \\
+&= \sum_{j=1}^M \Phi_S(\Svec_{\text{in}}^{(j)}) - \sum_{j=1}^M \Phi_S(\Svec_{\text{out}}^{(j)}) \\
+&= \sum_{j=1}^M \Phi_S(\Svec_{\text{in}}^{(j)}) - \sum_{j=1}^M \Phi_S(\Svec_{\text{in}}^{(j+1)})
+\label{eq:voltage_sum_intermediate}
+\end{align}
+
+The second sum is just a relabeling of the first sum (shifting indices by 1 in a cyclic manner). Therefore:
+\begin{equation}
+\sum_{j=1}^M V_j = 0
+\label{eq:kvl_derived}
+\end{equation}
+
+This is Kirchhoff's Voltage Law.
+
+\begin{theorem}[Kirchhoff's Voltage Law from S-Potential Single-Valuedness]
+\label{thm:kvl}
+Around any closed loop in a circuit network:
+\begin{equation}
+\sum_{j=1}^M V_j = 0
+\end{equation}
+where the sum is over all conductors in the loop.
+\end{theorem}
+
+\begin{proof}
+The S-potential $\Phi_S(\Svec)$ is a single-valued function of the S-coordinate. In a closed loop, traversing the loop returns to the starting S-coordinate. Therefore, the sum of S-potential differences must be zero:
+\begin{equation}
+\sum_j [\Phi_S(\Svec_{\text{in}}^{(j)}) - \Phi_S(\Svec_{\text{out}}^{(j)})] = 0
+\end{equation}
+
+Since $V_j = \Phi_S(\Svec_{\text{in}}^{(j)}) - \Phi_S(\Svec_{\text{out}}^{(j)})$, this gives:
+\begin{equation}
+\sum_j V_j = 0
+\end{equation}
+\qed
+\end{proof}
+
+\textbf{Physical interpretation:} KVL is not merely energy conservation—it is a consequence of the S-potential being a single-valued function. The S-potential assigns a unique value to each S-coordinate. Traversing a closed loop returns to the same S-coordinate, hence the same S-potential value, hence the sum of potential differences is zero.
+
+This explains why KVL holds even in the presence of inductors and capacitors. The S-potential includes contributions from all energy storage mechanisms (magnetic, electric, kinetic). Single-valuedness ensures that the sum of all voltage drops around a loop is zero, regardless of the circuit elements involved.
+
+\subsection{Series and Parallel Resistances}
+
+Kirchhoff's laws immediately yield the rules for combining resistances.
+
+\textbf{Series resistances:}
+
+For resistors $R_1, R_2, \ldots, R_N$ connected in series, the same current $I$ flows through all resistors. By Ohm's law:
+\begin{equation}
+V_j = I R_j \quad \text{for } j = 1, 2, \ldots, N
+\end{equation}
+
+The total voltage across the series combination is:
+\begin{equation}
+V_{\text{total}} = \sum_{j=1}^N V_j = I \sum_{j=1}^N R_j
+\end{equation}
+
+The equivalent resistance is:
+\begin{equation}
+R_{\text{series}} = \sum_{j=1}^N R_j
+\label{eq:series_resistance}
+\end{equation}
+
+\textbf{Parallel resistances:}
+
+For resistors $R_1, R_2, \ldots, R_N$ connected in parallel, the same voltage $V$ appears across all resistors. By Ohm's law:
+\begin{equation}
+I_j = \frac{V}{R_j} \quad \text{for } j = 1, 2, \ldots, N
+\end{equation}
+
+By KCL, the total current is:
+\begin{equation}
+I_{\text{total}} = \sum_{j=1}^N I_j = V \sum_{j=1}^N \frac{1}{R_j}
+\end{equation}
+
+The equivalent resistance is:
+\begin{equation}
+\frac{1}{R_{\text{parallel}}} = \sum_{j=1}^N \frac{1}{R_j}
+\label{eq:parallel_resistance}
+\end{equation}
+
+These familiar rules emerge directly from Kirchhoff's laws, which in turn emerge from categorical state conservation and S-potential single-valuedness.
+
+\subsection{Network Analysis and the Node-Voltage Method}
+
+For complex circuit networks, Kirchhoff's laws provide a systematic method for determining all currents and voltages. The most efficient approach is the \emph{node-voltage method}.
+
+\textbf{Procedure:}
+
+\begin{enumerate}
+\item Select one node as the reference (ground) with $\Phi_S = 0$
+
+\item Assign S-potential $\Phi_k$ to each of the remaining $N-1$ nodes
+
+\item For each node $k$, apply KCL:
+\begin{equation}
+\sum_{j \in \text{neighbors of } k} \frac{\Phi_k - \Phi_j}{R_{kj}} = I_k^{\text{ext}}
+\label{eq:node_voltage_kcl}
+\end{equation}
+where $R_{kj}$ is the resistance between nodes $k$ and $j$, and $I_k^{\text{ext}}$ is the external current injected at node $k$
+
+\item Solve the resulting system of $N-1$ linear equations for the node potentials $\{\Phi_k\}$
+
+\item Calculate currents from $I_{kj} = (\Phi_k - \Phi_j)/R_{kj}$
+\end{enumerate}
+
+This method is equivalent to the standard node-voltage method in circuit theory, but here it emerges naturally from the S-potential framework.
+
+\subsection{Time-Varying Circuits: Capacitors and Inductors}
+
+The analysis so far has assumed steady-state DC circuits. For time-varying circuits, we must account for energy storage in capacitors and inductors.
+
+\textbf{Capacitors:}
+
+A capacitor stores energy in the electric field. The charge $Q$ on the capacitor is related to the voltage $V$ by:
+\begin{equation}
+Q = CV
+\label{eq:capacitor_charge}
+\end{equation}
+where $C$ is the capacitance.
+
+In the S-coordinate framework, the capacitor's S-coordinate $\Svec_C$ changes when charge accumulates:
+\begin{equation}
+\frac{d\Svec_C}{dt} = \frac{1}{C} I
+\label{eq:capacitor_s_evolution}
+\end{equation}
+
+The voltage across the capacitor is:
+\begin{equation}
+V_C = \Phi_S(\Svec_C) = \frac{Q}{C} = \frac{1}{C}\int I \, dt
+\label{eq:capacitor_voltage}
+\end{equation}
+
+\textbf{Inductors:}
+
+An inductor stores energy in the magnetic field. The magnetic flux $\Phi_B$ through the inductor is related to the current $I$ by:
+\begin{equation}
+\Phi_B = LI
+\label{eq:inductor_flux}
+\end{equation}
+where $L$ is the inductance.
+
+In the S-coordinate framework, the inductor's S-coordinate $\Svec_L$ changes when the current changes:
+\begin{equation}
+\frac{d\Svec_L}{dt} = \frac{1}{L} V
+\label{eq:inductor_s_evolution}
+\end{equation}
+
+The voltage across the inductor is:
+\begin{equation}
+V_L = \Phi_S(\Svec_L) = L \frac{dI}{dt}
+\label{eq:inductor_voltage}
+\end{equation}
+
+With these relations, Kirchhoff's laws apply to time-varying circuits:
+
+\begin{itemize}
+\item \textbf{KCL:} $\sum_k I_k(t) = 0$ at each junction (categorical state conservation at each instant)
+
+\item \textbf{KVL:} $\sum_j V_j(t) = 0$ around each loop (S-potential single-valuedness at each instant)
+\end{itemize}
+
+The time-varying case reduces to solving differential equations rather than algebraic equations, but the fundamental principles remain the same.
+
+\subsection{Partition Lag and Joule Heating}
+
+The resistivity derived in Section 4 has a deeper interpretation in terms of partition lag. Each scattering event involves a partition lag $\tau_{s,ij}$—the time between when an electron $i$ begins to scatter from lattice site $j$ and when the scattered state is established.
+
+During this partition lag, the electron exists in an undetermined superposition of incident and scattered states. This undetermined residue creates entropy:
+\begin{equation}
+\Delta S_{\text{scatter}} = k_B \ln n_{\text{res}}^{(s)}
+\label{eq:scattering_entropy}
+\end{equation}
+where $n_{\text{res}}^{(s)}$ is the number of undetermined states during the partition lag.
+
+The entropy production per scattering event is:
+\begin{equation}
+\Delta S_{\text{scatter}} > 0
+\label{eq:entropy_production}
+\end{equation}
+
+This entropy production is the microscopic origin of Joule heating. The energy dissipated as heat per scattering event is:
+\begin{equation}
+Q_{\text{scatter}} = T \Delta S_{\text{scatter}} = k_B T \ln n_{\text{res}}^{(s)}
+\label{eq:joule_heat_microscopic}
+\end{equation}
+
+Summing over all scattering events in the conductor gives the total power dissipated:
+\begin{equation}
+P = \frac{N_{\text{scatter}}}{\tau_s} \cdot Q_{\text{scatter}} = \frac{N_{\text{scatter}}}{\tau_s} k_B T \ln n_{\text{res}}^{(s)}
+\label{eq:power_dissipation}
+\end{equation}
+
+For a conductor with current $I$ and resistance $R$, the number of scattering events per unit time is proportional to $I^2$, yielding:
+\begin{equation}
+P = I^2 R
+\label{eq:joule_law}
+\end{equation}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_partition_lag.png}
+\caption{\textbf{Partition lag $\tau_p$ across all four transport types showing universal temperature dependence.} 
+\textbf{(Top left)} Electrical partition lag showing scattering mechanism contributions. Phonon scattering (orange) dominates at high temperature with $\tau_p \sim 10^2$ fs at 500 K, decreasing from $\sim 10^3$ fs at low $T$ as phonon population increases ($\propto T$). Impurity scattering (magenta) is temperature-independent at $\tau_p \sim 10^4$ fs, providing residual scattering even at $T \to 0$. Electron-electron scattering (green) shows weak temperature dependence with $\tau_p \sim 10^4$ fs. All mechanisms contribute to total resistivity through $\rho = \mathcal{N}^{-1}\sum_{ij}\tau_{p,ij}g_{ij}$.
+\textbf{(Top right)} Diffusive partition lag showing atomic jump mechanisms. Vacancy diffusion (bright green) has longest partition lag $\tau_p \sim 10^{15}$ fs ($\sim 1$ s) at 400 K, decreasing exponentially with temperature as thermal activation enables atomic jumps: $\tau_p \propto \exp(E_a/k_B T)$. Interstitial diffusion (medium green) has shorter lag $\tau_p \sim 10^{13}$ fs ($\sim 10$ ms) due to lower activation barrier. Grain boundary diffusion (dark green) has intermediate lag $\tau_p \sim 10^7$ fs ($\sim 10$ ns) as atoms diffuse along defects with reduced barriers. The enormous range of partition lags (10$^2$--10$^{15}$ fs) reflects the wide range of diffusion timescales from fast interstitial motion to slow vacancy migration.
+\textbf{(Bottom left)} Thermal partition lag showing phonon scattering vs. frequency. Normal scattering (cyan) has constant partition lag $\tau_p \sim 10^3$ ps across all frequencies, as normal processes conserve crystal momentum and don't limit thermal transport. Umklapp scattering (orange) shows strong frequency dependence: $\tau_p \sim 10^1$ ps at low frequency ($\omega \sim 1$ THz), decreasing to $\sim 10^0$ ps at high frequency ($\omega \sim 14$ THz) as umklapp phase space increases. Boundary scattering (green) is frequency-independent at $\tau_p \sim 10^3$ ps. Impurity scattering (magenta) shows weak frequency dependence with $\tau_p \sim 10^2$ ps. The frequency-dependent partition lag determines thermal conductivity spectrum $\kappa(\omega)$.
+\textbf{(Bottom right)} Viscous partition lag showing molecular collision times. Water (cyan) has shortest partition lag $\tau_p \sim 10^0$ ps at 600 K, increasing to $\sim 10^2$ ps at 200 K as molecular collision rate decreases with temperature. Glycerol (magenta) has much longer lag $\tau_p \sim 10^{17}$ ps ($\sim 10^5$ s) at 200 K due to strong hydrogen bonding, decreasing exponentially to $\sim 10^9$ ps ($\sim 1$ s) at 600 K as bonds break. n-Hexane (green) has intermediate lag $\tau_p \sim 10^2$ ps. The partition lag directly determines viscosity through $\mu = \sum_{ij}\tau_{p,ij}g_{ij}$, explaining why glycerol is $\sim 10^3$ times more viscous than water at room temperature.}
+\label{fig:partition_lag_comparison}
+\end{figure}
+
+This is Joule's law for power dissipation. It emerges from the entropy production during partition lag, not from phenomenological energy considerations.
+
+\textbf{Key insight:} Resistance is not merely "friction" for electrons. It is the manifestation of partition lag—the irreducible time required for categorical state changes during scattering. The partition lag creates undetermined residue, which produces entropy and dissipates energy as heat.
+
+\subsection{Partition Lag Statistics}
+
+Individual scattering events have varying partition lags. The distribution of partition lags follows exponential statistics:
+\begin{equation}
+P(\tau_s) = \frac{1}{\langle \tau_s \rangle} e^{-\tau_s / \langle \tau_s \rangle}
+\label{eq:lag_distribution}
+\end{equation}
+
+This exponential distribution arises because scattering is a Poisson process—scattering events occur randomly with a constant rate $1/\langle \tau_s \rangle$.
+
+The mean and variance of the partition lag distribution are:
+\begin{align}
+\text{Mean:} \quad &\langle \tau_s \rangle \\
+\text{Variance:} \quad &\text{Var}(\tau_s) = \langle \tau_s \rangle^2
+\label{eq:lag_statistics}
+\end{align}
+
+The coefficient of variation is unity:
+\begin{equation}
+\text{CV} = \frac{\sqrt{\text{Var}(\tau_s)}}{\langle \tau_s \rangle} = 1
+\label{eq:cv_unity}
+\end{equation}
+
+This indicates that scattering is highly stochastic—individual electrons experience widely varying partition lags. Some electrons scatter almost immediately; others travel much longer than the mean free path before scattering.
+
+However, the ensemble average over $\sim 10^{23}$ electrons produces deterministic behaviour. This is why Ohm's law holds with high precision despite the underlying stochastic scattering process. The law of large numbers ensures that macroscopic currents follow the mean partition lag, not the individual fluctuations.
+
+
+\subsection{Temperature Dependence Revisited}
+
+The partition lag framework provides a deeper understanding of the temperature dependence of resistivity.
+
+At high temperatures ($T > \Theta_D$), phonon scattering dominates. The phonon occupation number is:
+\begin{equation}
+n_{\text{ph}} \approx \frac{k_B T}{\hbar \omega} \propto T
+\label{eq:phonon_occupation}
+\end{equation}
+
+The scattering rate is proportional to phonon density:
+\begin{equation}
+\frac{1}{\tau_{s,\text{phonon}}} \propto n_{\text{ph}} \propto T
+\label{eq:phonon_scattering_rate}
+\end{equation}
+
+Therefore, the partition lag decreases with temperature:
+\begin{equation}
+\tau_{s,\text{phonon}} \propto \frac{1}{T}
+\label{eq:phonon_lag_temperature}
+\end{equation}
+
+The resistivity is inversely proportional to the partition lag:
+\begin{equation}
+\rho = \frac{m_e}{ne^2 \tau_s} \propto \frac{1}{\tau_s} \propto T
+\label{eq:resistivity_temperature_phonon}
+\end{equation}
+
+This explains the linear temperature dependence of resistivity in metals.
+
+At low temperatures ($T \ll \Theta_D$), phonon scattering becomes negligible. The partition lag is determined by impurity and defect scattering:
+\begin{equation}
+\lim_{T \to 0} \tau_s = \tau_0 = \left(\frac{1}{\tau_{\text{impurity}}} + \frac{1}{\tau_{\text{defect}}}\right)^{-1}
+\label{eq:residual_lag}
+\end{equation}
+
+This gives the residual resistivity:
+\begin{equation}
+\rho_0 = \frac{m_e}{ne^2 \tau_0}
+\label{eq:residual_resistivity_lag}
+\end{equation}
+
+The residual resistivity ratio (RRR) is:
+\begin{equation}
+\text{RRR} = \frac{\rho(300\text{ K})}{\rho_0} = \frac{\tau_0}{\tau_s(300\text{ K})}
+\label{eq:rrr_lag}
+\end{equation}
+
+High-purity metals have large $\tau_0$ (few impurities), giving RRR $> 100$. This indicates that phonon scattering dominates at room temperature, while impurity scattering is negligible.
+
+\subsection{Summary}
+
+We have derived Kirchhoff's laws from categorical conservation:
+
+\begin{enumerate}
+\item \textbf{KCL} emerges from categorical state conservation: $\sum_k I_k = 0$ at each junction
+
+\item \textbf{KVL} emerges from S-potential single-valuedness: $\sum_j V_j = 0$ around each loop
+
+\item Series and parallel resistance rules follow from Kirchhoff's laws
+
+\item Capacitors and inductors are incorporated through S-coordinate evolution equations
+
+\item Joule heating emerges from entropy production during partition lag: $P = I^2 R$
+
+\item Partition lag statistics explain why Ohm's law is deterministic despite stochastic scattering
+
+\item Temperature dependence arises from phonon partition lag: $\rho \propto T$ at high temperature
+\end{enumerate}
+
+The next section extends this framework to time-varying electromagnetic fields, deriving Maxwell's equations from S-curl dynamics.

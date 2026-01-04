@@ -1,0 +1,107 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{physics}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\Cspace}{\mathcal{C}}
+\newcommand{\Pspace}{\mathcal{P}}
+\newcommand{\Fspace}{\mathcal{F}}
+\newcommand{\dcat}{d_{\mathcal{C}}}
+
+\title{Partition Terminators and Autocatalytic Cascade Dynamics\\in Charged Particle Ensembles}
+
+\author{Lavoisier Collaboration}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We establish that charged particle systems undergoing sequential partition operations exhibit autocatalytic dynamics governed by charge distribution topology. For a system with initial charge configuration $Q_0$ and partition operator $\Pi$, the $n$-fold application $\Pi^n(Q_0)$ generates a cascade whose rate depends on the charge separation created by prior partitions. We prove that this cascade terminates at configurations satisfying a stability criterion $\delta \Pspace / \delta Q = 0$, which we term partition terminators. The frequency with which terminators appear in ensemble data exceeds random expectation by a factor $\alpha = \exp(\Delta S_{\text{cat}}/k_B)$, where $\Delta S_{\text{cat}}$ is the categorical entropy gained through termination. We derive the kinetic equations governing cascade propagation and prove that the lag-exponential-saturation profile emerges from positive feedback in partition creation. The partition terminator distribution constitutes a complete basis for structural characterization: any charged particle configuration can be expressed as a linear combination of terminator states weighted by pathway accessibility. We present an algorithm for extracting terminators from ensemble data and demonstrate that terminator analysis reduces the dimensionality of structural characterization by a factor of $n^2/\log n$ for systems with partition depth $n$. The framework applies to any charged particle ensemble undergoing sequential dissociation; mass spectrometry of molecular ions provides the experimental context.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Consider a bounded system containing $N$ charged particles with total charge $Q_{\text{total}}$ distributed according to configuration $\rho(\mathbf{r})$. The system evolves through sequential partition operations that redistribute charge among subsystems. Each partition operation $\Pi: \Cspace \to \Cspace \times \Cspace$ maps a configuration to a pair of daughter configurations, conserving total charge:
+\begin{equation}
+    \Pi(Q) = (Q_1, Q_2), \quad Q_1 + Q_2 = Q
+\end{equation}
+
+The central observation of this work is that the rate of partition operations depends on the charge distribution created by prior operations. A partition that creates large charge separation $|Q_1 - Q_2|$ modifies the electrostatic environment in a manner that facilitates subsequent partitions of similar topology. This constitutes positive feedback: partitions catalyze partitions.
+
+The cascade terminates when the system reaches configurations where further partitioning is energetically or topologically forbidden. These terminal configurations---partition terminators---accumulate preferentially and appear in ensemble data with frequency exceeding random expectation. The terminator distribution encodes structural information about the parent system in compressed form.
+
+Section~\ref{sec:charge-partitioning} establishes the mathematical framework of charge partition spaces. Section~\ref{sec:autocatalytic-mechanism} derives the autocatalytic rate equations. Section~\ref{sec:information-catalyst-definition} characterizes partition terminators and their stability criteria. Section~\ref{sec:partition-cascade-dynamics} analyzes cascade kinetics. Section~\ref{sec:catalyst-families} classifies terminators by charge topology. Section~\ref{sec:detection-algorithm} presents the extraction algorithm. Section~\ref{sec:experimental-validation} provides validation against ensemble data. Section~\ref{sec:applications} discusses applications. Section~\ref{sec:partition-integration} integrates with the partition coordinate framework.
+
+\input{sections/charge-partitioning}
+\input{sections/autocatalytic-mechanism}
+\input{sections/information-catalyst-definition}
+\input{sections/partition-cascade-dynamics}
+\input{sections/catalyst-families}
+\input{sections/detection-algorithm}
+\input{sections/experimental-validation}
+\input{sections/applications}
+\input{sections/partition-integration}
+
+\section{Discussion}
+\label{sec:discussion}
+
+The partition terminator framework resolves a long-standing puzzle: why do certain charged configurations appear with disproportionate frequency in dissociation spectra? The conventional explanation invokes thermodynamic stability---stable configurations accumulate because they resist further dissociation. This explanation is correct but incomplete. It does not explain why certain configurations catalyze their own formation from diverse precursors, nor why the frequency enrichment follows the exponential law $\alpha = \exp(\Delta S_{\text{cat}}/k_B)$.
+
+The autocatalytic mechanism provides the missing element. Partition operations create charge separations that modify the local electrostatic environment. This modification facilitates subsequent partitions of similar topology through two mechanisms: electrostatic steering, whereby the charge distribution creates potential gradients that guide subsequent partition axes, and categorical demand, whereby the partition creates an incomplete categorical state that is completed by the next partition.
+
+The distinction between stability and autocatalysis is experimentally testable. Stability predicts that terminator abundance depends only on terminator properties (bond strengths, resonance stabilization). Autocatalysis predicts that terminator abundance also depends on precursor properties (how efficiently the precursor channels into the terminator pathway). The cascade kinetics derived in Section~\ref{sec:partition-cascade-dynamics}---specifically, the lag-exponential-saturation profile---provides a signature of autocatalytic dynamics distinguishable from simple accumulation.
+
+The partition terminator basis established in Theorem~\ref{thm:completeness-terminators} has practical implications. Rather than characterizing charged particle configurations by their full partition coordinate spectra (dimension $2n^2$ for depth $n$), one can characterize by terminator projections (dimension $\sim n^2/\log n$). This compression arises because terminators represent equivalence classes of configurations that share the same terminal state. The compression factor increases with partition depth, making terminator analysis increasingly advantageous for complex systems.
+
+The framework extends naturally to systems with multiple charge carriers. For systems with both positive and negative charges, the partition operator acts on the signed charge distribution, and terminators are configurations where positive and negative partitions reach mutual equilibrium. This extension is relevant for zwitterionic systems and ion pairs.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have established that:
+
+\begin{enumerate}
+    \item Charged particle ensembles undergoing sequential partition operations exhibit autocatalytic dynamics, with partition rate depending on prior charge separation.
+    
+    \item The cascade terminates at partition terminators---configurations satisfying the stability criterion $\delta \Pspace / \delta Q = 0$.
+    
+    \item Terminators appear with frequency enrichment $\alpha = \exp(\Delta S_{\text{cat}}/k_B)$, exceeding random expectation by the exponential of categorical entropy gain.
+    
+    \item Cascade kinetics follow a lag-exponential-saturation profile characteristic of autocatalytic systems.
+    
+    \item The terminator distribution constitutes a complete basis for structural characterization with dimensionality reduction factor $n^2/\log n$.
+    
+    \item The extraction algorithm (Algorithm~\ref{alg:terminator-detection}) identifies terminators from ensemble data with complexity $O(N \log N)$ for $N$ observations.
+\end{enumerate}
+
+The framework provides a principled foundation for interpreting charged particle dissociation data. In mass spectrometry, the terminators correspond to stable fragment ions that appear across diverse precursors---tropylium from aromatics, immonium ions from amino acids, oxonium ions from glycans. These are not merely stable endpoints but active participants in the dissociation cascade, catalyzing their own formation through the autocatalytic mechanism established here.
+
+\section*{Acknowledgments}
+
+This work was supported by the Lavoisier Initiative.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
+

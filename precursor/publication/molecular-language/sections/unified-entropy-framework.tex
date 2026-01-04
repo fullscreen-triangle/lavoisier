@@ -1,0 +1,159 @@
+% ============================================================================
+% UNIFIED ENTROPY FRAMEWORK
+% ============================================================================
+\section{Unified Entropy Framework}
+\label{sec:unified-entropy}
+
+The molecular language framework derives from a deeper theoretical structure establishing the equivalence of oscillatory, categorical, and partition-based descriptions of entropy. This section presents the unified framework underlying peptide sequence reconstruction.
+
+\subsection{The Fundamental Equivalence}
+
+\begin{theorem}[Triple Equivalence Theorem]
+For any system with $M$ degrees of freedom and $n$ states per degree of freedom, three apparently distinct counting methods yield identical entropy:
+\begin{equation}
+S_{\text{oscillatory}} = S_{\text{categorical}} = S_{\text{partition}} = k_B M \ln n
+\label{eq:triple-entropy}
+\end{equation}
+\end{theorem}
+
+For amino acid sequences:
+\begin{itemize}
+    \item \textbf{Oscillatory}: Each residue position has $n = 20$ amino acid ``vibrational modes''
+    \item \textbf{Categorical}: Sequence space is $20^M$ categorical states for length $M$
+    \item \textbf{Partition}: Building a sequence requires $M$ partitions, each selecting from 20 options
+\end{itemize}
+
+\subsection{Resolution of Maxwell's Demon in Sequence Reconstruction}
+
+The Molecular Maxwell Demon (MMD) orchestration system does not employ an actual ``demon.'' The name describes the sophisticated categorical completion dynamics:
+
+\begin{proposition}[No Demon Required]
+Peptide sequence reconstruction proceeds through automatic categorical completion:
+\begin{enumerate}
+    \item Fragment observations partition sequence space
+    \item Each observation eliminates impossible sequences (entropy reduction)
+    \item Categorical completion fills gaps through minimum-entropy paths
+    \item No intelligent agent is required---the process is deterministic
+\end{enumerate}
+\end{proposition}
+
+The ``demon'' metaphor explains why reconstruction \emph{appears} intelligent: the algorithm seems to ``know'' which sequences are valid. In reality, this is categorical completion through fragment graph topology.
+
+\subsection{Partition Lag in Fragment Observation}
+
+Each spectral observation is a partition operation with positive duration:
+
+\begin{definition}[Observation as Partition]
+Fragment detection partitions the mass space:
+\begin{equation}
+\text{Mass space} \xrightarrow{\text{observation}} \{\text{detected}\} \cup \{\text{not detected}\}
+\end{equation}
+This partition takes time $\tau_p > 0$, during which the ion population evolves.
+\end{definition}
+
+\begin{theorem}[Irreversibility of Observation]
+Fragment observation is irreversible:
+\begin{equation}
+\text{Compose}(\text{Observe}(S)) \neq S
+\end{equation}
+The original spectrum $S$ cannot be reconstructed from observation records because undetermined residue (timing jitter, intensity fluctuations) is lost.
+\end{theorem}
+
+This explains why:
+\begin{enumerate}
+    \item Replicate spectra differ slightly (partition residue varies)
+    \item Sequence reconstruction is approximate (categorical completion fills gaps)
+    \item Higher coverage improves reconstruction (more partitions constrain the sequence)
+\end{enumerate}
+
+\subsection{Heat-Entropy Decoupling in Fragmentation}
+
+Collision-induced dissociation involves both heat transfer and entropy production, but these are decoupled:
+
+\begin{axiom}[Heat-Entropy Independence]
+During fragmentation:
+\begin{align}
+\text{Energy flow:} &\quad \Delta E_{\text{collision}} \text{ (instrument-dependent)} \\
+\text{Entropy change:} &\quad \Delta S_{\text{fragmentation}} > 0 \text{ (always positive, topology-determined)}
+\end{align}
+\end{axiom}
+
+Platform independence arises because:
+\begin{itemize}
+    \item Different instruments deposit different energies (CID vs HCD vs ETD)
+    \item But all observe the same categorical fragmentation structure
+    \item S-Entropy coordinates capture the categorical invariant
+\end{itemize}
+
+\subsection{S-Entropy Coordinates from Partition Theory}
+
+The amino acid S-Entropy transformation:
+\begin{equation}
+\phi_{AA}: \mathcal{A} \to [0, 1]^3
+\end{equation}
+maps each amino acid to coordinates derived from partition operations on physicochemical properties:
+
+\begin{definition}[Amino Acid S-Entropy Mapping]
+\begin{align}
+S_k &= \sigma\left(\frac{H - \mu_H}{\sigma_H}\right) \quad \text{(hydrophobicity partition)} \\
+S_t &= \sigma\left(\frac{V - \mu_V}{\sigma_V}\right) \quad \text{(volume partition)} \\
+S_e &= \sigma\left(\frac{q^2 - \mu_q}{\sigma_q}\right) \quad \text{(charge partition)}
+\end{align}
+where $\sigma$ is the sigmoid function normalizing to $[0, 1]$.
+\end{definition}
+
+Each coordinate represents a partition of the amino acid property space:
+\begin{itemize}
+    \item $S_k$: Partitions by hydrophobic/hydrophilic character
+    \item $S_t$: Partitions by size (small/medium/large)
+    \item $S_e$: Partitions by charge (negative/neutral/positive)
+\end{itemize}
+
+\subsection{Fragment Graph as Partition Tree}
+
+The fragment graph $G_F = (V, E)$ is equivalently a partition tree:
+
+\begin{proposition}[Graph-Tree Equivalence]
+The directed fragment graph represents sequential partitioning of the precursor:
+\begin{equation}
+\text{Precursor} \xrightarrow{e_1} \text{Fragment}_1 \xrightarrow{e_2} \cdots \xrightarrow{e_n} \text{Terminus}
+\end{equation}
+Each edge $e_i$ represents one amino acid ``partition'' from the sequence.
+\end{proposition}
+
+Path finding in this graph is equivalent to identifying the partition sequence:
+\begin{itemize}
+    \item Hamiltonian path = complete partition sequence = full amino acid sequence
+    \item Partial path = incomplete partitioning = sequence with gaps
+    \item Minimum-entropy path = most probable partition order
+\end{itemize}
+
+\subsection{Categorical Completion via KD-Tree}
+
+The dictionary KD-tree implements categorical completion through spatial partitioning:
+
+\begin{definition}[KD-Tree as Partition Structure]
+A KD-tree in S-Entropy space recursively partitions:
+\begin{align}
+\text{Level 1:} &\quad \text{Partition by } S_k \\
+\text{Level 2:} &\quad \text{Partition by } S_t \\
+\text{Level 3:} &\quad \text{Partition by } S_e
+\end{align}
+Nearest-neighbor lookup is partition refinement until a unique leaf is reached.
+\end{definition}
+
+This provides $O(\log |\mathcal{E}|)$ categorical completion---the algorithm partitions the dictionary space until the unknown amino acid's categorical state is identified.
+
+\subsection{Unified Formula Application}
+
+The unified entropy formula $S = k_B M \ln n$ governs the entire pipeline:
+
+\begin{enumerate}
+    \item \textbf{Sequence Entropy}: $S_{\text{seq}} = k_B L \ln 20$ for length $L$ peptide
+    \item \textbf{Fragment Entropy}: $S_{\text{frag}} = k_B N_f \ln 2$ for $N_f$ binary fragment decisions
+    \item \textbf{Path Entropy}: $S_{\text{path}} = k_B \sum_i \ln d_i$ where $d_i$ is node degree
+    \item \textbf{Gap Entropy}: $S_{\text{gap}} = k_B n_g \ln 20^{L_g}$ for gap of length $L_g$
+\end{enumerate}
+
+Minimum-entropy path finding selects the sequence reconstruction with lowest total categorical entropy---the most constrained (highest confidence) interpretation of the spectral data.
+

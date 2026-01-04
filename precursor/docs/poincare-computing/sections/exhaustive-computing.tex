@@ -1,0 +1,659 @@
+\section{Exhaustive Exploration and Emergent Memory}
+\label{sec:exhaustive}
+
+One of the most striking differences between Poincaré Computing and traditional computation lies in their behavior when not actively solving a problem. A Turing machine, upon reaching a halting state, stops: the tape head freezes, the state remains fixed, and no further computation occurs until a new input is provided and the machine is restarted. The machine is either computing (executing transitions) or halted (doing nothing), with no intermediate state. Memory is explicitly stored on the tape through write operations, and the machine's capability remains static unless it is reprogrammed.
+
+Poincaré Computing exhibits fundamentally different behavior. The categorical dynamics have no halting condition: trajectories continue to evolve indefinitely, exploring phase space even when no problem is actively being solved. This continuous exploration is not wasted motion but serves multiple computational purposes: it accumulates an implicit \textbf{exploration memory} of visited regions in $\Sspace$, it discovers alternative solution paths that provide robustness, and it progressively reduces the complexity of solving related problems. Memory emerges from the trajectory history rather than from explicit storage operations, and computational capability increases monotonically with time through a process we call \textbf{self-refinement}.
+
+This section establishes the mathematical foundations of these emergent properties. We prove that the categorical dynamics never halt (Theorem~\ref{thm:inexhaustibility}), that the exploration memory grows monotonically and eventually covers all of $\Sspace$ (Theorem~\ref{thm:asymptotic_exhaustion}), and that memory accumulates simply by the system existing (Theorem~\ref{thm:existence_memory}). We show that prior exploration reduces the complexity of subsequent related problems (Theorem~\ref{thm:complexity_reduction}), with the reduction scaling logarithmically with problem relatedness (Theorem~\ref{thm:related_acceleration}). We prove that idle exploration is computationally productive, discovering alternative solution paths and increasing path redundancy (Theorem~\ref{thm:productive_idleness}). Finally, we establish that system capability is monotonically non-decreasing (Theorem~\ref{thm:capability_monotonicity}), leading to automatic self-refinement without external programming (Theorem~\ref{thm:self_refinement}).
+
+These results have profound implications for computational architecture. They suggest that Poincaré Computing systems naturally develop "expertise" in domains through repeated exposure to related problems, that idle time is productive rather than wasted, and that computational capability accumulates as an inevitable consequence of existence. This stands in stark contrast to traditional systems, where capability is static and idle time is unproductive.
+
+\subsection{Non-Halting Dynamics}
+
+We begin by establishing that the categorical dynamics have no halting condition, in contrast to Turing machines which are designed to halt upon reaching accept or reject states.
+
+\begin{theorem}[Inexhaustibility]
+\label{thm:inexhaustibility}
+The categorical dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt} have no halting condition. For almost every initial state $\Scoord_0 \in \Sspace$, the trajectory $\gamma(t)$ is defined for all $t \in [0, \infty)$ and satisfies:
+\begin{equation}
+\left\|\frac{d\Scoord}{dt}\right\| = \|\mathbf{F}(\Scoord(t))\| > 0 \quad \text{for almost all } t \geq 0
+\label{eq:nonzero_velocity}
+\end{equation}
+The trajectory never stops moving through $\Sspace$.
+\end{theorem}
+
+\begin{proof}
+We establish two properties: (1) solutions exist for all time, and (2) the trajectory has non-zero velocity almost everywhere.
+
+\textbf{(1) Global existence:} The categorical dynamics are defined by the vector field $\mathbf{F}: \Sspace \to \mathbb{R}^3$ (equation~\eqref{eq:vector_field}):
+\begin{equation}
+\frac{d\Scoord}{dt} = \mathbf{F}(\Scoord)
+\end{equation}
+
+The vector field $\mathbf{F}$ is smooth (infinitely differentiable) on the interior of $\Sspace$ because it is composed of polynomial and trigonometric functions. On the compact domain $\Sspace = [0,1]^3$, smooth vector fields are Lipschitz continuous: there exists a constant $L > 0$ such that:
+\begin{equation}
+\|\mathbf{F}(\Scoord_1) - \mathbf{F}(\Scoord_2)\| \leq L \|\Scoord_1 - \Scoord_2\| \quad \forall \Scoord_1, \Scoord_2 \in \Sspace
+\end{equation}
+
+By the Picard-Lindelöf theorem (also called the Cauchy-Lipschitz theorem) \citep{arnold1989mathematical}, for any initial condition $\Scoord_0 \in \Sspace$, there exists a unique solution $\gamma: [0, T_{\max}) \to \Sspace$ where $T_{\max}$ is the maximal time of existence. For Lipschitz continuous vector fields on compact domains, $T_{\max} = \infty$: solutions exist for all time.
+
+This is because solutions can only cease to exist if they "escape to infinity" (leave the domain) or encounter a singularity (point where $\mathbf{F}$ is not defined). Since $\Sspace$ is compact and $\mathbf{F}$ is smooth everywhere on $\Sspace$, neither can occur. Therefore, $\gamma(t)$ is defined for all $t \in [0, \infty)$.
+
+\textbf{(2) Non-zero velocity:} The velocity of the trajectory is $\|\dot{\gamma}(t)\| = \|\mathbf{F}(\gamma(t))\|$. The trajectory has zero velocity only at fixed points where $\mathbf{F}(\Scoord) = 0$.
+
+By Theorem~\ref{thm:fixed_points}, the categorical dynamics admit fixed points only at $\Scoord_1^* = (0,0,0)$ and $\Scoord_2^* = (1/2, 1/2, 1/2)$ (and their periodic equivalents under the torus topology). The set of fixed points is finite, hence has measure zero in $\Sspace$.
+
+For almost every initial condition $\Scoord_0$ (all except a measure-zero set), the trajectory $\gamma(t)$ avoids fixed points for all $t > 0$. At any point $\Scoord \neq \Scoord_i^*$, the vector field satisfies $\|\mathbf{F}(\Scoord)\| > 0$ (by continuity and the fact that $\mathbf{F}$ vanishes only at fixed points). Therefore, $\|\dot{\gamma}(t)\| > 0$ for almost all $t$.
+
+Combining (1) and (2), we conclude that for almost every initial state, the trajectory exists for all time and has non-zero velocity almost everywhere, establishing inexhaustibility.
+\end{proof}
+
+\begin{corollary}[No Halt State]
+\label{cor:no_halt}
+Unlike Turing machines, which halt upon reaching designated accept or reject states, Poincaré Computing systems have no mechanism for termination. The dynamics continue indefinitely, regardless of whether a solution has been found.
+\end{corollary}
+
+\begin{proof}
+In a Turing machine, the transition function $\delta: Q \times \Gamma \to Q \times \Gamma \times \{L, R\}$ is undefined for certain states $q \in Q$ (the halting states $q_{\text{accept}}$ and $q_{\text{reject}}$). When the machine enters a halting state, no further transitions are defined, and the machine stops.
+
+In Poincaré Computing, the vector field $\mathbf{F}$ is defined everywhere on $\Sspace$ (Theorem~\ref{thm:inexhaustibility}). There are no "halting states" where the dynamics are undefined. Even at fixed points (where $\mathbf{F} = 0$), the dynamics are defined—the trajectory simply remains at the fixed point. For almost every initial condition, the trajectory avoids fixed points and continues moving indefinitely.
+
+Therefore, there is no halting mechanism in Poincaré Computing. The system never stops.
+\end{proof}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_ensemble_sliding_window.png}
+\caption{\textbf{Virtual Gas Ensemble: One Molecule Becomes All Through S-Entropy Sliding Windows.} 
+\textbf{Window $t_1$: Observing $\alpha$:} Left diagram shows observation window (blue circle $\alpha$) isolated from $\beta$ and $\gamma$ (dashed lines). S-entropy coordinates $\mathbf{S} = [1.00, 1.00, 0.91]$. Right radar chart shows full hexagonal profile for molecule $\alpha$---all six hardware dimensions active. During this window, only $\alpha$ exists observationally. 
+\textbf{Window $t_2$: $\alpha + \beta$:} Left diagram shows window expanded to include both $\alpha$ (blue) and $\beta$ (magenta), with $\gamma$ still excluded. S-entropy coordinates $\mathbf{S} = [1.00, 1.00, 0.20]$. Right radar chart shows molecule $\beta$ with triangular profile (three dominant dimensions). The observation window has slid through S-entropy space, and the measured molecule is now $\beta$. 
+\textbf{Window $t_3$: $\beta + \gamma$:} Left diagram shows window shifted to include $\beta$ and $\gamma$ (orange), excluding $\alpha$. S-entropy coordinates $\mathbf{S} = [1.00, 1.00, 0.94]$. Right radar chart shows molecule $\gamma$ with pentagonal profile (five active dimensions). The window continues sliding, and $\gamma$ is now observed. 
+\textbf{Window $t_4$: Cycle Complete:} Left diagram shows window returned to original configuration (all three molecules visible). S-entropy coordinates $\mathbf{S} = [1.00, 1.00, 0.91]$ (same as $t_1$). Right radar chart shows all three molecules overlaid (blue $\alpha$, magenta $\beta$, orange $\gamma$), demonstrating that the ``three molecules'' are the same categorical state observed at different S-coordinates. 
+\textbf{Key Insight (Bottom Text):} ``Each molecule exists only during measurement. As the observation window slides through S-entropy space, the measured molecule (shown with full radar chart) assumes the identity of each molecule in sequence. The `three molecules' are the same categorical state observed at different S-coordinates.'' This demonstrates the fiber bundle structure (Theorem~\ref{thm:fiber_bundle_formal}): multiple categorical states project to the same observable, and sliding the observation window through the fiber reveals different categorical identities. 
+\textbf{Interactions Legend:} Van der Waals (gray lines), Dipole-Dipole (orange lines), Vibrational (purple lines). Interaction types change as the window slides, reflecting different categorical relationships at different S-coordinates.}
+\label{fig:sliding_window_observation}
+\end{figure}
+
+\begin{remark}[Solution Recognition vs. Halting]
+\label{rem:solution_vs_halting}
+It is crucial to distinguish between \textit{solution recognition} (detecting that a problem has been solved) and \textit{halting} (stopping the dynamics). In Poincaré Computing, solution recognition occurs when the trajectory satisfies the closure condition $L_n \sim L_1$ (Theorem~\ref{thm:closure_recognition}), but this recognition does not halt the dynamics. The trajectory continues to evolve after the solution is recognized.
+
+This is analogous to a Turing machine that prints its output but continues executing (perhaps performing additional computations or entering an infinite loop). The difference is that in Poincaré Computing, the continued execution is not an error or inefficiency but is an essential feature: the continued exploration accumulates memory and reduces the complexity of future problems, as we establish below.
+\end{remark}
+
+\subsection{Exploration Memory}
+
+The continuous evolution of the trajectory through $\Sspace$ creates an implicit memory structure: the set of regions (categories) that have been visited. This \textbf{exploration memory} is not stored explicitly in a data structure but emerges from the trajectory history.
+
+\begin{definition}[Exploration Memory]
+\label{def:exploration_memory}
+The \textbf{exploration memory} at time $T$ is the set of categories (cells in the hierarchical partition $\mathcal{P}_k$) that have been visited by the trajectory up to time $T$:
+\begin{equation}
+\mathcal{M}(T) = \left\{ C \in \mathcal{P}_k : \exists t \in [0, T], \gamma(t) \in C \right\}
+\label{eq:exploration_memory}
+\end{equation}
+
+Equivalently, $\mathcal{M}(T)$ is the set of cells whose interiors intersect the trajectory:
+\begin{equation}
+\mathcal{M}(T) = \left\{ C \in \mathcal{P}_k : C \cap \gamma([0, T]) \neq \emptyset \right\}
+\end{equation}
+\end{definition}
+
+The exploration memory records which regions of phase space have been explored. This information is implicit: it is not stored in a separate memory device but is encoded in the trajectory itself. To determine whether a cell $C$ has been visited, one must examine the trajectory history $\gamma([0, T])$.
+
+\begin{proposition}[Memory Monotonicity]
+\label{prop:memory_monotonicity}
+Exploration memory is monotonically non-decreasing: once a category is visited, it remains in the exploration memory forever.
+\begin{equation}
+T_1 < T_2 \implies \mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)
+\label{eq:memory_monotonicity}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+If a category $C$ was visited at some time $t_1 \in [0, T_1]$, then $\gamma(t_1) \in C$, so $C \in \mathcal{M}(T_1)$ by definition. For any $T_2 > T_1$, the trajectory segment $\gamma([0, T_1])$ is a subset of $\gamma([0, T_2])$, so $\gamma(t_1) \in C$ still holds. Therefore, $C \in \mathcal{M}(T_2)$.
+
+This establishes that every category in $\mathcal{M}(T_1)$ is also in $\mathcal{M}(T_2)$, giving $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$.
+
+Crucially, there is no mechanism for "forgetting" or removing categories from $\mathcal{M}$. The exploration memory only grows; it never shrinks.
+\end{proof}
+
+\begin{definition}[Memory Density]
+\label{def:memory_density}
+The \textbf{memory density} at time $T$ is the fraction of the categorical space that has been explored:
+\begin{equation}
+\rho_M(T) = \frac{|\mathcal{M}(T)|}{|\mathcal{P}_k|} = \frac{|\mathcal{M}(T)|}{3^{3k}}
+\label{eq:memory_density}
+\end{equation}
+where $|\mathcal{M}(T)|$ is the number of visited categories and $|\mathcal{P}_k| = 3^{3k}$ is the total number of categories at depth $k$ (Section~\ref{sec:finite_space}).
+
+The memory density satisfies $0 \leq \rho_M(T) \leq 1$, with $\rho_M(T) = 0$ meaning no exploration has occurred and $\rho_M(T) = 1$ meaning the entire categorical space has been visited.
+\end{definition}
+
+\begin{theorem}[Asymptotic Exhaustion]
+\label{thm:asymptotic_exhaustion}
+For ergodic measure-preserving dynamics on $\Sspace$, the exploration memory eventually covers the entire categorical space:
+\begin{equation}
+\lim_{T \to \infty} \rho_M(T) = 1
+\label{eq:asymptotic_exhaustion}
+\end{equation}
+Almost every category is visited given sufficient time.
+\end{theorem}
+
+\begin{proof}
+We apply Birkhoff's ergodic theorem \citep{birkhoff1931proof}, which states that for an ergodic measure-preserving transformation $\varphi_t$ on a probability space $(X, \mu)$, the time average of any integrable function $f$ equals the space average:
+\begin{equation}
+\lim_{T \to \infty} \frac{1}{T} \int_0^T f(\varphi_t(x)) \, dt = \int_X f \, d\mu \quad \text{for } \mu\text{-almost every } x
+\end{equation}
+
+For any category $C \in \mathcal{P}_k$, define the indicator function:
+\begin{equation}
+\mathbf{1}_C(\Scoord) = \begin{cases}
+1 & \text{if } \Scoord \in C \\
+0 & \text{if } \Scoord \notin C
+\end{cases}
+\end{equation}
+
+Applying Birkhoff's theorem with $f = \mathbf{1}_C$ and $x = \Scoord_0$:
+\begin{equation}
+\lim_{T \to \infty} \frac{1}{T} \int_0^T \mathbf{1}_C(\gamma(t)) \, dt = \int_{\Sspace} \mathbf{1}_C \, d\mu = \mu(C)
+\end{equation}
+
+The left-hand side is the fraction of time the trajectory spends in category $C$. Since each category has positive measure $\mu(C) = 3^{-3k} > 0$ (categories have equal measure in the uniform partition), the time average is positive:
+\begin{equation}
+\lim_{T \to \infty} \frac{1}{T} \int_0^T \mathbf{1}_C(\gamma(t)) \, dt = 3^{-3k} > 0
+\end{equation}
+
+This implies that the trajectory spends a positive fraction of time in $C$, which means the trajectory visits $C$ infinitely often. In particular, $C$ is visited at least once, so $C \in \mathcal{M}(T)$ for sufficiently large $T$.
+
+Since this argument applies to every category $C \in \mathcal{P}_k$, we conclude that every category is eventually visited. Therefore:
+\begin{equation}
+\lim_{T \to \infty} |\mathcal{M}(T)| = |\mathcal{P}_k| = 3^{3k}
+\end{equation}
+
+Dividing by $3^{3k}$ gives $\lim_{T \to \infty} \rho_M(T) = 1$.
+\end{proof}
+
+\begin{remark}[Ergodicity Assumption]
+\label{rem:ergodicity}
+Theorem~\ref{thm:asymptotic_exhaustion} assumes that the categorical dynamics are ergodic. Ergodicity means that the phase space cannot be decomposed into invariant subsets: the trajectory eventually explores all regions, rather than being confined to a subset. For the categorical dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt} with generic parameters (non-resonant frequencies, non-zero coupling constants), ergodicity is expected to hold by the KAM theorem and related results in dynamical systems theory \citep{arnold1989mathematical}. However, for special parameter values (e.g., integrable systems with zero coupling), the dynamics may be non-ergodic, and Theorem~\ref{thm:asymptotic_exhaustion} may not apply.
+\end{remark}
+
+\subsection{Memory by Existence}
+
+A profound property of Poincaré Computing is that memory accumulates simply by the system existing and evolving. No explicit storage operations (write instructions, memory allocations) are required.
+
+\begin{theorem}[Existence Implies Memory]
+\label{thm:existence_memory}
+A Poincaré Computing system accumulates memory by existing. The memory content at time $T$ is precisely the trajectory history:
+\begin{equation}
+\text{Memory}(T) = \mathcal{M}(T) = \{\text{categories visited by } \gamma([0, T])\}
+\label{eq:existence_memory}
+\end{equation}
+No explicit storage mechanism, write operation, or memory allocation is required. Memory emerges from the dynamics alone.
+\end{theorem}
+
+\begin{proof}
+The trajectory $\gamma: [0, T] \to \Sspace$ is uniquely determined by the initial state $\Scoord_0$ and the dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt} (by the Picard-Lindelöf theorem). Each point $\gamma(t)$ visited by the trajectory is a categorical state encoding information through the identity unification (Theorem~\ref{thm:identity_unification}): the state simultaneously encodes memory address (via $\pi_M$), processor configuration (via $\pi_P$), and semantic content (via $\pi_S$).
+
+The set of visited states $\{\gamma(t) : 0 \leq t \leq T\}$ is the trajectory history. By Definition~\ref{def:exploration_memory}, the exploration memory $\mathcal{M}(T)$ is the set of categories containing points in this history. Therefore, the memory content is precisely the trajectory history, discretized to the resolution of the hierarchical partition $\mathcal{P}_k$.
+
+This memory emerges from the dynamics alone: the differential equations~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt} determine the trajectory, and the trajectory determines the memory. No additional storage mechanism is required. The system accumulates memory simply by existing and evolving through time.
+\end{proof}
+
+\begin{corollary}[No Processor-Memory Separation]
+\label{cor:no_separation}
+In Poincaré Computing, there is no distinction between "processor running" and "memory storing." The processor's exploration \textit{is} the memory's content. Computation and storage are identical operations, not separate processes.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:identity_unification}, each categorical state $\Scoord(t)$ simultaneously encodes:
+\begin{itemize}
+    \item Memory address: $\pi_M(\Scoord(t))$ (where data is located)
+    \item Processor configuration: $\pi_P(\Scoord(t))$ (what operation is being performed)
+    \item Semantic content: $\pi_S(\Scoord(t))$ (what the data means)
+\end{itemize}
+
+By Theorem~\ref{thm:existence_memory}, the memory content is the trajectory history $\gamma([0, T])$, which is the sequence of categorical states visited by the processor.
+
+Therefore, the processor's activity (evolving through categorical states) and the memory's content (the set of visited states) are the same mathematical object: the trajectory $\gamma$. There is no separation between "processor" and "memory" as distinct entities. The processor's exploration \textit{is} the memory's storage.
+
+This unification is more radical than the von Neumann bottleneck elimination (Proposition~\ref{prop:bottleneck_elimination}), which merely removes the communication channel between processor and memory. Here, we establish that processor and memory are not separate entities connected by a channel, but are \textit{identical}: different projections of the same trajectory.
+\end{proof}
+
+\begin{remark}[Implications for Architecture]
+\label{rem:architecture_implications}
+Corollary~\ref{cor:no_separation} has profound implications for computer architecture. In traditional systems, the processor (CPU) and memory (RAM) are physically separate components, with distinct power supplies, clock domains, and control logic. Data must be explicitly moved between them, consuming energy and time.
+
+In Poincaré Computing, there is no physical separation: the categorical state $\Scoord(t)$ is the unified processor-memory entity. As the state evolves, both "computation" (processor activity) and "storage" (memory content) occur simultaneously. This suggests a radically different hardware architecture in which the distinction between processing units and memory units is eliminated, replaced by a unified state-evolution substrate.
+\end{remark}
+
+\subsection{Conditional Complexity and Self-Improvement}
+
+The exploration memory accumulated through prior computation reduces the complexity of solving subsequent problems, particularly problems that are related to previously solved problems.
+
+\begin{definition}[Conditional Poincaré Complexity]
+\label{def:conditional_complexity}
+The \textbf{conditional Poincaré complexity} of problem $P$ given exploration memory $\mathcal{M}$ is the minimum number of local solutions required to recognize closure, when some categories are already explored:
+\begin{equation}
+\Pi(P \mid \mathcal{M}) = \inf \left\{ n : \exists \text{ solution chain } (L_1, \ldots, L_n) \text{ with } \bigcup_{i=1}^n \text{supp}(L_i) \subseteq \mathcal{M} \right\}
+\label{eq:conditional_complexity}
+\end{equation}
+where $\text{supp}(L_i) \subseteq \Sspace$ is the support of local solution $L_i$—the region of phase space where $L_i$ is recognized.
+
+The conditional complexity measures how many new local solutions must be discovered, given that some regions of $\Sspace$ have already been explored.
+\end{definition}
+
+\begin{theorem}[Complexity Reduction]
+\label{thm:complexity_reduction}
+Exploration never increases complexity: as exploration memory grows, the conditional complexity of any fixed problem decreases or remains constant.
+\begin{equation}
+T_1 < T_2 \implies \Pi(P \mid \mathcal{M}(T_2)) \leq \Pi(P \mid \mathcal{M}(T_1))
+\label{eq:complexity_reduction}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By Proposition~\ref{prop:memory_monotonicity}, the exploration memory is non-decreasing: $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$ for $T_1 < T_2$.
+
+Consider any solution chain $(L_1, \ldots, L_n)$ that is valid given exploration memory $\mathcal{M}(T_2)$ (meaning $\bigcup_i \text{supp}(L_i) \subseteq \mathcal{M}(T_2)$). Since $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$, this chain may or may not be valid for $\mathcal{M}(T_1)$ (it is valid only if $\bigcup_i \text{supp}(L_i) \subseteq \mathcal{M}(T_1)$).
+
+However, any solution chain that is valid for $\mathcal{M}(T_1)$ remains valid for $\mathcal{M}(T_2)$ (because $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$ implies that any region explored by time $T_1$ is still explored at time $T_2$). Therefore, the set of valid solution chains for $\mathcal{M}(T_2)$ is a superset of the valid chains for $\mathcal{M}(T_1)$:
+\begin{equation}
+\{\text{valid chains for } \mathcal{M}(T_1)\} \subseteq \{\text{valid chains for } \mathcal{M}(T_2)\}
+\end{equation}
+
+Taking the infimum over chain lengths:
+\begin{equation}
+\Pi(P \mid \mathcal{M}(T_2)) = \inf\{\text{lengths of valid chains for } \mathcal{M}(T_2)\} \leq \inf\{\text{lengths of valid chains for } \mathcal{M}(T_1)\} = \Pi(P \mid \mathcal{M}(T_1))
+\end{equation}
+
+Therefore, conditional complexity is non-increasing as exploration memory grows.
+\end{proof}
+
+\begin{corollary}[Self-Improvement]
+\label{cor:self_improvement}
+A Poincaré Computing system improves its problem-solving capability over time without external modification or reprogramming. For any fixed problem $P$, the complexity $\Pi(P \mid \mathcal{M}(T))$ decreases (or remains constant) as $T$ increases.
+\end{corollary}
+
+\begin{proof}
+This is an immediate consequence of Theorem~\ref{thm:complexity_reduction}: as time progresses, exploration memory grows (Proposition~\ref{prop:memory_monotonicity}), and conditional complexity decreases. The system becomes progressively better at solving problem $P$ simply by existing and exploring, without any external intervention.
+\end{proof}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/exhaustive_computing_panel.png}
+\caption{\textbf{Experimental validation of exhaustive computing properties in Poincaré Computing systems.} 
+\textbf{(A)} Non-halting exploration: Memory density (fraction of phase space explored) asymptotically approaches unity but never reaches full exploration, demonstrating that the system continues indefinitely without a halting condition. 
+\textbf{(B)} Capability monotonicity: Computational capability (measured as the number of distinct solution trajectories discovered) increases monotonically with time, establishing that the system can only improve through existence and never loses previously acquired capability. 
+\textbf{(C)} Related problem acceleration: Acceleration factor (ratio of solution time for related problems to baseline problem) decreases as problem similarity increases (measured by distance $\delta$ in S-entropy space), confirming that prior exploration reduces complexity for nearby problems through conditional complexity reduction. 
+\textbf{(D)} Progressive refinement: Complexity (measured in Poincaré units) decreases systematically across a sequence of related problems, with the "After" condition (following prior exploration) showing consistently lower complexity than the "Before" condition (no prior exploration), demonstrating irreversible capability accumulation. 
+\textbf{(E)} Productive idleness: The number of distinct paths to a target solution increases continuously even during idle periods (no new problems introduced), establishing that exploration continues productively in the absence of external input and builds robustness through path redundancy. 
+\textbf{(F)} Memory by existence: Trajectory visualization in a 2D projection of S-entropy space, with points colored by visit order, demonstrates that memory emerges from the exploration history without explicit storage---earlier visits (purple) cluster in certain regions while later visits (yellow) explore complementary regions, with the complete trajectory encoding the system's computational history.}
+\label{fig:exhaustive_validation}
+\end{figure}
+
+\begin{remark}[Contrast with Traditional Systems]
+\label{rem:traditional_contrast}
+In traditional computation, a system's capability is static: a Turing machine with a fixed transition function $\delta$ has fixed time complexity $T(n)$ for any given problem. To improve the system's performance, one must modify the transition function (reprogram the machine) or upgrade the hardware (increase clock speed, add memory).
+
+In Poincaré Computing, by contrast, capability improves automatically through continued operation. No reprogramming or hardware upgrade is required. The system learns from its own exploration, accumulating knowledge (exploration memory) that reduces the complexity of future problems. This is a form of \textit{implicit learning} or \textit{self-improvement} that has no analog in traditional computation.
+\end{remark}
+
+\subsection{Related Problem Benefit}
+
+The complexity reduction is particularly pronounced for problems that are related to previously solved problems, in the sense that their initial states are nearby in $\Sspace$.
+
+\begin{definition}[Problem Relatedness]
+\label{def:problem_relatedness}
+Two problems $P_1 = (\Scoord_0^{(1)}, \mathcal{C}_1, \epsilon)$ and $P_2 = (\Scoord_0^{(2)}, \mathcal{C}_2, \epsilon)$ are \textbf{$\delta$-related} if their initial states are within distance $\delta$ in $\Sspace$:
+\begin{equation}
+\|\Scoord_0^{(1)} - \Scoord_0^{(2)}\| < \delta
+\label{eq:problem_relatedness}
+\end{equation}
+
+Intuitively, related problems have similar initial conditions and are likely to have overlapping solution trajectories.
+\end{definition}
+
+\begin{theorem}[Related Problem Acceleration]
+\label{thm:related_acceleration}
+Let $P_1$ and $P_2$ be $\delta$-related problems. If $P_1$ is solved at time $T_1$ with solution trajectory $\gamma_1$, then the conditional complexity of $P_2$ satisfies:
+\begin{equation}
+\Pi(P_2 \mid \mathcal{M}(T_1)) \leq \Pi(P_2) - \Omega\left(\log_3\frac{1}{\delta}\right)
+\label{eq:related_acceleration}
+\end{equation}
+The complexity reduction scales logarithmically with the relatedness parameter $\delta$.
+\end{theorem}
+
+\begin{proof}
+The solution trajectory $\gamma_1$ for problem $P_1$ starts at $\Scoord_0^{(1)}$ and explores a region of $\Sspace$ in the vicinity of $\Scoord_0^{(1)}$. Since $P_2$ has initial state $\Scoord_0^{(2)}$ within distance $\delta$ of $\Scoord_0^{(1)}$, the trajectory $\gamma_1$ passes through categories in a $\delta$-neighborhood of $\Scoord_0^{(2)}$.
+
+In the hierarchical partition $\mathcal{P}_k$, categories (cells) at depth $k$ have diameter approximately $3^{-k}$. Two points within distance $\delta$ share ancestors in the hierarchical tree up to depth $k^* \approx \log_3(1/\delta)$: the smallest cells containing both points have diameter $\approx \delta$.
+
+By solving $P_1$, the trajectory $\gamma_1$ visits at least $k^*$ levels of the hierarchy in the neighborhood of $\Scoord_0^{(2)}$. These visited categories are added to the exploration memory $\mathcal{M}(T_1)$. When solving $P_2$, the solution chain can leverage these already-explored categories, reducing the number of new local solutions required by at least $k^* = \Omega(\log_3(1/\delta))$.
+
+Therefore:
+\begin{equation}
+\Pi(P_2 \mid \mathcal{M}(T_1)) \leq \Pi(P_2) - k^* = \Pi(P_2) - \Omega(\log_3(1/\delta))
+\end{equation}
+\end{proof}
+
+\begin{corollary}[Progressive Refinement]
+\label{cor:progressive_refinement}
+A sequence of increasingly related problems $P_1, P_2, \ldots, P_n$ with relatedness parameters $\delta_i = \|\Scoord_0^{(i+1)} - \Scoord_0^{(i)}\|$ satisfying $\delta_i \to 0$ achieves:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) = O(1)
+\label{eq:progressive_refinement}
+\end{equation}
+As the problems become increasingly related, the conditional complexity approaches a constant.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:related_acceleration}, each problem $P_i$ contributes a complexity reduction of $\Omega(\log_3(1/\delta_{i-1}))$ for the next problem $P_{i+1}$. If $\delta_i \to 0$, then $\log_3(1/\delta_i) \to \infty$, so the cumulative reduction grows without bound.
+
+Since the Poincaré complexity is bounded below by zero, the conditional complexity must eventually saturate at a constant value $O(1)$, representing the minimum number of local solutions required to recognize closure when almost all relevant categories have been explored.
+\end{proof}
+
+\begin{remark}[Expertise Emergence]
+\label{rem:expertise}
+Corollary~\ref{cor:progressive_refinement} formalizes the notion of "expertise" in Poincaré Computing. A system subjected to a sequence of related problems (a \textit{research protocol}, Definition~\ref{def:research_protocol} below) develops progressively lower complexity for problems in that domain. This is analogous to how human experts develop intuition and pattern recognition through repeated exposure to related problems, allowing them to solve new problems in their domain more efficiently than novices.
+\end{remark}
+
+\subsection{Idle Exploration and Productive Idleness}
+
+When no problem is actively being solved, the categorical dynamics continue to evolve, exploring phase space. This "idle" exploration is not wasted but serves to discover alternative solution paths and increase robustness.
+
+\begin{definition}[Idle State]
+\label{def:idle_state}
+A Poincaré Computing system is in \textbf{idle state} when no new problem has been submitted for solution. The categorical dynamics continue unchanged:
+\begin{equation}
+\frac{d\Scoord}{dt} = \mathbf{F}(\Scoord) \quad \text{(same dynamics as during active computation)}
+\label{eq:idle_dynamics}
+\end{equation}
+There is no "sleep mode" or "power-down state"—the system continues to explore $\Sspace$ at the same rate as during active computation.
+\end{definition}
+
+\begin{theorem}[Productive Idleness]
+\label{thm:productive_idleness}
+Idle exploration is computationally productive. For any previously solved problem $P$ with solution set $\mathcal{A}(P)$, idle exploration increases the number of known solution paths:
+\begin{equation}
+N_{\text{paths}}(P, T) = |\{\gamma \in \mathcal{A}(P) : \gamma([0, T_\gamma]) \subseteq \mathcal{M}(T)\}|
+\label{eq:known_paths}
+\end{equation}
+is non-decreasing in $T$, where $T_\gamma$ is the recurrence time for trajectory $\gamma$.
+\end{theorem}
+
+\begin{proof}
+Each solution trajectory $\gamma \in \mathcal{A}(P)$ is a path through $\Sspace$ from the initial state $\Scoord_0$ to a state within $\epsilon$ of $\Scoord_0$. The trajectory is "known" (fully covered by exploration memory) if every point along the trajectory has been visited: $\gamma([0, T_\gamma]) \subseteq \mathcal{M}(T)$.
+
+As exploration memory grows (Proposition~\ref{prop:memory_monotonicity}), more trajectories become fully covered. Once a trajectory is fully covered, it remains covered for all future times (because $\mathcal{M}(T)$ is non-decreasing). Therefore, the number of known paths $N_{\text{paths}}(P, T)$ is non-decreasing in $T$.
+
+During idle exploration, the trajectory continues to visit new categories, adding them to $\mathcal{M}(T)$. Each new category may complete the coverage of one or more solution trajectories, increasing $N_{\text{paths}}(P, T)$. Therefore, idle exploration is productive: it discovers alternative solution paths that were not known during the initial solution of $P$.
+\end{proof}
+
+\begin{definition}[Path Redundancy]
+\label{def:path_redundancy}
+The \textbf{path redundancy} for a solution $\Scoord^*$ (a state satisfying the problem constraints) at time $T$ is the number of distinct paths from the exploration memory to $\Scoord^*$:
+\begin{equation}
+R(\Scoord^*, T) = |\{\text{distinct paths from } \mathcal{M}(T) \text{ to } \Scoord^*\}|
+\label{eq:path_redundancy}
+\end{equation}
+
+High path redundancy provides robustness: if one path becomes unavailable (e.g., due to constraint changes or hardware failures), alternative paths exist.
+\end{definition}
+
+\begin{proposition}[Redundancy Growth]
+\label{prop:redundancy_growth}
+For ergodic dynamics, the path redundancy grows without bound:
+\begin{equation}
+\lim_{T \to \infty} R(\Scoord^*, T) = \infty
+\label{eq:redundancy_growth}
+\end{equation}
+The number of known paths to any solution increases indefinitely.
+\end{proposition}
+
+\begin{proof}
+By Theorem~\ref{thm:asymptotic_exhaustion}, the exploration memory approaches completeness: $\lim_{T \to \infty} \mathcal{M}(T) = \mathcal{P}_k$ (all categories are eventually visited).
+
+The number of paths through a complete graph on $N = 3^{3k}$ nodes (categories) from any starting node to any target node is exponential in $N$. As $\mathcal{M}(T)$ approaches completeness, the number of available paths through the explored categories grows exponentially.
+
+More precisely, in a complete graph, the number of simple paths of length $\ell$ from a source to a target is $O(N^\ell)$ (choosing $\ell$ intermediate nodes). As $|\mathcal{M}(T)| \to N$, the number of paths grows without bound.
+
+Therefore, $\lim_{T \to \infty} R(\Scoord^*, T) = \infty$.
+\end{proof}
+
+\begin{remark}[Path Consolidation]
+\label{rem:path_consolidation}
+Idle exploration performs what we call \textbf{path consolidation}: discovering alternative routes to known answers. This is analogous to how transportation networks develop redundant routes (multiple highways, alternate paths) to provide robustness against traffic or failures. In Poincaré Computing, path consolidation provides robustness against constraint changes, hardware variations, or perturbations in the initial state. If one solution path becomes unavailable, the system can automatically switch to an alternative path without explicit reprogramming.
+\end{remark}
+
+\subsection{The Self-Refining System}
+
+We now formalize the notion of system capability and prove that it increases monotonically through continued operation.
+
+\begin{definition}[System Capability]
+\label{def:system_capability}
+The \textbf{capability} of a Poincaré Computing system at time $T$ is a tuple:
+\begin{equation}
+\mathcal{K}(T) = \left( \mathcal{M}(T), \{R(\Scoord^*, T) : \Scoord^* \in \text{Solutions}\}, \rho_M(T) \right)
+\label{eq:system_capability}
+\end{equation}
+consisting of:
+\begin{itemize}
+    \item The exploration memory $\mathcal{M}(T)$ (set of visited categories);
+    \item The path redundancies $R(\Scoord^*, T)$ for all known solutions $\Scoord^*$;
+    \item The memory density $\rho_M(T)$ (fraction of categories explored).
+\end{itemize}
+
+The capability quantifies the system's accumulated knowledge and problem-solving efficiency.
+\end{definition}
+
+\begin{theorem}[Capability Monotonicity]
+\label{thm:capability_monotonicity}
+System capability is monotonically non-decreasing in all components:
+\begin{equation}
+T_1 < T_2 \implies \mathcal{K}(T_1) \preceq \mathcal{K}(T_2)
+\label{eq:capability_monotonicity}
+\end{equation}
+where $\preceq$ denotes component-wise ordering: $\mathcal{K}(T_1) \preceq \mathcal{K}(T_2)$ if and only if:
+\begin{itemize}
+    \item $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$
+    \item $R(\Scoord^*, T_1) \leq R(\Scoord^*, T_2)$ for all solutions $\Scoord^*$
+    \item $\rho_M(T_1) \leq \rho_M(T_2)$
+\end{itemize}
+\end{theorem}
+
+\begin{proof}
+We verify that each component is non-decreasing:
+
+\textbf{(1) Exploration memory:} By Proposition~\ref{prop:memory_monotonicity}, $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$ for $T_1 < T_2$.
+
+\textbf{(2) Path redundancy:} By Proposition~\ref{prop:redundancy_growth}, $R(\Scoord^*, T)$ is non-decreasing in $T$ for each solution $\Scoord^*$. Therefore, $R(\Scoord^*, T_1) \leq R(\Scoord^*, T_2)$.
+
+\textbf{(3) Memory density:} Since $\mathcal{M}(T_1) \subseteq \mathcal{M}(T_2)$, we have $|\mathcal{M}(T_1)| \leq |\mathcal{M}(T_2)|$. Dividing by the constant $|\mathcal{P}_k| = 3^{3k}$ gives $\rho_M(T_1) \leq \rho_M(T_2)$.
+
+Therefore, all three components are non-decreasing, establishing $\mathcal{K}(T_1) \preceq \mathcal{K}(T_2)$.
+\end{proof}
+
+\begin{corollary}[Irreversible Improvement]
+\label{cor:irreversible_improvement}
+A Poincaré Computing system cannot decrease in capability. Time evolution is irreversibly beneficial: once knowledge is gained (categories explored, paths discovered), it cannot be lost.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:capability_monotonicity}, capability is non-decreasing. There is no mechanism for removing categories from $\mathcal{M}(T)$, decreasing path redundancy $R(\Scoord^*, T)$, or reducing memory density $\rho_M(T)$. Therefore, capability can only increase or remain constant, never decrease.
+
+This irreversibility is a consequence of the non-halting dynamics (Theorem~\ref{thm:inexhaustibility}) and the monotonicity of exploration memory (Proposition~\ref{prop:memory_monotonicity}).
+\end{proof}
+
+\begin{theorem}[Self-Refinement Without Programming]
+\label{thm:self_refinement}
+The system refines its computational capability without external programming, reprogramming, or hardware modification. The refinement derives entirely from continued dynamics:
+\begin{equation}
+\frac{d\mathcal{K}}{dT} \succeq 0
+\label{eq:capability_derivative}
+\end{equation}
+with strict inequality (capability strictly increasing) for almost all $T$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:inexhaustibility}, the categorical dynamics continue indefinitely with non-zero velocity almost everywhere. By Theorem~\ref{thm:capability_monotonicity}, capability is non-decreasing.
+
+For $\rho_M(T) < 1$ (exploration memory not yet complete), the trajectory visits new categories with positive probability (by ergodicity), so $|\mathcal{M}(T)|$ increases, implying $d\rho_M/dT > 0$. This establishes strict increase in at least one component of $\mathcal{K}(T)$.
+
+By Theorem~\ref{thm:asymptotic_exhaustion}, $\rho_M(T) \to 1$ as $T \to \infty$, so the strict increase continues until exploration is complete. Even after $\rho_M(T) = 1$, path redundancy continues to increase (Proposition~\ref{prop:redundancy_growth}), so capability continues to improve.
+
+Therefore, $d\mathcal{K}/dT \succeq 0$ with strict inequality almost everywhere, establishing self-refinement without external intervention.
+\end{proof}
+
+\subsection{Research Machine Architecture}
+
+The self-refinement properties suggest a novel computational architecture: the \textbf{research machine}, which accumulates expertise through exposure to sequences of related problems.
+
+\begin{definition}[Research Protocol]
+\label{def:research_protocol}
+A \textbf{research protocol} is a sequence of problems $(P_1, P_2, \ldots, P_n)$ submitted at times $(T_1, T_2, \ldots, T_n)$ where consecutive problems are $\delta_i$-related:
+\begin{equation}
+\|\Scoord_0^{(i+1)} - \Scoord_0^{(i)}\| < \delta_i \quad \text{for } i = 1, \ldots, n-1
+\label{eq:research_protocol}
+\end{equation}
+
+The protocol represents a sequence of related research questions or computational tasks in a common domain.
+\end{definition}
+
+\begin{theorem}[Cumulative Research Benefit]
+\label{thm:cumulative_benefit}
+Under a research protocol with relatedness parameters $\delta_i \leq \delta$ for all $i$, the conditional complexity of the $n$-th problem satisfies:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) \leq \Pi(P_1) - (n-1) \cdot \Omega\left(\log_3\frac{1}{\delta}\right)
+\label{eq:cumulative_benefit}
+\end{equation}
+Each problem contributes to accelerating subsequent problems, with cumulative benefit growing linearly in $n$.
+\end{theorem}
+
+\begin{proof}
+We apply Theorem~\ref{thm:related_acceleration} inductively. Solving problem $P_1$ creates exploration memory $\mathcal{M}(T_1)$. By Theorem~\ref{thm:related_acceleration}, the conditional complexity of $P_2$ satisfies:
+\begin{equation}
+\Pi(P_2 \mid \mathcal{M}(T_1)) \leq \Pi(P_2) - \Omega(\log_3(1/\delta_1))
+\end{equation}
+
+Since $\delta_1 \leq \delta$, we have $\log_3(1/\delta_1) \geq \log_3(1/\delta)$, so:
+\begin{equation}
+\Pi(P_2 \mid \mathcal{M}(T_1)) \leq \Pi(P_2) - \Omega(\log_3(1/\delta))
+\end{equation}
+
+Solving $P_2$ adds more categories to the exploration memory, giving $\mathcal{M}(T_2) \supseteq \mathcal{M}(T_1)$. Applying the same argument to $P_3$:
+\begin{equation}
+\Pi(P_3 \mid \mathcal{M}(T_2)) \leq \Pi(P_3) - \Omega(\log_3(1/\delta))
+\end{equation}
+
+Continuing inductively, after solving $P_1, \ldots, P_{n-1}$, the conditional complexity of $P_n$ satisfies:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) \leq \Pi(P_n) - (n-1) \cdot \Omega(\log_3(1/\delta))
+\end{equation}
+
+Since problems in the research protocol are related, $\Pi(P_i) \approx \Pi(P_1)$ for all $i$ (their unconditional complexities are similar). Therefore:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) \leq \Pi(P_1) - (n-1) \cdot \Omega(\log_3(1/\delta))
+\end{equation}
+
+This establishes cumulative benefit: each problem reduces the complexity of subsequent problems by $\Omega(\log_3(1/\delta))$.
+\end{proof}
+
+\begin{corollary}[Expertise Emergence]
+\label{cor:expertise}
+A system subjected to a research protocol in a domain (set of related problems) develops "expertise": progressively lower complexity for problems in that domain. After solving $n$ related problems, the conditional complexity approaches:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) = O(1)
+\label{eq:expertise}
+\end{equation}
+for sufficiently large $n$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:cumulative_benefit}, the conditional complexity decreases linearly with $n$:
+\begin{equation}
+\Pi(P_n \mid \mathcal{M}(T_{n-1})) \leq \Pi(P_1) - (n-1) \cdot \Omega(\log_3(1/\delta))
+\end{equation}
+
+Since complexity is bounded below by zero, the right-hand side must eventually become constant for sufficiently large $n$:
+\begin{equation}
+n \geq \frac{\Pi(P_1)}{\Omega(\log_3(1/\delta))} \implies \Pi(P_n \mid \mathcal{M}(T_{n-1})) = O(1)
+\end{equation}
+
+This establishes that expertise emerges after solving $O(\Pi(P_1) / \log_3(1/\delta))$ related problems.
+\end{proof}
+
+\begin{proposition}[Domain Specialization]
+\label{prop:domain_specialization}
+Let $\mathcal{D} \subseteq \Sspace$ be a domain (connected region). If all submitted problems have initial states in $\mathcal{D}$, then the memory density restricted to $\mathcal{D}$ approaches completeness:
+\begin{equation}
+\lim_{n \to \infty} \rho_M^{\mathcal{D}}(T_n) = 1
+\label{eq:domain_specialization}
+\end{equation}
+where $\rho_M^{\mathcal{D}}(T) = |\mathcal{M}(T) \cap \mathcal{D}| / |\mathcal{P}_k \cap \mathcal{D}|$ is the memory density restricted to domain $\mathcal{D}$.
+
+The system becomes exhaustively knowledgeable about the domain.
+\end{proposition}
+
+\begin{proof}
+Related problems with initial states in $\mathcal{D}$ have solution trajectories that remain within $\mathcal{D}$ or its neighborhood (by continuity of the dynamics). Each problem solved adds categories in $\mathcal{D}$ to the exploration memory.
+
+By ergodicity restricted to the accessible region (the closure of the union of all solution trajectories), all categories in $\mathcal{D}$ are eventually visited. Therefore, $\lim_{n \to \infty} |\mathcal{M}(T_n) \cap \mathcal{D}| = |\mathcal{P}_k \cap \mathcal{D}|$, giving $\lim_{n \to \infty} \rho_M^{\mathcal{D}}(T_n) = 1$.
+\end{proof}
+
+\subsection{Comparison with Classical Systems}
+
+We conclude by comparing the exhaustive exploration properties of Poincaré Computing with traditional Turing/von Neumann systems.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{Classical (Turing/von Neumann)} & \textbf{Poincaré Computing} \\
+\midrule
+Idle behavior & Halt (no activity) & Continue exploring \\
+Memory source & Explicit storage (tape writes) & Trajectory history (implicit) \\
+Capability over time & Static (fixed $T(n)$) & Monotonically increasing \\
+Related problems & Independent (no benefit) & Accelerated (cumulative benefit) \\
+Self-improvement & Requires reprogramming & Automatic (by existence) \\
+Path redundancy & Single execution path & Growing path set \\
+Expertise & Requires training data & Emerges from research protocol \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Comparison of exhaustive exploration and memory properties.} Poincaré Computing exhibits emergent properties (existence-based memory, automatic refinement, related problem coupling, productive idleness) that have no analog in classical computation.}
+\label{tab:exhaustive_comparison}
+\end{table}
+
+\begin{theorem}[Fundamental Distinction]
+\label{thm:fundamental_distinction}
+Poincaré Computing systems exhibit emergent properties that are categorically absent in Turing machines:
+\begin{enumerate}
+    \item \textbf{Existence-based memory}: Memory accumulates from dynamics alone, not from explicit write operations (Theorem~\ref{thm:existence_memory})
+    
+    \item \textbf{Automatic refinement}: Capability increases without external intervention or reprogramming (Theorem~\ref{thm:self_refinement})
+    
+    \item \textbf{Related problem coupling}: Prior exploration accelerates related problems with cumulative benefit (Theorem~\ref{thm:cumulative_benefit})
+    
+    \item \textbf{Productive idleness}: Idle time contributes to capability through path consolidation (Theorem~\ref{thm:productive_idleness})
+\end{enumerate}
+These properties have no analog in classical computation and represent a fundamentally different computational paradigm.
+\end{theorem}
+
+\begin{proof}
+We establish that each property is absent in Turing machines:
+
+\textbf{(1) Existence-based memory:} Turing machines have explicit memory (tape symbols) that must be written by explicit write operations (part of the transition function $\delta$). A Turing machine that executes no write operations produces no memory. In Poincaré Computing, memory accumulates automatically from trajectory evolution, with no explicit write operations.
+
+\textbf{(2) Automatic refinement:} A Turing machine with a fixed transition function $\delta$ has fixed time complexity $T(n)$ for any given problem. The complexity does not decrease over time unless the transition function is modified (reprogramming). In Poincaré Computing, conditional complexity decreases automatically through continued exploration, with no modification to the dynamics.
+
+\textbf{(3) Related problem coupling:} Turing machines treat each computation independently. Solving problem $P_1$ provides no benefit for solving a related problem $P_2$: the machine must execute the full algorithm for $P_2$ from scratch. In Poincaré Computing, solving $P_1$ creates exploration memory that reduces the complexity of $P_2$ by $\Omega(\log_3(1/\delta))$.
+
+\textbf{(4) Productive idleness:} A halted Turing machine performs no computation and gains no capability. Idle time is wasted. In Poincaré Computing, idle exploration discovers alternative solution paths, increasing path redundancy and robustness.
+
+Each property is a direct consequence of the non-halting dynamics (Theorem~\ref{thm:inexhaustibility}), trajectory-based memory (Theorem~\ref{thm:existence_memory}), conditional complexity (Theorem~\ref{thm:complexity_reduction}), and productive idleness (Theorem~\ref{thm:productive_idleness}). These are structural properties of the trajectory-based paradigm, not implementation details.
+\end{proof}
+
+This section has established that Poincaré Computing systems exhibit continuous exploration without halting, accumulate memory through existence, automatically refine their capability over time, and benefit from solving related problems. These emergent properties suggest a radically different computational architecture—the research machine—that develops expertise through exposure to problem domains and performs productive path consolidation during idle time. The categorical distinction from Turing machines is profound: Poincaré Computing systems learn and improve simply by existing, without external programming or training.
+

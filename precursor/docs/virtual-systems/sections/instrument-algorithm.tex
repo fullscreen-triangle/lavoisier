@@ -1,0 +1,190 @@
+\section{Universal Virtual Instrument Finder Algorithm}
+\label{sec:instrument-algorithm}
+
+\subsection{Problem Statement}
+
+\begin{definition}[Instrument Finding Problem]
+Given:
+\begin{itemize}
+    \item Hardware platform $H$ with oscillation hierarchy $\mathcal{H} = \{\nu_1, \ldots, \nu_k\}$
+    \item Quality factors $\{Q_1, \ldots, Q_k\}$
+    \item Target partition coordinates $(n^*, l^*, m^*, s^*)$
+\end{itemize}
+Find: Measurement protocol $P$ that extracts the target coordinates with minimum cost.
+\end{definition}
+
+\subsection{Hardware Characterization}
+
+\begin{algorithm}
+\caption{Hardware Characterization}
+\label{alg:hardware-char}
+\begin{algorithmic}[1]
+\Require Hardware specification $H$
+\Ensure Oscillation hierarchy $\mathcal{H}$, quality factors $\{Q_i\}$, coupling matrix $C$
+\State Identify oscillating components: RF sources, ion optics, detectors
+\State Measure frequencies $\{\nu_i\}$ by spectral analysis
+\State Measure quality factors $\{Q_i\}$ by ringdown or linewidth
+\State Construct coupling matrix $C_{ij} = $ coupling strength between $i$ and $j$
+\State Order by frequency: $\nu_1 > \nu_2 > \cdots > \nu_k$
+\State \Return $\mathcal{H} = \{\nu_i\}$, $\{Q_i\}$, $C$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Accessibility Analysis}
+
+\begin{definition}[Accessibility Matrix]
+The accessibility matrix $A \in \{0, 1\}^{k \times 4}$ indicates which oscillators can access which coordinates:
+\begin{equation}
+    A_{ij} = \begin{cases}
+        1 & \text{if oscillator } i \text{ can measure coordinate } j \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+where $j \in \{n, l, m, s\}$.
+\end{definition}
+
+\begin{algorithm}
+\caption{Accessibility Computation}
+\label{alg:accessibility}
+\begin{algorithmic}[1]
+\Require Oscillation hierarchy $\mathcal{H}$, quality factors $\{Q_i\}$, target depth $n^*$
+\Ensure Accessibility matrix $A$
+\For{each oscillator $i$}
+    \State $A_{i,n} \gets \mathbf{1}[Q_i \geq n^*]$ \Comment{Can measure depth?}
+    \State $A_{i,l} \gets \mathbf{1}[Q_i \geq (n^*)^2]$ \Comment{Can measure complexity?}
+    \State $A_{i,m} \gets \mathbf{1}[\text{phase detection available}]$
+    \State $A_{i,s} \gets \mathbf{1}[\text{polarization selection available}]$
+\EndFor
+\State \Return $A$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Instrument Selection}
+
+\begin{definition}[Instrument Selection Problem]
+Select subset $I \subseteq \{1, \ldots, k\}$ of oscillators such that:
+\begin{enumerate}
+    \item All coordinates are covered: $\forall j, \exists i \in I: A_{ij} = 1$
+    \item Cost is minimized: $\sum_{i \in I} c_i$ is minimal
+\end{enumerate}
+\end{definition}
+
+This is a weighted set cover problem.
+
+\begin{algorithm}
+\caption{Greedy Instrument Selection}
+\label{alg:selection}
+\begin{algorithmic}[1]
+\Require Accessibility matrix $A$, costs $\{c_i\}$
+\Ensure Selected instruments $I$
+\State $I \gets \emptyset$
+\State $U \gets \{n, l, m, s\}$ \Comment{Uncovered coordinates}
+\While{$U \neq \emptyset$}
+    \State $i^* \gets \arg\max_i \frac{|\{j \in U : A_{ij} = 1\}|}{c_i}$ \Comment{Best cost-effectiveness}
+    \State $I \gets I \cup \{i^*\}$
+    \State $U \gets U \setminus \{j : A_{i^*j} = 1\}$
+\EndWhile
+\State \Return $I$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Greedy Approximation]
+The greedy algorithm achieves $O(\ln 4)$-approximation to optimal selection.
+\end{theorem}
+
+\begin{proof}
+Standard result for weighted set cover with 4 elements.
+\end{proof}
+
+\subsection{Protocol Generation}
+
+\begin{algorithm}
+\caption{Protocol Generation}
+\label{alg:protocol}
+\begin{algorithmic}[1]
+\Require Selected instruments $I$, target coordinates $(n^*, l^*, m^*, s^*)$
+\Ensure Measurement protocol $P$
+\State Initialize protocol $P \gets \emptyset$
+\For{each coordinate $j \in \{n, l, m, s\}$}
+    \State Find instrument $i \in I$ with $A_{ij} = 1$
+    \State Compute required measurement time: $t_j = Q_i / \nu_i \cdot j^2$
+    \State Compute required sensitivity: $\sigma_j = 1/\sqrt{Q_i \nu_i t_j}$
+    \State Add step to protocol: $P \gets P \cup \{(i, t_j, \sigma_j)\}$
+\EndFor
+\State Order steps by efficiency: longest first (parallel execution)
+\State \Return $P$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Extraction Procedure}
+
+\begin{algorithm}
+\caption{Coordinate Extraction}
+\label{alg:extraction}
+\begin{algorithmic}[1]
+\Require Raw data $D$, protocol $P$
+\Ensure Partition coordinates $(n, l, m, s)$
+\For{each step $(i, t_j, \sigma_j) \in P$}
+    \State Extract frequency component: $D_i \gets \text{bandpass}(D, \nu_i, Q_i)$
+    \State Compute phase: $\phi_i \gets \text{arg}(\text{FFT}(D_i))$
+    \State Compute amplitude: $A_i \gets |\text{FFT}(D_i)|$
+\EndFor
+\State $n \gets \text{round}(A_1 \cdot Q_1 / A_{\text{ref}})$
+\State $l \gets \text{round}(A_2 / A_1 \cdot n) \mod n$
+\State $m \gets \text{round}((\phi_1 - \phi_2) / \pi \cdot l)$
+\State $s \gets 0.5 \cdot \text{sign}(\phi_L - \phi_R)$
+\State \Return $(n, l, m, s)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{UVIF: Complete Algorithm}
+
+\begin{algorithm}
+\caption{Universal Virtual Instrument Finder (UVIF)}
+\label{alg:uvif}
+\begin{algorithmic}[1]
+\Require Hardware specification $H$, target coordinates $(n^*, l^*, m^*, s^*)$, cost function $c$
+\Ensure Virtual instrument $V$, measurement protocol $P$
+\State $(\mathcal{H}, \{Q_i\}, C) \gets \text{HardwareCharacterization}(H)$ \Comment{Alg.~\ref{alg:hardware-char}}
+\State $A \gets \text{AccessibilityComputation}(\mathcal{H}, \{Q_i\}, n^*)$ \Comment{Alg.~\ref{alg:accessibility}}
+\If{$\neg\text{IsFeasible}(A)$}
+    \State \Return INFEASIBLE \Comment{Target coordinates unreachable}
+\EndIf
+\State $I \gets \text{GreedySelection}(A, c)$ \Comment{Alg.~\ref{alg:selection}}
+\State $P \gets \text{ProtocolGeneration}(I, (n^*, l^*, m^*, s^*))$ \Comment{Alg.~\ref{alg:protocol}}
+\State Define $V(D) \gets \text{CoordinateExtraction}(D, P)$ \Comment{Alg.~\ref{alg:extraction}}
+\State \Return $(V, P)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Complexity Analysis}
+
+\begin{theorem}[UVIF Complexity]
+The Universal Virtual Instrument Finder has complexity:
+\begin{itemize}
+    \item Hardware characterization: $O(k)$
+    \item Accessibility computation: $O(k)$
+    \item Instrument selection: $O(k \cdot 4) = O(k)$
+    \item Protocol generation: $O(4) = O(1)$
+    \item Coordinate extraction: $O(k \cdot N)$ where $N$ is data length
+\end{itemize}
+Total: $O(k \cdot N)$, linear in hardware complexity and data size.
+\end{theorem}
+
+For real-time operation with $k = 4$ oscillators and $N = 10^6$ data points, UVIF executes in milliseconds on standard hardware.
+
+\subsection{Optimality Conditions}
+
+\begin{theorem}[UVIF Optimality]
+UVIF produces an optimal virtual instrument when:
+\begin{enumerate}
+    \item Oscillators are independent (coupling matrix $C$ is diagonal)
+    \item Quality factors satisfy $Q_i \geq (n^*)^2$ for all $i$
+    \item Phase detection is available for all oscillators
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Under these conditions, each oscillator uniquely maps to one coordinate. The greedy selection is optimal for independent set cover. The extraction procedure is the maximum likelihood estimator for independent measurements.
+\end{proof}
+

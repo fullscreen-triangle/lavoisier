@@ -1,0 +1,203 @@
+\section{Trajectory Mechanics}
+\label{sec:trajectory}
+
+\subsection{Trits as Trajectory Steps}
+
+A fundamental insight of ternary S-entropy representation is that ternary strings encode \textit{trajectories} through S-space, not merely positions.
+
+\begin{definition}[Trajectory Step]
+A \textbf{trajectory step} is a single trit $t \in \{0, 1, 2\}$ indicating movement along one of the three S-entropy axes:
+\begin{align}
+t = 0 &: \text{step along } \Sk \text{ (refine knowledge)} \\
+t = 1 &: \text{step along } \St \text{ (refine temporal)} \\
+t = 2 &: \text{step along } \Se \text{ (refine evolution)}
+\end{align}
+\end{definition}
+
+\begin{definition}[Trajectory]
+A \textbf{trajectory} is a sequence of trits $\mathbf{t} = (t_1, t_2, \ldots, t_k)$ specifying a path through the $3^k$ hierarchy from the root cell to a level-$k$ cell.
+\end{definition}
+
+\begin{theorem}[Position-Trajectory Duality]\label{thm:pos-traj-duality}
+Every ternary string simultaneously encodes:
+\begin{enumerate}
+    \item A \textbf{position}: the cell $\phi(\mathbf{t})$ in S-space
+    \item A \textbf{trajectory}: the path from root to cell through the hierarchy
+\end{enumerate}
+These are not separate encodings but the same mathematical object viewed differently.
+\end{theorem}
+
+\begin{proof}
+By construction, $\phi(\mathbf{t})$ specifies a unique cell. The sequence $(t_1, t_2, \ldots, t_k)$ specifies the unique path:
+\begin{equation}
+\Sspace = C_0 \supset C_1 \supset \cdots \supset C_k = \phi(\mathbf{t})
+\end{equation}
+where $C_j = \phi_j(t_1, \ldots, t_j)$.
+
+The address IS the path. No additional structure is needed. \qed
+\end{proof}
+
+\begin{remark}
+This duality contrasts sharply with binary representation, where position (coordinates) and trajectory (program) are distinct data structures. In ternary S-entropy representation, the von Neumann separation between data and instruction dissolves at the representational level.
+\end{remark}
+
+\subsection{Ternary Operations}
+
+We now define the fundamental operations on ternary S-entropy representations.
+
+\begin{definition}[Projection]
+The \textbf{projection} onto dimension $d \in \{0, 1, 2\}$ extracts the trits that refine that dimension:
+\begin{equation}
+\pi_d(\mathbf{t}) = (t_j : j \equiv d \pmod 3)
+\end{equation}
+\end{definition}
+
+\begin{example}
+For $\mathbf{t} = (1, 0, 2, 2, 1, 0)$:
+\begin{align}
+\pi_0(\mathbf{t}) &= (t_3, t_6) = (2, 0) \quad \text{($\Sk$ refinements)} \\
+\pi_1(\mathbf{t}) &= (t_1, t_4) = (1, 2) \quad \text{($\St$ refinements)} \\
+\pi_2(\mathbf{t}) &= (t_2, t_5) = (0, 1) \quad \text{($\Se$ refinements)}
+\end{align}
+\end{example}
+
+\begin{definition}[Extension]
+The \textbf{extension} of string $\mathbf{t}$ by trit $t$ is concatenation:
+\begin{equation}
+\mathbf{t} \cdot t = (t_1, \ldots, t_k, t)
+\end{equation}
+This refines the position along dimension $d = (k+1) \mod 3$.
+\end{definition}
+
+\begin{definition}[Truncation]
+The \textbf{truncation} of string $\mathbf{t}$ to length $j < k$ is:
+\begin{equation}
+\mathbf{t}|_j = (t_1, \ldots, t_j)
+\end{equation}
+This coarsens the position to the enclosing level-$j$ cell.
+\end{definition}
+
+\begin{definition}[Composition]
+The \textbf{composition} of trajectories $\mathbf{t} = (t_1, \ldots, t_k)$ and $\mathbf{s} = (s_1, \ldots, s_m)$ is:
+\begin{equation}
+\mathbf{t} \circ \mathbf{s} = (t_1, \ldots, t_k, s_1, \ldots, s_m)
+\end{equation}
+This represents following trajectory $\mathbf{t}$ then continuing with trajectory $\mathbf{s}$.
+\end{definition}
+
+\begin{proposition}[Composition Associativity]
+Trajectory composition is associative:
+\begin{equation}
+(\mathbf{t} \circ \mathbf{s}) \circ \mathbf{r} = \mathbf{t} \circ (\mathbf{s} \circ \mathbf{r})
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+String concatenation is associative. \qed
+\end{proof}
+
+\subsection{Categorical Completion}
+
+\begin{definition}[Completion Status]
+A ternary string $\mathbf{t}$ has \textbf{completion status}:
+\begin{itemize}
+    \item \textbf{Incomplete}: The string has finite length; further refinement is possible.
+    \item \textbf{Complete}: The string is infinite; it specifies a unique point in $[0,1]^3$.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Completion Operator]
+The \textbf{completion operator} $\Omega$ extends a finite string to an infinite string by a completion rule:
+\begin{equation}
+\Omega(\mathbf{t}) = (t_1, t_2, \ldots, t_k, c_{k+1}, c_{k+2}, \ldots)
+\end{equation}
+where $(c_{k+1}, c_{k+2}, \ldots)$ is determined by a completion rule.
+\end{definition}
+
+\begin{example}[Centroid Completion]
+The \textbf{centroid completion} pads with 1's (middle value):
+\begin{equation}
+\Omega_{\text{centroid}}(\mathbf{t}) = (t_1, \ldots, t_k, 1, 1, 1, \ldots)
+\end{equation}
+This completes to the centre of the current cell.
+\end{example}
+
+\begin{example}[Minimal Completion]
+The \textbf{minimal completion} pads with 0's:
+\begin{equation}
+\Omega_{\text{min}}(\mathbf{t}) = (t_1, \ldots, t_k, 0, 0, 0, \ldots)
+\end{equation}
+This completes to the minimal-coordinate corner.
+\end{example}
+
+\begin{example}[Maximal Completion]
+The \textbf{maximal completion} pads with 2's:
+\begin{equation}
+\Omega_{\text{max}}(\mathbf{t}) = (t_1, \ldots, t_k, 2, 2, 2, \ldots)
+\end{equation}
+This completes to the maximal-coordinate corner.
+\end{example}
+
+\subsection{Navigation Algorithms}
+
+\begin{definition}[Navigation Problem]
+Given current position $\mathbf{t}$ and target region $R \subset [0,1]^3$, find the shortest extension $\mathbf{s}$ such that $\phi(\mathbf{t} \circ \mathbf{s}) \in R$.
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{Ternary Navigation}
+\label{alg:navigation}
+\begin{enumerate}
+    \item \textbf{Input}: Current string $\mathbf{t}$, target coordinates $\Scoord_{\text{target}}$, tolerance $\delta$
+    \item \textbf{While} $d(\phi(\mathbf{t}), \Scoord_{\text{target}}) > \delta$:
+    \begin{enumerate}
+        \item Compute next dimension: $d = (|\mathbf{t}| + 1) \mod 3$
+        \item Extract target coordinate: $c = \Scoord_{\text{target}}[d]$
+        \item Compute current interval bounds for dimension $d$
+        \item Determine which third contains $c$: $t_{\text{next}} \in \{0, 1, 2\}$
+        \item Extend: $\mathbf{t} \leftarrow \mathbf{t} \cdot t_{\text{next}}$
+    \end{enumerate}
+    \item \textbf{Return} $\mathbf{t}$
+\end{enumerate}
+\end{algorithm}
+
+\begin{theorem}[Navigation Complexity]\label{thm:nav-complexity}
+Navigation to tolerance $\delta$ requires:
+\begin{equation}
+O\left(\log_3 \frac{1}{\delta}\right) = O(\log \delta^{-1})
+\end{equation}
+trit extensions.
+\end{theorem}
+
+\begin{proof}
+Each extension refines one dimension by factor 3. After $k$ extensions, cell diameter is at most $\sqrt{3} \cdot 3^{-\lfloor k/3 \rfloor}$.
+
+For diameter $< \delta$:
+\begin{equation}
+k = O(3 \log_3 \delta^{-1}) = O(\log_3 \delta^{-1})
+\end{equation}
+\qed
+\end{proof}
+
+\subsection{Trajectory Invariants}
+
+\begin{definition}[Common Prefix]
+The \textbf{common prefix} of trajectories $\mathbf{t}$ and $\mathbf{s}$ is the longest $\mathbf{p}$ such that:
+\begin{equation}
+\mathbf{t} = \mathbf{p} \circ \mathbf{t}' \quad \text{and} \quad \mathbf{s} = \mathbf{p} \circ \mathbf{s}'
+\end{equation}
+for some $\mathbf{t}'$, $\mathbf{s}'$.
+\end{definition}
+
+\begin{theorem}[Prefix-Ancestor Correspondence]
+Two strings share common prefix $\mathbf{p}$ if and only if their cells share a common ancestor at level $|\mathbf{p}|$.
+\end{theorem}
+
+\begin{proof}
+By the nesting structure, cells $\phi(\mathbf{t})$ and $\phi(\mathbf{s})$ are both descendants of cell $\phi(\mathbf{p})$ if and only if their addresses extend $\mathbf{p}$. \qed
+\end{proof}
+
+\begin{corollary}[Semantic Clustering]
+Trajectories with long common prefixes address nearby cells in S-space, indicating semantic relatedness in categorical computing.
+\end{corollary}
+

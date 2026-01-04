@@ -1,0 +1,100 @@
+\section{Oscillatory Measurement Theorem}
+\label{sec:oscillatory-theorem}
+
+\subsection{Hardware Oscillator Fundamentals}
+
+\begin{definition}[Hardware Oscillator]
+A hardware oscillator is a physical system with periodic dynamics characterized by frequency $\nu$ and quality factor $Q$. The minimum distinguishable time interval is
+\begin{equation}
+    \delta t = \frac{1}{Q \nu}
+\end{equation}
+\end{definition}
+
+All mass spectrometers employ hardware oscillators:
+\begin{itemize}
+    \item Quadrupole: RF field oscillation at $\nu \sim 1$ MHz
+    \item Ion trap: Secular motion at $\nu \sim 100$ kHz
+    \item Orbitrap: Axial oscillation at $\nu \sim 100$ kHz
+    \item Time-of-flight: Detection timing at $\delta t \sim 1$ ns resolution
+\end{itemize}
+
+\begin{theorem}[Oscillatory Measurement]
+\label{thm:oscillatory}
+Any measurement that extracts information from a bounded system must employ an oscillatory process. The information gained is bounded by
+\begin{equation}
+    I \leq Q \cdot \ln 2
+\end{equation}
+bits per oscillation cycle.
+\end{theorem}
+
+\begin{proof}
+Information extraction requires distinguishing system states. In a bounded system, states differ by minimum action $h$. Distinguishing states separated by $\Delta E$ requires observation time $\Delta t \geq h/\Delta E$. This time-energy uncertainty mandates periodic sampling---oscillation. The quality factor $Q$ counts distinguishable cycles, bounding information at $Q \ln 2$ bits.
+\end{proof}
+
+\subsection{Oscillation Hierarchy}
+
+\begin{definition}[Oscillation Hierarchy]
+A mass spectrometer implements an oscillation hierarchy $\{\nu_1 > \nu_2 > \cdots > \nu_k\}$ where each frequency corresponds to a distinct physical process:
+\begin{align}
+    \nu_1 &: \text{RF field frequency (ion confinement)} \\
+    \nu_2 &: \text{Secular frequency (ion motion)} \\
+    \nu_3 &: \text{Detection frequency (signal digitization)}
+\end{align}
+\end{definition}
+
+\begin{proposition}[Frequency-Coordinate Correspondence]
+Each level in the oscillation hierarchy extracts one partition coordinate:
+\begin{align}
+    \nu_1 &\to n \quad \text{(partition depth from confinement)} \\
+    \nu_2 &\to l \quad \text{(angular complexity from secular motion)} \\
+    \nu_3 &\to m \quad \text{(orientation from phase detection)}
+\end{align}
+The chirality coordinate $s$ requires comparison between two measurements (e.g., left/right circular polarization).
+\end{proposition}
+
+\subsection{Timing Analysis Protocol}
+
+\begin{algorithm}
+\caption{Partition Coordinate Extraction from Oscillator Timing}
+\label{alg:timing}
+\begin{algorithmic}[1]
+\Require Oscillation hierarchy $\{\nu_i\}$, quality factors $\{Q_i\}$, raw timing data $T$
+\Ensure Partition coordinates $(n, l, m, s)$
+\State Decompose $T$ into frequency components $\{T_i\}$ by bandpass filtering
+\State $n \gets \lfloor Q_1 \cdot T_1 \cdot \nu_1 / \tau_{\text{ref}} \rfloor$ \Comment{Partition depth from confinement cycles}
+\State $l \gets \lfloor Q_2 \cdot T_2 \cdot \nu_2 / \tau_{\text{ref}} \rfloor \mod n$ \Comment{Angular complexity from secular cycles}
+\State $m \gets \text{sign}(\phi_2) \cdot \lfloor |Q_2 \cdot \phi_2| / \pi \rfloor$ \Comment{Orientation from phase}
+\State $s \gets \frac{1}{2}\text{sign}(\phi_1 - \phi_1')$ \Comment{Chirality from polarization comparison}
+\State \Return $(n, l, m, s)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Resolution Limits}
+
+\begin{theorem}[Resolution-Frequency Relation]
+The mass resolution $R = m/\Delta m$ achievable by an oscillator-based analyzer is
+\begin{equation}
+    R = Q \cdot \nu \cdot \tau
+\end{equation}
+where $\tau$ is the measurement time.
+\end{theorem}
+
+\begin{proof}
+Mass measurement requires timing ion motion to precision $\delta t$. The mass-to-time relationship $m \propto t^2$ (for TOF) or $m \propto 1/\nu^2$ (for trap) gives $\delta m/m = 2\delta t/t$ or $\delta m/m = 2\delta\nu/\nu$. With $\delta t = 1/(Q\nu)$ and $t = \tau$, we obtain $R = Q\nu\tau$.
+\end{proof}
+
+This theorem connects hardware specifications (quality factor, frequency) to partition coordinate resolution. Higher resolution corresponds to finer partition of phase space---more distinguishable categorical states.
+
+\begin{corollary}[Partition Depth from Resolution]
+The maximum partition depth resolvable by a mass analyzer is
+\begin{equation}
+    n_{\max} = \lfloor \sqrt{R} \rfloor
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The capacity at depth $n$ is $C(n) = 2n^2$. Resolving all states at depth $n$ requires $R \geq 2n^2$, giving $n \leq \sqrt{R/2}$.
+\end{proof}
+
+For an Orbitrap with $R = 100,000$, the maximum partition depth is $n_{\max} \approx 223$---far exceeding the fragmentation depths relevant for metabolomics.
+

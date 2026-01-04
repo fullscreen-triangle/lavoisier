@@ -1,0 +1,129 @@
+\section{Virtual Detector Ensemble}
+\label{sec:virtual-detector-ensemble}
+
+\subsection{Virtual Instrument Definition}
+
+\begin{definition}[Virtual Instrument]
+A virtual instrument is a software function $V: \mathcal{D} \to \mathcal{C}$ that maps raw detector data $\mathcal{D}$ to partition coordinates $\mathcal{C} = (n, l, m, s)$.
+\end{definition}
+
+Virtual instruments are ``virtual'' in that they do not correspond to specific hardware components but rather to information extraction protocols applied to hardware output.
+
+\subsection{The Four Canonical Virtual Instruments}
+
+\subsubsection{Shell Resonator}
+
+\begin{definition}[Shell Resonator]
+The Shell Resonator extracts partition depth $n$ from the primary oscillation frequency:
+\begin{equation}
+    n = V_{\text{shell}}(\nu_1, Q_1, t) = \left\lfloor \frac{\nu_1 \cdot t}{Q_1 \cdot \tau_{\text{ref}}} \right\rfloor
+\end{equation}
+where $\tau_{\text{ref}}$ is a reference time constant.
+\end{definition}
+
+Physical interpretation: $n$ counts the number of complete oscillation cycles that fit within the bounded region. For molecular fragmentation, $n$ corresponds to the fragmentation generation.
+
+\subsubsection{Angular Analyser}
+
+\begin{definition}[Angular Analyser]
+The Angular Analyser extracts angular complexity $l$ from the secondary oscillation frequency:
+\begin{equation}
+    l = V_{\text{angular}}(\nu_2, Q_2, n) = \left\lfloor \frac{\nu_2}{\nu_1} \cdot n \right\rfloor \mod n
+\end{equation}
+\end{definition}
+
+Physical interpretation: $l$ counts the number of angular nodes in the secular motion. For fragmentation, $l$ corresponds to the pathway complexity---the number of distinct bond cleavages.
+
+\subsubsection{Orientation Mapper}
+
+\begin{definition}[Orientation Mapper]
+The Orientation Mapper extracts orientation $m$ from phase relationships:
+\begin{equation}
+    m = V_{\text{orient}}(\phi_1, \phi_2, l) = \text{round}\left( \frac{\phi_1 - \phi_2}{\pi} \cdot l \right)
+\end{equation}
+with $|m| \leq l$.
+\end{definition}
+
+Physical interpretation: $m$ identifies which specific fragmentation pathway was taken among pathways of equal complexity $l$.
+
+\subsubsection{Chirality Discriminator}
+
+\begin{definition}[Chirality Discriminator]
+The Chirality Discriminator extracts chirality $s$ from polarization or rotation:
+\begin{equation}
+    s = V_{\text{chiral}}(\phi_L, \phi_R) = \frac{1}{2} \text{sign}(\phi_L - \phi_R)
+\end{equation}
+where $\phi_L, \phi_R$ are phases measured with left/right circular polarization.
+\end{definition}
+
+Physical interpretation: $s = \pm 1/2$ encodes the handedness of the molecular configuration.
+
+\subsection{Instrument Independence}
+
+\begin{theorem}[Virtual Instrument Independence]
+The four virtual instruments extract orthogonal information:
+\begin{equation}
+    \text{Cov}(V_i, V_j) = 0 \quad \text{for } i \neq j
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Each virtual instrument $V_i$ depends on a distinct oscillator in the hierarchy. Independence of oscillators (by definition of hierarchy) implies independence of extracted coordinates.
+\end{proof}
+
+\subsection{Hardware Implementation Requirements}
+
+\begin{table}[h]
+\centering
+\caption{Hardware requirements for virtual instruments}
+\begin{tabular}{llc}
+\toprule
+Virtual Instrument & Required Hardware & Min. $Q$ \\
+\midrule
+Shell Resonator & Primary oscillator & $n_{\max}$ \\
+Angular Analyser & Secondary oscillator & $n_{\max}^2$ \\
+Orientation Mapper & Phase detector & $n_{\max}^2$ \\
+Chirality Discriminator & Polarization selector & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The quality factor requirements scale with desired partition depth. For $n_{\max} = 10$: Shell Resonator requires $Q \geq 10$, Angular Analyser requires $Q \geq 100$.
+
+\subsection{Virtual Instrument Composition}
+
+\begin{definition}[Instrument Ensemble]
+The instrument ensemble $\mathcal{E} = (V_{\text{shell}}, V_{\text{angular}}, V_{\text{orient}}, V_{\text{chiral}})$ is the product of four virtual instruments:
+\begin{equation}
+    \mathcal{E}: \mathcal{D} \to (n, l, m, s)
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Ensemble Completeness]
+The instrument ensemble extracts all partition coordinates. No additional virtual instruments can provide independent information.
+\end{proposition}
+
+\begin{proof}
+By Theorem~\ref{thm:completeness} (main text), four coordinates suffice. By independence (previous theorem), the four instruments provide exactly four independent measurements.
+\end{proof}
+
+\subsection{Partial Ensembles}
+
+Not all hardware platforms support the full ensemble. Partial ensembles extract subsets of coordinates:
+
+\begin{itemize}
+    \item \textbf{Mass-only} ($V_{\text{shell}}$): Extracts $n$ only. Typical of unit-resolution MS.
+    \item \textbf{MS/MS} ($V_{\text{shell}}, V_{\text{angular}}$): Extracts $(n, l)$. Typical of tandem MS.
+    \item \textbf{MS + IMS} ($V_{\text{shell}}, V_{\text{angular}}, V_{\text{orient}}$): Extracts $(n, l, m)$.
+    \item \textbf{Full ensemble}: Extracts $(n, l, m, s)$. Requires chiral selection.
+\end{itemize}
+
+\begin{proposition}[Information Hierarchy]
+The information content of partial ensembles is strictly ordered:
+\begin{equation}
+    I(V_{\text{shell}}) < I(V_{\text{shell}}, V_{\text{angular}}) < I(V_{\text{shell}}, V_{\text{angular}}, V_{\text{orient}}) < I(\mathcal{E})
+\end{equation}
+\end{proposition}
+
+Each additional virtual instrument provides non-redundant information, improving identification confidence.
+

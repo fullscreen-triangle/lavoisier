@@ -1,0 +1,135 @@
+\section{Virtual Chromatography}
+\label{sec:virtual-chromatography}
+
+\subsection{Chromatographic Oscillation}
+
+Chromatography involves oscillatory partitioning between mobile and stationary phases.
+
+\begin{definition}[Chromatographic Oscillator]
+A chromatographic oscillator is the repeated equilibration between mobile phase (M) and stationary phase (S):
+\begin{equation}
+    \text{M} \rightleftharpoons \text{S} \rightleftharpoons \text{M} \rightleftharpoons \cdots
+\end{equation}
+with effective frequency $\nu_{\text{chrom}} = v / L$ where $v$ is flow velocity and $L$ is the characteristic plate height.
+\end{definition}
+
+\begin{proposition}[Chromatographic Quality Factor]
+The plate count $N$ is the quality factor of the chromatographic oscillator:
+\begin{equation}
+    Q_{\text{chrom}} = N = \frac{L_{\text{column}}}{H}
+\end{equation}
+where $H$ is the height equivalent to a theoretical plate.
+\end{proposition}
+
+\subsection{Partition Coordinates from Retention}
+
+\begin{definition}[Retention-Based Partition Depth]
+The partition depth extractable from retention time $t_R$ is
+\begin{equation}
+    n_{\text{chrom}} = \left\lfloor \sqrt{N} \cdot \frac{t_R - t_0}{t_R} \right\rfloor
+\end{equation}
+where $t_0$ is the void time.
+\end{definition}
+
+\begin{proposition}[Chromatographic Resolution to Partition Depth]
+Two compounds with retention times $t_{R1}$ and $t_{R2}$ have distinct partition depths if
+\begin{equation}
+    |t_{R1} - t_{R2}| > \frac{t_{R1}}{\sqrt{N}}
+\end{equation}
+\end{proposition}
+
+\subsection{Multi-Dimensional Chromatography}
+
+\begin{definition}[Orthogonal Chromatographic Dimensions]
+Chromatographic dimensions are orthogonal if they separate by independent physicochemical properties:
+\begin{itemize}
+    \item Dimension 1: Hydrophobicity (reversed-phase)
+    \item Dimension 2: Polarity (HILIC)
+    \item Dimension 3: Size (SEC)
+    \item Dimension 4: Charge (IEX)
+\end{itemize}
+\end{definition}
+
+\begin{theorem}[Chromatographic Partition Mapping]
+Orthogonal chromatographic dimensions map to partition coordinates:
+\begin{align}
+    \text{RP retention} &\to n \quad \text{(partition depth)} \\
+    \text{HILIC retention} &\to l \quad \text{(angular complexity)} \\
+    \text{SEC retention} &\to m \quad \text{(orientation)} \\
+    \text{IEX retention} &\to s \quad \text{(chirality proxy)}
+\end{align}
+\end{theorem}
+
+\begin{proof}
+Each chromatographic dimension implements an independent oscillator with distinct selectivity. The mapping to partition coordinates follows from the oscillator-coordinate correspondence (Section~\ref{sec:hardware-categorical-mechanics}).
+\end{proof}
+
+\subsection{Virtual Chromatographic Instruments}
+
+\subsubsection{Virtual Retention Index}
+
+\begin{definition}[Virtual Retention Index]
+The virtual retention index $I_V$ is a platform-independent retention descriptor:
+\begin{equation}
+    I_V = \frac{n \cdot 100 + l \cdot 10 + m + (s + 0.5)}{1.1}
+\end{equation}
+\end{definition}
+
+The virtual retention index enables comparison of retention data across different chromatographic platforms (HPLC, UHPLC, GC) by converting to partition coordinates.
+
+\subsubsection{Virtual Selectivity}
+
+\begin{definition}[Virtual Selectivity]
+The virtual selectivity between compounds A and B is
+\begin{equation}
+    \alpha_V = \frac{\|(n_A, l_A, m_A, s_A) - (n_B, l_B, m_B, s_B)\|}{n_{\max}}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Selectivity Optimization]
+Optimal chromatographic separation maximizes virtual selectivity:
+\begin{equation}
+    \text{Conditions}^* = \arg\max_{\text{Conditions}} \alpha_V(\text{A}, \text{B})
+\end{equation}
+\end{proposition}
+
+\subsection{LC-MS Integration}
+
+\begin{theorem}[LC-MS Partition Completeness]
+Hyphenated LC-MS with $\geq 2$ chromatographic dimensions and MS/MS provides partition-complete measurement.
+\end{theorem}
+
+\begin{proof}
+Two chromatographic dimensions provide $n$ and $l$. MS/MS provides $n$ (mass) and $l$ (fragmentation). The combination overcounts $n$ and $l$ but enables validation. Adding IMS provides $m$; chiral chromatography provides $s$.
+\end{proof}
+
+\subsection{Virtual Chromatogram}
+
+\begin{definition}[Virtual Chromatogram]
+A virtual chromatogram is the projection of partition coordinates onto a 1D time axis:
+\begin{equation}
+    C_V(t) = \sum_i \delta(t - t_i(n_i, l_i))
+\end{equation}
+where $t_i(n, l) = t_0 + (n + \alpha l) \cdot \Delta t$ is the virtual retention time.
+\end{definition}
+
+The virtual chromatogram is platform-independent: different chromatographic systems measuring the same analytes produce identical virtual chromatograms after coordinate transformation.
+
+\subsection{Method Translation}
+
+\begin{algorithm}
+\caption{Chromatographic Method Translation}
+\label{alg:method-translation}
+\begin{algorithmic}[1]
+\Require Method $M_1$ on platform $P_1$, target platform $P_2$
+\Ensure Translated method $M_2$
+\State Characterize $P_1$: oscillation hierarchy $\mathcal{H}_1$, quality factors $\{Q_i\}$
+\State Characterize $P_2$: oscillation hierarchy $\mathcal{H}_2$, quality factors $\{Q_j\}$
+\State Extract partition coordinates from $M_1$ on $P_1$: $(n, l, m, s)$
+\State Compute required conditions on $P_2$ to achieve same coordinates
+\State \Return $M_2$
+\end{algorithmic}
+\end{algorithm}
+
+This algorithm enables systematic method transfer between chromatographic platforms---a common pain point in analytical chemistry.
+

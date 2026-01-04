@@ -1,0 +1,131 @@
+\section{Categorical Dynamics and Selection Rules}
+\label{sec:categorical-dynamics}
+
+\subsection{Transition Energetics}
+
+\begin{definition}[Categorical Transition]
+A categorical transition is a change in partition coordinates
+\begin{equation}
+    (n_i, l_i, m_i, s_i) \to (n_f, l_f, m_f, s_f)
+\end{equation}
+induced by energy transfer $\Delta E$.
+\end{definition}
+
+For molecular fragmentation, categorical transitions correspond to bond cleavage events. The initial state represents the precursor ion; the final state represents the fragment ion(s).
+
+\begin{proposition}[Transition Energy]
+The energy required for a categorical transition scales as
+\begin{equation}
+    \Delta E = E_0 \left( \frac{1}{n_f^2} - \frac{1}{n_i^2} \right)
+\end{equation}
+where $E_0$ is a characteristic energy scale (analogous to the Rydberg energy for atomic transitions).
+\end{proposition}
+
+\begin{proof}
+The binding energy at partition depth $n$ scales as $E_n \propto -1/n^2$ (derivation in the bounded-systems framework). The transition energy is the difference between final and initial binding energies.
+\end{proof}
+
+For $n_f > n_i$ (fragmentation), $\Delta E > 0$: energy must be supplied to increase partition depth. This energy is provided by collision-induced dissociation (CID), higher-energy collisional dissociation (HCD), or photodissociation.
+
+\subsection{Selection Rules}
+
+\begin{theorem}[Partition Selection Rules]
+\label{thm:selection}
+Categorical transitions satisfy the selection rules:
+\begin{align}
+    \Delta l &= \pm 1 \\
+    \Delta m &\in \{-1, 0, +1\} \\
+    \Delta s &= 0
+\end{align}
+\end{theorem}
+
+\begin{proof}
+The selection rules follow from conservation laws in bounded phase space:
+
+\textbf{Angular complexity ($\Delta l = \pm 1$):} The transition operator must connect states of different angular structure. The lowest-order coupling is dipole ($\Delta l = 1$). Quadrupole transitions ($\Delta l = 2$) are suppressed by selection rules derived from the matrix elements of the perturbation Hamiltonian.
+
+\textbf{Orientation ($\Delta m \in \{-1, 0, +1\}$):} The projection quantum number changes by at most one unit per transition, corresponding to absorption or emission of angular momentum quantum $\hbar$.
+
+\textbf{Chirality ($\Delta s = 0$):} Chirality is conserved in electromagnetic interactions. Parity-violating weak interactions can change $s$, but these are negligible on the energy scales of mass spectrometry.
+\end{proof}
+
+\subsection{Fragmentation Pathways}
+
+\begin{definition}[Fragmentation Pathway]
+A fragmentation pathway is a sequence of categorical transitions
+\begin{equation}
+    (n_0, l_0, m_0, s_0) \to (n_1, l_1, m_1, s_1) \to \cdots \to (n_k, l_k, m_k, s_k)
+\end{equation}
+where each step satisfies the selection rules.
+\end{definition}
+
+\begin{proposition}[Pathway Constraints]
+The number of distinct pathways from partition depth $n_i$ to $n_f$ is constrained by:
+\begin{enumerate}
+    \item Minimum steps: $|n_f - n_i|$ (one depth increment per step)
+    \item Angular accumulation: $|l_f - l_i| \leq |n_f - n_i|$ (each step changes $l$ by at most 1)
+    \item Orientation accumulation: $|m_f - m_i| \leq |n_f - n_i|$
+\end{enumerate}
+\end{proposition}
+
+These constraints explain empirical observations in tandem mass spectrometry:
+\begin{itemize}
+    \item Primary fragments ($n = 1$) show limited angular complexity ($l \leq 1$)
+    \item Secondary fragments require at least two fragmentation steps
+    \item Stereochemistry is preserved through fragmentation cascades
+\end{itemize}
+
+\subsection{Transition Rates}
+
+\begin{definition}[Categorical Transition Rate]
+The rate of transition from state $(n_i, l_i, m_i, s_i)$ to $(n_f, l_f, m_f, s_f)$ is
+\begin{equation}
+    W_{i \to f} = \frac{2\pi}{\hbar} |\langle f | H' | i \rangle|^2 \rho(E_f)
+\end{equation}
+where $H'$ is the perturbation (collision energy) and $\rho(E_f)$ is the density of final states.
+\end{definition}
+
+\begin{proposition}[Rate Scaling]
+For collision-induced dissociation, the transition rate scales as
+\begin{equation}
+    W_{n_i \to n_f} \propto \frac{1}{n_f^3} \cdot f(l_i, l_f) \cdot g(m_i, m_f)
+\end{equation}
+where $f$ and $g$ are geometric factors of order unity satisfying the selection rules.
+\end{proposition}
+
+The $1/n_f^3$ scaling implies that transitions to higher partition depths are increasingly suppressed. This explains why MS$^3$ and MS$^4$ yield progressively weaker signals: the categorical transition rates decrease with fragmentation depth.
+
+\subsection{Neutral Loss Patterns}
+
+\begin{definition}[Neutral Loss]
+A neutral loss is the mass difference between precursor and fragment:
+\begin{equation}
+    \Delta m = m_{\text{precursor}} - m_{\text{fragment}}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Neutral Loss Selection]
+Neutral losses correspond to specific categorical transitions and satisfy:
+\begin{equation}
+    \Delta m = m_0 \cdot \Delta f(n, l)
+\end{equation}
+where $m_0$ is a characteristic mass unit (e.g., CH$_2$ = 14 Da) and $\Delta f(n, l)$ is a function determined by the selection rules.
+\end{equation}
+\end{proposition}
+
+Common neutral losses map to partition transitions:
+\begin{center}
+\begin{tabular}{lcl}
+\toprule
+Neutral Loss & $\Delta m$ (Da) & Partition Transition \\
+\midrule
+H$_2$O & 18 & $(n, l) \to (n+1, l \pm 1)$ \\
+CO & 28 & $(n, l) \to (n+1, l \pm 1)$ \\
+CO$_2$ & 44 & $(n, l) \to (n+2, l)$ \\
+C$_3$H$_6$ & 42 & $(n, l) \to (n+1, l \pm 1)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The CO$_2$ loss ($\Delta n = 2$, $\Delta l = 0$) requires two sequential steps, explaining its lower intensity compared to H$_2$O or CO losses ($\Delta n = 1$).
+

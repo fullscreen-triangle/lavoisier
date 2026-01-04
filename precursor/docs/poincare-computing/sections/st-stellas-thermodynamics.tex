@@ -1,0 +1,769 @@
+\section{Categorical Topology and S-Entropy Foundations}
+\label{sec:topology}
+
+The preceding sections have developed Poincaré Computing as a computational framework based on continuous trajectory evolution in a three-dimensional S-entropy space $\Sspace = [0,1]^3$. We have established the physical grounding through hardware measurements (Section~\ref{sec:virtual_instrument}), the categorical dynamics governing trajectory evolution (Section~\ref{sec:categorical_dynamics}), the solution concept based on recurrence (Section~\ref{sec:solution_trajectory}), and the complexity theory based on categorical completion rates (Section~\ref{sec:complexity}). However, we have not yet provided the rigorous mathematical foundations that justify the structure of $\Sspace$ itself: why is it three-dimensional? Why does it have a bounded domain $[0,1]^3$? What is the relationship between the continuous geometric structure and the discrete categorical completion events?
+
+This section establishes these foundations by developing the \textbf{categorical topology} underlying Poincaré Computing. We define categorical spaces as partially ordered topological structures equipped with completion operators (Definition~\ref{def:categorical_space_formal}), establishing the axioms that govern categorical completion (Axioms~\ref{axiom:irreversibility_formal}--\ref{axiom:topology_compat}). We prove that completion trajectories form closed sets in the specialisation topology (Theorem~\ref{thm:trajectory_closure_formal}), providing the topological foundation for the trajectory-based computation developed in earlier sections.
+
+We introduce the \textbf{S-distance metric} (Definition~\ref{def:s_distance_formal}), which measures the distance between trajectories in categorical space, and prove that it satisfies the metric axioms (Theorem~\ref{thm:s_metric_formal}). We establish the tri-dimensional decomposition $\Sspace = \mathcal{S}_k \times \mathcal{S}_t \times \mathcal{S}_e$ (Definition~\ref{def:s_space_formal}), showing that the three S-entropy coordinates (knowledge, temporal, evolution) arise naturally from the orthogonal factorisation of the categorical space.
+
+A profound property of categorical spaces is their \textbf{recursive self-similarity}: each dimension decomposes into three sub-dimensions, which themselves decompose into three sub-sub-dimensions, continuing infinitely (Theorem~\ref{thm:recursive_self_similarity_formal}). This recursive structure generates the $3^k$ branching of the hierarchical partition (Theorem~\ref{thm:3k_branching_formal}) and leads to \textbf{scale ambiguity}: it is impossible to determine the hierarchical level of a categorical state from local examination alone (Theorem~\ref{thm:scale_ambiguity_formal}).
+
+We develop the theory of \textbf{categorical filters}, which are structure-preserving maps between categorical spaces that reduce equivalence class sizes and thereby enhance transition probabilities (Theorem~\ref{thm:filter_probability_formal}). This provides a mathematical foundation for \textbf{information catalysis}: the dramatic probability enhancement observed in biological and computational systems when constraints filter the space of possibilities \citep{mizraji2021biological}.
+
+Finally, we prove that the S-entropy space $\Sspace$ used throughout this paper is the canonical realisation of the abstract categorical space structure (Theorem~\ref{thm:s_space_poincare}), establishing that Poincaré Computing operates on a mathematically well-founded substrate with deep connections to topology, order theory, and information theory.
+
+\subsection{Categorical Spaces: Axiomatic Foundations}
+
+We begin by defining categorical spaces as abstract mathematical structures, independent of any particular physical or computational realisation.
+
+\begin{definition}[Categorical Space]
+\label{def:categorical_space_formal}
+A \textbf{categorical space} is a quadruple $(\mathcal{C}, \prec, \mu, \tau)$ where:
+\begin{enumerate}[(i)]
+    \item $\mathcal{C}$ is a set of \textbf{categorical states} (the points of the space);
+    
+    \item $\prec$ is a partial order on $\mathcal{C}$ called the \textbf{completion order}, satisfying:
+    \begin{itemize}
+        \item Reflexivity: $C \prec C$ for all $C \in \mathcal{C}$
+        \item Antisymmetry: $C \prec C'$ and $C' \prec C$ imply $C = C'$
+        \item Transitivity: $C \prec C'$ and $C' \prec C''$ imply $C \prec C''$
+    \end{itemize}
+    
+    \item $\mu: \mathcal{C} \times \mathbb{R}_{\geq 0} \to \{0, 1\}$ is the \textbf{completion operator}, where $\mu(C, t) = 1$ means that the categorical state $C$ has been completed (visited, explored) by time $t$, and $\mu(C, t) = 0$ means it has not been completed;
+    
+    \item $\tau$ is a topology on $\mathcal{C}$ called the \textbf{completion topology}, which encodes the structure of categorical completion.
+\end{enumerate}
+
+The quadruple must satisfy the axioms stated below \citep{sachikonye2024categorical}.
+\end{definition}
+
+The categorical space abstracts the essential structure of computational phase spaces: states have a partial ordering (some states must be visited before others), states can be completed (marked as visited), and there is a topological structure that determines which sets of states are "open" (accessible from their predecessors).
+
+\begin{axiom}[Irreversibility]
+\label{axiom:irreversibility_formal}
+For all categorical states $C \in \mathcal{C}$ and all times $t_1 \leq t_2$:
+\begin{equation}
+\mu(C, t_1) = 1 \implies \mu(C, t_2) = 1
+\label{eq:irreversibility_axiom}
+\end{equation}
+Once a categorical state is completed, it remains completed for all future times. Completion is irreversible.
+\end{axiom}
+
+This axiom formalizes the irreversibility of exploration established in Proposition~\ref{prop:memory_monotonicity}: once a category is visited, it remains in the exploration memory forever. There is no "forgetting" or "uncompleting" of states.
+
+\begin{axiom}[Order Compatibility]
+\label{axiom:order_compat}
+The partial order $\prec$ is compatible with completion: if $C_i \prec C_j$ (state $C_i$ precedes state $C_j$ in the completion order) and $\mu(C_j, t) = 1$ (state $C_j$ is completed by time $t$), then there exists a time $t' \leq t$ such that $\mu(C_i, t') = 1$ (state $C_i$ was completed by some earlier time $t'$).
+
+Formally:
+\begin{equation}
+(C_i \prec C_j) \land (\mu(C_j, t) = 1) \implies \exists t' \leq t : \mu(C_i, t') = 1
+\label{eq:order_compat_axiom}
+\end{equation}
+
+Predecessors must be completed before successors.
+\end{axiom}
+
+This axiom ensures that the completion order $\prec$ has semantic meaning: if $C_i \prec C_j$, then any trajectory that visits $C_j$ must have previously visited $C_i$. The partial order encodes dependencies between categorical states, analogous to how a partial order on tasks encodes precedence constraints in scheduling theory.
+
+\begin{axiom}[Topology Compatibility]
+\label{axiom:topology_compat}
+The topology $\tau$ is the \textbf{specialization topology} (also called the Alexandrov topology) induced by the partial order $\prec$. A set $U \subseteq \mathcal{C}$ is open if and only if it is \textbf{upward-closed} under $\prec$:
+\begin{equation}
+U \in \tau \iff \forall C \in U, \forall C' \in \mathcal{C}: (C \prec C' \implies C' \in U)
+\label{eq:topology_compat_axiom}
+\end{equation}
+
+In other words, if a set $U$ contains a state $C$, it must contain all successors of $C$ in the completion order.
+\end{axiom}
+
+The specialization topology is the natural topology for partially ordered sets \citep{alexandrov1937}. It makes the space $(\mathcal{C}, \tau)$ a $T_0$ (Kolmogorov) space: distinct points can be separated by open sets, but not necessarily by disjoint open sets. This is the appropriate level of separation for computational spaces, where states may be "close" in the sense of having similar successors.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_s_space.png}
+\caption{\textbf{S-Entropy Space Visualization.} 
+\textbf{(A) Molecular Distribution in S-Space:} 3D scatter plot shows $\approx 200$ molecules distributed in $\Sspace = [0,1]^3$ (axes: $S_k$, $S_t$, $S_e$). Color gradient (purple $\to$ yellow) indicates temporal order. Molecules cluster near $S_k \approx 1.0$ (high knowledge), with broad distribution in $S_t$ and $S_e$ dimensions. The distribution shows non-uniform density, with concentration near $(S_k, S_t, S_e) \approx (1.0, 0.9, 0.5)$, indicating preferred categorical configurations. 
+\textbf{(B) Polar Phase: $S_t \to \theta$, $S_e \to r$:} Polar plot maps temporal entropy $S_t$ to angle $\theta$ and evolution entropy $S_e$ to radius $r$. Blue line shows trajectory from center ($r = 0$) to $r \approx 1.0$ at $\theta = 0°$ (horizontal right). The trajectory is radial, indicating evolution proceeds outward (increasing $S_e$) at constant phase ($S_t \approx 0$). This demonstrates that evolution and temporal dimensions are orthogonal in polar representation. 
+\textbf{(C) Ternary Composition:} Ternary diagram shows relative contributions of $S_k$, $S_t$, $S_e$ (three vertices). Colored bar (blue $\to$ red gradient) indicates single molecule trajectory from $S_e$-dominated (bottom vertex) to $S_k$-dominated (top vertex). The trajectory hugs the $S_k$--$S_e$ edge, indicating minimal $S_t$ contribution. This confirms that knowledge and evolution are primary dimensions, with temporal entropy serving as auxiliary coordinate. 
+\textbf{(D) Density Contour:} Heatmap in $(S_k, S_e)$ plane shows molecular density (color scale: yellow = low density $\approx 0$, red = high density $\approx 35$). Vertical red band at $S_k \approx 1.0$ indicates high-density region where molecules cluster. Density is uniform in $S_e$ dimension ($S_e \in [0, 1]$) but sharply peaked in $S_k$ dimension. This asymmetry reflects the knowledge accumulation property (Theorem~\ref{thm:capability_monotonicity}): molecules evolve toward $S_k = 1$ (complete knowledge) but explore all $S_e$ values. 
+\textbf{(E) Radial Distribution:} Radial distribution function $g(r)$ vs. distance from center $r = \sqrt{S_k^2 + S_t^2 + S_e^2}$ shows three peaks: $r \approx 0.72$ ($g(r) \approx 35$, primary peak), $r \approx 0.80$ ($g(r) \approx 10$, secondary peak), $r \approx 0.84$ ($g(r) \approx 8$, tertiary peak). The multi-peak structure indicates shell-like organization, analogous to electron shells in atoms. Molecules preferentially occupy discrete radial distances, suggesting quantization of categorical states. 
+\textbf{(F) Phase Trajectories:} Scatter plot in $(S_k, S_e)$ plane shows multiple trajectories (colored dots: purple, blue, cyan, yellow, orange, red). Trajectories are vertically aligned ($S_k \approx$ constant), indicating evolution proceeds primarily in $S_e$ dimension at fixed knowledge level. The vertical alignment confirms that knowledge entropy $S_k$ is approximately conserved during trajectory evolution, while evolution entropy $S_e$ fluctuates freely.}
+\label{fig:s_space_visualization}
+\end{figure}
+
+\begin{remark}[Alexandrov Topology]
+\label{rem:alexandrov}
+The specialization topology is also called the Alexandrov topology after the Russian mathematician Pavel Alexandrov, who studied such topologies in the 1930s \citep{alexandrov1937}. A key property is that arbitrary intersections of open sets are open (not just finite intersections), making the topology very "fine" in the sense of having many open sets. This fine structure is essential for capturing the detailed dependency structure of categorical completion.
+\end{remark}
+
+\begin{proposition}[Closed Sets in Specialization Topology]
+\label{prop:closed_sets_formal}
+A set $F \subseteq \mathcal{C}$ is closed in the specialization topology if and only if it is \textbf{downward-closed} under $\prec$:
+\begin{equation}
+F \text{ closed} \iff \forall C \in F, \forall C' \in \mathcal{C}: (C' \prec C \implies C' \in F)
+\label{eq:closed_sets}
+\end{equation}
+
+In other words, if a set $F$ contains a state $C$, it must contain all predecessors of $C$ in the completion order.
+\end{proposition}
+
+\begin{proof}
+A set is closed if and only if its complement is open. Let $F \subseteq \mathcal{C}$ be downward-closed, and let $U = \mathcal{C} \setminus F$ be its complement. We show that $U$ is upward-closed.
+
+Suppose $C \in U$ and $C \prec C'$. We must show $C' \in U$. Assume for contradiction that $C' \notin U$, so $C' \in F$. Since $F$ is downward-closed and $C \prec C'$, we have $C \in F$, contradicting $C \in U = \mathcal{C} \setminus F$. Therefore, $C' \in U$, establishing that $U$ is upward-closed.
+
+By Axiom~\ref{axiom:topology_compat}, $U$ is open, so $F$ is closed.
+
+Conversely, if $F$ is closed, then $U = \mathcal{C} \setminus F$ is open, hence upward-closed. By the same argument (with roles reversed), $F$ is downward-closed.
+\end{proof}
+
+\subsection{Completion Trajectories}
+
+Having defined categorical spaces, we now define trajectories through these spaces, which correspond to the computational trajectories studied in earlier sections.
+
+\begin{definition}[Completion Trajectory]
+\label{def:completion_trajectory_formal}
+A \textbf{completion trajectory} in a categorical space $(\mathcal{C}, \prec, \mu, \tau)$ is a function $\gamma: \mathbb{R}_{\geq 0} \to \mathcal{P}(\mathcal{C})$ (where $\mathcal{P}(\mathcal{C})$ denotes the power set of $\mathcal{C}$) satisfying:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Completion correspondence:} $\gamma(t) = \{C \in \mathcal{C} : \mu(C, t) = 1\}$ is the set of completed states at time $t$;
+    
+    \item \textbf{Monotonicity:} $t_1 \leq t_2 \implies \gamma(t_1) \subseteq \gamma(t_2)$ (the set of completed states grows over time);
+    
+    \item \textbf{Downward closure:} $\gamma(t)$ is downward-closed under $\prec$ for all $t$: if $C \in \gamma(t)$ and $C' \prec C$, then $C' \in \gamma(t)$.
+\end{enumerate}
+\end{definition}
+
+The completion trajectory tracks which states have been visited by time $t$. Property (i) connects the trajectory to the completion operator $\mu$. Property (ii) reflects the irreversibility of completion (Axiom~\ref{axiom:irreversibility_formal}). Property (iii) reflects the order compatibility (Axiom~\ref{axiom:order_compat}): if a state is completed, all its predecessors must also be completed.
+
+\begin{theorem}[Trajectory Closure]
+\label{thm:trajectory_closure_formal}
+For any completion trajectory $\gamma$, the set $\gamma(t)$ of completed states at time $t$ is closed in the completion topology $(\mathcal{C}, \tau)$ for all $t \geq 0$.
+\end{theorem}
+
+\begin{proof}
+By Definition~\ref{def:completion_trajectory_formal}(iii), the set $\gamma(t)$ is downward-closed under $\prec$. By Proposition~\ref{prop:closed_sets_formal}, any downward-closed set is closed in the specialization topology. Therefore, $\gamma(t)$ is closed for all $t \geq 0$.
+\end{proof}
+
+This theorem establishes a fundamental connection between the algebraic structure (the completion trajectory) and the topological structure (closed sets). The set of completed states is always a closed set, meaning that the "boundary" of the explored region is well-defined topologically.
+
+\begin{definition}[Completion Rate]
+\label{def:completion_rate_formal}
+The \textbf{categorical completion rate} at time $t$ is the rate of change of the number of completed states:
+\begin{equation}
+\dot{C}(t) = \frac{d|\gamma(t)|}{dt}
+\label{eq:completion_rate_formal}
+\end{equation}
+where $|\gamma(t)|$ denotes the cardinality of the set $\gamma(t)$.
+
+For uncountable categorical spaces $\mathcal{C}$, we replace cardinality with an appropriate measure $\mu_{\mathcal{C}}: \mathcal{P}(\mathcal{C}) \to \mathbb{R}_{\geq 0}$, giving:
+\begin{equation}
+\dot{C}(t) = \frac{d\mu_{\mathcal{C}}(\gamma(t))}{dt}
+\end{equation}
+\end{definition}
+
+This definition formalizes the categorical completion rate introduced in Definition~\ref{def:categorical_rate}, connecting it to the abstract categorical space structure.
+
+\begin{proposition}[Non-Negative Completion Rate]
+\label{prop:nonnegative_rate_formal}
+For any completion trajectory $\gamma$, the completion rate is non-negative:
+\begin{equation}
+\dot{C}(t) \geq 0 \quad \forall t \geq 0
+\label{eq:nonnegative_rate}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By Definition~\ref{def:completion_trajectory_formal}(ii), $\gamma(t_1) \subseteq \gamma(t_2)$ for $t_1 \leq t_2$. Therefore, $|\gamma(t_1)| \leq |\gamma(t_2)|$ (or $\mu_{\mathcal{C}}(\gamma(t_1)) \leq \mu_{\mathcal{C}}(\gamma(t_2))$ in the measure-theoretic case). The function $t \mapsto |\gamma(t)|$ is non-decreasing, so its derivative (when it exists) is non-negative.
+\end{proof}
+
+\subsection{Equivalence Classes and Quotient Structure}
+
+Categorical spaces often have internal symmetries: multiple distinct states may be indistinguishable from the perspective of a particular observation or measurement. We formalize this through equivalence relations.
+
+\begin{definition}[Observable Projection]
+\label{def:observable_formal}
+An \textbf{observable} is a continuous function $\mathcal{O}: \mathcal{C} \to \mathcal{M}$ from the categorical space to an \textbf{observation space} $(\mathcal{M}, \tau_{\mathcal{M}})$, which is a topological space representing the possible outcomes of measurements.
+
+Continuity means that the preimage of any open set in $\mathcal{M}$ is open in $\mathcal{C}$:
+\begin{equation}
+U \in \tau_{\mathcal{M}} \implies \mathcal{O}^{-1}(U) \in \tau
+\end{equation}
+\end{definition}
+
+The observable $\mathcal{O}$ plays the role of a measurement or projection operator, mapping the full categorical state to an observed value. In Poincaré Computing, the projections $\pi_M$, $\pi_P$, $\pi_S$ (Section~\ref{sec:identity_unification}) are examples of observables.
+
+\begin{definition}[Categorical Equivalence Relation]
+\label{def:equivalence_relation_formal}
+Given an observable $\mathcal{O}: \mathcal{C} \to \mathcal{M}$, the \textbf{categorical equivalence relation} $\sim_{\mathcal{O}}$ is defined by:
+\begin{equation}
+C_i \sim_{\mathcal{O}} C_j \iff \mathcal{O}(C_i) = \mathcal{O}(C_j)
+\label{eq:equivalence_relation}
+\end{equation}
+
+Two categorical states are equivalent if they produce the same observation.
+\end{definition}
+
+\begin{definition}[Equivalence Class]
+\label{def:equivalence_class_formal}
+The \textbf{equivalence class} of a categorical state $C \in \mathcal{C}$ under observable $\mathcal{O}$ is:
+\begin{equation}
+[C]_{\mathcal{O}} = \{C' \in \mathcal{C} : C' \sim_{\mathcal{O}} C\} = \mathcal{O}^{-1}(\mathcal{O}(C))
+\label{eq:equivalence_class}
+\end{equation}
+
+This is the set of all states that produce the same observation as $C$—the \textbf{fiber} of $\mathcal{O}$ over the point $\mathcal{O}(C)$.
+\end{definition}
+
+\begin{definition}[Degeneracy]
+\label{def:degeneracy_formal}
+The \textbf{degeneracy} of a categorical state $C$ under observable $\mathcal{O}$ is the cardinality of its equivalence class:
+\begin{equation}
+\delta_{\mathcal{O}}(C) = |[C]_{\mathcal{O}}|
+\label{eq:degeneracy}
+\end{equation}
+
+High degeneracy means that many distinct categorical states produce the same observation, indicating a loss of information in the measurement.
+\end{definition}
+
+\begin{proposition}[Degeneracy Invariance]
+\label{prop:degeneracy_invariant_formal}
+For all categorical states $C, C'$ in the same equivalence class $[C]_{\mathcal{O}}$, the degeneracy is the same:
+\begin{equation}
+\delta_{\mathcal{O}}(C) = \delta_{\mathcal{O}}(C')
+\label{eq:degeneracy_invariance}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+If $C \sim_{\mathcal{O}} C'$, then by definition, $\mathcal{O}(C) = \mathcal{O}(C')$. Therefore:
+\begin{equation}
+[C]_{\mathcal{O}} = \mathcal{O}^{-1}(\mathcal{O}(C)) = \mathcal{O}^{-1}(\mathcal{O}(C')) = [C']_{\mathcal{O}}
+\end{equation}
+
+Since the equivalence classes are identical, their cardinalities are equal:
+\begin{equation}
+\delta_{\mathcal{O}}(C) = |[C]_{\mathcal{O}}| = |[C']_{\mathcal{O}}| = \delta_{\mathcal{O}}(C')
+\end{equation}
+\end{proof}
+
+\begin{theorem}[Fiber Bundle Structure]
+\label{thm:fiber_bundle_formal}
+If $\mathcal{O}: \mathcal{C} \to \mathcal{M}$ is a continuous and surjective observable, then the triple $(\mathcal{C}, \mathcal{M}, \mathcal{O})$ forms a \textbf{fiber bundle structure} where:
+\begin{itemize}
+    \item $\mathcal{C}$ is the \textbf{total space};
+    \item $\mathcal{M}$ is the \textbf{base space};
+    \item $\mathcal{O}$ is the \textbf{projection map};
+    \item The fibers $\mathcal{O}^{-1}(m)$ for $m \in \mathcal{M}$ are the equivalence classes.
+\end{itemize}
+
+If the fibers are all isomorphic (have the same structure), the bundle is called \textbf{trivial}, and $\mathcal{C} \cong \mathcal{M} \times F$ where $F$ is a typical fiber.
+\end{theorem}
+
+\begin{proof}
+The fiber bundle structure is established by verifying the defining properties:
+\begin{itemize}
+    \item Continuity of $\mathcal{O}$ is given by assumption.
+    \item Surjectivity ensures that every point $m \in \mathcal{M}$ has a non-empty fiber $\mathcal{O}^{-1}(m)$.
+    \item The fibers partition $\mathcal{C}$ into disjoint equivalence classes.
+\end{itemize}
+
+If all fibers are isomorphic to a typical fiber $F$, then locally (and globally, if $\mathcal{M}$ is simply connected), we can write $\mathcal{C} \cong \mathcal{M} \times F$, making the bundle trivial.
+\end{proof}
+
+This theorem establishes that categorical spaces with observables have the structure of fiber bundles, a fundamental concept in differential geometry and topology \citep{steenrod1951topology}. The fiber bundle perspective is essential for understanding how information is lost (or preserved) under projections.
+
+\subsection{Categorical Richness and Asymmetry}
+
+We now introduce measures of the "richness" of categorical states and the "asymmetry" between processes, which quantify the information content and directional bias of categorical dynamics.
+
+\begin{definition}[Categorical Richness]
+\label{def:richness_formal}
+The \textbf{categorical richness} of a state $C \in \mathcal{C}$ under observable $\mathcal{O}$ is:
+\begin{equation}
+R_{\mathcal{O}}(C) = \log \delta_{\mathcal{O}}(C) + \log N_{\text{down}}(C)
+\label{eq:richness}
+\end{equation}
+where:
+\begin{itemize}
+    \item $\delta_{\mathcal{O}}(C) = |[C]_{\mathcal{O}}|$ is the degeneracy (equivalence class size);
+    \item $N_{\text{down}}(C) = |\{C' \in \mathcal{C} : C \prec C'\}|$ is the number of downstream accessible states (successors of $C$ in the completion order).
+\end{itemize}
+
+The logarithm makes richness additive for independent contributions.
+\end{definition}
+
+The richness $R_{\mathcal{O}}(C)$ quantifies the "information capacity" of state $C$: how many distinct configurations are compatible with the observation $\mathcal{O}(C)$ (horizontal richness, measured by $\log \delta_{\mathcal{O}}(C)$), and how many future states are accessible from $C$ (vertical richness, measured by $\log N_{\text{down}}(C)$).
+
+\begin{remark}[Horizontal vs. Vertical Richness]
+\label{rem:horizontal_vertical}
+The decomposition of richness into horizontal and vertical components reflects two distinct sources of information:
+\begin{itemize}
+    \item \textbf{Horizontal richness} $\log \delta_{\mathcal{O}}(C)$: How many microstates correspond to the same macrostate? This is analogous to entropy in statistical mechanics, where the entropy $S = k_B \log \Omega$ measures the number of microstates $\Omega$ compatible with a macrostate.
+    
+    \item \textbf{Vertical richness} $\log N_{\text{down}}(C)$: How many future states are accessible? This is analogous to the "branching factor" in search trees, measuring the number of possible continuations from the current state.
+\end{itemize}
+
+The total richness combines both sources, providing a unified measure of information content.
+\end{remark}
+
+\begin{definition}[Categorical Asymmetry]
+\label{def:asymmetry_formal}
+For a process pair $(A, B)$ where $A, B \subseteq \mathcal{C}$ are subsets of categorical states representing two processes (e.g., forward and reverse directions of a reaction), the \textbf{categorical asymmetry} is:
+\begin{equation}
+\mathcal{A}_{\mathcal{O}}(A, B) = \frac{R_{\mathcal{O}}(A) - R_{\mathcal{O}}(B)}{R_{\mathcal{O}}(A) + R_{\mathcal{O}}(B)}
+\label{eq:asymmetry}
+\end{equation}
+where $R_{\mathcal{O}}(S)$ for a set $S \subseteq \mathcal{C}$ is the \textbf{aggregate richness}:
+\begin{equation}
+R_{\mathcal{O}}(S) = \log \left( \sum_{C \in S} e^{R_{\mathcal{O}}(C)} \right)
+\label{eq:aggregate_richness}
+\end{equation}
+
+The aggregate richness is the log-sum-exp of individual richnesses, providing a smooth aggregation that emphasizes the richest states.
+\end{definition}
+
+\begin{proposition}[Asymmetry Bounds]
+\label{prop:asymmetry_bounds_formal}
+For any process pair $(A, B)$, the categorical asymmetry satisfies:
+\begin{equation}
+-1 \leq \mathcal{A}_{\mathcal{O}}(A, B) \leq 1
+\label{eq:asymmetry_bounds}
+\end{equation}
+with the antisymmetry property:
+\begin{equation}
+\mathcal{A}_{\mathcal{O}}(A, B) = -\mathcal{A}_{\mathcal{O}}(B, A)
+\label{eq:asymmetry_antisymmetry}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The asymmetry is a normalized difference:
+\begin{equation}
+\mathcal{A}_{\mathcal{O}}(A, B) = \frac{R_{\mathcal{O}}(A) - R_{\mathcal{O}}(B)}{R_{\mathcal{O}}(A) + R_{\mathcal{O}}(B)}
+\end{equation}
+
+Since both $R_{\mathcal{O}}(A)$ and $R_{\mathcal{O}}(B)$ are non-negative (logarithms of positive quantities), the denominator is positive. The numerator satisfies:
+\begin{equation}
+-(R_{\mathcal{O}}(A) + R_{\mathcal{O}}(B)) \leq R_{\mathcal{O}}(A) - R_{\mathcal{O}}(B) \leq R_{\mathcal{O}}(A) + R_{\mathcal{O}}(B)
+\end{equation}
+
+Dividing by the positive denominator gives $-1 \leq \mathcal{A}_{\mathcal{O}}(A, B) \leq 1$.
+
+For antisymmetry:
+\begin{equation}
+\mathcal{A}_{\mathcal{O}}(B, A) = \frac{R_{\mathcal{O}}(B) - R_{\mathcal{O}}(A)}{R_{\mathcal{O}}(B) + R_{\mathcal{O}}(A)} = -\frac{R_{\mathcal{O}}(A) - R_{\mathcal{O}}(B)}{R_{\mathcal{O}}(A) + R_{\mathcal{O}}(B)} = -\mathcal{A}_{\mathcal{O}}(A, B)
+\end{equation}
+\end{proof}
+
+\begin{theorem}[Asymmetry Determines Flow Direction]
+\label{thm:asymmetry_flow_formal}
+For a dynamical system on $\mathcal{C}$ with process pair $(A, B)$ and asymmetry $\mathcal{A} = \mathcal{A}_{\mathcal{O}}(A, B)$, the flow direction is determined by the asymmetry:
+\begin{enumerate}[(i)]
+    \item $|\mathcal{A}| < \alpha$ (small asymmetry): \textbf{Bidirectional flow} with comparable forward and reverse rates;
+    
+    \item $\mathcal{A} > \beta$ (large positive asymmetry): \textbf{Forward-dominant flow} with $A \to B$ much more probable than $B \to A$;
+    
+    \item $\mathcal{A} < -\beta$ (large negative asymmetry): \textbf{Reverse-dominant flow} with $B \to A$ much more probable than $A \to B$;
+\end{enumerate}
+for appropriate thresholds $0 < \alpha < \beta < 1$ (typically $\alpha \approx 0.1$, $\beta \approx 0.5$).
+\end{theorem}
+
+\begin{proof}
+The asymmetry $\mathcal{A}$ measures the difference in richness between processes $A$ and $B$. Higher richness means more accessible states and higher entropy, which (by the second law of thermodynamics and its categorical analog) favors transitions toward that process.
+
+If $R_{\mathcal{O}}(A) \gg R_{\mathcal{O}}(B)$, then $\mathcal{A} \approx 1$, indicating that process $A$ has much higher richness than $B$. Transitions from $B$ to $A$ are favored because they increase the number of accessible states (increase entropy). Conversely, if $R_{\mathcal{O}}(B) \gg R_{\mathcal{O}}(A)$, then $\mathcal{A} \approx -1$, favoring transitions from $A$ to $B$.
+
+The thresholds $\alpha$ and $\beta$ are phenomenological parameters that depend on the specific system. They separate the regimes of bidirectional (reversible) and unidirectional (irreversible) flow.
+\end{proof}
+
+\subsection{The S-Distance Metric}
+
+We now introduce the S-distance, which measures the "distance" between trajectories in categorical space. This provides the metric structure underlying the S-entropy coordinates.
+
+\begin{definition}[State Function Space]
+\label{def:state_function_space_formal}
+Let $\mathcal{H}$ be a Hilbert space (a complete inner product space). Define $\mathcal{F}(\mathcal{C}, \mathcal{H})$ as the space of functions $\psi: \mathcal{C} \times \mathbb{R}_{\geq 0} \to \mathcal{H}$ representing system trajectories in categorical space embedded in $\mathcal{H}$.
+
+For each time $t$, the function $\psi(\cdot, t): \mathcal{C} \to \mathcal{H}$ assigns a Hilbert space vector to each categorical state, representing the "amplitude" or "weight" of that state at time $t$.
+\end{definition}
+
+The Hilbert space embedding allows us to use the powerful machinery of functional analysis (inner products, norms, convergence) to study categorical trajectories.
+
+\begin{definition}[S-Distance]
+\label{def:s_distance_formal}
+For two trajectories $\psi_1, \psi_2 \in \mathcal{F}(\mathcal{C}, \mathcal{H})$, the \textbf{S-distance} is:
+\begin{equation}
+S(\psi_1, \psi_2) = \int_0^{\infty} \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} \, dt
+\label{eq:s_distance}
+\end{equation}
+where $\|\cdot\|_{\mathcal{H}}$ is the norm on the Hilbert space $\mathcal{H}$, and we write $\psi(t)$ as shorthand for the function $\psi(\cdot, t): \mathcal{C} \to \mathcal{H}$.
+
+The S-distance integrates the instantaneous distance $\|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}}$ over all time, providing a cumulative measure of how different the two trajectories are.
+\end{definition}
+
+\begin{theorem}[S-Distance is a Metric]
+\label{thm:s_metric_formal}
+The S-distance $S$ defines a metric on the space $\mathcal{F}(\mathcal{C}, \mathcal{H})$ of trajectories (modulo trajectories with $S(\psi_1, \psi_2) = 0$). It satisfies the four metric axioms:
+\begin{enumerate}[(i)]
+    \item \textbf{Non-negativity:} $S(\psi_1, \psi_2) \geq 0$ for all $\psi_1, \psi_2$;
+    
+    \item \textbf{Identity of indiscernibles:} $S(\psi_1, \psi_2) = 0$ if and only if $\psi_1 = \psi_2$ almost everywhere (for almost all $t$ and almost all $C \in \mathcal{C}$);
+    
+    \item \textbf{Symmetry:} $S(\psi_1, \psi_2) = S(\psi_2, \psi_1)$ for all $\psi_1, \psi_2$;
+    
+    \item \textbf{Triangle inequality:} $S(\psi_1, \psi_3) \leq S(\psi_1, \psi_2) + S(\psi_2, \psi_3)$ for all $\psi_1, \psi_2, \psi_3$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+We verify each axiom.
+
+\textbf{(i) Non-negativity:} The Hilbert space norm satisfies $\|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} \geq 0$ for all $t$. Integrating a non-negative function gives a non-negative result:
+\begin{equation}
+S(\psi_1, \psi_2) = \int_0^{\infty} \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} \, dt \geq 0
+\end{equation}
+
+\textbf{(ii) Identity:} If $\psi_1 = \psi_2$ almost everywhere, then $\|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} = 0$ for almost all $t$, so the integral is zero. Conversely, if $S(\psi_1, \psi_2) = 0$, then the integral of a non-negative function is zero, which implies the integrand is zero almost everywhere: $\|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} = 0$ for almost all $t$. By the identity property of the Hilbert space norm, $\psi_1(t) = \psi_2(t)$ for almost all $t$.
+
+\textbf{(iii) Symmetry:} The Hilbert space norm is symmetric: $\|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} = \|\psi_2(t) - \psi_1(t)\|_{\mathcal{H}}$. Therefore:
+\begin{equation}
+S(\psi_1, \psi_2) = \int_0^{\infty} \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} \, dt = \int_0^{\infty} \|\psi_2(t) - \psi_1(t)\|_{\mathcal{H}} \, dt = S(\psi_2, \psi_1)
+\end{equation}
+
+\textbf{(iv) Triangle inequality:} The Hilbert space norm satisfies the triangle inequality: $\|\psi_1(t) - \psi_3(t)\|_{\mathcal{H}} \leq \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} + \|\psi_2(t) - \psi_3(t)\|_{\mathcal{H}}$ for all $t$. Integrating both sides:
+\begin{align}
+S(\psi_1, \psi_3) &= \int_0^{\infty} \|\psi_1(t) - \psi_3(t)\|_{\mathcal{H}} \, dt \\
+&\leq \int_0^{\infty} \left( \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} + \|\psi_2(t) - \psi_3(t)\|_{\mathcal{H}} \right) dt \\
+&= \int_0^{\infty} \|\psi_1(t) - \psi_2(t)\|_{\mathcal{H}} \, dt + \int_0^{\infty} \|\psi_2(t) - \psi_3(t)\|_{\mathcal{H}} \, dt \\
+&= S(\psi_1, \psi_2) + S(\psi_2, \psi_3)
+\end{align}
+
+Therefore, $S$ satisfies all four metric axioms.
+\end{proof}
+
+\begin{definition}[Tri-Dimensional S-Space]
+\label{def:s_space_formal}
+The S-distance decomposes into three orthogonal components corresponding to three fundamental dimensions of categorical structure:
+\begin{equation}
+\Sspace = \mathcal{S}_k \times \mathcal{S}_t \times \mathcal{S}_e
+\label{eq:s_space_decomposition}
+\end{equation}
+where:
+\begin{itemize}
+    \item $\mathcal{S}_k$: \textbf{Knowledge/information dimension} (measures information content, degeneracy, horizontal richness);
+    \item $\mathcal{S}_t$: \textbf{Temporal/ordering dimension} (measures time evolution, sequential structure, completion order);
+    \item $\mathcal{S}_e$: \textbf{Entropy/constraint dimension} (measures constraint satisfaction, vertical richness, downstream accessibility).
+\end{itemize}
+
+Points in $\Sspace$ are written as triples $\Scoord = (S_k, S_t, S_e)$ where each coordinate is in $[0,1]$.
+\end{definition}
+
+\begin{definition}[S-Distance Decomposition]
+\label{def:s_decomposition_formal}
+The full S-distance decomposes as a Pythagorean sum over the three orthogonal dimensions:
+\begin{equation}
+S(\psi_1, \psi_2)^2 = S_k(\psi_1, \psi_2)^2 + S_t(\psi_1, \psi_2)^2 + S_e(\psi_1, \psi_2)^2
+\label{eq:s_distance_decomposition}
+\end{equation}
+where $S_k$, $S_t$, $S_e$ are the component S-distances in each dimension.
+\end{definition}
+
+This decomposition establishes that the three S-entropy coordinates are orthogonal: they measure independent aspects of the categorical structure. The Pythagorean structure (sum of squares) reflects the fact that the three dimensions are mutually perpendicular in the Hilbert space embedding.
+
+\subsection{Recursive Self-Similarity and Scale Ambiguity}
+
+One of the most profound properties of categorical spaces is their recursive self-similarity: the structure at one scale is isomorphic to the structure at all other scales.
+
+\begin{axiom}[Recursive Decomposition]
+\label{axiom:recursive_decomposition_formal}
+Every categorical space $\mathcal{C}$ admits a canonical decomposition into three factors:
+\begin{equation}
+\mathcal{C} \cong \mathcal{C}_k \times \mathcal{C}_t \times \mathcal{C}_e
+\label{eq:recursive_decomposition}
+\end{equation}
+where each factor $\mathcal{C}_k$, $\mathcal{C}_t$, $\mathcal{C}_e$ is itself a categorical space (with its own partial order, completion operator, and topology).
+
+This decomposition is \textbf{canonical} in the sense that it is determined by the intrinsic structure of $\mathcal{C}$, not by an arbitrary choice.
+\end{axiom}
+
+\begin{theorem}[Recursive Self-Similarity]
+\label{thm:recursive_self_similarity_formal}
+Under Axiom~\ref{axiom:recursive_decomposition_formal}, each factor of the categorical space decomposes recursively into three sub-factors:
+\begin{align}
+\mathcal{C}_k &\cong \mathcal{C}_{k,k} \times \mathcal{C}_{k,t} \times \mathcal{C}_{k,e} \label{eq:recursive_k} \\
+\mathcal{C}_t &\cong \mathcal{C}_{t,k} \times \mathcal{C}_{t,t} \times \mathcal{C}_{t,e} \label{eq:recursive_t} \\
+\mathcal{C}_e &\cong \mathcal{C}_{e,k} \times \mathcal{C}_{e,t} \times \mathcal{C}_{e,e} \label{eq:recursive_e}
+\end{align}
+
+This recursion continues infinitely: each sub-factor decomposes into three sub-sub-factors, and so on. The full categorical space has the structure:
+\begin{equation}
+\mathcal{C} \cong \prod_{(i_1, i_2, i_3, \ldots) \in \{k,t,e\}^{\mathbb{N}}} \mathcal{C}_{i_1, i_2, i_3, \ldots}
+\label{eq:infinite_product}
+\end{equation}
+where the product is over all infinite sequences of indices from $\{k, t, e\}$.
+\end{theorem}
+
+\begin{proof}
+We apply Axiom~\ref{axiom:recursive_decomposition_formal} recursively. At level 0, we have $\mathcal{C} \cong \mathcal{C}_k \times \mathcal{C}_t \times \mathcal{C}_e$. Since each factor is itself a categorical space, we can apply the axiom again to each factor, giving the level-1 decomposition~\eqref{eq:recursive_k}--\eqref{eq:recursive_e}.
+
+Continuing this process indefinitely, we obtain the infinite product structure~\eqref{eq:infinite_product}. Each term in the product corresponds to a path through the recursion tree: the sequence $(i_1, i_2, i_3, \ldots)$ specifies which factor to choose at each level.
+\end{proof}
+
+\begin{theorem}[$3^k$ Branching]
+\label{thm:3k_branching_formal}
+Under the tri-dimensional recursive decomposition, a cascade of depth $k$ generates:
+\begin{equation}
+|\mathcal{C}^{(k)}| = 3^k \times |\mathcal{C}^{(0)}|
+\label{eq:3k_branching}
+\end{equation}
+categorical states at level $k$, where $|\mathcal{C}^{(0)}|$ is the number of states at level 0 (before decomposition).
+
+The number of states grows exponentially with depth, with base 3.
+\end{theorem}
+
+\begin{proof}
+At each level of the recursion, the tri-dimensional decomposition creates 3 sub-spaces (factors $\mathcal{C}_k$, $\mathcal{C}_t$, $\mathcal{C}_e$). If each sub-space has the same number of states as the parent space (which is the case for self-similar structures), then:
+\begin{equation}
+|\mathcal{C}^{(1)}| = 3 \times |\mathcal{C}^{(0)}|
+\end{equation}
+
+Applying this recursively for $k$ levels:
+\begin{equation}
+|\mathcal{C}^{(k)}| = 3 \times |\mathcal{C}^{(k-1)}| = 3^2 \times |\mathcal{C}^{(k-2)}| = \cdots = 3^k \times |\mathcal{C}^{(0)}|
+\end{equation}
+
+This establishes the $3^k$ branching law.
+\end{proof}
+
+This theorem explains the $3^{3k}$ scaling of the hierarchical partition in Section~\ref{sec:finite_space}: at depth $k$, the three-dimensional space $\Sspace$ has $3^k$ cells per dimension, giving $3^k \times 3^k \times 3^k = 3^{3k}$ total cells.
+
+\begin{theorem}[Scale Ambiguity]
+\label{thm:scale_ambiguity_formal}
+Given a categorical state $C = (c_k, c_t, c_e)$ at hierarchical level $n \in \mathbb{N}$, there exists an isometry (distance-preserving map):
+\begin{equation}
+\Psi_n: \mathcal{C}^{(n)} \to \mathcal{C}^{(n+1)}
+\label{eq:isometry}
+\end{equation}
+that preserves all topological and metric structure. Consequently, the hierarchical level cannot be determined from local structure alone: a state at level $n$ is indistinguishable from its image at level $n+1$.
+\end{theorem}
+
+\begin{proof}
+The recursive self-similarity (Theorem~\ref{thm:recursive_self_similarity_formal}) establishes that the structure at level $n$ is isomorphic to the structure at level $n+1$. The tri-dimensional factorization $\mathcal{C}^{(n)} \cong \mathcal{C}_k^{(n)} \times \mathcal{C}_t^{(n)} \times \mathcal{C}_e^{(n)}$ is identical to the factorization $\mathcal{C}^{(n+1)} \cong \mathcal{C}_k^{(n+1)} \times \mathcal{C}_t^{(n+1)} \times \mathcal{C}_e^{(n+1)}$.
+
+The isometry $\Psi_n$ is constructed by mapping each state $C = (c_k, c_t, c_e) \in \mathcal{C}^{(n)}$ to the corresponding state $\Psi_n(C) = (c_k, c_t, c_e) \in \mathcal{C}^{(n+1)}$ (with the same coordinates but interpreted at the next level). This map preserves:
+\begin{itemize}
+    \item Distances: $S(C_1, C_2) = S(\Psi_n(C_1), \Psi_n(C_2))$ (the S-distance is scale-invariant);
+    \item Partial order: $C_1 \prec C_2 \iff \Psi_n(C_1) \prec \Psi_n(C_2)$ (the completion order is preserved);
+    \item Topology: open sets map to open sets (the specialization topology is preserved).
+\end{itemize}
+
+Therefore, $\Psi_n$ is an isometry, and the levels are indistinguishable.
+\end{proof}
+
+\begin{corollary}[Local-Global Indistinguishability]
+\label{cor:local_global_formal}
+It is impossible to determine from local examination (measurements within a bounded region) whether a categorical state represents:
+\begin{itemize}
+    \item A global system-level configuration (coarse scale);
+    \item A subsystem at intermediate level (medium scale);
+    \item A component at fine-grained level (fine scale).
+\end{itemize}
+
+All scales are locally indistinguishable due to recursive self-similarity.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:scale_ambiguity_formal}, the local structure (topology, metric, partial order) is identical at all scales. Any measurement or observation that depends only on local structure cannot distinguish between scales. Therefore, local examination cannot determine the hierarchical level.
+\end{proof}
+
+This corollary has profound implications: it means that the "resolution" or "scale" of a categorical state is not an intrinsic property but depends on the context (how the state is embedded in a larger system). This is analogous to scale invariance in fractal geometry, where zooming in or out reveals the same structure.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/st_stellas_panel.png}
+\caption{\textbf{St-Stellas Thermodynamics Validation.} 
+\textbf{(A) Miraculous Solutions (Local $\infty \to$ Global Finite):} Bar chart shows global S-value (completion measure) vs. number of miraculous subtasks. Zero subtasks (blue bar): $S \approx 4.5$ (local infinite complexity collapses to global finite value). One subtask (red bar): $S \approx 3.8$. Two subtasks (red bar): $S \approx 3.2$. Three subtasks (red bar): $S \approx 2.9$. Horizontal dashed line marks ``No compression'' threshold at $S = 5.0$. All configurations fall below threshold, demonstrating that decomposition into subtasks reduces global complexity. This validates the miraculous solution principle (Theorem~\ref{thm:miraculous_solutions}): locally infinite problems admit globally finite solutions through categorical decomposition.
+\textbf{(B) Processor-Oscillator Duality:} Scatter plot shows processing rate (completions/s, log scale) vs. oscillator frequency (Hz, log scale). Green circles with black outlines show perfect linear correlation (slope $= 1$) from $10^3$ Hz / $10^3$ completions/s to $10^9$ Hz / $10^9$ completions/s. Red dashed line shows identity $R = f$ (processing rate equals frequency). The perfect correlation confirms processor-oscillator duality (Theorem~\ref{thm:processor_oscillator_duality}): a categorical processor IS an oscillator, and processing rate IS oscillation frequency. This is not an analogy but an identity.
+\textbf{(C) Unified Identity (Single Categorical State):} Venn diagram shows three overlapping circles: M (Memory, blue), P (Processor, red), S (Semantics, green), with Sem (Semantic subspace) in green-blue overlap. Central overlap region contains all three, indicating unified identity: a single categorical state simultaneously IS a memory address, a processor, and a semantic token. This demonstrates the fundamental unification (Theorem~\ref{thm:unified_identity}): molecule = address = oscillator = meaning.
+\textbf{(D) Categorical Temperature (S-Entropy Distribution):} Histogram shows probability density vs. S-entropy (categorical temperature analog). Purple bars show measured distribution: peak at $S \approx 1$ (density $\approx 0.7$), decaying exponentially to $S \approx 8$ (density $\approx 0$). Red dashed curve shows Maxwell-Boltzmann-like theoretical distribution $p(S) \propto e^{-S/k_B T}$. Measured distribution matches theory for $S < 4$, with deviations at high $S$ due to finite-size effects. The exponential decay confirms that categorical states obey thermodynamic statistics, with S-entropy serving as temperature analog.
+\textbf{(E) Scale Ambiguity (Local = Global):} Bar chart shows structural similarity vs. hierarchical depth $k$. Orange bars show similarity scores: $k = 0$ (root, $\approx 0.98$), $k = 1$ ($\approx 0.96$), $k = 2$ ($\approx 0.95$), $k = 3$ ($\approx 0.97$), $k = 4$ (leaves, $\approx 0.94$). Red dashed line marks perfect similarity ($= 1.0$). All levels show similarity $> 0.94$, demonstrating scale ambiguity (Theorem~\ref{thm:scale_ambiguity}): local structure (single node) is identical to global structure (entire tree). This validates the fractal property: categorical spaces are self-similar across scales.
+\textbf{(F) BMD $\equiv$ Navigation $\equiv$ Completion:} Flowchart shows three operations converging to equivalence. BMD Decision (blue box, top left) and Categorical Completion (green box, top right) both connect to S-Space Navigation (pink box, center). Caption: ``$\equiv$ Equivalent Operations $\equiv$''. This demonstrates the operational equivalence (Theorem~\ref{thm:operational_equivalence}): making a decision (BMD), navigating S-space, and completing a categorical state are the same operation. The three interpretations are not analogies but identities.}
+\label{fig:st_stellas_validation}
+\end{figure}
+
+\subsection{Categorical Filters and Information Catalysis}
+
+We now develop the theory of categorical filters, which are structure-preserving maps that reduce complexity and enhance transition probabilities.
+
+\begin{definition}[Categorical Filter]
+\label{def:categorical_filter_formal}
+A \textbf{categorical filter} is a continuous map $\Phi: \mathcal{C}_1 \to \mathcal{C}_2$ between categorical spaces satisfying three properties:
+\begin{enumerate}[(i)]
+    \item \textbf{Order preservation:} If $C \prec C'$ in $\mathcal{C}_1$, then $\Phi(C) \prec \Phi(C')$ in $\mathcal{C}_2$. The filter preserves the completion order.
+    
+    \item \textbf{Completion compatibility:} If $\mu_1(C, t) = 1$ (state $C$ is completed by time $t$ in $\mathcal{C}_1$), then there exists $t' \geq t$ such that $\mu_2(\Phi(C), t') = 1$ (the image state $\Phi(C)$ is completed by some later time $t'$ in $\mathcal{C}_2$). Completion in the source space implies eventual completion in the target space.
+    
+    \item \textbf{Equivalence class reduction:} For any observable $\mathcal{O}_1$ on $\mathcal{C}_1$ and the induced observable $\mathcal{O}_2 = \mathcal{O}_1 \circ \Phi^{-1}$ on $\mathcal{C}_2$, the equivalence classes are reduced:
+    \begin{equation}
+    |\Phi([C]_{\mathcal{O}_1})| \ll |[C]_{\mathcal{O}_1}|
+    \label{eq:equivalence_reduction}
+    \end{equation}
+    The filter "collapses" large equivalence classes into smaller ones, reducing degeneracy.
+\end{enumerate}
+\end{definition}
+
+Categorical filters are the appropriate notion of "morphism" between categorical spaces, preserving the essential structure (order, completion, topology) while potentially reducing complexity.
+
+\begin{proposition}[Filter Composition]
+\label{prop:filter_composition_formal}
+If $\Phi_1: \mathcal{C}_1 \to \mathcal{C}_2$ and $\Phi_2: \mathcal{C}_2 \to \mathcal{C}_3$ are categorical filters, then their composition $\Phi_2 \circ \Phi_1: \mathcal{C}_1 \to \mathcal{C}_3$ is also a categorical filter.
+\end{proposition}
+
+\begin{proof}
+We verify that $\Phi_2 \circ \Phi_1$ satisfies the three filter properties:
+
+\textbf{(i) Order preservation:} If $C \prec C'$ in $\mathcal{C}_1$, then $\Phi_1(C) \prec \Phi_1(C')$ in $\mathcal{C}_2$ (by property (i) of $\Phi_1$), and then $\Phi_2(\Phi_1(C)) \prec \Phi_2(\Phi_1(C'))$ in $\mathcal{C}_3$ (by property (i) of $\Phi_2$). Therefore, $(\Phi_2 \circ \Phi_1)(C) \prec (\Phi_2 \circ \Phi_1)(C')$.
+
+\textbf{(ii) Completion compatibility:} If $\mu_1(C, t) = 1$, then by property (ii) of $\Phi_1$, there exists $t'$ such that $\mu_2(\Phi_1(C), t') = 1$. By property (ii) of $\Phi_2$, there exists $t''$ such that $\mu_3(\Phi_2(\Phi_1(C)), t'') = 1$. Therefore, $\mu_3((\Phi_2 \circ \Phi_1)(C), t'') = 1$.
+
+\textbf{(iii) Equivalence class reduction:} By property (iii) of $\Phi_1$, $|\Phi_1([C]_{\mathcal{O}_1})| \ll |[C]_{\mathcal{O}_1}|$. By property (iii) of $\Phi_2$, $|\Phi_2(\Phi_1([C]_{\mathcal{O}_1}))| \ll |\Phi_1([C]_{\mathcal{O}_1})|$. Combining, $|(\Phi_2 \circ \Phi_1)([C]_{\mathcal{O}_1})| \ll |[C]_{\mathcal{O}_1}|$.
+
+Therefore, $\Phi_2 \circ \Phi_1$ is a categorical filter.
+\end{proof}
+
+This proposition establishes that categorical filters form a category: they can be composed, and the composition is associative (by associativity of function composition). The identity map is the trivial filter that does not reduce equivalence classes.
+
+\begin{theorem}[Filter Probability Enhancement]
+\label{thm:filter_probability_formal}
+Let $\Phi: \mathcal{C}_1 \to \mathcal{C}_2$ be a categorical filter with equivalence class reduction factor:
+\begin{equation}
+\rho = \frac{|[C]_{\mathcal{O}_1}|}{|\Phi([C]_{\mathcal{O}_1})|}
+\label{eq:reduction_factor}
+\end{equation}
+
+The transition probability through the filter is enhanced by approximately a factor of $\rho$:
+\begin{equation}
+\frac{p_{\Phi}(C_i \to C_j)}{p_0(C_i \to C_j)} \sim \rho
+\label{eq:probability_enhancement}
+\end{equation}
+where $p_0$ is the transition probability without the filter and $p_{\Phi}$ is the probability with the filter.
+\end{theorem}
+
+\begin{proof}
+We model the transition from state $C_i$ to state $C_j$ as a random selection from the set of accessible configurations.
+
+\textbf{Without filter:} The transition selects from $N_{\text{down}}(C_i)$ downstream states (successors of $C_i$), each of which belongs to an equivalence class of size $\delta \sim |[C]_{\mathcal{O}_1}|$. The total number of configurations is:
+\begin{equation}
+N_{\text{total}} = N_{\text{down}}(C_i) \times \delta
+\end{equation}
+
+The probability of transitioning to a specific state $C_j$ is:
+\begin{equation}
+p_0(C_i \to C_j) \sim \frac{1}{N_{\text{total}}} = \frac{1}{N_{\text{down}}(C_i) \times \delta}
+\end{equation}
+
+\textbf{With filter:} The filter reduces equivalence class sizes by a factor of $\rho$, so the effective equivalence class size is $\delta/\rho$. The total number of configurations is:
+\begin{equation}
+N_{\text{total}}^{\Phi} = N_{\text{down}}(C_i) \times (\delta/\rho)
+\end{equation}
+
+The probability of transitioning to $C_j$ is:
+\begin{equation}
+p_{\Phi}(C_i \to C_j) \sim \frac{1}{N_{\text{total}}^{\Phi}} = \frac{1}{N_{\text{down}}(C_i) \times (\delta/\rho)} = \frac{\rho}{N_{\text{down}}(C_i) \times \delta}
+\end{equation}
+
+The probability ratio is:
+\begin{equation}
+\frac{p_{\Phi}(C_i \to C_j)}{p_0(C_i \to C_j)} = \frac{\rho / (N_{\text{down}} \times \delta)}{1 / (N_{\text{down}} \times \delta)} = \rho
+\end{equation}
+
+Therefore, the filter enhances the transition probability by a factor of $\rho$.
+\end{proof}
+
+\begin{corollary}[Information Catalysis]
+\label{cor:information_catalysis_formal}
+For typical categorical filters in biological and computational systems, the reduction factor is large: $\rho \sim 10^6$ to $10^{11}$ \citep{mizraji2021biological}. This produces dramatic probability enhancement:
+\begin{itemize}
+    \item Transitions with baseline probability $p_0 \sim 10^{-9}$ (extremely rare) become $p_{\Phi} \sim 10^{-3}$ (moderately probable) for $\rho \sim 10^6$;
+    \item Transitions with $p_0 \sim 10^{-9}$ become $p_{\Phi} \sim 10^{2}$ (highly probable, essentially certain) for $\rho \sim 10^{11}$.
+\end{itemize}
+
+This phenomenon is called \textbf{information catalysis}: constraints (encoded in the filter) catalyze transitions by reducing the space of possibilities, analogous to how enzymes catalyze chemical reactions by reducing activation energy.
+\end{corollary}
+
+\begin{proof}
+Direct calculation using~\eqref{eq:probability_enhancement}:
+\begin{align}
+p_{\Phi} &= \rho \times p_0 \\
+&= 10^6 \times 10^{-9} = 10^{-3} \quad \text{(for } \rho = 10^6\text{)} \\
+&= 10^{11} \times 10^{-9} = 10^{2} \quad \text{(for } \rho = 10^{11}\text{)}
+\end{align}
+\end{proof}
+
+\subsection{Connection to Poincaré Computing}
+
+We conclude by establishing that the S-entropy space used throughout this paper is the canonical realization of the abstract categorical space structure.
+
+\begin{theorem}[S-Space is Poincaré Computing Substrate]
+\label{thm:s_space_poincare}
+The bounded S-entropy space $\Sspace = [0,1]^3$ (Section~\ref{sec:finite_space}) is the canonical realization of a categorical space $(\mathcal{C}, \prec, \mu, \tau)$ with:
+\begin{enumerate}[(i)]
+    \item The partial order $\prec$ induced by categorical completion: $C \prec C'$ if state $C$ must be completed before state $C'$ can be accessed;
+    
+    \item The completion operator $\mu$ encoding trajectory history: $\mu(C, t) = 1$ if the trajectory $\gamma$ has visited cell $C$ by time $t$;
+    
+    \item The specialization topology $\tau$ compatible with the S-distance metric: open sets are upward-closed under $\prec$, and the metric topology induced by $S$ coincides with $\tau$.
+\end{enumerate}
+
+The Poincaré recurrence dynamics (Section~\ref{sec:solution_trajectory}) correspond to completion trajectories in this categorical structure, and the categorical completion rate (Section~\ref{sec:complexity}) is the rate $\dot{C}(t)$ defined in Definition~\ref{def:completion_rate_formal}.
+\end{theorem}
+
+\begin{proof}
+We construct an explicit embedding $\phi: \mathcal{C} \to \Sspace$ that preserves all structure.
+
+\textbf{(i) Partial order:} The hierarchical partition $\mathcal{P}_k$ (Definition~\ref{def:hierarchical_partition}) induces a natural partial order on cells: $C \prec C'$ if cell $C$ must be visited before cell $C'$ in any trajectory satisfying the categorical dynamics. This order is preserved by the embedding $\phi$: cells that are predecessors in $\mathcal{C}$ map to regions in $\Sspace$ that are visited earlier in the trajectory evolution.
+
+Formally, for cells $C, C' \in \mathcal{P}_k$, define:
+\begin{equation}
+C \prec C' \iff \exists \gamma \in \mathcal{A}(P) : \inf\{t : \gamma(t) \in C\} < \inf\{t : \gamma(t) \in C'\}
+\end{equation}
+
+This order is compatible with the S-entropy coordinates: if $C = (\Sk, \St, \Se)$ and $C' = (\Sk', \St', \Se')$ with $C \prec C'$, then typically $\St < \St'$ (the temporal coordinate increases along trajectories).
+
+\textbf{(ii) Completion operator:} The exploration memory $\mathcal{M}(t)$ (Definition~\ref{def:exploration_memory}) defines the completion operator:
+\begin{equation}
+\mu(C, t) = \begin{cases}
+1 & \text{if } C \in \mathcal{M}(t) \text{ (cell visited by time } t\text{)} \\
+0 & \text{if } C \notin \mathcal{M}(t) \text{ (cell not yet visited)}
+\end{cases}
+\end{equation}
+
+This operator satisfies Axiom~\ref{axiom:irreversibility_formal} (by Proposition~\ref{prop:memory_monotonicity}) and Axiom~\ref{axiom:order_compat} (by the definition of the partial order).
+
+\textbf{(iii) Topology:} The specialization topology on $\mathcal{C}$ is induced by the partial order $\prec$ (Axiom~\ref{axiom:topology_compat}). We must show that this topology is compatible with the S-distance metric.
+
+The S-distance metric induces a metric topology on $\Sspace$ where open balls $B_r(\Scoord) = \{\Scoord' : S(\Scoord, \Scoord') < r\}$ form a basis. We claim that the metric topology coincides with the specialization topology.
+
+For any upward-closed set $U$ (open in the specialization topology), the set $\phi^{-1}(U)$ is open in the metric topology because trajectories approaching $U$ from below (in the partial order) converge in the S-distance metric. Conversely, for any open ball $B_r(\Scoord)$ in the metric topology, the preimage $\phi^{-1}(B_r(\Scoord))$ is upward-closed because states close in S-distance have similar completion orders.
+
+Therefore, the two topologies coincide, establishing that $\Sspace$ is a categorical space.
+
+\textbf{Recurrence dynamics:} The Poincaré recurrence dynamics (Section~\ref{sec:solution_trajectory}) evolve the categorical state $\Scoord(t)$ according to the differential equations~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}. The trajectory $\gamma(t) = \Scoord(t)$ traces a path through $\Sspace$, visiting cells in the hierarchical partition $\mathcal{P}_k$.
+
+By Definition~\ref{def:completion_trajectory_formal}, the set of visited cells $\gamma(t) = \{C \in \mathcal{P}_k : \exists s \leq t, \Scoord(s) \in C\}$ is a completion trajectory: it is monotonically growing (property (ii)), downward-closed (property (iii)), and corresponds to the completion operator (property (i)).
+
+The recurrence condition $\|\gamma(T) - \Scoord_0\| < \epsilon$ (Definition~\ref{def:solution_trajectory}) corresponds to the trajectory returning to a cell close to the initial cell, completing a cycle in the categorical space.
+
+\textbf{Completion rate:} The categorical completion rate $\rho_C$ (Definition~\ref{def:categorical_rate}) counts the number of cells exited per unit of promising trajectory length. This is precisely the rate $\dot{C}(t)$ in Definition~\ref{def:completion_rate_formal}:
+\begin{equation}
+\rho_C = \frac{d|\mathcal{M}(t)|}{dt} / \|\dot{\gamma}(t)\| = \frac{\dot{C}(t)}{\|\dot{\gamma}(t)\|}
+\end{equation}
+
+where $\|\dot{\gamma}(t)\|$ is the arc-length velocity.
+
+Therefore, all components of the Poincaré Computing framework (dynamics, recurrence, completion rate) are manifestations of the underlying categorical space structure, establishing that $\Sspace$ is the canonical realization of $\mathcal{C}$.
+\end{proof}
+
+

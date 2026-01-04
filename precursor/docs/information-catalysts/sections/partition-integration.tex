@@ -1,0 +1,150 @@
+\section{Integration with Partition Coordinate Framework}
+\label{sec:partition-integration}
+
+\subsection{Terminators as Partition Coordinate Configurations}
+
+\begin{definition}[Partition Coordinate Representation]
+A partition terminator $\rho^*$ has partition coordinate representation $(n^*, l^*, m^*, s^*)$ where:
+\begin{itemize}
+    \item $n^*$ = terminator index (minimum cascade depth to reach $\rho^*$)
+    \item $l^*$ = charge topology complexity (number of independent multipole modes)
+    \item $m^*$ = orientation parameter (projection of dipole onto reference axis)
+    \item $s^*$ = chirality (handedness of charge distribution under parity)
+\end{itemize}
+\end{definition}
+
+\begin{theorem}[Coordinate-Stability Correspondence]
+\label{thm:coordinate-stability}
+The partition potential of terminator $\rho^*$ scales with partition coordinates as:
+\begin{equation}
+    \Pspace(\rho^*) \propto \frac{Q^{*2}}{R(n^*)} \left(1 + \frac{l^*(l^*+1)}{n^{*2}} + O(n^{*-3})\right)
+\end{equation}
+where $R(n^*) \propto n^*$ is the effective radius at partition depth $n^*$.
+\end{theorem}
+
+\begin{proof}
+From the multipole stability hierarchy (Theorem~\ref{thm:multipole-hierarchy}), the partition potential is dominated by the monopole term $Q^2/(2R)$. The radius scales with partition depth as $R \propto n$ (larger terminators require deeper partitioning to form). The complexity correction $l(l+1)/n^2$ follows from the energy ordering of partition coordinates (companion paper, Section 5).
+\end{proof}
+
+\begin{corollary}[Most Stable Terminators]
+The most stable terminators (lowest $\Pspace$) have:
+\begin{enumerate}
+    \item High partition depth $n^*$ (large effective radius)
+    \item Low complexity $l^*$ (minimal higher multipoles)
+    \item Vanishing orientation $m^* \approx 0$ (symmetric charge distribution)
+\end{enumerate}
+\end{corollary}
+
+\subsection{Selection Rules for Terminator Formation}
+
+\begin{theorem}[Terminator Selection Rules]
+\label{thm:terminator-selection}
+Cascade transitions to terminator $\rho^*$ satisfy:
+\begin{align}
+    \Delta l &= \pm 1 \quad \text{(complexity change by one)} \\
+    \Delta m &\in \{-1, 0, +1\} \quad \text{(orientation constrained)} \\
+    \Delta s &= 0 \quad \text{(chirality conserved)}
+\end{align}
+where $\Delta$ denotes the change from the penultimate cascade state to the terminator.
+\end{theorem}
+
+\begin{proof}
+These selection rules follow from conservation laws in partition space:
+\begin{itemize}
+    \item $\Delta l = \pm 1$: Partition operators couple adjacent complexity levels (dipole transitions)
+    \item $\Delta m \in \{-1, 0, +1\}$: Angular momentum conservation limits orientation change
+    \item $\Delta s = 0$: Chirality is a topological invariant preserved under partition operations
+\end{itemize}
+\end{proof}
+
+\begin{corollary}[Reachability Constraints]
+A terminator at $(n^*, l^*, m^*, s^*)$ is reachable from parent at $(n_0, l_0, m_0, s_0)$ only if:
+\begin{equation}
+    s^* = s_0, \quad |l^* - l_0| \leq n^* - n_0, \quad |m^* - m_0| \leq n^* - n_0
+\end{equation}
+\end{corollary}
+
+\subsection{Terminator Capacity at Each Depth}
+
+\begin{proposition}[Terminator Count]
+The number of distinct terminators at partition depth $n$ is bounded by:
+\begin{equation}
+    T(n) \leq 2n^2
+\end{equation}
+with the bound saturated when all partition coordinate configurations are terminator-stable.
+\end{proposition}
+
+\begin{proof}
+From partition coordinate theory, the capacity at depth $n$ is $C(n) = 2n^2$. Terminators are a subset of all configurations at depth $n$, hence $T(n) \leq C(n)$.
+\end{proof}
+
+\begin{proposition}[Terminator Fraction]
+The fraction of depth-$n$ configurations that are terminators decreases with $n$:
+\begin{equation}
+    \frac{T(n)}{C(n)} \propto \frac{1}{\ln n}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+From Morse theory, the number of critical points (terminators) of a generic smooth function on an $n$-dimensional space scales as $O(n^{d-1})$ for dimension $d$. With $d = 2$ (partition coordinate space at fixed $n$), $T(n) \sim n$. Thus $T(n)/C(n) \sim n/(2n^2) \sim 1/n$. The logarithmic correction arises from the non-generic structure of the partition potential.
+\end{proof}
+
+\subsection{Virtual Instrument for Terminator Detection}
+
+\begin{definition}[Terminator Detector]
+The Terminator Detector virtual instrument extracts partition terminators from cascade endpoint data:
+\begin{equation}
+    V_{\text{term}}: \mathcal{O} \to \{(\rho_j^*, g_j, \mathcal{F}_j)\}
+\end{equation}
+mapping observations to terminators with degeneracies and family assignments.
+\end{definition}
+
+\begin{proposition}[Detector Independence]
+The Terminator Detector is independent of the four canonical virtual instruments (Shell Resonator, Angular Analyser, Orientation Mapper, Chirality Discriminator). It extracts structural information orthogonal to partition coordinates.
+\end{proposition}
+
+\begin{proof}
+The canonical instruments extract partition coordinates $(n, l, m, s)$ from oscillator timing. The Terminator Detector extracts pathway information (which terminators are reached, with what degeneracy) from frequency analysis. These are complementary: coordinates describe the configuration, while terminator projections describe the cascade dynamics.
+\end{proof}
+
+\subsection{Unified Representation}
+
+\begin{theorem}[Complete Structural Characterization]
+\label{thm:complete-characterization}
+A charged particle configuration is completely characterized by:
+\begin{enumerate}
+    \item Partition coordinates $(n, l, m, s)$ from the canonical virtual instruments
+    \item Terminator projection $\mathbf{T} = (w_1, \ldots, w_K)$ from the Terminator Detector
+\end{enumerate}
+The combined representation has dimension $4 + K$, sufficient for unambiguous structural identification.
+\end{theorem}
+
+\begin{proof}
+Partition coordinates specify the categorical state. Terminator projection specifies the cascade dynamics. Together, they uniquely determine both the static configuration and its dynamic behavior under partition operations. Two configurations with identical coordinates and projections are structurally indistinguishable.
+\end{proof}
+
+\begin{corollary}[Hierarchical Characterization]
+For rapid screening, use terminator projection (low-dimensional, high discriminating power). For detailed analysis, add partition coordinates. The hierarchy provides adaptive resolution.
+\end{corollary}
+
+\subsection{Connection to Poincar\'{e} Computing}
+
+\begin{proposition}[Terminator Convergence]
+In the Poincar\'{e} computing framework, terminators are the fixed points of cascade dynamics:
+\begin{equation}
+    \rho^* = \lim_{n \to \infty} \Pi^n(\rho_0)
+\end{equation}
+for any initial configuration $\rho_0$ within the basin of attraction of $\rho^*$.
+\end{proposition}
+
+\begin{proposition}[Structural Identification as Terminator Orbit]
+Structural identification is complete when the cascade trajectory:
+\begin{enumerate}
+    \item Visits a sufficient set of intermediate states (pathway determination)
+    \item Terminates at identified terminators (endpoint confirmation)
+    \item Has terminator distribution consistent with a known structure
+\end{enumerate}
+\end{proposition}
+
+The integration with partition coordinate theory provides a unified mathematical framework: partition coordinates describe where configurations are in categorical space, while terminators describe where cascades end and how they get there.
+

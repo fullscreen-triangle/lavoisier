@@ -1,0 +1,166 @@
+\section{Poincar\'{e} Computing}
+\label{sec:poincare-computing}
+
+\subsection{Poincar\'{e} Recurrence}
+
+\begin{theorem}[Poincar\'{e} Recurrence Theorem]
+In a bounded phase space with volume-preserving dynamics, almost every trajectory returns arbitrarily close to its initial point.
+\end{theorem}
+
+This classical result from dynamical systems theory provides the foundation for interpreting compound identification as trajectory completion.
+
+\subsection{Identification as Recurrence}
+
+\begin{definition}[Partition Trajectory]
+A partition trajectory is a sequence of partition coordinates:
+\begin{equation}
+    \mathcal{T} = \{(n_0, l_0, m_0, s_0), (n_1, l_1, m_1, s_1), \ldots, (n_k, l_k, m_k, s_k)\}
+\end{equation}
+where consecutive entries satisfy selection rules.
+\end{definition}
+
+\begin{definition}[Trajectory Closure]
+A trajectory closes if there exists a chemically consistent endpoint:
+\begin{equation}
+    \sum_i m(n_i, l_i) = M_{\text{precursor}}
+\end{equation}
+where $m(n, l)$ is the mass associated with coordinates $(n, l)$.
+\end{definition}
+
+\begin{theorem}[Identification as Trajectory Closure]
+\label{thm:id-closure}
+Compound identification is equivalent to finding a closed trajectory through measured partition coordinates.
+\end{theorem}
+
+\begin{proof}
+A compound is characterized by its precursor mass and fragmentation pattern. The fragmentation pattern defines a set of partition coordinates. A valid identification corresponds to a trajectory through these coordinates that:
+\begin{enumerate}
+    \item Starts at the precursor
+    \item Passes through all measured fragments
+    \item Closes (mass is conserved)
+\end{enumerate}
+This is exactly the condition for trajectory closure.
+\end{proof}
+
+\subsection{Poincar\'{e} Machine}
+
+\begin{definition}[Poincar\'{e} Machine]
+A Poincar\'{e} machine is a computational device that solves problems by finding closed trajectories in phase space.
+\end{definition}
+
+\begin{proposition}[Mass Spectrometer as Poincar\'{e} Machine]
+A mass spectrometer implementing the virtual instrument ensemble is a Poincar\'{e} machine: it solves identification by trajectory closure.
+\end{proposition}
+
+\subsection{Poincar\'{e} Complexity}
+
+\begin{definition}[Poincar\'{e} Complexity]
+The Poincar\'{e} complexity $\Pi(C)$ of a compound $C$ is the minimum number of measurements required for trajectory closure:
+\begin{equation}
+    \Pi(C) = \min \{k : \exists \text{ unique closed trajectory through } k \text{ measurements}\}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Complexity Bounds]
+For a compound with $F$ fragments at maximum depth $n$:
+\begin{equation}
+    \lceil \log_2 C(n) \rceil \leq \Pi(C) \leq F
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Lower bound: At least $\log_2 C(n)$ bits are required to specify a state among $C(n) = 2n^2$ possibilities.
+Upper bound: Measuring all fragments guarantees closure.
+\end{proof}
+
+\subsection{Information Routing}
+
+\begin{definition}[Information Gain]
+The information gain from measurement $M_i$ is
+\begin{equation}
+    I(M_i) = H(\mathcal{T}_{\text{before}}) - H(\mathcal{T}_{\text{after}})
+\end{equation}
+where $H(\mathcal{T})$ is the entropy over trajectory space.
+\end{definition}
+
+\begin{algorithm}
+\caption{Optimal Measurement Routing}
+\label{alg:routing}
+\begin{algorithmic}[1]
+\Require Current trajectory distribution $P(\mathcal{T})$, available measurements $\{M_i\}$
+\Ensure Next measurement $M^*$
+\For{each measurement $M_i$}
+    \State Compute expected posterior: $P(\mathcal{T} | M_i)$
+    \State Compute expected information gain: $I_i = \mathbb{E}[H_{\text{before}} - H_{\text{after}}]$
+\EndFor
+\State $M^* \gets \arg\max_i I_i$
+\State \Return $M^*$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Dynamics}
+
+\begin{theorem}[Convergence Rate]
+With optimal measurement routing, the expected number of measurements to trajectory closure is
+\begin{equation}
+    \mathbb{E}[k] = O(\Pi(C) \cdot \log \Pi(C))
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Each optimally chosen measurement reduces trajectory entropy by at least a constant factor. The number of halvings to reach certainty from $C(n)$ initial states is $O(\log C(n)) = O(\log n)$. Combined with the minimum $\Pi(C)$ measurements, total is $O(\Pi(C) \log \Pi(C))$.
+\end{proof}
+
+\subsection{Multi-Modal Fusion}
+
+\begin{definition}[Modal Projection]
+Each analytical modality (MS, NMR, IR, etc.) implements a projection $\pi_\alpha$ onto a subspace of partition coordinates.
+\end{definition}
+
+\begin{theorem}[Optimal Fusion]
+Multi-modal fusion is optimal when modalities project onto orthogonal subspaces:
+\begin{equation}
+    \pi_\alpha \perp \pi_\beta \implies I(\alpha, \beta) = I(\alpha) + I(\beta)
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Orthogonal projections provide independent information. Information is additive for independent sources.
+\end{proof}
+
+\begin{corollary}[Fusion Strategy]
+For maximum information gain, select modalities whose projections span partition coordinate space with minimum overlap.
+\end{corollary}
+
+\subsection{De Novo Identification}
+
+\begin{algorithm}
+\caption{De Novo Identification via Poincar\'{e} Computing}
+\label{alg:denovo}
+\begin{algorithmic}[1]
+\Require Measurements $\{M_1, \ldots, M_k\}$, molecular formula $F$
+\Ensure Candidate structures $\{C_1, \ldots, C_m\}$
+\State Extract partition coordinates from each measurement
+\State Build trajectory graph $G$: nodes are coordinates, edges satisfy selection rules
+\State Find all closed paths in $G$ consistent with $F$
+\State For each closed path $P$:
+    \State \quad Reconstruct molecular graph from path topology
+    \State \quad Check chemical validity (valence, ring strain, etc.)
+    \State \quad Score by trajectory likelihood
+\State \Return top-scoring valid structures
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Computational Interpretation}
+
+The Poincar\'{e} computing framework provides a new perspective on analytical chemistry:
+
+\begin{itemize}
+    \item \textbf{Measurement} = Projection onto partition coordinate subspace
+    \item \textbf{Identification} = Trajectory closure in partition space
+    \item \textbf{Structure elucidation} = Trajectory topology determination
+    \item \textbf{Method development} = Projection optimization
+\end{itemize}
+
+This interpretation unifies diverse analytical techniques under a common mathematical framework, enabling systematic optimization and integration.
+

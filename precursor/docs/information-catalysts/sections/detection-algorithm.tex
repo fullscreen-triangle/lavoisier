@@ -1,0 +1,181 @@
+\section{Terminator Detection Algorithm}
+\label{sec:detection-algorithm}
+
+\subsection{Problem Statement}
+
+\begin{definition}[Terminator Detection Problem]
+Given:
+\begin{itemize}
+    \item Ensemble of observations $\mathcal{O} = \{o_1, o_2, \ldots, o_N\}$
+    \item Each observation $o_i$ is a set of terminal configurations (cascade endpoints)
+    \item No direct access to cascade dynamics (only endpoints observed)
+\end{itemize}
+Find:
+\begin{itemize}
+    \item Set of partition terminators $\{\rho_j^*\}$
+    \item Pathway degeneracy $g(\rho_j^*)$ for each terminator
+    \item Family assignments $\mathcal{F}(\rho_j^*)$
+\end{itemize}
+\end{definition}
+
+\subsection{Frequency Analysis}
+
+\begin{definition}[Observed Frequency]
+The observed frequency of configuration $\rho$ in ensemble $\mathcal{O}$ is:
+\begin{equation}
+    f_{\text{obs}}(\rho) = \frac{1}{N} \sum_{i=1}^N \mathbf{1}[\rho \in o_i]
+\end{equation}
+where $\mathbf{1}[\cdot]$ is the indicator function.
+\end{definition}
+
+\begin{definition}[Expected Random Frequency]
+Under null hypothesis of uniform distribution over configuration space $\Cspace$:
+\begin{equation}
+    f_{\text{random}}(\rho) = \frac{1}{|\Cspace|}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Enrichment Score]
+The enrichment score of configuration $\rho$ is:
+\begin{equation}
+    \alpha(\rho) = \frac{f_{\text{obs}}(\rho)}{f_{\text{random}}(\rho)}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Terminator Identification by Enrichment]
+Configuration $\rho$ is a candidate terminator if $\alpha(\rho) > \alpha_{\text{threshold}}$ where:
+\begin{equation}
+    \alpha_{\text{threshold}} = 1 + z_\alpha \sqrt{\frac{1}{N f_{\text{random}}}}
+\end{equation}
+for significance level $\alpha$ with corresponding $z$-score $z_\alpha$.
+\end{proposition}
+
+\begin{proof}
+Under the null hypothesis, observed counts follow $\text{Binomial}(N, f_{\text{random}})$. For large $N$, this is approximately normal with mean $Nf_{\text{random}}$ and variance $Nf_{\text{random}}(1-f_{\text{random}})$. The enrichment exceeds threshold $\alpha_{\text{threshold}}$ with probability $\alpha$ under the null.
+\end{proof}
+
+\subsection{Clustering Algorithm}
+
+\begin{algorithm}
+\caption{Terminator Clustering}
+\label{alg:clustering}
+\begin{algorithmic}[1]
+\Require Candidate terminators $\{\rho_j\}$ with enrichment scores $\{\alpha_j\}$
+\Require Distance function $d(\rho_i, \rho_j)$ (electrostatic distance)
+\Require Clustering threshold $\epsilon$
+\Ensure Terminator families $\{\mathcal{F}_k\}$
+\State Sort candidates by enrichment: $\alpha_1 \geq \alpha_2 \geq \ldots$
+\State Initialize families: $\mathcal{F} \gets \emptyset$
+\For{each candidate $\rho_j$}
+    \State $\text{assigned} \gets \text{False}$
+    \For{each family $\mathcal{F}_k \in \mathcal{F}$}
+        \If{$\min_{\rho \in \mathcal{F}_k} d(\rho_j, \rho) < \epsilon$}
+            \State $\mathcal{F}_k \gets \mathcal{F}_k \cup \{\rho_j\}$
+            \State $\text{assigned} \gets \text{True}$
+            \State \textbf{break}
+        \EndIf
+    \EndFor
+    \If{not assigned}
+        \State Create new family: $\mathcal{F} \gets \mathcal{F} \cup \{\{\rho_j\}\}$
+    \EndIf
+\EndFor
+\State \Return $\mathcal{F}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}[Clustering Complexity]
+Algorithm~\ref{alg:clustering} has complexity $O(M^2)$ where $M$ is the number of candidate terminators.
+\end{proposition}
+
+\subsection{Degeneracy Estimation}
+
+\begin{theorem}[Maximum Likelihood Degeneracy]
+\label{thm:ml-degeneracy}
+Given observed frequencies $\{f_{\text{obs}}(\rho_j^*)\}$ for terminators in family $\mathcal{F}$, the maximum likelihood estimate of pathway degeneracy is:
+\begin{equation}
+    \hat{g}(\rho_j^*) = N \cdot f_{\text{obs}}(\rho_j^*) \cdot \frac{\sum_k f_{\text{obs}}(\rho_k^*)}{\sum_k g(\rho_k^*)}
+\end{equation}
+Under the constraint $\sum_j g(\rho_j^*) = g(\mathcal{F})$ (total family degeneracy).
+\end{theorem}
+
+\begin{proof}
+The likelihood of observing counts $\{n_j\}$ for terminators with degeneracies $\{g_j\}$ is:
+\begin{equation}
+    L(\{g_j\}) = \prod_j \binom{N}{n_j} \left(\frac{g_j}{\sum_k g_k}\right)^{n_j}
+\end{equation}
+Maximizing $\log L$ with respect to $g_j$ subject to the normalization constraint yields the stated estimator.
+\end{proof}
+
+\subsection{Complete Detection Algorithm}
+
+\begin{algorithm}
+\caption{Partition Terminator Detection}
+\label{alg:terminator-detection}
+\begin{algorithmic}[1]
+\Require Observation ensemble $\mathcal{O}$, significance level $\alpha$, clustering threshold $\epsilon$
+\Ensure Terminators $\{\rho_j^*\}$, degeneracies $\{g_j\}$, families $\{\mathcal{F}_k\}$
+\State \textbf{Step 1: Frequency Analysis}
+\For{each unique configuration $\rho$ in $\mathcal{O}$}
+    \State Compute $f_{\text{obs}}(\rho)$
+    \State Compute $\alpha(\rho) = f_{\text{obs}}(\rho) / f_{\text{random}}$
+\EndFor
+\State \textbf{Step 2: Candidate Selection}
+\State Compute $\alpha_{\text{threshold}}$ for significance $\alpha$
+\State $\text{Candidates} \gets \{\rho : \alpha(\rho) > \alpha_{\text{threshold}}\}$
+\State \textbf{Step 3: Clustering}
+\State $\{\mathcal{F}_k\} \gets \text{ClusterTerminators}(\text{Candidates}, \epsilon)$
+\State \textbf{Step 4: Degeneracy Estimation}
+\For{each family $\mathcal{F}_k$}
+    \For{each terminator $\rho_j^* \in \mathcal{F}_k$}
+        \State Compute $\hat{g}(\rho_j^*)$ via Theorem~\ref{thm:ml-degeneracy}
+    \EndFor
+\EndFor
+\State \textbf{Step 5: Output}
+\State \Return $\{\rho_j^*\}$, $\{\hat{g}_j\}$, $\{\mathcal{F}_k\}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Algorithm Complexity]
+Algorithm~\ref{alg:terminator-detection} has complexity $O(N \log N + M^2)$ where $N = |\mathcal{O}|$ is the ensemble size and $M$ is the number of candidate terminators.
+\end{theorem}
+
+\begin{proof}
+Step 1 (frequency counting) is $O(N)$ with hash table. Step 2 (candidate selection) is $O(|\Cspace|)$. Step 3 (clustering) is $O(M^2)$. Step 4 (degeneracy estimation) is $O(M)$. The sorting step in clustering dominates at $O(M \log M) \leq O(M^2)$. Total: $O(N \log N + M^2)$.
+\end{proof}
+
+\subsection{Validation Metrics}
+
+\begin{definition}[Terminator Recall]
+The fraction of true terminators identified:
+\begin{equation}
+    R = \frac{|\{\rho^* : \rho^* \text{ detected}\}|}{|\{\rho^* : \rho^* \text{ true terminator}\}|}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Terminator Precision]
+The fraction of detected terminators that are true:
+\begin{equation}
+    P = \frac{|\{\rho^* : \rho^* \text{ true terminator and detected}\}|}{|\{\rho^* : \rho^* \text{ detected}\}|}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Degeneracy Correlation]
+The Pearson correlation between estimated and true degeneracies:
+\begin{equation}
+    r_g = \frac{\text{Cov}(\hat{g}, g)}{\sigma_{\hat{g}} \sigma_g}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Asymptotic Performance]
+For ensemble size $N \to \infty$:
+\begin{enumerate}
+    \item Recall $R \to 1$ (all terminators with $g > 0$ are detected)
+    \item Precision $P \to 1$ (no false positives above threshold)
+    \item Degeneracy correlation $r_g \to 1$ (perfect estimation)
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+By the law of large numbers, $f_{\text{obs}} \to f_{\text{true}}$ as $N \to \infty$. True terminators have $f_{\text{true}} > f_{\text{random}}$, hence enrichment $\alpha > 1$. For any threshold $\alpha_{\text{threshold}} > 1$, all terminators with sufficient degeneracy exceed the threshold for large $N$. False positives have $f_{\text{true}} = f_{\text{random}}$, so $\alpha \to 1 < \alpha_{\text{threshold}}$.
+\end{proof}
+

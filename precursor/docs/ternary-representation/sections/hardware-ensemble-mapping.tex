@@ -1,0 +1,176 @@
+\section{Hardware Ensemble Mapping}
+\label{sec:hardware}
+
+\subsection{Three-Phase Oscillator Systems}
+
+Ternary representation finds natural physical instantiation in three-phase oscillatory systems.
+
+\begin{definition}[Three-Phase Oscillator]
+A \textbf{three-phase oscillator ensemble} consists of three oscillators with phase relationship:
+\begin{equation}
+\phi_i = \phi_0 + \frac{2\pi i}{3} \quad \text{for } i \in \{0, 1, 2\}
+\end{equation}
+where $\phi_0$ is the reference phase.
+\end{definition}
+
+\begin{theorem}[Phase-Trit Correspondence]\label{thm:phase-trit}
+Oscillator dominance encodes trit value:
+\begin{equation}
+t = \arg\max_{i \in \{0,1,2\}} A_i(t)
+\end{equation}
+where $A_i(t)$ is the amplitude of oscillator $i$ at time $t$.
+\end{theorem}
+
+\begin{proof}
+At any instant, one of the three oscillators has maximum amplitude (except at crossing points, which form a set of measure zero). This dominant oscillator determines the trit value.
+
+The phase separation of $2\pi/3$ ensures each oscillator dominates for exactly one-third of the cycle, providing uniform trit distribution. \qed
+\end{proof}
+
+\subsection{Physical Implementations}
+
+\begin{example}[Three-Phase AC Power]
+Industrial AC power systems operate with three phases separated by $2\pi/3$:
+\begin{align}
+V_0(t) &= V_m \sin(\omega t) \\
+V_1(t) &= V_m \sin(\omega t - 2\pi/3) \\
+V_2(t) &= V_m \sin(\omega t - 4\pi/3)
+\end{align}
+
+This existing infrastructure provides a physical substrate for ternary computation at power-line frequencies ($\sim$50--60 Hz).
+\end{example}
+
+\begin{example}[Three-Phase Clock]
+A ternary clock circuit generates three phase-shifted square waves:
+\begin{align}
+C_0(t) &= \text{sgn}(\sin(\omega t)) \\
+C_1(t) &= \text{sgn}(\sin(\omega t - 2\pi/3)) \\
+C_2(t) &= \text{sgn}(\sin(\omega t - 4\pi/3))
+\end{align}
+
+At any instant, exactly two clocks are high (or low), encoding trit value through the pattern.
+\end{example}
+
+\begin{example}[Coupled Oscillator Network]
+Three coupled oscillators with symmetric coupling:
+\begin{align}
+\ddot{x}_0 + \omega^2 x_0 &= \kappa(x_1 - x_0) + \kappa(x_2 - x_0) \\
+\ddot{x}_1 + \omega^2 x_1 &= \kappa(x_0 - x_1) + \kappa(x_2 - x_1) \\
+\ddot{x}_2 + \omega^2 x_2 &= \kappa(x_0 - x_2) + \kappa(x_1 - x_2)
+\end{align}
+
+The normal modes include a rotating mode with $2\pi/3$ phase separation, providing stable ternary encoding.
+\end{example}
+
+\subsection{Trit Extraction from Oscillators}
+
+\begin{definition}[Phase Detector]
+A \textbf{ternary phase detector} compares three oscillator phases and outputs the index of the leading phase:
+\begin{equation}
+\text{Detect}(\phi_0, \phi_1, \phi_2) = \arg\max_i \cos(\phi_i)
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Continuous Trit Stream]
+A three-phase oscillator at frequency $f$ generates a trit stream at rate:
+\begin{equation}
+R_{\text{trit}} = 3f
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Each full cycle ($2\pi$ radians) traverses all three phases. At frequency $f$ (cycles per second), the oscillator completes $f$ cycles per second, generating $3f$ trit transitions. \qed
+\end{proof}
+
+\begin{example}
+A 1 GHz three-phase oscillator generates 3 billion trits per second, equivalent to:
+\begin{equation}
+3 \times 10^9 \times \log_2 3 \approx 4.75 \times 10^9 \text{ bits/second}
+\end{equation}
+information throughput.
+\end{example}
+
+\subsection{S-Coordinate Extraction}
+
+\begin{definition}[S-Coordinate Extractor]
+An \textbf{S-coordinate extractor} converts a trit stream to S-entropy coordinates by interleaved accumulation:
+\begin{align}
+\Sk &= \sum_{j=1}^{n} \frac{t_{3j} + 0.5}{3^j} \\
+\St &= \sum_{j=0}^{n-1} \frac{t_{3j+1} + 0.5}{3^{j+1}} \\
+\Se &= \sum_{j=0}^{n-1} \frac{t_{3j+2} + 0.5}{3^{j+1}}
+\end{align}
+\end{definition}
+
+\begin{proposition}[Hardware Implementation]
+S-coordinate extraction requires:
+\begin{itemize}
+    \item 3 accumulators (one per dimension)
+    \item 1 mod-3 counter (for dimension selection)
+    \item 3 multipliers (for $3^{-j}$ scaling)
+    \item 3 adders (for running sum)
+\end{itemize}
+Total: $O(1)$ hardware complexity, independent of precision $n$.
+\end{proposition}
+
+\subsection{Oscillator Ensemble Architecture}
+
+\begin{definition}[Oscillator Ensemble]
+An \textbf{oscillator ensemble} for ternary S-entropy computation comprises:
+\begin{enumerate}
+    \item \textbf{Core oscillators}: Three phase-locked oscillators at frequency $f_0$
+    \item \textbf{Trit extractor}: Phase detector outputting dominant oscillator index
+    \item \textbf{Coordinate accumulator}: Three-channel accumulator for $(\Sk, \St, \Se)$
+    \item \textbf{Cell address register}: Current ternary string $\mathbf{t}$
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Ensemble Processing Rate]
+An oscillator ensemble at frequency $f_0$ processes:
+\begin{equation}
+R_{\text{cell}} = f_0 \text{ cells per second}
+\end{equation}
+where one ``cell'' is a complete refinement of all three dimensions (3 trits).
+\end{theorem}
+
+\begin{proof}
+Three trits (one per dimension) require one full cycle of the three-phase oscillator. At frequency $f_0$, this gives $f_0$ complete refinements per second. \qed
+\end{proof}
+
+\subsection{Multi-Scale Oscillator Hierarchy}
+
+\begin{definition}[Hierarchical Oscillator Network]
+A \textbf{hierarchical oscillator network} comprises multiple three-phase oscillators at different frequencies:
+\begin{equation}
+f_k = f_0 \cdot 3^{-k} \quad \text{for } k = 0, 1, 2, \ldots
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Scale-Frequency Correspondence]
+Level $k$ in the $3^k$ hierarchy corresponds to oscillator frequency $f_k = f_0 \cdot 3^{-k}$.
+\end{theorem}
+
+\begin{proof}
+Each level requires 3 trits to refine. The time to generate 3 trits at frequency $f$ is $1/f$ seconds. For level $k$, the cumulative refinement time is:
+\begin{equation}
+T_k = \sum_{j=0}^{k-1} \frac{1}{f_j} = \sum_{j=0}^{k-1} \frac{3^j}{f_0} = \frac{3^k - 1}{2f_0}
+\end{equation}
+
+The frequency at level $k$ determines the refinement rate for that level. \qed
+\end{proof}
+
+\begin{remark}
+This hierarchical structure mirrors the timescale separation in physical systems: fast oscillations (high frequency) correspond to fine-grained structure; slow oscillations (low frequency) correspond to coarse-grained structure. The ternary representation naturally couples to this hierarchy.
+\end{remark}
+
+\subsection{Quantum Considerations}
+
+\begin{remark}
+Three-level quantum systems (qutrits) provide another physical instantiation of ternary representation. A qutrit has basis states $|0\rangle$, $|1\rangle$, $|2\rangle$ with general state:
+\begin{equation}
+|\psi\rangle = \alpha_0 |0\rangle + \alpha_1 |1\rangle + \alpha_2 |2\rangle
+\end{equation}
+where $|\alpha_0|^2 + |\alpha_1|^2 + |\alpha_2|^2 = 1$.
+
+Measurement collapses to one of the three basis states, yielding a classical trit. Qutrit-based quantum computing may offer advantages over qubit-based systems for problems naturally suited to three-dimensional S-entropy representation.
+\end{remark}
+

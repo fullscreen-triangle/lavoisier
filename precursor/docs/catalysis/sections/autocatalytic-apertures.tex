@@ -1,0 +1,796 @@
+%==============================================================================
+\section{Autocatalytic Apertures: Categorical Resistance, Positive Feedback, and the Ball Game Derivation}
+\label{sec:autocatalysis}
+%==============================================================================
+
+The preceding sections have established that catalysis operates through geometric apertures (Section~\ref{sec:partition_formalism}), phase-lock network topology (Section~\ref{sec:topology}), and categorical distance minimization (Section~\ref{sec:exclusion}). A fundamental question remains: does the categorical framework predict emergent dynamical properties beyond static structural analysis? The present section demonstrates that the aperture model, when extended to bidirectional systems with finite aperture capacity, naturally gives rise to autocatalytic behavior—positive feedback in which successful transitions reduce resistance to subsequent transitions. We introduce a thought experiment, the "ball game," that derives autocatalysis from first principles using only categorical aperture occupancy, demonstrating that velocity, time, and energetic considerations are irrelevant to the emergence of positive feedback. The analysis reveals that catalysis is inherently autocatalytic at the categorical level: each product molecule formed increases the categorical burden on the reverse reaction, reducing resistance to forward transitions. This autocatalytic cascade produces characteristic lag-exponential-saturation kinetics, explains cooperative binding and allosteric regulation, and provides a categorical foundation for Le Chatelier's principle. The framework establishes that autocatalysis is not a special property of certain reactions but a universal consequence of finite aperture capacity in bidirectional categorical systems.
+
+\subsection{The Ball Game Thought Experiment: Categorical Apertures with Finite Capacity}
+\label{sec:ball_game}
+
+We introduce a thought experiment that isolates the categorical structure of bidirectional reactions with finite aperture capacity, removing all temporal, energetic, and mechanistic details to reveal the pure logic of categorical transitions.
+
+\textbf{Setup:}
+
+Consider two teams, Team A and Team B, separated by a partition containing $k$ apertures (holes). Each team has $n$ balls that must be shot through apertures to the opposing side.
+
+\textbf{Rules:}
+
+\begin{enumerate}
+    \item \textbf{Immediate action:} Players cannot hold balls. Upon receiving a ball, a player must immediately shoot it back toward an aperture.
+
+    \item \textbf{Aperture capacity:} Each aperture can accommodate only one ball at a time. A ball arriving at an occupied aperture is deflected (mutual blocking).
+
+    \item \textbf{Goal:} Each team attempts to maximize the number of balls on the opposing side while minimizing balls on their own side.
+
+    \item \textbf{Scoring:} A ball successfully transiting an aperture constitutes a "score" for the shooting team.
+
+    \item \textbf{No temporal coordination:} Players cannot schedule shots based on aperture availability timing. They shoot when they receive a ball, with aperture state determined by categorical occupancy at the moment of arrival.
+\end{enumerate}
+
+\textbf{Mapping to chemical systems:}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Ball Game Element} & \textbf{Chemical System Element} \\
+\midrule
+Ball & Molecule (reactant or product) \\
+Aperture (hole) & Catalyst active site / transition state \\
+Opposing ball blocking aperture & Transition state occupied by reverse reaction \\
+Shot timing & Molecular collision with catalyst \\
+Ball successfully through aperture & Reaction completion (forward or reverse) \\
+Score & Product formation \\
+Number of balls on side & Concentration of species \\
+Aperture coverage & Catalyst saturation \\
+\bottomrule
+\end{tabular}
+\caption{Mapping between ball game elements and chemical system components. The ball game isolates the categorical structure of bidirectional reactions with finite catalyst capacity.}
+\label{tab:ball_game_mapping}
+\end{table}
+
+\textbf{Initial conditions:}
+
+We consider the symmetric initial state:
+\begin{align}
+\text{Balls on Team A side:} \quad n_A(0) &= n \\
+\text{Balls on Team B side:} \quad n_B(0) &= n \\
+\text{Number of apertures:} \quad k &= n
+\label{eq:initial_conditions}
+\end{align}
+
+This corresponds to a chemical system at equilibrium with equal concentrations of reactants and products and catalyst concentration equal to substrate concentration.
+
+\subsection{Velocity Independence: Categorical vs. Temporal Dynamics}
+\label{sec:velocity_independence}
+
+The ball game reveals a fundamental distinction between categorical and temporal dynamics: success depends solely on aperture availability (categorical state), not on ball velocity (temporal parameter).
+
+\begin{theorem}[Velocity Independence of Categorical Transitions]
+\label{thm:velocity_independence}
+In the ball game, the probability of successful transit through an aperture is independent of ball velocity. Success is determined entirely by categorical aperture occupancy at the moment of arrival.
+\end{theorem}
+
+\begin{proof}
+Define the scoring function for ball $b$ attempting to transit aperture $a$ at time $t$:
+\begin{equation}
+S(b, a, t) = \begin{cases}
+1 & \text{if aperture } a \text{ is unoccupied at time } t \\
+0 & \text{if aperture } a \text{ is occupied at time } t
+\end{cases}
+\label{eq:scoring_function}
+\end{equation}
+
+The condition "aperture $a$ is unoccupied" is a categorical state $C_a(t) \in \{\text{occupied}, \text{unoccupied}\}$ that depends on:
+\begin{itemize}
+    \item Number of balls currently in transit toward aperture $a$
+    \item Positions of those balls relative to aperture $a$
+    \item Aperture capacity (1 ball)
+\end{itemize}
+
+Critically, $C_a(t)$ does not depend on:
+\begin{itemize}
+    \item Velocity $v_b$ of ball $b$
+    \item Distance $d_b$ of ball $b$ from aperture $a$ (except insofar as it determines arrival time)
+    \item Travel time $\tau_b = d_b / v_b$
+\end{itemize}
+
+\textbf{Case 1: Slow ball, open aperture}
+
+Ball $b$ has velocity $v_b = 1$ m/s, distance $d_b = 10$ m, travel time $\tau_b = 10$ s. Aperture $a$ is unoccupied when $b$ arrives.
+
+Result: $S(b, a, t) = 1$ (success).
+
+\textbf{Case 2: Fast ball, occupied aperture}
+
+Ball $b'$ has velocity $v_{b'} = 100$ m/s, distance $d_{b'} = 10$ m, travel time $\tau_{b'} = 0.1$ s. Aperture $a$ is occupied when $b'$ arrives.
+
+Result: $S(b', a, t) = 0$ (failure).
+
+The slow ball succeeds; the fast ball fails. Velocity is categorically irrelevant to success.
+
+\textbf{Generalization:}
+
+For any ball $b$ with velocity $v_b$, the scoring probability is:
+\begin{equation}
+P(\text{score} \mid v_b) = P(\text{aperture unoccupied at arrival}) = P(C_a(t_{\text{arrival}}) = \text{unoccupied})
+\label{eq:score_probability}
+\end{equation}
+
+This probability depends on the distribution of aperture occupancy states, which is determined by:
+\begin{itemize}
+    \item Number of balls on each side ($n_A$, $n_B$)
+    \item Number of apertures ($k$)
+    \item Categorical configuration (which balls are in transit, which apertures are occupied)
+\end{itemize}
+
+None of these depend on individual ball velocities. Therefore:
+\begin{equation}
+\frac{\partial P(\text{score})}{\partial v_b} = 0
+\label{eq:velocity_independence}
+\end{equation}
+
+Success is velocity-independent.
+\end{proof}
+
+\begin{corollary}[Maxwell's Demon Inapplicability]
+\label{cor:maxwell_demon}
+A Maxwell's demon attempting to sort balls by velocity cannot improve scoring probability in the ball game. Velocity-based selection is useless in categorical systems.
+\end{corollary}
+
+\begin{proof}
+Maxwell's demon operates by measuring particle velocities and selectively allowing fast particles to pass through a gate \citep{maxwell1871}. In the ball game, the demon could:
+\begin{enumerate}
+    \item Measure velocities of all balls on Team A side
+    \item Select the fastest balls for shooting toward apertures
+    \item Block slow balls from shooting
+\end{enumerate}
+
+However, by Theorem~\ref{thm:velocity_independence}, scoring probability is independent of velocity:
+\begin{equation}
+P(\text{score} \mid v_{\text{fast}}) = P(\text{score} \mid v_{\text{slow}}) = P(\text{aperture unoccupied})
+\label{eq:demon_futility}
+\end{equation}
+
+The demon's velocity-based selection does not change aperture occupancy statistics. Therefore, the demon cannot improve scoring rate beyond random shooting.
+
+This demonstrates a fundamental difference between thermal systems (where Maxwell's demon can extract work by exploiting velocity distributions) and categorical systems (where success depends on configurational states, not velocities).
+\end{proof}
+
+\begin{remark}[Implications for Catalysis]
+\label{rem:catalysis_velocity}
+Theorem~\ref{thm:velocity_independence} establishes that catalytic success is determined by categorical aperture availability, not by molecular velocities or kinetic energies. This provides a categorical foundation for the observation that catalysts do not alter the Maxwell-Boltzmann velocity distribution of reactants but rather provide alternative pathways (apertures) with different categorical structures.
+\end{remark}
+
+\subsection{Equilibrium as Mutual Blocking: The Penultimate State Revisited}
+\label{sec:equilibrium_blocking_ballgame}
+
+The ball game provides a concrete realization of the penultimate state concept (Section~\ref{sec:penultimate}): equilibrium corresponds to mutual blocking in which both teams are one categorical step from scoring but neither can advance.
+
+\begin{proposition}[Equilibrium as Mutual Aperture Saturation]
+\label{prop:equilibrium_mutual_blocking}
+At equilibrium in the ball game, every aperture is contested: for each aperture, balls from both teams are attempting transit, resulting in mutual blocking. Neither team can score because all apertures are categorically saturated.
+\end{proposition}
+
+\begin{proof}
+Consider the symmetric initial state with $n_A = n_B = k$ (equal balls on each side, number of balls equals number of apertures).
+
+\textbf{Aperture coverage:}
+
+Team A has $n_A = k$ balls, each attempting to transit an aperture. Team B has $n_B = k$ balls, each attempting to transit an aperture in the reverse direction.
+
+The average aperture occupancy is:
+\begin{equation}
+\langle \text{occupancy} \rangle = \frac{n_A + n_B}{k} = \frac{k + k}{k} = 2
+\label{eq:average_occupancy}
+\end{equation}
+
+Since each aperture has capacity 1, and average occupancy is 2, every aperture is contested by balls from both sides.
+
+\textbf{Blocking probability:}
+
+For a ball from Team A attempting to score, the probability that the target aperture is blocked by a ball from Team B is:
+\begin{equation}
+P_{\text{blocked}}^A = \frac{n_B}{k} = \frac{k}{k} = 1
+\label{eq:blocking_probability_A}
+\end{equation}
+
+Similarly, for Team B:
+\begin{equation}
+P_{\text{blocked}}^B = \frac{n_A}{k} = \frac{k}{k} = 1
+\label{eq:blocking_probability_B}
+\end{equation}
+
+Both teams face 100\% blocking probability. No scores occur.
+
+\textbf{Penultimate state:}
+
+Each team is one categorical step from scoring (one aperture transit away from increasing their score), but mutual blocking prevents completion. This is precisely the penultimate state of Section~\ref{sec:penultimate}: the system occupies a categorical state equidistant from both forward and reverse completion, with $d_{\mathcal{C}}(\text{current state}, \text{A scores}) = d_{\mathcal{C}}(\text{current state}, \text{B scores}) = 1$.
+
+The equilibrium is dynamic (balls are constantly in motion) but categorically static (no net change in ball distribution across the partition).
+\end{proof}
+
+\begin{remark}[Chemical Equilibrium]
+\label{rem:chemical_equilibrium_blocking}
+In chemical systems, equilibrium corresponds to equal forward and reverse reaction rates: $v_f = v_r$. The ball game reveals the categorical structure underlying this equality: at equilibrium, catalyst active sites are equally contested by forward and reverse reactions, with mutual blocking preventing net progress in either direction. The dynamic equilibrium is a consequence of categorical saturation, not of temporal balancing of rates.
+\end{remark}
+
+\subsection{The Autocatalytic Cascade: Positive Feedback from Categorical Resistance}
+\label{sec:autocatalytic_cascade}
+
+We now derive the central result: successful transits through apertures reduce resistance to subsequent transits, creating positive feedback that is inherent to the categorical structure of finite-capacity apertures.
+
+\begin{definition}[Categorical Resistance]
+\label{def:categorical_resistance}
+For a system with $k$ apertures and $n_B$ balls on the receiving side (Team B), the \emph{categorical resistance} to forward transitions (Team A scoring) is defined as:
+\begin{equation}
+R(n_B) = \begin{cases}
+\frac{n_B}{k} & \text{if } n_B \leq k \\
+1 & \text{if } n_B > k
+\end{cases}
+\label{eq:categorical_resistance}
+\end{equation}
+
+The resistance quantifies the probability that a randomly selected aperture is blocked by a ball from the receiving side.
+\end{definition}
+
+\begin{theorem}[Autocatalytic Apertures: Positive Feedback from Resistance Reduction]
+\label{thm:autocatalytic_apertures}
+Each successful transit through an aperture reduces categorical resistance to subsequent transits. Catalysis is inherently autocatalytic: product formation facilitates further product formation through progressive reduction of categorical resistance.
+\end{theorem}
+
+\begin{proof}
+Consider the ball game starting from the symmetric equilibrium state:
+\begin{align}
+n_A(0) &= k \\
+n_B(0) &= k \\
+R(0) &= \frac{k}{k} = 1 \quad \text{(full blocking)}
+\label{eq:initial_equilibrium}
+\end{align}
+
+\textbf{First score by Team A:}
+
+Suppose, due to a random fluctuation, Team A successfully scores once. The ball distribution becomes:
+\begin{align}
+n_A(1) &= k - 1 \\
+n_B(1) &= k + 1 \\
+R(1) &= \frac{k + 1}{k} = 1 + \frac{1}{k}
+\label{eq:after_first_score}
+\end{align}
+
+However, since $R$ is capped at 1 (100\% blocking), we have $R(1) = 1$ still.
+
+\textbf{The overflow problem:}
+
+Here is the critical insight: Team B now has $k + 1$ balls but only $k$ apertures. By the rule "players cannot hold balls," each ball must be actively in transit toward an aperture. With $k + 1$ balls and $k$ apertures, at least one aperture must be targeted by multiple balls simultaneously.
+
+This creates \emph{overflow}: some balls cannot find an uncontested aperture. These overflow balls create chaos:
+\begin{itemize}
+    \item Multiple balls converge on the same aperture
+    \item Players must handle multiple balls in rapid succession
+    \item Effective blocking capacity decreases because some balls are "wasted" on already-blocked apertures
+\end{itemize}
+
+\textbf{Effective resistance with overflow:}
+
+Define the \emph{effective resistance} accounting for overflow:
+\begin{equation}
+R_{\text{eff}}(n_B) = \frac{k}{n_B} \quad \text{for } n_B > k
+\label{eq:effective_resistance}
+\end{equation}
+
+This represents the fraction of balls that successfully block apertures (one ball per aperture), with the remaining $n_B - k$ balls being overflow that does not contribute to blocking.
+
+After Team A scores once:
+\begin{equation}
+R_{\text{eff}}(k + 1) = \frac{k}{k + 1} \approx 1 - \frac{1}{k}
+\label{eq:resistance_after_one}
+\end{equation}
+
+The resistance has decreased by $\approx 1/k$.
+
+\textbf{Second score by Team A:}
+
+With reduced resistance, Team A has higher probability of scoring again:
+\begin{equation}
+P_{\text{score}}^{(2)} = 1 - R_{\text{eff}}(k + 1) = \frac{1}{k + 1} > P_{\text{score}}^{(1)} = 0
+\label{eq:second_score_probability}
+\end{equation}
+
+After the second score:
+\begin{align}
+n_A(2) &= k - 2 \\
+n_B(2) &= k + 2 \\
+R_{\text{eff}}(2) &= \frac{k}{k + 2}
+\label{eq:after_second_score}
+\end{align}
+
+\textbf{General case after $m$ scores:}
+
+After Team A scores $m$ times:
+\begin{align}
+n_A(m) &= k - m \\
+n_B(m) &= k + m \\
+R_{\text{eff}}(m) &= \frac{k}{k + m}
+\label{eq:after_m_scores}
+\end{align}
+
+The resistance is a decreasing function of $m$:
+\begin{equation}
+\frac{dR_{\text{eff}}}{dm} = -\frac{k}{(k + m)^2} < 0
+\label{eq:resistance_derivative}
+\end{equation}
+
+Each score reduces resistance to the next score. This is \emph{positive feedback}: the system exhibits autocatalytic behavior in which successful transitions facilitate subsequent transitions.
+
+\textbf{Scoring rate:}
+
+The rate at which Team A scores is proportional to the probability of finding an open aperture:
+\begin{equation}
+\frac{dm}{dt} \propto (1 - R_{\text{eff}}) = \frac{m}{k + m}
+\label{eq:scoring_rate}
+\end{equation}
+
+This is an autocatalytic rate law: the rate increases with the number of scores already achieved.
+
+\textbf{Autocatalytic kinetics:}
+
+Solving the differential equation:
+\begin{equation}
+\frac{dm}{dt} = \alpha \frac{m}{k + m}
+\label{eq:autocatalytic_ode}
+\end{equation}
+
+where $\alpha$ is a rate constant, yields:
+\begin{equation}
+m(t) = \frac{k}{1 - e^{-\alpha t / k}}
+\label{eq:autocatalytic_solution}
+\end{equation}
+
+This exhibits characteristic autocatalytic kinetics:
+\begin{enumerate}
+    \item \textbf{Lag phase:} Initially ($m \approx 0$), scoring is slow due to high resistance ($R \approx 1$)
+    \item \textbf{Exponential phase:} Once scoring begins ($m > 0$), resistance drops and scoring accelerates exponentially
+    \item \textbf{Saturation:} Eventually limited by ball availability on Team A side ($m \to k$)
+\end{enumerate}
+
+Therefore, the ball game exhibits inherent autocatalysis arising purely from categorical resistance dynamics, without invoking temporal acceleration, energetic considerations, or mechanistic details.
+\end{proof}
+
+\begin{corollary}[Product Accelerates Reaction]
+\label{cor:product_accelerates}
+The formation of product molecules on the receiving side increases the categorical burden (overflow), reducing resistance to forward transitions. Product formation accelerates the forward reaction—a categorical foundation for autocatalysis.
+\end{corollary}
+
+\begin{corollary}[Lag-Exponential-Saturation Kinetics]
+\label{cor:kinetic_phases}
+The autocatalytic cascade produces characteristic three-phase kinetics observed in many catalytic and autocatalytic systems:
+\begin{enumerate}
+    \item \textbf{Lag phase:} Initial resistance is high ($R \approx 1$), few successful transits occur
+    \item \textbf{Exponential phase:} Resistance decreases as products accumulate, scoring rate increases exponentially
+    \item \textbf{Saturation phase:} Reactant depletion limits further acceleration, rate plateaus
+\end{enumerate}
+
+These kinetics arise from categorical resistance dynamics, not from temporal or energetic factors.
+\end{corollary}
+
+\subsection{Time Independence of the Autocatalytic Cascade}
+\label{sec:time_independence}
+
+A crucial feature of the autocatalytic cascade is its independence from temporal parameters: the positive feedback arises from categorical structure, not from temporal dynamics.
+
+\begin{proposition}[Temporal Irrelevance of Autocatalytic Cascade]
+\label{prop:temporal_irrelevance}
+The autocatalytic cascade is independent of ball velocities, travel times, and temporal coordination. The positive feedback arises purely from categorical resistance reduction.
+\end{proposition}
+
+\begin{proof}
+The resistance function (Equation~\ref{eq:effective_resistance}) is:
+\begin{equation}
+R_{\text{eff}}(n_B) = \frac{k}{n_B}
+\label{eq:resistance_function}
+\end{equation}
+
+This depends only on:
+\begin{itemize}
+    \item Number of balls on receiving side ($n_B$)
+    \item Number of apertures ($k$)
+\end{itemize}
+
+It does not depend on:
+\begin{itemize}
+    \item Ball velocities ($v_i$)
+    \item Travel times ($\tau_i = d_i / v_i$)
+    \item Temporal scheduling of shots
+    \item Time since last score
+\end{itemize}
+
+\textbf{Scenario 1: Fast balls}
+
+All balls have velocity $v = 100$ m/s. After Team A scores $m$ times, the resistance is:
+\begin{equation}
+R_{\text{eff}}^{\text{fast}}(m) = \frac{k}{k + m}
+\label{eq:resistance_fast}
+\end{equation}
+
+\textbf{Scenario 2: Slow balls}
+
+All balls have velocity $v = 1$ m/s (100× slower). After Team A scores $m$ times, the resistance is:
+\begin{equation}
+R_{\text{eff}}^{\text{slow}}(m) = \frac{k}{k + m}
+\label{eq:resistance_slow}
+\end{equation}
+
+The resistances are identical:
+\begin{equation}
+R_{\text{eff}}^{\text{fast}}(m) = R_{\text{eff}}^{\text{slow}}(m)
+\label{eq:resistance_equality}
+\end{equation}
+
+The autocatalytic cascade proceeds identically in both scenarios. The only difference is the absolute timescale: fast balls complete the cascade in time $T_{\text{fast}}$, slow balls in time $T_{\text{slow}} = 100 \times T_{\text{fast}}$. But the categorical structure—the sequence of resistance reductions—is identical.
+
+\textbf{No temporal coordination:}
+
+Crucially, teams "cannot have time-based aperture allocation" because aperture state is determined by categorical occupancy at the moment of ball arrival, not by temporal scheduling. A team cannot say "we will shoot at aperture 3 at time $t = 5$ s because we know it will be open then." The aperture state at $t = 5$ s depends on the categorical configuration at that moment, which is determined by the history of scores (categorical transitions), not by temporal planning.
+
+Therefore, the autocatalytic cascade is a categorical phenomenon, independent of temporal parameters.
+\end{proof}
+
+\begin{remark}[Implications for Chemical Kinetics]
+\label{rem:kinetics_implications}
+Proposition~\ref{prop:temporal_irrelevance} establishes that autocatalytic behavior in chemical systems can arise from categorical resistance dynamics without requiring temporal acceleration or energetic feedback mechanisms. The positive feedback is structural, not temporal: it arises from the finite capacity of catalytic apertures and the overflow created by product accumulation.
+\end{remark}
+
+\subsection{"Seeing Behind the Wall": Categorical Information Transfer}
+\label{sec:seeing_behind_wall}
+
+The ball game reveals a subtle but profound aspect of categorical transitions: successful transits create categorical structure on the receiving side that facilitates further transits.
+
+\begin{proposition}[Categorical Information Transfer Through Apertures]
+\label{prop:categorical_information}
+When a ball successfully transits an aperture, it creates categorical structure on the receiving side that is "visible" to the shooting team through the aperture. This categorical presence facilitates subsequent transits.
+\end{proposition}
+
+\begin{proof}
+Consider Team A's perspective after scoring once:
+
+\textbf{Before scoring:}
+\begin{itemize}
+    \item Team A has $k$ balls on their side
+    \item Team B has $k$ balls on their side
+    \item All apertures are blocked (mutual saturation)
+    \item Team A has no categorical presence on Team B's side
+\end{itemize}
+
+\textbf{After scoring:}
+\begin{itemize}
+    \item Team A has $k - 1$ balls on their side
+    \item Team B has $k + 1$ balls on their side
+    \item Team A has established a categorical presence on Team B's side (one ball)
+    \item This ball creates overflow on Team B's side, reducing their blocking capacity
+\end{itemize}
+
+From Team A's perspective, the successful transit has created a "foothold" on the opposing side. This foothold is categorical information: it represents a change in the configurational state of the system that is accessible to Team A through the aperture structure.
+
+Colloquially, Team A has "seen behind the wall": the successful transit reveals that the opposing side is now in a state of overflow, which means apertures are less effectively blocked. This information is not temporal (Team A does not know when the next aperture will be open) but categorical (Team A knows that the categorical state has shifted in their favor).
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.90\textwidth]{figures/autocatalysis_panel.png}
+\caption{\textbf{The Ball Game: Deriving Autocatalytic Dynamics from Categorical Aperture Availability.} \textbf{(A)} Two-team setup with partition containing apertures; balls must be shot immediately (no holding). \textbf{(B)} Initial equilibrium state where all apertures are mutually blocked—neither side can score (penultimate state). \textbf{(C)} Velocity independence: fast balls are blocked if no aperture is available; slow balls score if apertures are open—only configuration matters. \textbf{(D)} First score occurs when one side becomes overwhelmed (4 balls, 3 defenders), breaking symmetry. \textbf{(E)} Autocatalytic cascade: each score reduces defensive coverage, making subsequent scores progressively easier (3v3 → 2v4 → 1v5 → 0v6). \textbf{(F)} Quantitative resistance decrease: $R = k/(n+m)$ where $n$ is scores—positive feedback creates exponential acceleration. \textbf{(G)} Products create categorical presence: scoring establishes structure on the opposite side, enabling further reactions. \textbf{(H)} Kinetic profile shows characteristic autocatalytic behavior: lag phase (full blocking) → exponential phase (cascade) → saturation. \textbf{(I)} Summary: catalysis emerges from categorical aperture availability, not temporal acceleration; velocity is irrelevant; time is not fundamental.}
+\label{fig:autocatalysis_ball_game}
+\end{figure*}
+
+\textbf{Chemical interpretation:}
+
+In chemical systems, product molecules on the product side create categorical "demand" for more product. The presence of product indicates that the forward reaction pathway is accessible (the aperture has been successfully traversed), which facilitates subsequent forward reactions through reduced resistance.
+
+This is the categorical basis for autocatalysis: the system "remembers" successful transits through the configurational state (product accumulation), and this memory facilitates further transits.
+\end{proof}
+
+\begin{remark}[Non-Temporal Memory]
+\label{rem:non_temporal_memory}
+The "memory" in autocatalytic systems is categorical, not temporal. The system does not remember when the last successful transit occurred but rather that it occurred, as evidenced by the configurational state (product concentration). This categorical memory persists indefinitely (until the configuration changes), whereas temporal memory would decay over time.
+\end{remark}
+
+\subsection{Implications for Enzyme Catalysis: Cooperativity and Allostery}
+\label{sec:enzyme_implications}
+
+The autocatalytic aperture model provides a categorical foundation for several phenomena in enzyme catalysis that are traditionally explained through energetic or mechanistic arguments.
+
+\begin{theorem}[Enzymes as Autocatalytic Apertures]
+\label{thm:enzymes_autocatalytic}
+Enzymes function as autocatalytic apertures whose successful traversal (product formation) reduces categorical resistance to subsequent traversals. This explains cooperativity, allosteric regulation, and product inhibition as consequences of categorical resistance dynamics.
+\end{theorem}
+
+\begin{proof}
+An enzyme with $n$ active sites and substrates $S$ converting to products $P$ can be modeled as a ball game with:
+\begin{itemize}
+    \item $k = n$ apertures (active sites)
+    \item $n_S$ balls on substrate side
+    \item $n_P$ balls on product side
+\end{itemize}
+
+\textbf{1. Cooperativity (positive cooperativity):}
+
+Cooperative binding occurs when the binding of the first substrate molecule increases the affinity for subsequent substrate molecules. In the categorical model:
+
+\begin{itemize}
+    \item First substrate binding occupies one active site, creating categorical structure (enzyme-substrate complex)
+    \item This occupancy changes the configurational state of the enzyme (e.g., conformational change)
+    \item The changed configuration reduces resistance to subsequent substrate binding by:
+    \begin{itemize}
+        \item Widening apertures (increased acceptance region $|G_{\Pi}|$)
+        \item Reducing entropic barriers (pre-organization)
+        \item Creating new phase-lock network edges that stabilize subsequent binding
+    \end{itemize}
+\end{itemize}
+
+The Hill equation for cooperative binding:
+\begin{equation}
+\theta = \frac{[S]^n}{K_d^n + [S]^n}
+\label{eq:hill_equation}
+\end{equation}
+
+arises from the autocatalytic cascade: each binding event reduces resistance to the next, producing sigmoidal binding curves with Hill coefficient $n > 1$.
+
+\textbf{2. Allosteric regulation:}
+
+Allosteric effectors bind at sites distinct from the active site but modulate catalytic activity. In the categorical model:
+
+\begin{itemize}
+    \item Effector binding changes the phase-lock network topology of the enzyme
+    \item This topological change alters aperture geometry (widens or narrows $|G_{\Pi}|$)
+    \item Altered aperture geometry changes categorical resistance:
+    \begin{itemize}
+        \item Positive effectors reduce resistance (widen apertures)
+        \item Negative effectors increase resistance (narrow apertures)
+    \end{itemize}
+\end{itemize}
+
+The Monod-Wyman-Changeux (MWC) model \citep{monod1965} posits that allosteric enzymes exist in equilibrium between tense (T) and relaxed (R) states:
+\begin{equation}
+\frac{[R]}{[T]} = L \cdot \frac{(1 + \alpha [S])^n}{(1 + [S])^n}
+\label{eq:mwc_model}
+\end{equation}
+
+In categorical terms, the T and R states correspond to different aperture configurations with different resistances $R_T > R_R$. Effectors shift the equilibrium by stabilizing one configuration over the other.
+
+\textbf{3. Product inhibition:}
+
+At high product concentrations, the reverse reaction (product $\to$ substrate) competes with the forward reaction, reducing net forward rate. In the categorical model:
+
+\begin{itemize}
+    \item High $n_P$ (many balls on product side) creates overflow
+    \item Overflow reduces resistance to reverse transits (product $\to$ substrate)
+    \item Reverse transits block apertures, increasing resistance to forward transits
+    \item Net effect: reduced forward rate
+\end{itemize}
+
+The product inhibition constant:
+\begin{equation}
+K_i^P = \frac{[E][P]}{[EP]}
+\label{eq:product_inhibition}
+\end{equation}
+
+reflects the categorical resistance created by product accumulation.
+
+\textbf{4. Substrate inhibition:}
+
+At very high substrate concentrations, some enzymes exhibit reduced activity (substrate inhibition). In the categorical model:
+
+\begin{itemize}
+    \item Extremely high $n_S$ creates multiple substrates competing for each aperture
+    \item Multiple substrates at a single aperture can create "traffic jams"
+    \item Some substrates bind non-productively (wrong orientation), blocking apertures without leading to product formation
+    \item Net effect: reduced effective aperture capacity, increased resistance
+\end{itemize}
+
+The substrate inhibition kinetics:
+\begin{equation}
+v = \frac{V_{\max} [S]}{K_M + [S] + [S]^2 / K_i^S}
+\label{eq:substrate_inhibition}
+\end{equation}
+
+arise from categorical resistance increasing at high $[S]$ due to aperture saturation and non-productive binding.
+
+Therefore, multiple enzyme regulatory phenomena can be understood as consequences of categorical resistance dynamics in autocatalytic aperture systems.
+\end{proof}
+
+\subsection{The Resistance Equation and Dynamical Evolution}
+\label{sec:resistance_dynamics}
+
+We formalize the dynamics of categorical resistance and derive the time evolution of the autocatalytic cascade.
+
+\begin{definition}[Categorical Resistance Function]
+\label{def:resistance_function}
+For a system with $k$ apertures, $n_A$ balls on side A (reactants), and $n_B$ balls on side B (products), the categorical resistance to forward transitions (A $\to$ B) is:
+\begin{equation}
+R_{\text{forward}}(n_A, n_B) = \begin{cases}
+\frac{n_B}{k} & \text{if } n_B \leq k \\
+\frac{k}{n_B} & \text{if } n_B > k
+\end{cases}
+\label{eq:resistance_function_full}
+\end{equation}
+
+The first case ($n_B \leq k$) corresponds to partial aperture coverage: only fraction $n_B / k$ of apertures are blocked. The second case ($n_B > k$) corresponds to overflow: all apertures are contested, but overflow reduces effective blocking.
+
+Similarly, the resistance to reverse transitions (B $\to$ A) is:
+\begin{equation}
+R_{\text{reverse}}(n_A, n_B) = \begin{cases}
+\frac{n_A}{k} & \text{if } n_A \leq k \\
+\frac{k}{n_A} & \text{if } n_A > k
+\end{cases}
+\label{eq:resistance_reverse}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Resistance Dynamics]
+\label{prop:resistance_dynamics}
+The time evolution of categorical resistance is governed by:
+\begin{equation}
+\frac{dR_{\text{forward}}}{dt} = -\frac{k}{n_B^2} \cdot \frac{dn_B}{dt} \quad \text{for } n_B > k
+\label{eq:resistance_evolution}
+\end{equation}
+
+As products accumulate ($dn_B / dt > 0$), forward resistance decreases ($dR_{\text{forward}} / dt < 0$), creating positive feedback.
+\end{proposition}
+
+\begin{proof}
+From Equation~\ref{eq:resistance_function_full}, for $n_B > k$:
+\begin{equation}
+R_{\text{forward}} = \frac{k}{n_B}
+\label{eq:resistance_overflow}
+\end{equation}
+
+Taking the time derivative:
+\begin{equation}
+\frac{dR_{\text{forward}}}{dt} = \frac{d}{dt}\left(\frac{k}{n_B}\right) = -\frac{k}{n_B^2} \cdot \frac{dn_B}{dt}
+\label{eq:resistance_derivative_proof}
+\end{equation}
+
+The rate of product formation is proportional to the probability of finding an open aperture:
+\begin{equation}
+\frac{dn_B}{dt} = \alpha n_A (1 - R_{\text{forward}}) = \alpha n_A \left(1 - \frac{k}{n_B}\right) = \alpha n_A \frac{n_B - k}{n_B}
+\label{eq:product_formation_rate}
+\end{equation}
+
+where $\alpha$ is a rate constant.
+
+Substituting into Equation~\ref{eq:resistance_derivative_proof}:
+\begin{equation}
+\frac{dR_{\text{forward}}}{dt} = -\frac{k}{n_B^2} \cdot \alpha n_A \frac{n_B - k}{n_B} = -\frac{\alpha k n_A (n_B - k)}{n_B^3}
+\label{eq:resistance_evolution_full}
+\end{equation}
+
+For $n_B > k$ (overflow regime), $n_B - k > 0$, so:
+\begin{equation}
+\frac{dR_{\text{forward}}}{dt} < 0
+\label{eq:resistance_decreasing}
+\end{equation}
+
+Resistance decreases as products accumulate, creating positive feedback: product formation facilitates further product formation.
+\end{proof}
+
+\begin{corollary}[Autocatalytic Rate Law]
+\label{cor:autocatalytic_rate_law}
+The rate of product formation in the autocatalytic cascade follows:
+\begin{equation}
+\frac{dn_B}{dt} = \alpha n_A \frac{n_B - k}{n_B} \approx \alpha n_A \left(1 - \frac{k}{n_B}\right)
+\label{eq:autocatalytic_rate_law}
+\end{equation}
+
+This is an autocatalytic rate law: the rate increases with product concentration $n_B$ (for $n_B > k$).
+\end{corollary}
+
+\subsection{Connection to Le Chatelier's Principle: Categorical Resistance Restoration}
+\label{sec:le_chatelier}
+
+Le Chatelier's principle states that a system at equilibrium, when subjected to a perturbation, responds in a way that counteracts the perturbation \citep{lechatelier1884}. The ball game provides a categorical foundation for this principle.
+
+\begin{theorem}[Le Chatelier's Principle from Categorical Resistance]
+\label{thm:le_chatelier_categorical}
+Le Chatelier's principle is the system's response to perturbations in categorical resistance. The system shifts to restore equilibrium resistance $R_{\text{eq}} = 1$ (mutual blocking).
+\end{theorem}
+
+\begin{proof}
+Consider a system at equilibrium with $n_A = n_B = k$, so $R_{\text{forward}} = R_{\text{reverse}} = 1$ (mutual blocking).
+
+\textbf{Perturbation 1: Add reactants (increase $n_A$)}
+
+Suppose we add $\Delta n_A$ balls to side A:
+\begin{align}
+n_A &\to n_A + \Delta n_A = k + \Delta n_A \\
+n_B &= k \\
+R_{\text{forward}} &= \frac{k}{k} = 1 \quad \text{(unchanged)} \\
+R_{\text{reverse}} &= \frac{k + \Delta n_A}{k} > 1 \quad \text{(increased)}
+\label{eq:perturbation_add_reactants}
+\end{align}
+
+The reverse resistance has increased above equilibrium. The system responds by:
+\begin{itemize}
+    \item Increased forward reaction rate (more reactants available to shoot)
+    \item Products accumulate on side B: $n_B$ increases
+    \item As $n_B$ increases, $R_{\text{reverse}}$ decreases toward 1
+    \item Equilibrium is restored when $R_{\text{reverse}} = 1$, which occurs at $n_A = n_B$
+\end{itemize}
+
+The system shifts forward (A $\to$ B) to counteract the addition of A.
+
+\textbf{Perturbation 2: Add products (increase $n_B$)}
+
+Suppose we add $\Delta n_B$ balls to side B:
+\begin{align}
+n_A &= k \\
+n_B &\to n_B + \Delta n_B = k + \Delta n_B \\
+R_{\text{forward}} &= \frac{k}{k + \Delta n_B} < 1 \quad \text{(decreased)} \\
+R_{\text{reverse}} &= \frac{k}{k} = 1 \quad \text{(unchanged)}
+\label{eq:perturbation_add_products}
+\end{align}
+
+The forward resistance has decreased below equilibrium (overflow on side B reduces blocking). The system responds by:
+\begin{itemize}
+    \item Increased forward reaction rate (reduced resistance)
+    \item More products accumulate on side B
+    \item Paradoxically, adding products drives the reaction forward!
+\end{itemize}
+
+This seems to contradict Le Chatelier, but it reflects the autocatalytic nature of the system: adding products creates overflow, which reduces resistance to forward transitions, driving the reaction further forward until a new equilibrium is reached.
+
+\textbf{Perturbation 3: Remove products (decrease $n_B$)}
+
+Suppose we remove $\Delta n_B$ balls from side B:
+\begin{align}
+n_A &= k \\
+n_B &\to n_B - \Delta n_B = k - \Delta n_B \\
+R_{\text{forward}} &= \frac{k - \Delta n_B}{k} < 1 \quad \text{(decreased)} \\
+R_{\text{reverse}} &= \frac{k}{k} = 1 \quad \text{(unchanged)}
+\label{eq:perturbation_remove_products}
+\end{align}
+
+With fewer balls on side B, apertures are less effectively blocked. The system responds by:
+\begin{itemize}
+    \item Increased forward reaction rate (less blocking)
+    \item Products accumulate to restore $n_B \to k$
+    \item Equilibrium is restored when $R_{\text{forward}} = 1$
+\end{itemize}
+
+The system shifts forward (A $\to$ B) to counteract the removal of B.
+
+\textbf{General principle:}
+
+Le Chatelier's principle emerges from the system's tendency to restore equilibrium resistance $R_{\text{eq}} = 1$ (mutual blocking). Perturbations that change resistance drive the system to shift in a direction that restores $R = 1$.
+
+The principle is categorical, not energetic: it arises from the structure of aperture occupancy, not from thermodynamic potentials.
+\end{proof}
+
+\begin{remark}[Autocatalytic Anomaly]
+\label{rem:autocatalytic_anomaly}
+The ball game reveals an apparent paradox: adding products can drive the reaction forward (Perturbation 2 above). This occurs because product addition creates overflow, reducing forward resistance. In chemical systems, this corresponds to autocatalytic reactions where product acts as a catalyst for its own formation. The categorical framework shows that this is not an anomaly but a natural consequence of finite aperture capacity.
+\end{remark}
+
+\subsection{Summary: Autocatalysis as Categorical Structure}
+\label{sec:autocatalysis_summary}
+
+The ball game thought experiment establishes that autocatalysis is an inherent property of categorical systems with finite aperture capacity:
+
+\begin{enumerate}
+    \item \textbf{Velocity independence:} Success depends on categorical aperture availability, not on ball velocity or temporal parameters (Theorem~\ref{thm:velocity_independence})
+
+    \item \textbf{Equilibrium as mutual blocking:} Equilibrium corresponds to categorical saturation in which all apertures are contested (Proposition~\ref{prop:equilibrium_mutual_blocking})
+
+    \item \textbf{Autocatalytic cascade:} Successful transits reduce categorical resistance to subsequent transits, creating positive feedback (Theorem~\ref{thm:autocatalytic_apertures})
+
+    \item \textbf{Time independence:} The autocatalytic cascade is independent of temporal parameters; it arises from categorical structure (Proposition~\ref{prop:temporal_irrelevance})
+
+    \item \textbf{Categorical information transfer:} Successful transits create categorical structure on the receiving side that facilitates further transits ("seeing behind the wall") (Proposition~\ref{prop:categorical_information})
+
+    \item \textbf{Enzyme regulation:} Cooperativity, allostery, and product inhibition arise from categorical resistance dynamics (Theorem~\ref{thm:enzymes_autocatalytic})
+
+    \item \textbf{Le Chatelier's principle:} The system responds to perturbations by shifting to restore equilibrium resistance (Theorem~\ref{thm:le_chatelier_categorical})
+\end{enumerate}
+
+The ball game demonstrates that catalysis is not merely a mechanism for accelerating reactions but an inherently autocatalytic process in which successful categorical transitions progressively reduce resistance to subsequent transitions. This autocatalytic structure is universal: it arises from the finite capacity of apertures and the overflow created by product accumulation, independent of the specific chemical or physical details of the system.
+
+The categorical framework thus unifies catalysis and autocatalysis: all catalytic systems with finite capacity exhibit autocatalytic behavior at the categorical level. The distinction between "catalytic" and "autocatalytic" reactions is one of degree (how strong is the positive feedback) rather than kind (whether positive feedback exists). This completes the categorical theory of catalysis, establishing that catalysts function as autocatalytic apertures whose successful traversal progressively reduces categorical resistance, creating positive feedback that is structural, not temporal.

@@ -1,0 +1,229 @@
+\section{Problem Specification as Initial State}
+\label{sec:initial_state}
+
+Traditional computational frameworks specify problems through input data structures, algorithms, and termination conditions. In Poincaré Computing, by contrast, problems are specified geometrically as initial states in S-entropy space together with constraint sets that define the acceptable solution trajectories. This geometric problem specification eliminates the separation between "program" and "data" characteristic of von Neumann architectures, replacing it with a unified representation in which the problem itself is a point in phase space and the solution is a trajectory returning to that point.
+
+This section formalises the mathematical structure of problem specification in the Poincaré framework. We establish that computational problems correspond to tuples $(\Scoord_0, \mathcal{C}, \epsilon)$ consisting of an initial state, a constraint predicate, and a recurrence tolerance. We prove that this representation is sufficiently expressive to encode arbitrary computable functions, and we develop a complexity measure based on the geometric properties of the initial state and the structure of the constraint set.
+
+\subsection{Problem Definition}
+
+The fundamental object in Poincaré Computing is the computational problem, defined as a geometric specification in S-entropy space.
+
+\begin{definition}[Computational Problem]
+\label{def:computational_problem}
+A \textbf{computational problem} is a tuple $P = (\Scoord_0, \mathcal{C}, \epsilon)$ where:
+\begin{itemize}
+    \item $\Scoord_0 \in \Sspace$ is the \textbf{initial state}, representing the problem specification encoded as a point in S-entropy coordinate space;
+    \item $\mathcal{C}: \Sspace^* \to \{\text{true}, \text{false}\}$ is a \textbf{constraint predicate} defined on trajectories (finite sequences of points in $\Sspace$), specifying which trajectories constitute valid solutions;
+    \item $\epsilon > 0$ is the \textbf{recurrence tolerance}, defining the maximum permissible distance between the trajectory endpoint and the initial state for the recurrence condition to be satisfied.
+\end{itemize}
+A trajectory $\gamma: [0,T] \to \Sspace$ is a \textbf{solution} to problem $P$ if and only if it satisfies both the recurrence condition $\|\gamma(T) - \Scoord_0\| < \epsilon$ and the constraint condition $\mathcal{C}(\gamma) = \text{true}$.
+\end{definition}
+
+The initial state $\Scoord_0 = (\Sk^{(0)}, \St^{(0)}, \Se^{(0)})$ encodes the problem specification through the values of its three S-entropy coordinates. Each coordinate captures a distinct aspect of the problem structure:
+
+\begin{itemize}
+    \item \textbf{Knowledge entropy} $\Sk^{(0)} \in [0,1]$ quantifies the information content or uncertainty in the problem specification itself. A low value of $\Sk^{(0)}$ indicates a well-specified problem with precise input data and clear requirements, while a high value indicates an ambiguous or underspecified problem in which significant uncertainty remains about the intended computation. For example, a problem with complete input data might have $\Sk^{(0)} \approx 0.1$, while a search problem with partial information might have $\Sk^{(0)} \approx 0.8$.
+    
+    \item \textbf{Temporal entropy} $\St^{(0)} \in [0,1]$ encodes timing constraints, sequencing requirements, or temporal dependencies in the problem structure. Problems with strict ordering constraints (such as sequential algorithms or causal dependencies) have low $\St^{(0)}$, while problems with flexible ordering (such as embarrassingly parallel computations) have high $\St^{(0)}$. This coordinate also captures the expected temporal complexity of the solution trajectory.
+    
+    \item \textbf{Evolution entropy} $\Se^{(0)} \in [0,1]$ specifies the anticipated complexity of the solution trajectory through phase space. This coordinate encodes information about the expected trajectory length, the number of intermediate states, and the geometric complexity of the path. Simple problems with direct solution paths have low $\Se^{(0)}$, while complex problems requiring extensive exploration have high $\Se^{(0)}$.
+\end{itemize}
+
+The encoding of problem information into these three coordinates is not arbitrary but reflects the fundamental structure of computation in bounded phase space. The knowledge entropy determines which region of $\Sspace$ contains the initial state, the temporal entropy determines the characteristic timescale of trajectory evolution, and the evolution entropy determines the trajectory's geometric complexity. Together, these three coordinates provide a complete geometric specification of the computational problem.
+
+\begin{remark}[Unknowability of Initial State]
+\label{rem:unknowable_initial}
+A crucial property of Poincaré Computing, established rigorously in Section~\ref{sec:complexity}, is that the initial state $\Scoord_0$ is not directly observable. Instead, it is inferred from the trajectory itself through the closure of local solution chains. This means that problem specification in practice involves setting approximate coordinates that guide the system toward the appropriate region of phase space, with the precise initial state being determined retrospectively when the recurrence condition is satisfied. This property distinguishes Poincaré Computing from traditional computation, where input data is explicitly specified before execution begins.
+\end{remark}
+
+\subsection{Constraint Representation}
+
+The constraint predicate $\mathcal{C}$ determines which trajectories constitute valid solutions to a given problem. While the recurrence condition $\|\gamma(T) - \Scoord_0\| < \epsilon$ ensures that the trajectory returns to its starting point, the constraint predicate encodes the problem-specific requirements that the trajectory must satisfy during its evolution. We distinguish three fundamental classes of constraints, each capturing different aspects of trajectory validity.
+
+\begin{definition}[Pointwise Constraints]
+\label{def:pointwise_constraints}
+A \textbf{pointwise constraint} is a predicate $c_p: \Sspace \to \{\text{true}, \text{false}\}$ that specifies conditions which must hold at specific points along the trajectory. The pointwise constraint predicate on a trajectory $\gamma: [0,T] \to \Sspace$ is defined as:
+\begin{equation}
+\mathcal{C}_p(\gamma) = \bigwedge_{t \in T_c} c_p(\gamma(t))
+\label{eq:pointwise_constraint}
+\end{equation}
+where $T_c \subseteq [0, T]$ is the set of constraint evaluation times, and $\bigwedge$ denotes logical conjunction (all constraints must be satisfied).
+\end{definition}
+
+Pointwise constraints capture requirements that specific intermediate states must satisfy. For example, in a sorting problem, a pointwise constraint might require that at time $t_{\text{mid}}$, the trajectory passes through a state where $\Sk(t_{\text{mid}}) < 0.5$, indicating that partial ordering has been achieved. In an optimization problem, pointwise constraints might specify that certain states must be visited (corresponding to evaluation of specific candidate solutions) or avoided (corresponding to infeasible regions of the search space).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/phase_lock_network_panel.png}
+\caption{\textbf{Phase-Lock Network Evolution Through Categorical Time.} 
+\textbf{(A) Initial State: Independent Oscillators:} Twelve nodes (circles) arranged in circular layout. All nodes are white/gray (unlocked oscillators). No edges. Metrics: Edges: 0/45, Lock ratio: 0.0\%, $C = 0$ (zero completion). This represents the initial state: oscillators are independent, no phase-locks have formed, and categorical completion is zero.
+\textbf{(B) Early Phase-Locking: First Connections:} Same layout with five green nodes (highly locked) and seven gray/cyan nodes (unlocked or partially locked). Green edges connect locked nodes. Metrics: Edges: 8/45, Lock ratio: 17.8\%, $C = C_0$ (initial completion). This represents early dynamics: first phase-locks form between oscillators with similar frequencies. The locks are sparse and localized.
+\textbf{(C) Growing Network: Cascade Effect:} Same layout with seven green nodes and five cyan/gray nodes. More green edges (14 total). Orange edges (forming locks) connect green nodes to cyan nodes. Metrics: Edges: 14/45, Lock ratio: 31.1\%, $C = 3C_0$. This represents cascade dynamics: initial locks enable new locks through autocatalytic growth. The network expands from initial seed, with partially locked nodes (cyan) transitioning to highly locked (green).
+\textbf{(D) Dense Network: Many Phase-Locks:} Same layout with ten green nodes and two cyan nodes. Dense network of green edges (28 total) with few orange edges. Metrics: Edges: 28/45, Lock ratio: 62.2\%, $C = 10C_0$. This represents mature network: most oscillators are phase-locked, forming dense interconnected structure. The few remaining unlocked nodes (cyan) are being integrated.
+\textbf{(E) Near-Complete: Network Saturation:} Same layout with eleven green nodes and one cyan node. Very dense network of green edges (37 total). Metrics: Edges: 37/45, Lock ratio: 82.2\%, $C \approx C_{\max}$. This represents near-saturation: almost all possible phase-locks have formed. The network is nearly complete, with only a few missing connections.
+\textbf{(F) Categorical Completion: Equilibrium:} Same layout with all twelve nodes green (fully locked). Maximally dense network of green and orange edges (42 total). Metrics: Edges: 42/45, Lock ratio: 93.3\%, $S = S_{\text{eq}}$ (equilibrium entropy). This represents equilibrium: the network has reached maximum density (not all 45 possible edges form due to geometric constraints). The system is in stable equilibrium, with categorical completion maximized.
+\textbf{Legend (Bottom):} Node colors: white circle (unlocked oscillator), cyan circle (partially locked), green circle (highly locked). Edge colors: gray dashed line (weak coupling), orange dashed line (forming lock), green solid line (strong phase-lock).
+\textbf{Key Insight (Bottom Text):} ``Phase-lock networks form when oscillators synchronize. Each edge represents a completed categorical connection. Network density = entropy. Equilibrium = maximum phase-locking.'' This demonstrates the phase-lock network interpretation of categorical dynamics: categorical states are oscillators, categorical completion is phase-locking, and entropy is network density. The evolution from independent oscillators (panel A) to fully connected network (panel F) represents the trajectory from initial state to equilibrium, with completion $C$ increasing monotonically and entropy $S$ saturating at $S_{\text{eq}}$. This validates the network-theoretic foundation of categorical computing.}
+\label{fig:phase_lock_network_evolution}
+\end{figure}
+
+\begin{definition}[Trajectory Constraints]
+\label{def:trajectory_constraints}
+A \textbf{trajectory constraint} is a predicate $c_\gamma: C([0,T], \Sspace) \to \{\text{true}, \text{false}\}$ defined on the space of continuous trajectories $C([0,T], \Sspace)$. The trajectory constraint predicate is:
+\begin{equation}
+\mathcal{C}_\gamma(\gamma) = c_\gamma(\gamma)
+\label{eq:trajectory_constraint}
+\end{equation}
+where the predicate evaluates properties of the entire trajectory path rather than individual points.
+\end{definition}
+
+Trajectory constraints capture global properties of the solution path. Examples include:
+\begin{itemize}
+    \item \textbf{Monotonicity constraints:} requiring that one or more S-entropy coordinates evolve monotonically, such as $\Sk(t_1) \leq \Sk(t_2)$ for all $t_1 < t_2$ (knowledge never decreases);
+    \item \textbf{Bounded variation constraints:} limiting the total variation $\text{TV}(\gamma) = \int_0^T \|\dot{\gamma}(t)\| dt < V_{\max}$, ensuring that the trajectory does not oscillate excessively;
+    \item \textbf{Continuity constraints:} requiring that the trajectory be continuous or differentiable, excluding discontinuous jumps between distant regions of phase space;
+    \item \textbf{Energy constraints:} limiting the "energy" of the trajectory, defined through an appropriate functional on the path, analogous to action principles in classical mechanics.
+\end{itemize}
+
+These trajectory constraints often encode physical or computational resource limitations, such as bounds on the rate of information processing or restrictions on the types of state transitions that are physically realizable.
+
+\begin{definition}[Harmonic Constraints]
+\label{def:harmonic_constraints}
+A \textbf{harmonic constraint} specifies frequency relationships between the oscillatory components of the trajectory coordinates. For a trajectory $\gamma(t) = (\Sk(t), \St(t), \Se(t))$ with Fourier decompositions having dominant frequencies $\omega_k$, $\omega_t$, and $\omega_e$ respectively, the harmonic constraint requires:
+\begin{equation}
+\mathcal{C}_h(\gamma) = \exists (n_k, n_t, n_e) \in \mathbb{Z}^3 \setminus \{(0,0,0)\} : n_k \omega_k + n_t \omega_t + n_e \omega_e = 0
+\label{eq:harmonic_constraint}
+\end{equation}
+where the integers $(n_k, n_t, n_e)$ define the harmonic relationship.
+\end{definition}
+
+Harmonic constraints arise naturally from the physical grounding of Poincaré Computing in oscillator dynamics (Section~\ref{sec:virtual_instrument}). When multiple oscillators with frequencies $f_1, f_2, \ldots, f_n$ interact, their phases can lock into rational relationships $n_1 f_1 + n_2 f_2 + \cdots + n_n f_n = 0$ for integer coefficients $n_i$. This phenomenon, known as harmonic coincidence or frequency locking, is ubiquitous in physical oscillatory systems \citep{arnold1989mathematical}. In the computational context, harmonic constraints encode synchronisation requirements between different aspects of the computation, ensuring that the knowledge, temporal, and evolutionary components of the trajectory evolve in a coordinated manner.
+
+\begin{remark}[Constraint Complexity]
+\label{rem:constraint_complexity}
+The expressiveness of the constraint predicate $\mathcal{C}$ determines the class of problems that can be specified in the Poincaré framework. Pointwise constraints with finite $|T_c|$ can be evaluated in finite time. Trajectory constraints requiring integration over the entire path may require limiting procedures. Harmonic constraints require frequency analysis, typically through Fourier transforms. The computational cost of constraint evaluation contributes to the overall problem complexity, as formalised in Definition~\ref{def:complexity_measure}.
+\end{remark}
+
+\subsection{Problem Encoding}
+
+Having defined the structure of computational problems in the Poincaré framework, we now establish that this representation is sufficiently expressive to encode arbitrary computable functions. This result demonstrates that Poincaré Computing is at least as powerful as Turing computation in terms of the class of problems it can represent, though the computational paradigms remain categorically distinct (as established in Section~\ref{sec:completeness}).
+
+\begin{proposition}[Encoding Sufficiency]
+\label{prop:encoding_sufficiency}
+For any computable function $f: \{0,1\}^n \to \{0,1\}^m$, there exists an encoding function $\iota: \{0,1\}^n \to \Sspace$, a constraint set $\mathcal{C}_f$, and an output extraction projection $\pi_{\text{out}}: \Sspace^* \to \{0,1\}^m$ such that:
+\begin{equation}
+f(x) = y \iff \exists \gamma: \gamma(0) = \iota(x), \|\gamma(T) - \gamma(0)\| < \epsilon, \mathcal{C}_f(\gamma) = \text{true}, \pi_{\text{out}}(\gamma) = y
+\label{eq:encoding_equivalence}
+\end{equation}
+In other words, computing $f(x)$ in the Turing sense is equivalent to finding a recurrent trajectory in $\Sspace$ starting from the encoded initial state $\iota(x)$ and satisfying the constraints $\mathcal{C}_f$, with the output extracted via $\pi_{\text{out}}$.
+\end{proposition}
+
+\begin{proof}
+We construct the encoding explicitly. For input $x = (x_1, x_2, \ldots, x_n) \in \{0,1\}^n$, define the encoding function:
+\begin{equation}
+\iota(x) = \left( \Sk^{(0)}(x), \St^{(0)}(x), \Se^{(0)}(x) \right)
+\label{eq:encoding_function}
+\end{equation}
+where the three components are:
+\begin{align}
+\Sk^{(0)}(x) &= \frac{1}{2^n} \sum_{i=1}^n x_i 2^{n-i} \label{eq:sk_encoding}\\
+\St^{(0)}(x) &= \frac{1}{n} \label{eq:st_encoding}\\
+\Se^{(0)}(x) &= \frac{H(x)}{n} \label{eq:se_encoding}
+\end{align}
+where $H(x) = |\{i : x_i = 1\}|$ denotes the Hamming weight (number of ones in the binary string $x$).
+
+The knowledge entropy coordinate $\Sk^{(0)}(x)$ encodes the binary input as a fractional value in $[0,1]$, interpreting the bit string as a binary number. This encoding is injective: distinct inputs $x \neq x'$ produce distinct knowledge entropies $\Sk^{(0)}(x) \neq \Sk^{(0)}(x')$, provided $n < \infty$ and we use exact arithmetic.
+
+The temporal entropy coordinate $\St^{(0)}(x) = 1/n$ encodes the input length, providing a timescale for the computation. Longer inputs correspond to smaller temporal entropy, reflecting the increased temporal complexity of processing more data.
+
+The evolution entropy coordinate $\Se^{(0)}(x) = H(x)/n$ encodes the input's Hamming weight normalised by length, providing information about the input's structure that can guide trajectory evolution.
+
+The constraint set $\mathcal{C}_f$ is constructed to enforce that the trajectory passes through intermediate states corresponding to the computation of $f$. Specifically, if $f$ is computed by a Turing machine $M$ with computation sequence $c_0 \to c_1 \to \cdots \to c_T$ (where each $c_i$ is a configuration of $M$), we construct pointwise constraints requiring that the trajectory pass through states $\Scoord_i$ corresponding to configurations $c_i$. The mapping from Turing machine configurations to S-entropy states is defined through a configuration encoding function $\iota_{\text{config}}$.
+
+The output extraction projection $\pi_{\text{out}}$ maps the final trajectory state (or the complete trajectory) to the output bit string. For example, if the output is encoded in the final knowledge entropy coordinate, we might have:
+\begin{equation}
+\pi_{\text{out}}(\gamma) = \text{binary representation of } \lfloor 2^m \cdot \Sk(T) \rfloor
+\end{equation}
+
+The equivalence~\eqref{eq:encoding_equivalence} follows from the construction: a valid computation of $f(x) = y$ in the Turing sense corresponds to a trajectory satisfying the constraints $\mathcal{C}_f$ (which enforce the Turing machine computation steps) and returning to the initial state (which ensures the computation completes), with the output extracted via $\pi_{\text{out}}$.
+\end{proof}
+
+\begin{remark}[Encoding Non-Uniqueness]
+\label{rem:encoding_nonunique}
+The encoding $\iota$ constructed in Proposition~\ref{prop:encoding_sufficiency} is not unique. Many different encodings can represent the same computable function, corresponding to different ways of embedding the discrete Turing computation into the continuous S-entropy space. This non-uniqueness reflects the fundamental difference between Poincaré Computing and Turing computation: while Turing machines operate on discrete symbol strings, Poincaré Computing operates on continuous trajectories in phase space. The choice of encoding affects the trajectory geometry but not the answer equivalence (Section~\ref{sec:completeness}).
+\end{remark}
+
+\subsection{Problem Complexity}
+
+The geometric structure of problem specification in S-entropy space provides a natural notion of problem complexity based on the initial state coordinates and the constraint structure. This complexity measure differs fundamentally from traditional computational complexity measures (such as time or space complexity) because it characterises the problem itself rather than the resources required to solve it.
+
+\begin{definition}[Problem Complexity Measure]
+\label{def:complexity_measure}
+The \textbf{intrinsic complexity} of a problem $P = (\Scoord_0, \mathcal{C}, \epsilon)$ is defined as:
+\begin{equation}
+\kappa(P) = \frac{\Se^{(0)}}{\epsilon} \cdot |\mathcal{C}|
+\label{eq:complexity_measure}
+\end{equation}
+where $\Se^{(0)}$ is the evolution entropy of the initial state, $\epsilon$ is the recurrence tolerance, and $|\mathcal{C}|$ denotes the description length of the constraint set measured in bits (or nats, depending on the choice of logarithm base).
+\end{definition}
+
+This complexity measure has a clear geometric interpretation. The ratio $\Se^{(0)}/\epsilon$ quantifies the mismatch between the anticipated trajectory complexity (encoded in $\Se^{(0)}$) and the required precision (encoded in $\epsilon$). A large ratio indicates that the trajectory must navigate through a complex region of phase space while maintaining high precision, which corresponds to a difficult problem. The constraint description length $|\mathcal{C}|$ quantifies the amount of information required to specify which trajectories are valid solutions, with more complex constraint sets corresponding to more difficult problems.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel_hardware_pipeline.png}
+\caption{\textbf{Hardware-to-Molecule Transformation Pipeline.} 
+\textbf{(A) Hardware Timing Jitter:} Histogram of timing deltas $\Delta t$ (ns) shows exponential distribution with mean $314.0$ ns (red dashed line). Peak at $250$--$300$ ns contains $\approx 250$ samples, decaying to $< 10$ samples by $1500$ ns. The distribution represents natural hardware oscillations (CPU clock jitter, memory access variability, I/O latency fluctuations). 
+\textbf{(B) $\Delta \rho \to S_e$ Mapping:} Scatter plot shows nonlinear mapping from precision-by-difference $\Delta \rho$ (seconds, horizontal) to evolution entropy $S_e$ (vertical). Three clusters visible: yellow/green at low $\Delta \rho$ ($< 0.5 \times 10^{-6}$ s, $S_e \approx 0.5$), cyan at medium $\Delta \rho$ ($0.5$--$1.0 \times 10^{-6}$ s, $S_e \approx 1.2$), purple at high $\Delta \rho$ ($1.5$--$2.0 \times 10^{-6}$ s, $S_e \approx 2.5$). The mapping implements Theorem~\ref{thm:hardware_se_mapping}: hardware timing creates categorical coordinates. 
+\textbf{(C) Oscillator Contributions:} Stacked area chart shows cumulative contributions of three oscillator types (CPU: blue, Memory: magenta, System: orange) vs. normalized frequency. At low frequency ($< 0.2$), System dominates; at medium frequency ($0.2$--$0.6$), Memory dominates; at high frequency ($> 0.6$), CPU dominates. Total contribution reaches $\approx 1.5$ at frequency $= 1.0$, indicating superposition of multiple oscillators. 
+\textbf{(D) Molecular Creation Rate:} Time series of creation rate (molecules per second, $\times 10^6$) over 50 sample windows. Rate fluctuates between $2.5$--$4.0 \times 10^6$ Hz with mean $\approx 3.5 \times 10^6$ Hz. Orange shaded area shows variability envelope. The rate is bounded (Theorem~\ref{thm:creation_rate_bounds}) and reflects hardware sampling frequency. 
+\textbf{(E) Hardware-Categorical Correlation:} Heatmap shows correlation matrix between hardware timing $\Delta \rho$ and S-entropy coordinates $(S_k, S_t, S_e)$. Strong correlations: $\Delta \rho$--$\Delta \rho$ ($1.00$, trivial), $S_k$--$S_k$ ($1.00$), $S_e$--$S_e$ ($1.00$). Cross-correlations: $\Delta \rho$--$S_k$ ($0.79$), $\Delta \rho$--$S_e$ ($0.68$), $S_k$--$S_e$ ($0.78$). The $S_t$ row/column shows ``nan'' (not a number) because temporal entropy is computed from trajectory history, not instantaneous timing. Strong correlations confirm that hardware timing determines categorical coordinates. 
+\textbf{(F) Measurement Pipeline:} Five-stage flowchart: (1) Hardware Oscillator (red) generates timing samples, (2) Timing Sample (orange) captures $\Delta t$, (3) $\Delta \rho$ Calculation (magenta) computes precision-by-difference, (4) Coordinate Mapping (cyan) applies $\Delta \rho \to S_e$ transformation, (5) Categorical State (green) emerges as molecule in $\Sspace$. Caption: ``Real hardware timing creates real categorical states.'' This pipeline implements the forward translator $\mathcal{T}_{\text{in}}: \mathcal{P} \to \Sspace$ at the hardware level.}
+\label{fig:hardware_molecule_pipeline}
+\end{figure}
+
+\begin{proposition}[Complexity Bounds on Trajectory Length]
+\label{prop:complexity_bounds}
+For a problem $P$ with intrinsic complexity $\kappa(P)$, the minimum trajectory length satisfies:
+\begin{equation}
+T_{\min} \geq \Omega\left( \log_3 \kappa(P) \right)
+\label{eq:complexity_lower_bound}
+\end{equation}
+where the notation $\Omega(\cdot)$ denotes an asymptotic lower bound.
+\end{proposition}
+
+\begin{proof}
+The hierarchical structure of $\Sspace$ established in Section~\ref{sec:finite_space} implies that navigating to a cell of measure $\mu = 3^{-k}$ requires at least $k$ categorical steps (one for each level of the hierarchy). The recurrence tolerance $\epsilon$ corresponds to a cell diameter, which for a depth-$k$ cell is approximately $3^{-k}$. Therefore, achieving recurrence within tolerance $\epsilon$ requires reaching depth:
+\begin{equation}
+k \approx \log_3(1/\epsilon)
+\end{equation}
+
+The constraint satisfaction requires that the trajectory visit states corresponding to the constraint evaluations. For a constraint set with description length $|\mathcal{C}|$, the trajectory must encode at least $|\mathcal{C}|$ bits of information, which requires visiting at least $|\mathcal{C}|/\log_2 3$ cells (since each ternary choice encodes $\log_2 3$ bits).
+
+The evolution entropy $\Se^{(0)}$ provides an additional multiplicative factor, as higher evolution entropy corresponds to more complex trajectory geometry requiring more steps to traverse.
+
+Combining these factors, the minimum trajectory length scales as:
+\begin{equation}
+T_{\min} \geq c \cdot \log_3\left(\frac{\Se^{(0)}}{\epsilon}\right) + c' \cdot |\mathcal{C}| \geq \Omega(\log_3 \kappa(P))
+\end{equation}
+for appropriate constants $c, c' > 0$, establishing the claimed lower bound.
+\end{proof}
+
+\begin{remark}[Complexity vs. Computational Cost]
+\label{rem:complexity_vs_cost}
+The intrinsic complexity $\kappa(P)$ defined in Definition~\ref{def:complexity_measure} characterises the problem structure, while the computational cost (measured in Poincaré units, as developed in Section~\ref{sec:complexity}) characterises the resources required to find a solution. These quantities are related but distinct: a problem with high intrinsic complexity may have low computational cost if the system has previously explored similar problems (conditional complexity reduction, Section~\ref{sec:exhaustive}), while a problem with low intrinsic complexity may have high computational cost if it requires exploration of unfamiliar regions of phase space.
+\end{remark}
+
+\begin{example}[Boolean Satisfiability]
+\label{ex:sat_encoding}
+Consider the Boolean satisfiability problem (SAT) for a formula $\phi$ with $n$ variables and $m$ clauses. The problem can be encoded as:
+\begin{itemize}
+    \item Initial state: $\Scoord_0 = (n/(2^n), 1/m, m/n)$, encoding the number of variables in $\Sk^{(0)}$, the clause structure in $\St^{(0)}$, and the formula complexity in $\Se^{(0)}$;
+    \item Constraints: $\mathcal{C}_{\text{SAT}}$ consist of pointwise constraints requiring that the trajectory pass through states corresponding to satisfying assignments for each clause;
+    \item Recurrence tolerance: $\epsilon = 2^{-n}$, ensuring that the solution distinguishes between all possible variable assignments.
+\end{itemize}
+The intrinsic complexity is $\kappa(P_{\text{SAT}}) \approx (m/n) \cdot 2^n \cdot m = m^2 \cdot 2^n / n$, reflecting the exponential scaling characteristic of NP-complete problems. The minimum trajectory length bound gives $T_{\min} \geq \Omega(n + \log_3 m)$, consistent with the expectation that SAT requires exploring an exponentially large search space.
+\end{example}
+
+This section has established the mathematical framework for problem specification in Poincaré Computing. Problems are represented as geometric objects (initial states with constraints) rather than algorithmic procedures; solutions are characterised by trajectory properties (recurrence with constraint satisfaction) rather than final state values, and complexity is measured through geometric quantities (evolution entropy, recurrence tolerance, constraint description length) rather than operational counts. In the following sections, we develop the physical grounding (Section~\ref{sec:virtual_instrument}) and dynamical evolution (Section~\ref{sec:categorical_dynamics}) that transform these geometric problem specifications into computational processes.

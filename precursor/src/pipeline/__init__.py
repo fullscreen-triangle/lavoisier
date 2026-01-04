@@ -125,5 +125,5 @@ def get_version():
 
 
 print(f"[Lavoisier Pipeline v{__version__}] Finite Observer Architecture")
-print("  Theatre → Stages → Processes")
+print("  Theatre -> Stages -> Processes")
 print("  Results saved at every stage for bidirectional navigation")

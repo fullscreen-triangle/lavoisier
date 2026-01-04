@@ -1,0 +1,569 @@
+\section{Complexity Theory: Categorical Rate}
+\label{sec:complexity}
+
+Complexity theory is the study of the resources required to solve computational problems. In traditional computation, these resources are measured in terms of time (number of computational steps) and space (amount of memory used), with the fundamental unit being the discrete operation—an instruction executed, a bit written, a state transition performed \citep{arora2009computational}. The complexity of an algorithm is characterized by functions $T(n)$ and $S(n)$ that bound the time and space required as a function of input size $n$. Performance metrics such as FLOPS (floating-point operations per second) and clock frequency (GHz) quantify the rate at which these discrete operations are executed.
+
+This operational paradigm, however, presupposes a computational model in which computation consists of discrete, countable steps. Poincaré Computing, by contrast, operates through continuous trajectory evolution in phase space, with no discrete operations, no instruction sequences, and no clock-synchronized state transitions. The question thus arises: \textbf{how do we measure complexity in a computational framework without operations?}
+
+This section develops a complexity theory appropriate to the trajectory-based paradigm. We establish that traditional operation-based measures such as FLOPS are fundamentally inapplicable to Poincaré Computing (Proposition~\ref{prop:flops_inapplicable}), not merely difficult to apply but categorically meaningless. We prove that the initial state $\Scoord_0$—which plays the role of the "input" in traditional computation—is not directly observable but must be inferred from the trajectory itself, creating a fundamental epistemological constraint on complexity measurement (Theorem~\ref{thm:origin_inaccessible}). We establish that solutions are recognized not by direct comparison with the initial state but through the accumulation of local solutions that form a closed chain in interpretation space (Theorem~\ref{thm:closure_recognition}).
+
+We introduce the \textbf{categorical completion rate} $\rho_C$ as the fundamental measure of computational progress, defined as the number of categorical transitions per unit of promising trajectory length in $\Sspace$ (Definition~\ref{def:categorical_rate}). We prove that this rate is independent of physical time and hardware implementation (Theorem~\ref{thm:rate_independence}), making it an intrinsic geometric property of the trajectory-constraint system. We define the \textbf{Poincaré complexity} $\Pi(P)$ as the minimum number of local solutions required to recognize closure (Definition~\ref{def:poincare_complexity}), and we establish bounds relating this complexity to the recurrence tolerance $\epsilon$ (Theorem~\ref{thm:complexity_bounds}).
+
+Finally, we introduce the \textbf{Poincaré} ($\mathbb{P}$) as the fundamental unit of computation—the cost of one local solution recognition—and prove that Poincaré complexity and Turing complexity are incommensurable, with no general conversion between them (Theorem~\ref{thm:incommensurability}). This incommensurability reflects the categorical distinction between operational and trajectory-based computation.
+
+\subsection{Inapplicability of Operation-Based Measures}
+
+We begin by establishing that traditional complexity measures, which count discrete operations, cannot be meaningfully applied to Poincaré Computing.
+
+\begin{proposition}[FLOPS Inapplicability]
+\label{prop:flops_inapplicable}
+Floating-point operations per second (FLOPS) is not a well-defined measure for Poincaré Computing. More generally, any complexity measure based on counting discrete operations is inapplicable.
+\end{proposition}
+
+\begin{proof}
+FLOPS measures the rate at which a computational system executes floating-point arithmetic operations (additions, multiplications, divisions, etc.). The definition presupposes:
+\begin{enumerate}
+    \item \textbf{Discrete operations:} Computation consists of countable, atomic operations that can be enumerated.
+    \item \textbf{Sequential execution:} Operations are executed in sequence (or in parallel with a well-defined count of simultaneous operations).
+    \item \textbf{Time-based rate:} The measure is operations \textit{per second}, making physical time the fundamental parameter.
+    \item \textbf{Operation-result correspondence:} Each operation contributes a quantifiable amount to the computational progress.
+\end{enumerate}
+
+In Poincaré Computing, none of these assumptions hold:
+
+\textbf{(1) No discrete operations:} The categorical dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt} evolve the state continuously according to differential equations. There are no discrete operations to count. While one could discretize the dynamics (e.g., using Euler's method with time step $\Delta t$), this discretization is an artifact of numerical simulation, not an intrinsic property of the computation. Different discretizations produce different operation counts for the same trajectory, making the count arbitrary.
+
+\textbf{(2) No instruction sequence:} Theorem~\ref{thm:non_algorithmic} establishes that Poincaré Computing has no instruction sequence. The trajectory evolves according to the vector field $\mathbf{F}(\Scoord)$, which is evaluated continuously, not step-by-step. There is no program counter, no fetch-decode-execute cycle, no sequential ordering of operations.
+
+\textbf{(3) Time is not fundamental:} Theorem~\ref{thm:rate_independence} (proven below) establishes that computational progress in Poincaré Computing is measured by categorical completion events, which are geometric properties of the trajectory in $\Sspace$, not temporal properties. A faster or slower physical clock does not change the number of categorical completions required to solve a problem.
+
+\textbf{(4) Path-dependent operation count:} Theorem~\ref{thm:non_uniqueness} establishes that multiple distinct trajectories can solve the same problem. If we were to count "operations" (e.g., evaluations of the vector field $\mathbf{F}$), different solution trajectories would have different operation counts, making the count path-dependent rather than problem-dependent. This violates the principle that complexity should be a property of the problem, not the solution method.
+
+Therefore, FLOPS and related operation-based measures are categorically inapplicable to Poincaré Computing. They measure properties that do not exist in the framework.
+\end{proof}
+
+\begin{corollary}[Hardware Comparison Failure]
+\label{cor:hardware_comparison}
+Comparing Poincaré Computing systems by FLOPS, clock speed (GHz), instruction throughput (IPC), or memory bandwidth (GB/s) is meaningless. These metrics measure properties of operational computation that do not exist in trajectory-based computation.
+\end{corollary}
+
+\begin{proof}
+Each of these metrics is defined in terms of discrete operations or time-based rates:
+\begin{itemize}
+    \item FLOPS: floating-point operations per second (Proposition~\ref{prop:flops_inapplicable})
+    \item Clock speed: cycles per second (but Poincaré Computing has no clock-synchronized cycles)
+    \item IPC: instructions per cycle (but there are no instructions)
+    \item Memory bandwidth: bytes transferred per second (but the identity unification, Section~\ref{sec:identity_unification}, eliminates data transfer between processor and memory)
+\end{itemize}
+
+Since these metrics measure non-existent properties, they cannot be used to compare Poincaré Computing systems. A different set of metrics, based on categorical completion rates, is required.
+\end{proof}
+
+\begin{remark}[Implications for Benchmarking]
+\label{rem:benchmarking}
+Corollary~\ref{cor:hardware_comparison} has profound implications for benchmarking and performance evaluation. Traditional benchmark suites (e.g., SPEC, LINPACK) measure FLOPS, memory bandwidth, and instruction throughput. These benchmarks are inapplicable to Poincaré Computing. New benchmarks must measure categorical completion rates, trajectory efficiency, and constraint satisfaction density—metrics that reflect the geometric nature of trajectory-based computation.
+\end{remark}
+
+\subsection{The Unknowable Origin}
+
+A fundamental epistemological constraint on complexity measurement in Poincaré Computing is that the initial state $\Scoord_0$—which plays the role of the "input" in traditional computation—is not directly observable. This constraint has profound implications for how solutions are recognized and complexity is measured.
+
+\begin{theorem}[Origin Inaccessibility]
+\label{thm:origin_inaccessible}
+The initial state $\Scoord_0$ cannot be directly measured or stored. It exists only as the origin of the trajectory and must be inferred from the trajectory itself, not given as an independent input.
+\end{theorem}
+
+\begin{proof}
+The initial state $\Scoord_0$ is derived from hardware timing measurements through the coordinate mapping functions (Section~\ref{sec:virtual_instrument}):
+\begin{equation}
+\Scoord_0 = \Phi(\delta_p(0)) = \left( \phi_k(\delta_p(0)), \phi_t(\delta_p(0)), \phi_e(\delta_p(0)) \right)
+\label{eq:initial_state_measurement}
+\end{equation}
+where $\delta_p(0)$ is the timing difference measured at time $t = 0$.
+
+The mapping $\Phi: \mathbb{R} \to \Sspace$ is deterministic (Theorem~\ref{thm:deterministic_mapping}), so given the timing measurement $\delta_p(0)$, the initial state $\Scoord_0$ is uniquely determined. However, the timing measurement $\delta_p(0)$ is a transient physical quantity that exists only at the moment of measurement. Once the categorical state begins to evolve according to the dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}, the original timing measurement is no longer available.
+
+More fundamentally, the timing measurement $\delta_p(t)$ changes continuously as the hardware oscillators evolve. The value $\delta_p(0)$ that produced $\Scoord_0$ cannot be recovered from later measurements $\delta_p(t)$ for $t > 0$ because the mapping $\Phi$ is not injective (multiple timing differences can map to nearby categorical states due to the periodic structure of $\phi_t$ and $\phi_e$).
+
+Therefore, once the trajectory departs from $\Scoord_0$, the initial state exists only as the \textit{origin} of the trajectory—the point from which the trajectory began—not as an observable datum that can be measured or stored. The initial state must be inferred from the trajectory structure, not given independently.
+\end{proof}
+
+\begin{corollary}[No Direct Recurrence Verification]
+\label{cor:no_direct_verification}
+The recurrence condition $\|\gamma(T) - \Scoord_0\| < \epsilon$ cannot be verified by direct comparison of $\gamma(T)$ with $\Scoord_0$, because $\Scoord_0$ is not available for comparison.
+\end{corollary}
+
+\begin{proof}
+Verification of the recurrence condition requires knowing both the current state $\gamma(T)$ and the initial state $\Scoord_0$ to compute the distance $\|\gamma(T) - \Scoord_0\|$. The current state $\gamma(T)$ is observable through timing measurements: $\gamma(T) = \Phi(\delta_p(T))$. However, by Theorem~\ref{thm:origin_inaccessible}, the initial state $\Scoord_0$ is not available. We cannot compute $\|\gamma(T) - \Scoord_0\|$ because we do not have $\Scoord_0$.
+
+Therefore, direct verification of recurrence is impossible. An alternative recognition mechanism, based on local observations along the trajectory, is required.
+\end{proof}
+
+\begin{remark}[Contrast with Turing Machines]
+\label{rem:turing_input}
+In Turing computation, the input is explicitly written on the tape at the start of the computation and remains available throughout. The Turing machine can "look back" at the input at any time by moving the tape head. In Poincaré Computing, by contrast, the "input" (the initial state $\Scoord_0$) is ephemeral and cannot be accessed once the computation begins. This fundamental difference necessitates a different approach to solution recognition.
+\end{remark}
+
+\subsection{Solution Recognition Through Local Accumulation}
+
+Since the origin is inaccessible, solution recognition cannot proceed by direct comparison with the initial state. Instead, solutions are recognized through the accumulation of local observations that form a closed chain in interpretation space.
+
+\begin{definition}[Local Solution]
+\label{def:local_solution}
+A \textbf{local solution} $L_i$ is a recognizable pattern or property exhibited by a segment of the trajectory $\gamma|_{[t_i, t_{i+1}]}$ as it passes through a region of $\Sspace$ where the categorical state admits semantic interpretation. 
+
+Formally, a local solution is a tuple $L_i = (R_i, \sigma_i, t_i)$ where:
+\begin{itemize}
+    \item $R_i \subseteq \Sspace$ is a region of phase space (typically a cell in the hierarchical partition $\mathcal{P}_k$);
+    \item $\sigma_i \in \Sigma$ is a semantic label from a problem-specific semantic alphabet $\Sigma$ (e.g., $\Sigma = \{\text{``sorted''}, \text{``unsorted''}, \text{``pivot\_selected''}, \ldots\}$ for a sorting problem);
+    \item $t_i$ is the time at which the trajectory enters region $R_i$.
+\end{itemize}
+
+The semantic label $\sigma_i$ is assigned by an interpretation function $\iota: \Sspace \to \Sigma$ that maps categorical states to semantic meanings. This function is problem-specific and encodes the relationship between geometric positions in $\Sspace$ and computational concepts.
+\end{definition}
+
+\begin{example}[Sorting Local Solutions]
+\label{ex:sorting_local}
+For a sorting problem, local solutions might include:
+\begin{itemize}
+    \item $L_1 = (R_1, \text{``input\_loaded''}, t_1)$: trajectory enters region where input data is encoded
+    \item $L_2 = (R_2, \text{``pivot\_selected''}, t_2)$: trajectory enters region corresponding to pivot selection
+    \item $L_3 = (R_3, \text{``partition\_left''}, t_3)$: trajectory enters region corresponding to left partition
+    \item $L_4 = (R_4, \text{``partition\_right''}, t_4)$: trajectory enters region corresponding to right partition
+    \item $L_5 = (R_5, \text{``sorted''}, t_5)$: trajectory enters region where sorted output is recognized
+\end{itemize}
+Each local solution corresponds to a recognizable computational milestone.
+\end{example}
+
+\begin{definition}[Solution Chain]
+\label{def:solution_chain}
+A \textbf{solution chain} is an ordered sequence $(L_1, L_2, \ldots, L_n)$ of local solutions satisfying:
+\begin{enumerate}
+    \item \textbf{Temporal ordering:} $t_1 < t_2 < \cdots < t_n$ (local solutions occur in sequence along the trajectory)
+    
+    \item \textbf{Semantic compatibility:} Adjacent local solutions $L_i$ and $L_{i+1}$ are semantically compatible, meaning that the semantic label $\sigma_{i+1}$ is a valid successor to $\sigma_i$ according to the problem's semantic structure. Formally, there exists a compatibility relation $\rightarrow \subseteq \Sigma \times \Sigma$ such that $\sigma_i \rightarrow \sigma_{i+1}$ for all $i = 1, \ldots, n-1$.
+    
+    \item \textbf{Coherent interpretation:} The sequence $(L_1, \ldots, L_n)$ forms a coherent interpretation of the trajectory as a computational process. This means that the semantic labels $(\sigma_1, \ldots, \sigma_n)$ constitute a valid "story" of how the problem was solved.
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[Closure Recognition]
+\label{thm:closure_recognition}
+A trajectory $\gamma: [0, T] \to \Sspace$ is recognized as solving problem $P$ when its solution chain $(L_1, \ldots, L_n)$ satisfies the \textbf{closure condition}:
+\begin{equation}
+L_n \sim L_1
+\label{eq:closure}
+\end{equation}
+where $\sim$ denotes semantic equivalence: $L_n \sim L_1$ if and only if $\sigma_n = \sigma_1$ (the final semantic label equals the initial semantic label).
+
+The closure in interpretation space (semantic labels returning to their starting value) implies recurrence in $\Sspace$ (geometric return to the initial region).
+\end{theorem}
+
+\begin{proof}
+The semantic interpretation function $\iota: \Sspace \to \Sigma$ maps regions of phase space to semantic labels. If $L_1 = (R_1, \sigma_1, t_1)$ and $L_n = (R_n, \sigma_n, t_n)$ satisfy $\sigma_n = \sigma_1$, then by definition of the interpretation function, the trajectory has returned to a region of $\Sspace$ that is semantically equivalent to the initial region.
+
+Since the interpretation function is designed to partition $\Sspace$ into semantically meaningful regions, semantic equivalence implies spatial proximity. Formally, if $\iota(\Scoord) = \iota(\Scoord')$, then $\|\Scoord - \Scoord'\| \leq \epsilon_{\text{sem}}$, where $\epsilon_{\text{sem}}$ is the semantic resolution (the maximum diameter of a semantic region).
+
+Therefore:
+\begin{equation}
+\sigma_n = \sigma_1 \implies \iota(\gamma(t_n)) = \iota(\gamma(t_1)) \implies \|\gamma(t_n) - \gamma(t_1)\| \leq \epsilon_{\text{sem}}
+\end{equation}
+
+Since $\gamma(t_1) \approx \gamma(0) = \Scoord_0$ (the first local solution occurs near the initial state), we have:
+\begin{equation}
+\|\gamma(t_n) - \Scoord_0\| \leq \|\gamma(t_n) - \gamma(t_1)\| + \|\gamma(t_1) - \Scoord_0\| \leq \epsilon_{\text{sem}} + \delta
+\end{equation}
+for some small $\delta > 0$. Setting $\epsilon = \epsilon_{\text{sem}} + \delta$, we obtain the recurrence condition $\|\gamma(T) - \Scoord_0\| < \epsilon$ (where $T \approx t_n$).
+
+Therefore, closure in interpretation space (semantic return) implies recurrence in $\Sspace$ (geometric return), establishing that the trajectory solves the problem.
+\end{proof}
+
+\begin{remark}[Indirect Recurrence Verification]
+\label{rem:indirect_verification}
+Theorem~\ref{thm:closure_recognition} provides the mechanism for recognizing solutions without direct access to the initial state $\Scoord_0$. Instead of comparing $\gamma(T)$ with $\Scoord_0$ (which is impossible by Corollary~\ref{cor:no_direct_verification}), we compare the semantic labels $\sigma_n$ with $\sigma_1$ (which are both observable). This indirect verification circumvents the origin inaccessibility problem.
+\end{remark}
+
+\subsection{The Asymptotic Nature of Solutions}
+
+Poincaré's recurrence theorem guarantees that trajectories return arbitrarily close to their initial states, but it does not guarantee exact return. This asymptotic nature of recurrence has important implications for solution recognition and complexity measurement.
+
+\begin{theorem}[Asymptotic Return]
+\label{thm:asymptotic_return}
+For almost every initial state $\Scoord_0 \in \Sspace$, the trajectory $\gamma(t)$ never returns exactly to $\Scoord_0$. Instead, for any $\epsilon > 0$, there exist infinitely many times $T_1, T_2, T_3, \ldots$ such that:
+\begin{equation}
+\gamma(T_i) \in B_\epsilon(\Scoord_0) \setminus \{\Scoord_0\}
+\label{eq:punctured_neighborhood}
+\end{equation}
+The solution lies in the \textbf{punctured neighborhood} of the origin—the $\epsilon$-ball with the origin removed.
+\end{theorem}
+
+\begin{proof}
+Two obstructions prevent exact return for almost every initial state.
+
+\textbf{Measure-theoretic obstruction:} In measure-preserving dynamical systems on compact manifolds, the set of exactly periodic orbits (orbits that return exactly to their initial states after a finite time) has measure zero \citep{katok1995introduction}. Almost all trajectories are either quasi-periodic (dense on invariant tori) or aperiodic (never returning exactly). Therefore, for almost every $\Scoord_0$, the trajectory $\gamma(t)$ satisfies $\gamma(t) \neq \Scoord_0$ for all $t > 0$.
+
+\textbf{Categorical obstruction:} The hierarchical partition $\mathcal{P}_k$ (Definition~\ref{def:hierarchical_partition}) assigns each point in $\Sspace$ to a unique cell. When the trajectory departs from the initial cell containing $\Scoord_0$, that cell is marked as "visited" or "completed" according to the categorical completion principle. The categorical dynamics are designed to avoid re-visiting completed cells (to ensure progress toward constraint satisfaction), so the returning trajectory must enter an adjacent cell rather than the exact initial cell.
+
+Formally, if $\Scoord_0 \in C_0 \in \mathcal{P}_k$ and the trajectory departs at time $t_{\text{dep}} > 0$, then for all $t > t_{\text{dep}}$, the trajectory satisfies $\gamma(t) \notin C_0$ until it approaches the boundary of $C_0$ from outside. The closest approach is to the boundary $\partial C_0$, not to the interior point $\Scoord_0$.
+
+Combining these obstructions, we conclude that $\gamma(t) \neq \Scoord_0$ for almost every initial state and all $t > 0$. The trajectory returns to arbitrarily small neighborhoods $B_\epsilon(\Scoord_0)$ but never to the exact point $\Scoord_0$.
+\end{proof}
+
+\begin{definition}[Problem-Solution Identity]
+\label{def:problem_solution_identity}
+At the initial state $\Scoord_0$, the problem specification and the solution are identical:
+\begin{equation}
+\Scoord_0 = \Scoord_{\text{problem}} = \Scoord_{\text{solution}}
+\label{eq:problem_solution_identity}
+\end{equation}
+The difference between problem and solution is zero at, and only at, the origin. For all $t > 0$, the trajectory $\gamma(t)$ represents a partial solution with non-zero difference from the complete solution.
+\end{definition}
+
+This definition captures a profound property of Poincaré Computing: the problem and its solution are not separate entities but are unified at the initial state. The computation consists of departing from this unified state, exploring phase space to satisfy constraints, and returning to (near) the unified state, at which point the solution is recognized.
+
+\begin{proposition}[Solution as Approximation]
+\label{prop:solution_approximation}
+Solving a problem means reducing the problem-solution difference below a threshold $\epsilon$:
+\begin{equation}
+\text{Solved} \iff \|\Scoord_{\text{problem}} - \Scoord_{\text{solution}}\|_{\gamma(T)} < \epsilon
+\label{eq:solution_approximation}
+\end{equation}
+where $\Scoord_{\text{problem}} = \Scoord_0$ and $\Scoord_{\text{solution}} = \gamma(T)$. The difference is never exactly zero for $T > 0$.
+\end{proposition}
+
+\begin{proof}
+At $t = 0$, the problem and solution coincide: $\Scoord_{\text{problem}} = \Scoord_0 = \gamma(0) = \Scoord_{\text{solution}}$, so the difference is zero.
+
+For $t > 0$, the trajectory has departed from $\Scoord_0$, and by Theorem~\ref{thm:asymptotic_return}, it never returns exactly. Therefore, $\|\gamma(t) - \Scoord_0\| > 0$ for all $t > 0$.
+
+The best achievable is $\epsilon$-proximity: $\|\gamma(T) - \Scoord_0\| < \epsilon$ for arbitrarily small $\epsilon > 0$. This $\epsilon$-proximity is what we mean by "solving" the problem—reducing the problem-solution difference below the tolerance threshold.
+\end{proof}
+
+\begin{remark}[Implications for Exactness]
+\label{rem:exactness}
+Proposition~\ref{prop:solution_approximation} establishes that Poincaré Computing produces approximate solutions, not exact solutions. This is not a limitation but a fundamental property of continuous dynamics in bounded phase space. The tolerance $\epsilon$ can be made arbitrarily small (by increasing the hierarchical depth $k$), but it cannot be reduced to zero. This contrasts with Turing computation, where exact solutions are the norm (e.g., a Turing machine computing $2 + 2$ produces exactly $4$, not approximately $4$).
+\end{remark}
+
+\subsection{Categorical Completion Rate}
+
+Having established the epistemological constraints on complexity measurement (origin inaccessibility, asymptotic return), we now define the fundamental measure of computational progress in Poincaré Computing.
+
+\begin{definition}[Categorical Completion Event]
+\label{def:completion_event}
+A \textbf{categorical completion event} occurs when the trajectory $\gamma$ exits a cell $C \in \mathcal{P}_k$ of the hierarchical partition. At the moment of exit, the cell is marked as "visited" or "completed," indicating that the trajectory has explored that region of phase space.
+
+Formally, a completion event occurs at time $t_{\text{exit}}$ when:
+\begin{equation}
+\gamma(t_{\text{exit}}) \in \partial C \quad \text{and} \quad \frac{d}{dt}\|\gamma(t) - C\|_{t=t_{\text{exit}}} > 0
+\end{equation}
+where $\partial C$ is the boundary of cell $C$ and the derivative condition ensures that the trajectory is leaving (not entering) the cell.
+\end{definition}
+
+\begin{definition}[Promising Trajectory]
+\label{def:promising_trajectory}
+A trajectory segment $\gamma|_{[t, t+\delta]}$ is \textbf{promising} if it moves toward regions of higher constraint satisfaction. Formally, the segment is promising if:
+\begin{equation}
+\mathcal{C}_{\text{partial}}(\gamma|_{[0, t+\delta]}) \geq \mathcal{C}_{\text{partial}}(\gamma|_{[0, t]})
+\label{eq:promising_condition}
+\end{equation}
+where $\mathcal{C}_{\text{partial}}: C([0,T], \Sspace) \to [0,1]$ is a partial constraint satisfaction measure that quantifies the fraction of constraints satisfied by a trajectory segment.
+
+Intuitively, a promising trajectory is one that makes progress toward satisfying the problem constraints, as opposed to a trajectory that wanders aimlessly or moves away from constraint satisfaction.
+\end{definition}
+
+\begin{definition}[Categorical Completion Rate]
+\label{def:categorical_rate}
+The \textbf{categorical completion rate} $\rho_C$ is the number of categorical completion events per unit of promising trajectory length in $\Sspace$:
+\begin{equation}
+\rho_C = \frac{N_{\text{completions}}}{L_{\text{promising}}}
+\label{eq:categorical_rate}
+\end{equation}
+where:
+\begin{itemize}
+    \item $N_{\text{completions}}$ is the number of cells exited by the trajectory (number of completion events);
+    \item $L_{\text{promising}} = \int_{\text{promising}} \|\dot{\gamma}(t)\| dt$ is the arc length of the promising portions of the trajectory, measured in $\Sspace$ distance (not physical time).
+\end{itemize}
+
+The categorical completion rate has units of [completions per unit $\Sspace$-distance], making it a geometric property of the trajectory.
+\end{definition}
+
+\begin{theorem}[Rate Independence from Physical Time]
+\label{thm:rate_independence}
+The categorical completion rate $\rho_C$ is independent of physical time. It depends only on the geometry of $\Sspace$, the hierarchical partition $\mathcal{P}_k$, and the constraint structure $\mathcal{C}$.
+\end{theorem}
+
+\begin{proof}
+We establish independence by showing that $\rho_C$ is defined entirely in terms of geometric quantities, with no reference to physical time.
+
+\textbf{Numerator (completions):} The number of completion events $N_{\text{completions}}$ is determined by counting how many cells in $\mathcal{P}_k$ the trajectory exits. This is a geometric property: it depends on the trajectory's path through $\Sspace$ (which cells it visits) but not on the time parameterization of the path. Two trajectories that trace the same geometric curve through $\Sspace$ at different speeds (different $t$-parameterizations) have the same $N_{\text{completions}}$.
+
+\textbf{Denominator (promising length):} The arc length $L_{\text{promising}}$ is computed by integrating the speed $\|\dot{\gamma}(t)\|$ over the promising portions of the trajectory:
+\begin{equation}
+L_{\text{promising}} = \int_{\text{promising}} \|\dot{\gamma}(t)\| dt = \int_{\text{promising}} \sqrt{\left(\frac{d\Sk}{dt}\right)^2 + \left(\frac{d\St}{dt}\right)^2 + \left(\frac{d\Se}{dt}\right)^2} dt
+\end{equation}
+
+This integral measures the length of the curve $\gamma$ in $\Sspace$, which is a geometric invariant. If we reparameterize the trajectory by a different time variable $\tau = h(t)$ (where $h$ is a monotonic function), the arc length remains unchanged:
+\begin{equation}
+L = \int \|\dot{\gamma}(t)\| dt = \int \left\|\frac{d\gamma}{d\tau}\right\| \frac{d\tau}{dt} dt = \int \left\|\frac{d\gamma}{d\tau}\right\| d\tau
+\end{equation}
+
+Therefore, the arc length $L_{\text{promising}}$ is independent of the time parameterization.
+
+\textbf{Rate:} Since both the numerator and denominator are independent of the time parameterization, the ratio $\rho_C = N_{\text{completions}} / L_{\text{promising}}$ is also independent of time. A faster or slower physical clock (corresponding to a different time parameterization) produces the same categorical completion rate.
+
+The rate depends only on:
+\begin{itemize}
+    \item The geometry of $\Sspace$ (the metric structure determining arc length);
+    \item The hierarchical partition $\mathcal{P}_k$ (determining which cells are exited);
+    \item The constraint structure $\mathcal{C}$ (determining which portions of the trajectory are promising).
+\end{itemize}
+
+These are all intrinsic properties of the problem and the trajectory, not of the physical implementation.
+\end{proof}
+
+\begin{corollary}[Physical Implementation Invariance]
+\label{cor:implementation_invariance}
+Two physical implementations of Poincaré Computing with different clock speeds, different oscillator frequencies, and different hardware architectures produce identical categorical completion rates $\rho_C$ if they instantiate the same trajectory $\gamma$ in $\Sspace$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:rate_independence}, the categorical completion rate depends only on the geometry of the trajectory in $\Sspace$, not on the physical parameters of the implementation. If two implementations produce the same trajectory $\gamma$ (the same curve in $\Sspace$), they have the same $\rho_C$, regardless of differences in clock speed, oscillator frequencies, or hardware architecture.
+
+This invariance is analogous to the fact that two Turing machines with different clock speeds (one running at 1 GHz, another at 10 GHz) execute the same algorithm with the same number of steps, even though the faster machine completes the computation in less physical time. The number of steps is an intrinsic property of the algorithm, not of the physical implementation. Similarly, the categorical completion rate is an intrinsic property of the trajectory, not of the physical implementation.
+\end{proof}
+
+\subsection{Poincaré Complexity}
+
+We now define the fundamental complexity measure for Poincaré Computing, analogous to time complexity $T(n)$ in Turing computation.
+
+\begin{definition}[Poincaré Complexity]
+\label{def:poincare_complexity}
+The \textbf{Poincaré complexity} of a problem $P = (\Scoord_0, \mathcal{C}, \epsilon)$ is the minimum number of local solutions required to recognize closure:
+\begin{equation}
+\Pi(P) = \inf_{\gamma \in \mathcal{A}(P)} \left\{ n : (L_1, \ldots, L_n) \text{ is a solution chain with } L_n \sim L_1 \right\}
+\label{eq:poincare_complexity}
+\end{equation}
+
+In other words, $\Pi(P)$ is the length of the shortest solution chain among all trajectories that solve problem $P$. This measures the minimum number of categorical transitions (local solution recognitions) required to solve the problem.
+\end{definition}
+
+\begin{theorem}[Complexity Lower Bound]
+\label{thm:complexity_bounds}
+For a problem $P$ with recurrence tolerance $\epsilon$ in the depth-$k$ hierarchical partition, the Poincaré complexity satisfies:
+\begin{equation}
+\Pi(P) \geq \log_3\left(\frac{1}{\epsilon}\right)
+\label{eq:complexity_lower_bound}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The recurrence tolerance $\epsilon$ determines the required resolution of the hierarchical partition. To distinguish states within distance $\epsilon$, the partition must have cell diameter at most $\epsilon$. In the ternary hierarchical partition $\mathcal{P}_k$, cells at depth $k$ have diameter approximately $3^{-k}$ (since each coordinate is divided into $3^k$ levels).
+
+To achieve cell diameter $\leq \epsilon$, we require:
+\begin{equation}
+3^{-k} \leq \epsilon \quad \Rightarrow \quad k \geq \log_3(1/\epsilon)
+\end{equation}
+
+Each local solution corresponds to at least one cell transition (exiting one cell and entering another). To navigate from the initial cell to a cell within distance $\epsilon$ of the origin requires traversing at least $k$ cells (one per level of the hierarchy, in the most efficient case).
+
+Therefore, the number of local solutions satisfies:
+\begin{equation}
+n \geq k \geq \log_3(1/\epsilon)
+\end{equation}
+
+Taking the infimum over all solution chains gives $\Pi(P) \geq \log_3(1/\epsilon)$.
+\end{proof}
+
+\begin{remark}[Exponential Scaling]
+\label{rem:exponential_scaling}
+Theorem~\ref{thm:complexity_bounds} establishes that Poincaré complexity scales logarithmically with $1/\epsilon$, or equivalently, exponentially with the required precision. This is consistent with the recurrence time bound in Corollary~\ref{cor:resolution_time}, which showed that expected recurrence time scales as $O(1/\epsilon)$. The exponential scaling reflects the hierarchical structure of $\Sspace$: each additional level of precision requires exploring exponentially more cells.
+\end{remark}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/complexity_panel.png}
+\caption{\textbf{Complexity Theory Validation.} 
+\textbf{(A) Poincaré Complexity:} Poincaré complexity $\Pi(P)$ (measured in Poincarés, the natural unit of categorical complexity) scales sub-linearly with problem size $n$. For $n = 10$: $\Pi(P) \approx 8$; $n = 20$: $\Pi(P) \approx 15$; $n = 50$: $\Pi(P) \approx 38$; $n = 100$: $\Pi(P) \approx 72$. Growth is approximately $\Pi(P) \sim \sqrt{n}$ due to manifold dimensionality reduction (Theorem~\ref{thm:poincare_complexity}), contrasting with Turing complexity $K(P) \sim n \log n$. 
+\textbf{(B) Categorical Completion Rate:} Completion rate $p_C(t) = d|\gamma(t)|/dt$ (completions per unit time) fluctuates around mean $\langle p_C \rangle = 5.0$ (dashed line). Green shaded region shows variation envelope. Rate is bounded (Theorem~\ref{thm:completion_rate_bounds}) and non-negative (Proposition~\ref{prop:nonnegative_rate_formal}), confirming irreversible categorical dynamics. 
+\textbf{(C) $S_0$ Unknowability (No Perfect Inference):} Distribution of inference error $|S_0^{\text{inferred}} - S_0^{\text{true}}|$ for initial S-entropy state. Perfect inference (vertical dashed line at zero) is never achieved; errors are distributed over $[0.02, 0.20]$ with mode at $\approx 0.05$. This confirms $S_0$ unknowability (Theorem~\ref{thm:s0_unknowability}): initial state cannot be perfectly inferred from trajectory observations due to information loss in categorical completion. 
+\textbf{(D) Asymptotic Return (Never Zero):} Distance to initial state $\|\gamma(t) - \Scoord_0\|$ (orange curve, log scale) decreases exponentially but never reaches zero (horizontal dashed line). Asymptotic approach confirms categorical irreversibility: exact return is unreachable (Theorem~\ref{thm:asymptotic_solution}). The $\epsilon$-boundary is the solution (Corollary~\ref{cor:epsilon_boundary}). 
+\textbf{(E) Solution Chain Closure:} Polar plot of trajectory distance to initial state vs. angular position (proxy for categorical completion order). Trajectory starts at $0°$ (green marker), explores to maximum distance at $\approx 90°$, and returns near start at $\approx 315°$ (yellow marker), stopping at penultimate state (red marker) one step from closure. The trajectory forms a near-closed loop, confirming Poincaré recurrence with categorical irreversibility preventing exact closure. 
+\textbf{(F) Turing-Poincaré Incommensurability:} Scatter plot of Turing complexity (Kolmogorov complexity $K(P)$, vertical axis) vs. Poincaré complexity ($\Pi(P)$, horizontal axis) for 30 problems. Low correlation ($\rho = 0.31$) demonstrates incommensurability: problems with similar Turing complexity have vastly different Poincaré complexity and vice versa. The two complexity measures capture orthogonal aspects of computational difficulty (Theorem~\ref{thm:complexity_incommensurability}).}
+\label{fig:complexity_validation}
+\end{figure}
+
+\begin{proposition}[Complexity Additivity]
+\label{prop:complexity_additivity}
+For independent problems $P_1$ and $P_2$ (problems with disjoint constraint sets), the Poincaré complexity of the product problem satisfies:
+\begin{equation}
+\Pi(P_1 \times P_2) = \Pi(P_1) + \Pi(P_2)
+\label{eq:complexity_additivity}
+\end{equation}
+where $P_1 \times P_2$ is the problem in the product space $\Sspace \times \Sspace$ that requires solving both $P_1$ and $P_2$ simultaneously.
+\end{proposition}
+
+\begin{proof}
+In the product space $\Sspace \times \Sspace$, a trajectory is a pair $(\gamma_1(t), \gamma_2(t))$ where $\gamma_1$ solves $P_1$ and $\gamma_2$ solves $P_2$. Local solutions in the product space decompose into pairs $(L_i^{(1)}, L_j^{(2)})$ where $L_i^{(1)}$ is a local solution for $P_1$ and $L_j^{(2)}$ is a local solution for $P_2$.
+
+Closure in the product space requires both components to close:
+\begin{equation}
+(L_n^{(1)}, L_m^{(2)}) \sim (L_1^{(1)}, L_1^{(2)}) \iff L_n^{(1)} \sim L_1^{(1)} \text{ and } L_m^{(2)} \sim L_1^{(2)}
+\end{equation}
+
+The minimum number of local solutions in the product space is achieved when both chains are minimal:
+\begin{equation}
+\Pi(P_1 \times P_2) = n + m = \Pi(P_1) + \Pi(P_2)
+\end{equation}
+
+This additivity property is analogous to the additivity of time complexity for independent subproblems in traditional computation: $T(n_1 + n_2) = T(n_1) + T(n_2)$ for independent problems.
+\end{proof}
+
+\subsection{Units of Computation: The Poincaré}
+
+We now introduce the fundamental unit of computation for Poincaré Computing, analogous to the "operation" in traditional computation.
+
+\begin{definition}[The Poincaré (Unit)]
+\label{def:poincare_unit}
+One \textbf{Poincaré}, denoted $\mathbb{P}$, is the computational cost of one local solution recognition—one step toward closure in interpretation space. It represents the cost of completing one categorical transition: exiting one cell of the hierarchical partition, recognizing the associated semantic label, and entering the next cell.
+
+The Poincaré is the fundamental unit of computational progress in trajectory-based computation.
+\end{definition}
+
+\begin{remark}[Poincaré vs. FLOPS]
+\label{rem:poincare_vs_flops}
+Unlike FLOPS (floating-point operations per second), which is a rate (operations per unit time), the Poincaré is a count (number of categorical transitions). The total computational cost of solving problem $P$ is $\Pi(P)$ Poincarés, independent of how long the computation takes in physical time.
+
+This distinction reflects the fundamental difference between operational and trajectory-based computation:
+\begin{itemize}
+    \item Operational computation: cost = (operations) × (time per operation)
+    \item Trajectory computation: cost = (categorical transitions), with time irrelevant
+\end{itemize}
+\end{remark}
+
+\begin{definition}[Categorical Throughput]
+\label{def:categorical_throughput}
+The \textbf{categorical throughput} of a Poincaré Computing system is:
+\begin{equation}
+\Theta = \rho_C \cdot v_\gamma
+\label{eq:categorical_throughput}
+\end{equation}
+where:
+\begin{itemize}
+    \item $\rho_C$ is the categorical completion rate (Definition~\ref{def:categorical_rate});
+    \item $v_\gamma = \|\dot{\gamma}\|$ is the arc-length velocity of promising trajectories in $\Sspace$.
+\end{itemize}
+
+The throughput $\Theta$ has units of [completions per unit time], making it the Poincaré Computing analog of FLOPS. However, unlike FLOPS, $\Theta$ depends on the trajectory geometry (through $\rho_C$) and the dynamics (through $v_\gamma$), not just on hardware parameters.
+\end{definition}
+
+\begin{proposition}[Throughput-Complexity Relation]
+\label{prop:throughput_complexity}
+The expected solution time for problem $P$ scales as:
+\begin{equation}
+T_{\text{solution}} \propto \frac{\Pi(P)}{\Theta}
+\label{eq:solution_time}
+\end{equation}
+Problems with higher Poincaré complexity $\Pi(P)$ require more categorical completions; systems with higher categorical throughput $\Theta$ complete them faster.
+\end{proposition}
+
+\begin{proof}
+The total computational cost is $\Pi(P)$ Poincarés (Definition~\ref{def:poincare_complexity}). The system completes categorical transitions at rate $\Theta$ Poincarés per unit time (Definition~\ref{def:categorical_throughput}). Therefore, the time required to complete $\Pi(P)$ transitions is:
+\begin{equation}
+T_{\text{solution}} = \frac{\Pi(P)}{\Theta}
+\end{equation}
+
+This is the Poincaré Computing analog of the relation $T = N_{\text{ops}} / \text{FLOPS}$ in traditional computation, where $N_{\text{ops}}$ is the number of operations and FLOPS is the operation rate.
+\end{proof}
+
+\subsection{Comparison with Classical Complexity}
+
+We now compare the complexity framework developed for Poincaré Computing with traditional Turing/von Neumann complexity theory.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{Turing/von Neumann} & \textbf{Poincaré Computing} \\
+\midrule
+Basic unit & Instruction/operation & Local solution ($\mathbb{P}$) \\
+Complexity measure & Time $T(n)$, space $S(n)$ & Poincaré complexity $\Pi(P)$ \\
+Rate measure & FLOPS, IPC & Categorical rate $\rho_C$ \\
+Time dependence & Essential (operations per second) & Absent (geometric property) \\
+Initial state & Known input on tape & Unknown, inferred from trajectory \\
+Solution criterion & Halting in accept state & Closure recognition $L_n \sim L_1$ \\
+Exactness & Exact answer & $\epsilon$-approximation \\
+Determinism & Single path from input & Multiple paths (Theorem~\ref{thm:non_uniqueness}) \\
+Completeness & Turing completeness & Trajectory completeness \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Comparison of complexity frameworks.} Poincaré Computing and traditional computation differ in every fundamental aspect of complexity measurement, reflecting their categorical distinction as computational paradigms.}
+\label{tab:complexity_comparison}
+\end{table}
+
+\begin{theorem}[Incommensurability]
+\label{thm:incommensurability}
+Poincaré complexity $\Pi(P)$ and Turing time complexity $T(n)$ are incommensurable: there exists no general conversion function $f$ such that $\Pi(P) = f(T(n))$ or $T(n) = g(\Pi(P))$ for all problems.
+\end{theorem}
+
+\begin{proof}
+We establish incommensurability by showing that the two complexity measures are defined in terms of fundamentally different quantities that cannot be related by a general conversion.
+
+\textbf{Different basic units:} Turing complexity $T(n)$ counts discrete operations (state transitions, tape movements, symbol writes) as a function of input size $n$. Poincaré complexity $\Pi(P)$ counts local solution recognitions (categorical transitions) as a function of problem structure $P$. The quantities being counted are categorically different:
+\begin{itemize}
+    \item Turing operations are discrete, sequential, and algorithmic;
+    \item Poincaré transitions are continuous, geometric, and trajectory-based.
+\end{itemize}
+
+\textbf{Different dependencies:} Turing complexity depends on the algorithm (the transition function $\delta$), which does not exist in Poincaré Computing (Theorem~\ref{thm:non_algorithmic}). Poincaré complexity depends on the trajectory geometry and constraint structure, which do not exist in Turing computation.
+
+\textbf{Different equivalence relations:} Two Turing machines computing the same function via different algorithms have different time complexities $T_1(n) \neq T_2(n)$. Two Poincaré problems that are answer-equivalent (Theorem~\ref{thm:non_algo_equiv}) may have completely different complexities $\Pi(P_1) \neq \Pi(P_2)$ because they have different trajectory geometries.
+
+\textbf{No bijection:} Suppose there existed a conversion function $f: \mathbb{N} \to \mathbb{N}$ such that $\Pi(P) = f(T(n))$ for all problems. Then problems with the same Turing complexity would have the same Poincaré complexity. However, we can construct two problems with identical Turing complexity $T(n) = n^2$ (e.g., two different sorting algorithms, both quadratic) but different Poincaré complexities $\Pi(P_1) \neq \Pi(P_2)$ (because they have different trajectory geometries in $\Sspace$). This contradicts the existence of $f$.
+
+Therefore, Poincaré complexity and Turing complexity are incommensurable: they measure fundamentally different aspects of computation and cannot be converted into each other.
+\end{proof}
+
+\begin{remark}[Implications for Complexity Classes]
+\label{rem:complexity_classes}
+The incommensurability of Poincaré and Turing complexity implies that traditional complexity classes (P, NP, PSPACE, etc.) do not directly apply to Poincaré Computing. These classes are defined in terms of Turing machine time and space complexity, which are not meaningful for trajectory-based computation. A new hierarchy of complexity classes, based on Poincaré complexity $\Pi(P)$ and categorical throughput $\Theta$, would be required to classify problems in Poincaré Computing. The development of such a hierarchy is left for future work.
+\end{remark}
+
+\subsection{Measurement and Observation}
+
+We conclude this section by discussing the practical aspects of measuring complexity in Poincaré Computing.
+
+\begin{proposition}[Per-Category Measurement]
+\label{prop:per_category_measurement}
+Measurement in Poincaré Computing occurs per categorical completion event, not per unit time. The observable is the sequence of local solutions $(L_1, L_2, \ldots)$, obtained as the trajectory completes categories (exits cells in $\mathcal{P}_k$).
+\end{proposition}
+
+\begin{proof}
+Local solutions are recognized when the trajectory exits a cell in the hierarchical partition $\mathcal{P}_k$ (Definition~\ref{def:local_solution}). This is a geometric event in $\Sspace$: the trajectory crosses the boundary $\partial C$ of a cell $C$. The event is detected by monitoring the categorical state $\Scoord(t)$ and recognizing when it transitions from one cell to another.
+
+This detection is independent of physical time: the event occurs when the geometric condition $\Scoord(t) \in \partial C$ is satisfied, regardless of when this occurs on the clock. The measurement apparatus (virtual spectrometer, Section~\ref{sec:virtual_instrument}) is synchronized to categorical transitions, not to a time-based clock.
+
+Therefore, measurement is per-category (per cell exit), not per-time (per clock cycle).
+\end{proof}
+
+\begin{corollary}[Asynchronous Computation]
+\label{cor:asynchronous}
+Poincaré Computing is inherently asynchronous. There is no global clock governing computation. Progress is measured by categorical completion events, which occur at irregular intervals determined by the trajectory dynamics, not by a regular clock signal.
+\end{corollary}
+
+\begin{proof}
+In traditional synchronous computation, a global clock signal triggers state transitions at regular intervals (e.g., every nanosecond for a 1 GHz clock). All components of the system are synchronized to this clock.
+
+In Poincaré Computing, there is no such global clock. The categorical state $\Scoord(t)$ evolves continuously according to the dynamics~\eqref{eq:dsk_dt}--\eqref{eq:dse_dt}, and categorical completion events occur when the trajectory crosses cell boundaries. These crossings occur at irregular intervals determined by the trajectory geometry, not by a regular clock.
+
+For example, if the trajectory moves slowly through a dense region of cells, completion events occur frequently. If the trajectory moves quickly through a sparse region, completion events occur infrequently. The rate of completion events varies dynamically, making the computation asynchronous.
+\end{proof}
+
+\begin{remark}[Synchronization Protocols]
+\label{rem:synchronization}
+Corollary~\ref{cor:asynchronous} has practical implications for distributed Poincaré Computing systems. Synchronization between multiple Poincaré processors cannot use time-based protocols (e.g., "synchronize at time $t = 1$ second") because time is not the fundamental parameter. Instead, synchronization must use categorical-state-based protocols: systems synchronize when their solution chains reach compatible states (e.g., "synchronize when both systems reach local solution $L_5$"), not when their clocks align.
+
+This categorical synchronization is analogous to dataflow synchronization in asynchronous circuits, where components synchronize based on data availability rather than clock signals.
+\end{remark}
+
+This section has established a complexity theory for Poincaré Computing based on categorical completion rates and Poincaré complexity. We have proven that traditional operation-based measures are inapplicable, that the initial state is unknowable, that solutions are recognized through local accumulation, and that complexity is measured in Poincarés rather than operations. The categorical completion rate is independent of physical time and hardware implementation, making it an intrinsic geometric property of the trajectory-constraint system. Poincaré complexity and Turing complexity are incommensurable, reflecting the categorical distinction between trajectory-based and operational computation.
+

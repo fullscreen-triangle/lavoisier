@@ -1,0 +1,136 @@
+\section{Validation}
+\label{sec:experimental-validation}
+
+\subsection{Validation Strategy}
+
+The theoretical framework makes three quantitative predictions testable against ensemble data:
+
+\begin{enumerate}
+    \item \textbf{Frequency enrichment}: Terminators appear with enrichment $\alpha = \exp(\Delta S_{\text{cat}}/k_B)$
+    \item \textbf{Kinetic signature}: Cascade dynamics follow lag-exponential-saturation profile with overdispersion
+    \item \textbf{Family structure}: Terminators cluster into families with correlated pathway degeneracies
+\end{enumerate}
+
+\subsection{Test 1: Frequency Enrichment Law}
+
+\begin{definition}[Enrichment-Entropy Regression]
+For a set of terminators $\{\rho_j^*\}$ with measured enrichments $\{\alpha_j\}$ and estimated categorical entropies $\{\Delta S_j\}$:
+\begin{equation}
+    \ln \alpha_j = \beta_0 + \beta_1 \frac{\Delta S_j}{k_B} + \epsilon_j
+\end{equation}
+where $\beta_0, \beta_1$ are regression coefficients and $\epsilon_j$ is error.
+\end{definition}
+
+\begin{proposition}[Theoretical Prediction]
+The theoretical prediction (Theorem~\ref{thm:frequency-enrichment}) implies:
+\begin{equation}
+    \beta_0 = 0, \quad \beta_1 = 1
+\end{equation}
+\end{proposition}
+
+\begin{definition}[Validation Criterion]
+The enrichment law is validated if:
+\begin{equation}
+    |\hat{\beta}_1 - 1| < 2 \cdot \text{SE}(\hat{\beta}_1)
+\end{equation}
+where $\text{SE}(\hat{\beta}_1)$ is the standard error of the slope estimate.
+\end{definition}
+
+\subsection{Test 2: Kinetic Signature}
+
+\begin{definition}[Depth Distribution Analysis]
+For cascade endpoints observed at varying activation levels (proxy for time), fit the depth distribution to:
+\begin{equation}
+    P(n; E) = A(E) \frac{(r(E) \cdot t_{\text{eff}}(E))^n}{n!} \exp\left(\frac{n(n-1)\bar{\beta}}{2}\right)
+\end{equation}
+where $E$ is activation energy (e.g., collision energy in mass spectrometry) and $t_{\text{eff}}(E)$ is effective cascade time.
+\end{definition}
+
+\begin{proposition}[Overdispersion Test]
+The variance-to-mean ratio of partition depth:
+\begin{equation}
+    \frac{\sigma_n^2}{\langle n \rangle} = 1 + 2\bar{\beta}\langle n \rangle + O(\bar{\beta}^2)
+\end{equation}
+For simple kinetics, $\bar{\beta} = 0$ and ratio equals 1 (Poisson). For autocatalytic kinetics, $\bar{\beta} > 0$ and ratio exceeds 1 (overdispersion).
+\end{definition}
+
+\begin{definition}[Validation Criterion]
+The kinetic signature is validated if:
+\begin{equation}
+    \frac{\sigma_n^2}{\langle n \rangle} > 1 + 2 \cdot \text{SE}\left(\frac{\sigma_n^2}{\langle n \rangle}\right)
+\end{equation}
+at high activation levels where $\langle n \rangle > 3$.
+\end{definition}
+
+\subsection{Test 3: Family Structure}
+
+\begin{definition}[Intra-Family Correlation]
+For terminators within family $\mathcal{F}_k$, the intra-family correlation of pathway degeneracy is:
+\begin{equation}
+    r_{\text{intra}}(\mathcal{F}_k) = \frac{\sum_{i,j \in \mathcal{F}_k, i \neq j} (g_i - \bar{g})(g_j - \bar{g})}{\sum_{i \in \mathcal{F}_k} (g_i - \bar{g})^2}
+\end{equation}
+where $\bar{g}$ is the mean degeneracy within the family.
+\end{definition}
+
+\begin{proposition}[Theoretical Prediction]
+By Theorem~\ref{thm:family-pathway}, terminators within a family share pathway structure. This predicts:
+\begin{equation}
+    r_{\text{intra}} > r_{\text{inter}}
+\end{equation}
+where $r_{\text{inter}}$ is the correlation between terminators in different families.
+\end{proposition}
+
+\begin{definition}[Validation Criterion]
+Family structure is validated if:
+\begin{equation}
+    r_{\text{intra}} - r_{\text{inter}} > 2 \cdot \text{SE}(r_{\text{intra}} - r_{\text{inter}})
+\end{equation}
+for families with $|\mathcal{F}_k| \geq 3$ members.
+\end{definition}
+
+\subsection{Data Requirements}
+
+\begin{proposition}[Minimum Ensemble Size]
+To detect terminators with enrichment $\alpha \geq \alpha_{\min}$ at significance $\alpha_{\text{sig}}$:
+\begin{equation}
+    N \geq \frac{z_{\alpha_{\text{sig}}}^2}{\alpha_{\min}^2 f_{\text{random}}}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The standard error of enrichment estimate is $\text{SE}(\hat{\alpha}) \approx \alpha / \sqrt{N f_{\text{random}} \alpha}$. Detection at significance $\alpha_{\text{sig}}$ requires $\hat{\alpha} > 1 + z_{\alpha_{\text{sig}}} \cdot \text{SE}(\hat{\alpha})$. Solving for $N$ yields the stated bound.
+\end{proof}
+
+\begin{example}[Mass Spectrometry Context]
+For molecular ion fragmentation with:
+\begin{itemize}
+    \item $f_{\text{random}} \approx 10^{-4}$ (one in 10,000 mass bins)
+    \item $\alpha_{\min} = 10$ (ten-fold enrichment)
+    \item $\alpha_{\text{sig}} = 0.01$ (99\% confidence)
+\end{itemize}
+The required ensemble size is:
+\begin{equation}
+    N \geq \frac{(2.58)^2}{10^2 \cdot 10^{-4}} = \frac{6.66}{0.01} \approx 670 \text{ spectra}
+\end{equation}
+\end{example}
+
+\subsection{Expected Outcomes}
+
+\begin{proposition}[Prediction Summary]
+For charged particle ensembles undergoing sequential dissociation:
+\begin{enumerate}
+    \item Frequency enrichment: $\ln \alpha \propto \Delta S_{\text{cat}}$ with slope $\beta_1 \approx 1$
+    \item Kinetic overdispersion: $\sigma_n^2 / \langle n \rangle > 1$ at high activation
+    \item Family clustering: $r_{\text{intra}} > r_{\text{inter}}$ for terminator degeneracies
+\end{enumerate}
+\end{proposition}
+
+These predictions distinguish the autocatalytic cascade model from alternative hypotheses:
+\begin{itemize}
+    \item Random fragmentation (predicts $\alpha = 1$, Poisson statistics, no family structure)
+    \item Thermodynamic-only stability (predicts enrichment but not overdispersion or family correlation)
+    \item Energy-barrier-only kinetics (predicts neither overdispersion nor entropy-enrichment correlation)
+\end{itemize}
+
+In mass spectrometry, the validation can be performed using public spectral databases containing thousands of fragmentation spectra from diverse precursor ions.
+
