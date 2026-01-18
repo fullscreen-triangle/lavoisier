@@ -1,0 +1,128 @@
+\section{Temporal-Causal Modality: Consistency Validation Through Light Propagation Constraints}
+\label{sec:temporal}
+
+\subsection{Causal Structure of Light Propagation}
+
+Light propagation obeys causality: photon at position $\mathbf{r}$ and time $t$ can only have originated from sources within past light cone. Causal Green's function for electromagnetic field \cite{Jackson1999}:
+\begin{equation}
+G(\mathbf{r}, t; \mathbf{r}', t') = \frac{\delta(t - t' - |\mathbf{r} - \mathbf{r}'|/c)}{4\pi|\mathbf{r} - \mathbf{r}'|} \Theta(t - t')
+\end{equation}
+where $\Theta$ is Heaviside step function enforcing $t > t'$ (causality) and $\delta$ function enforces light-speed propagation.
+
+Field at $(\mathbf{r}, t)$ from source distribution $\rho(\mathbf{r}', t')$:
+\begin{equation}
+\Phi(\mathbf{r}, t) = \int_{-\infty}^t dt' \int_V d^3\mathbf{r}' \, \rho(\mathbf{r}', t') G(\mathbf{r}, t; \mathbf{r}', t')
+\end{equation}
+
+Causality constraint: field depends only on sources at retarded times $t' = t - |\mathbf{r} - \mathbf{r}'|/c$.
+
+\subsection{Structural Prediction and Light Distribution Consistency}
+
+Given structure $S(t_0)$ measured at time $t_0$, predict structure $\hat{S}(t_1)$ at future time $t_1 > t_0$ using physical constraints (conservation laws, thermodynamic evolution, reaction kinetics).
+
+Predicted structure implies light distribution:
+\begin{equation}
+L^{\text{pred}}(\mathbf{r}, t_1) = \int_{t_0}^{t_1} dt' \int_V d^3\mathbf{r}' \, \sigma(\mathbf{r}', t'; \hat{S}) G(\mathbf{r}, t_1; \mathbf{r}', t')
+\end{equation}
+where $\sigma(\mathbf{r}', t'; \hat{S})$ is light source/scattering distribution implied by predicted structure $\hat{S}$.
+
+\begin{theorem}[Temporal-Causal Consistency]
+\label{thm:temporal_causal}
+Predicted structure $\hat{S}(t_1)$ is consistent with physics if and only if predicted light distribution matches observed distribution:
+\begin{equation}
+L^{\text{pred}}(\mathbf{r}, t_1) = L^{\text{obs}}(\mathbf{r}, t_1)
+\end{equation}
+within measurement uncertainty $\delta L$.
+\end{theorem}
+
+\begin{proof}
+Light propagation is deterministic: given source distribution $\rho(\mathbf{r}', t')$, field $\Phi(\mathbf{r}, t)$ is uniquely determined by Maxwell's equations with causal boundary conditions.
+
+Structure determines source distribution through reflection, scattering, and emission. If predicted structure is correct, implied source distribution equals actual source distribution, thus predicted light distribution equals observed distribution.
+
+Conversely, if light distributions differ by more than measurement uncertainty, implied source distributions differ, thus predicted structure is incorrect.
+\end{proof}
+
+\subsection{Exclusion Through Causal Inconsistency}
+
+\begin{corollary}[Causal Exclusion]
+\label{cor:causal_exclusion}
+Candidate structures predicting light distributions violating causal consistency:
+\begin{equation}
+\int |\mathbf{L}^{\text{pred}}(\mathbf{r}, t) - \mathbf{L}^{\text{obs}}(\mathbf{r}, t)|^2 d^3\mathbf{r} > (\delta L)^2 V
+\end{equation}
+are excluded, where $V$ is observation volume.
+\end{corollary}
+
+\begin{proof}
+Follows directly from Theorem~\ref{thm:temporal_causal}. Structures producing light distributions outside measurement uncertainty violate causal consistency and are excluded.
+\end{proof}
+
+Exclusion factor depends on precision of light measurement and complexity of prediction. For optical measurements with signal-to-noise ratio SNR $\sim 10^3$ over volume with $\sim 10^6$ resolvable elements:
+\begin{equation}
+\epsilon_{\text{causal}} \sim \text{SNR}^{-1} \sim 10^{-3}
+\end{equation}
+per spatial element.
+
+Multiple measurements at different times $\{t_j\}$ compound exclusion:
+\begin{equation}
+\epsilon_{\text{causal}}^{N_t} \sim (10^{-3})^{N_t}
+\end{equation}
+
+For $N_t = 5$ temporal samples, total exclusion $\sim 10^{-15}$.
+
+\subsection{Computational Implementation}
+
+Computing predicted light distribution requires:
+
+\textbf{Step 1}: Given structure $S(t_0)$, extract source distribution $\rho(\mathbf{r}, t_0)$ (includes scatterers, fluorophores, reflection boundaries).
+
+\textbf{Step 2}: Evolve structure forward in time using physical laws:
+\begin{equation}
+\frac{d S}{dt} = F(S, T, P, \ldots)
+\end{equation}
+where $F$ encodes dynamics (molecular motion, reactions, diffusion).
+
+\textbf{Step 3}: Compute implied source distribution at time $t_1$:
+\begin{equation}
+\rho(\mathbf{r}, t_1) = \sigma(\mathbf{r}; S(t_1))
+\end{equation}
+
+\textbf{Step 4}: Integrate causal Green's function:
+\begin{equation}
+L^{\text{pred}}(\mathbf{r}, t_1) = \int_{t_0}^{t_1} dt' \int_V d^3\mathbf{r}' \, \rho(\mathbf{r}', t') G(\mathbf{r}, t_1; \mathbf{r}', t')
+\end{equation}
+
+\textbf{Step 5}: Compare to observed $L^{\text{obs}}(\mathbf{r}, t_1)$. If mismatch exceeds $\delta L$, structure prediction is incorrect.
+
+This provides self-consistency check without requiring explicit light propagation simulation—only verification that predicted structure produces observed light distribution.
+
+\subsection{Multi-Time Validation}
+
+Measuring at multiple times $\{t_j\}_{j=0}^{N_t}$ enables trajectory validation. Predicted trajectory $\{S(t_j)\}$ must satisfy:
+\begin{equation}
+L^{\text{pred}}(\mathbf{r}, t_j) = L^{\text{obs}}(\mathbf{r}, t_j) \quad \forall j
+\end{equation}
+
+This overdetermines structure: $N_t$ measurements provide $N_t$ constraints, while structure evolution depends on continuous parameters. Inconsistency indicates error in structural prediction.
+
+\begin{proposition}[Temporal Overdetermination]
+\label{prop:temporal_overdetermination}
+For structure with $N_{\text{param}}$ continuous parameters, $N_t > N_{\text{param}}$ temporal measurements overdetermine structure, enabling error detection through consistency checking.
+\end{proposition}
+
+\begin{proof}
+$N_{\text{param}}$ parameters require $N_{\text{param}}$ independent measurements for unique determination. Additional measurements ($N_t > N_{\text{param}}$) provide redundancy. If all measurements are consistent with single parameter set, structure is validated. If inconsistent, at least one measurement or structural prediction is erroneous.
+\end{proof}
+
+\subsection{Relationship to Retarded Potentials}
+
+Standard electromagnetic theory uses retarded potentials \cite{Jackson1999}:
+\begin{equation}
+\mathbf{A}(\mathbf{r}, t) = \frac{\mu_0}{4\pi} \int \frac{\mathbf{J}(\mathbf{r}', t - |\mathbf{r} - \mathbf{r}'|/c)}{|\mathbf{r} - \mathbf{r}'|} d^3\mathbf{r}'
+\end{equation}
+
+Current at retarded time $t_{\text{ret}} = t - |\mathbf{r} - \mathbf{r}'|/c$ determines field at $(\mathbf{r}, t)$. This is identical to causal Green's function formulation.
+
+Our contribution is recognizing this causal structure provides constraint for structural validation: predicted structures must produce retarded potentials consistent with observation.
+

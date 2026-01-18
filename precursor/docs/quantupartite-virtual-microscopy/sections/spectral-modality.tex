@@ -1,0 +1,85 @@
+\section{Spectral Modality: Electronic State Determination}
+\label{sec:spectral}
+
+\subsection{Wavelength-Dependent Reflection and Absorption}
+
+Spectral analysis measures wavelength-dependent response $R(\lambda)$ or absorption $A(\lambda)$. Electronic transitions between states with energies $E_n$ and $E_m$ occur at wavelengths:
+\begin{equation}
+\lambda_{nm} = \frac{hc}{E_m - E_n}
+\end{equation}
+where $h$ is Planck constant and $c$ is speed of light.
+
+Absorption spectrum is sum over all allowed transitions:
+\begin{equation}
+A(\lambda) = \sum_{n<m} f_{nm} \cdot L\left(\lambda - \lambda_{nm}\right)
+\end{equation}
+where $f_{nm}$ are oscillator strengths and $L$ is line shape function (typically Lorentzian or Gaussian).
+
+\subsection{Material Identification Through Refractive Index}
+
+Refractive index $n(\lambda)$ relates to partition signatures through Kramers-Kronig relations \cite{Kronig1926}:
+\begin{equation}
+n(\omega) - 1 = \frac{c}{\pi} \mathcal{P} \int_0^\infty \frac{\alpha(\omega')}{\omega'^2 - \omega^2} d\omega'
+\end{equation}
+where $\alpha$ is absorption coefficient and $\mathcal{P}$ denotes principal value.
+
+Measured reflection coefficient at normal incidence:
+\begin{equation}
+R(\lambda) = \left|\frac{n(\lambda) - 1}{n(\lambda) + 1}\right|^2
+\end{equation}
+
+Different materials have characteristic $n(\lambda)$:
+\begin{align}
+n_{\text{water}}(550\text{ nm}) &= 1.33 \\
+n_{\text{protein}}(550\text{ nm}) &= 1.53 \\
+n_{\text{lipid}}(550\text{ nm}) &= 1.46 \\
+n_{\text{DNA}}(550\text{ nm}) &= 1.60
+\end{align}
+
+Measurement precision $\Delta n \sim 0.01$ distinguishes these materials.
+
+\subsection{Exclusion Through Spectral Mismatch}
+
+\begin{theorem}[Spectral Exclusion]
+\label{thm:spectral_exclusion}
+Given measured spectrum $S_{\text{meas}}(\lambda)$ with precision $\delta S$, candidate structures with predicted spectra $S_{\text{pred}}(\lambda)$ satisfying:
+\begin{equation}
+\int |S_{\text{pred}}(\lambda) - S_{\text{meas}}(\lambda)|^2 d\lambda > (\delta S)^2 \cdot \Delta\lambda
+\end{equation}
+are excluded, where $\Delta\lambda$ is measurement bandwidth.
+\end{theorem}
+
+\begin{proof}
+Measurement precision $\delta S$ defines confidence interval. Predicted spectra outside this interval are inconsistent with measurement and thus excluded. Integrated squared difference quantifies total mismatch over bandwidth $\Delta\lambda$.
+\end{proof}
+
+For typical spectroscopy with $\delta S/S \sim 10^{-3}$ over bandwidth $\Delta\lambda \sim 400$ nm (visible range), exclusion factor is:
+\begin{equation}
+\epsilon_{\text{spectral}} \sim \frac{\delta S}{S} \cdot \frac{\Delta\lambda}{\delta\lambda} \sim 10^{-3} \times 10^3 = 1
+\end{equation}
+per wavelength channel.
+
+With $M_{\lambda} \sim 100$ independent wavelength channels, total exclusion:
+\begin{equation}
+\epsilon_{\text{spectral}}^{M_{\lambda}} \sim (10^{-3})^{100} \sim 10^{-300}
+\end{equation}
+
+However, correlations between channels reduce effective independence. Realistic estimate: $\epsilon_{\text{spectral}} \sim 10^{-15}$ considering $\sim 15$ effectively independent spectral features.
+
+\subsection{Multi-Wavelength Depth Probing}
+
+Different wavelengths penetrate to different depths:
+\begin{equation}
+I(z, \lambda) = I_0 e^{-\alpha(\lambda) z}
+\end{equation}
+where $\alpha(\lambda)$ is absorption coefficient.
+
+For biological tissue:
+\begin{align}
+\alpha(400\text{ nm}) &\sim 10^6\text{ m}^{-1} \quad (\text{penetration } \sim 1\text{ }\mu\text{m}) \\
+\alpha(550\text{ nm}) &\sim 10^5\text{ m}^{-1} \quad (\text{penetration } \sim 10\text{ }\mu\text{m}) \\
+\alpha(700\text{ nm}) &\sim 10^4\text{ m}^{-1} \quad (\text{penetration } \sim 100\text{ }\mu\text{m})
+\end{align}
+
+Measuring at multiple wavelengths provides depth-resolved information, adding spatial constraint beyond lateral resolution.
+

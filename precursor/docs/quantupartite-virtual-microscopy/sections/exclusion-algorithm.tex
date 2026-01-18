@@ -1,0 +1,111 @@
+\section{Sequential Exclusion Algorithm}
+\label{sec:algorithm}
+
+\subsection{Five-Modality Sequential Application}
+
+The quintupartite framework applies five independent constraints sequentially. Each modality reduces structural ambiguity through exclusion of inconsistent candidates.
+
+\begin{algorithm}
+\caption{Quintupartite Sequential Exclusion}
+\label{alg:quintupartite}
+\begin{algorithmic}[1]
+\REQUIRE Initial structure ambiguity $N_0 \sim 10^{60}$
+\ENSURE Unique structure determination $N_5 \sim 1$
+\STATE \textbf{Modality 1 (Optical):} Measure intensity $I(\mathbf{r})$ at wavelength $\lambda_0$
+\STATE Extract spatial structure, exclude incompatible candidates
+\STATE Remaining ambiguity: $N_1 = N_0 \epsilon_{\text{optical}}$ where $\epsilon_{\text{optical}} \sim 1$ (provides baseline)
+\STATE \textbf{Modality 2 (Spectral):} Measure spectrum $S(\lambda)$ over range $\Delta\lambda$
+\STATE Compute predicted spectra for remaining candidates
+\STATE Exclude candidates with $|S^{\text{pred}} - S^{\text{obs}}| > \delta S$
+\STATE Remaining ambiguity: $N_2 = N_1 \epsilon_{\text{spectral}}$ where $\epsilon_{\text{spectral}} \sim 10^{-15}$
+\STATE \textbf{Modality 3 (Vibrational):} Measure Raman spectrum over $500-3500$ cm$^{-1}$
+\STATE Compute predicted vibrational modes for remaining candidates
+\STATE Exclude candidates with mismatched vibrational signatures
+\STATE Remaining ambiguity: $N_3 = N_2 \epsilon_{\text{vibrational}}$ where $\epsilon_{\text{vibrational}} \sim 10^{-15}$
+\STATE \textbf{Modality 4 (Metabolic GPS):} Measure categorical distances to four O$_2$ molecules
+\STATE For each remaining candidate, compute enzymatic pathway lengths
+\STATE Exclude candidates with $\dcat \neq \dcat^{\text{meas}}$ for any of four oxygen references
+\STATE Remaining ambiguity: $N_4 = N_3 \epsilon_{\text{metabolic}}^4$ where $\epsilon_{\text{metabolic}} \sim 10^{-15}$
+\STATE \textbf{Modality 5 (Temporal-Causal):} Measure light distribution at times $\{t_j\}$
+\STATE For each remaining candidate, compute predicted light evolution
+\STATE Exclude candidates with $|L^{\text{pred}}(t_j) - L^{\text{obs}}(t_j)| > \delta L$
+\STATE Remaining ambiguity: $N_5 = N_4 \epsilon_{\text{causal}}^{N_t}$ where $\epsilon_{\text{causal}} \sim 10^{-3}$
+\RETURN Unique structure (or minimal set if $N_5 \sim O(1)$)
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Ambiguity Reduction Analysis}
+
+Starting from $N_0 \sim 10^{60}$, sequential exclusion gives:
+\begin{align}
+N_1 &= N_0 \times 1 = 10^{60} \quad \text{(optical baseline)} \\
+N_2 &= N_1 \times 10^{-15} = 10^{45} \quad \text{(spectral exclusion)} \\
+N_3 &= N_2 \times 10^{-15} = 10^{30} \quad \text{(vibrational exclusion)} \\
+N_4 &= N_3 \times (10^{-15})^{1} = 10^{15} \quad \text{(metabolic GPS, single)} \\
+N_5 &= N_4 \times (10^{-3})^{5} = 10^{0} \quad \text{(causal, 5 time points)}
+\end{align}
+
+Unique determination achieved: $N_5 \sim 1$.
+
+Alternative pathway using four-oxygen metabolic GPS:
+\begin{align}
+N_4' &= N_3 \times (10^{-4})^{4} = 10^{30} \times 10^{-16} = 10^{14}
+\end{align}
+still requiring causal constraint for final uniqueness.
+
+\subsection{Computational Complexity}
+
+Each exclusion step requires computing predicted observable for remaining candidates:
+
+\textbf{Spectral prediction}: Quantum chemistry calculation of electronic states. Computational cost per candidate: $O(N_{\text{electrons}}^3)$ using density functional theory \cite{Kohn1965}.
+
+\textbf{Vibrational prediction}: Normal mode analysis. Cost: $O(N_{\text{atoms}}^3)$ for eigenvalue problem of Hessian matrix.
+
+\textbf{Metabolic GPS}: Graph search through enzymatic network. Cost: $O(E \log V)$ where $E$ is number of enzymatic reactions and $V$ is number of metabolites, using Dijkstra's algorithm \cite{Dijkstra1959}.
+
+\textbf{Causal validation}: Light propagation integration. Cost: $O(N_{\text{sources}} \times N_{\text{detectors}})$ for ray tracing or $O(N^3)$ for finite-difference time-domain \cite{Yee1966}.
+
+Total computational cost:
+\begin{equation}
+C_{\text{total}} = \sum_{i=1}^5 N_i \times C_i
+\end{equation}
+where $C_i$ is cost per candidate for modality $i$.
+
+Dominant cost is initial stages with large $N_i$. For $N_1 = 10^{60}$, exhaustive enumeration is intractable. Practical implementation requires efficient sampling strategies (Monte Carlo, genetic algorithms, gradient descent in parameter space).
+
+\subsection{Error Propagation and Uncertainty}
+
+Measurement uncertainties $\{\delta M_i\}$ propagate through sequential exclusion. If modality $i$ has false positive rate $p_i$ (incorrectly retains wrong structure) and false negative rate $q_i$ (incorrectly excludes correct structure):
+
+\begin{equation}
+P_{\text{correct}}^{(i)} = (1 - q_i) \prod_{j=1}^{i-1} (1 - p_j)
+\end{equation}
+
+For $p_i, q_i \ll 1$, probability of correctly identifying unique structure:
+\begin{equation}
+P_{\text{success}} \approx \prod_{i=1}^5 (1 - p_i - q_i)
+\end{equation}
+
+Requiring $P_{\text{success}} > 0.95$ with five modalities necessitates:
+\begin{equation}
+p_i + q_i < 0.01 \quad \forall i
+\end{equation}
+
+This translates to measurement precision requirements: signal-to-noise ratio SNR $> 100$, calibration accuracy $< 1\%$, systematic errors $< 1\%$ of signal.
+
+\subsection{Comparison to Multi-Objective Optimization}
+
+The sequential exclusion framework is equivalent to constrained optimization \cite{Boyd2004}:
+\begin{align}
+\text{minimize} \quad & |\Sigma - \Sigma_{\text{true}}| \\
+\text{subject to} \quad & |I^{\text{pred}}(\mathbf{r}) - I^{\text{obs}}(\mathbf{r})| < \delta I \\
+& |S^{\text{pred}}(\lambda) - S^{\text{obs}}(\lambda)| < \delta S \\
+& |\omega^{\text{pred}} - \omega^{\text{obs}}| < \delta\omega \\
+& |d_{\text{GPS}}^{\text{pred}} - d_{\text{GPS}}^{\text{obs}}| < \delta d \\
+& |L^{\text{pred}}(t) - L^{\text{obs}}(t)| < \delta L
+\end{align}
+
+Each constraint eliminates regions of parameter space. Intersection of feasible regions determines structure.
+
+Advantage of sequential application: early modalities drastically reduce search space before expensive computations (quantum chemistry, molecular dynamics) are required.
+

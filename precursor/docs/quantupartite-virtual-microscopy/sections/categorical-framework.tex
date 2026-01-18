@@ -1,0 +1,109 @@
+\section{Categorical Framework for Constraint-Based Imaging}
+\label{sec:categorical_framework}
+
+\subsection{Partition Coordinates and Structural Ambiguity}
+
+Physical structures admit characterization through partition coordinates $(n, l, m, s)$ arising from bounded oscillatory systems \cite{Griffiths2018}. For atomic systems, these correspond to principal quantum number $n$, angular momentum $l$, magnetic quantum number $m$, and spin $s$. Molecular systems extend this through vibrational and rotational quantum numbers.
+
+\begin{definition}[Partition Signature]
+\label{def:partition_signature}
+The \textbf{partition signature} of a molecular system is the multiset:
+\begin{equation}
+\Sigma = \{(n_i, l_i, m_i, s_i)\}_{i=1}^{N_{\text{particles}}}
+\end{equation}
+characterizing all constituent particles.
+\end{definition}
+
+For system with $N$ atoms, each with $\sim 10$ electrons, partition signature contains $\sim 10N$ four-tuples. The space of possible signatures has cardinality $\sim (2n_{\max}^2)^{10N}$ where $n_{\max}$ is maximum accessible quantum number.
+
+\begin{definition}[Structural Ambiguity]
+\label{def:structural_ambiguity}
+Given measurement $M$ with finite precision, the \textbf{structural ambiguity} $N(M)$ is the number of distinct partition signatures consistent with $M$:
+\begin{equation}
+N(M) = |\{\Sigma \,|\, M(\Sigma) \in [\mu - \Delta\mu, \mu + \Delta\mu]\}|
+\end{equation}
+where $\mu$ is measured value and $\Delta\mu$ is uncertainty.
+\end{definition}
+
+Single-modality measurements have large ambiguity. Optical microscopy measures spatial intensity $I(\mathbf{r})$ but cannot distinguish structures with identical $I(\mathbf{r})$ yet different molecular compositions, electronic states, or vibrational modes.
+
+\subsection{Sequential Categorical Exclusion}
+
+Multiple independent measurements reduce ambiguity through intersection:
+
+\begin{theorem}[Multi-Modal Ambiguity Reduction]
+\label{thm:multimodal_reduction}
+Given $M$ independent measurements $\{M_i\}_{i=1}^M$ with individual ambiguities $\{N_i\}$, combined ambiguity satisfies:
+\begin{equation}
+N_{\text{combined}} \leq \min_i N_i
+\end{equation}
+with equality when measurements are uncorrelated.
+\end{theorem}
+
+\begin{proof}
+Each measurement $M_i$ restricts possible signatures to set $S_i$ with $|S_i| = N_i$. Combined measurement restricts to intersection $S_{\text{combined}} = \bigcap_{i=1}^M S_i$.
+
+Cardinality satisfies $|S_{\text{combined}}| \leq |S_i|$ for all $i$, thus $N_{\text{combined}} \leq \min_i N_i$.
+
+For uncorrelated measurements, intersection probability is product: $|S_{\text{combined}}| = \prod_i |S_i|/|S_{\text{total}}|^{M-1}$ where $|S_{\text{total}}|$ is total signature space. For $|S_i| \ll |S_{\text{total}}|$, this gives $N_{\text{combined}} \approx N_1 \cdot (N_2/|S_{\text{total}}|) \cdots (N_M/|S_{\text{total}}|)$.
+\end{proof}
+
+Define exclusion factor:
+\begin{equation}
+\epsilon_i = \frac{N_i}{N_0}
+\end{equation}
+where $N_0$ is initial ambiguity. Sequential application yields:
+\begin{equation}
+N_M = N_0 \prod_{i=1}^M \epsilon_i
+\end{equation}
+
+For unique determination, require $N_M = 1$:
+\begin{equation}
+\prod_{i=1}^M \epsilon_i = \frac{1}{N_0}
+\end{equation}
+
+\subsection{Information Content of Measurements}
+
+From Shannon information theory \cite{Shannon1949}, measurement reducing ambiguity from $N$ to $N'$ provides information:
+\begin{equation}
+I = k_B \ln(N/N') = k_B \ln(1/\epsilon)
+\end{equation}
+in units of energy-entropy.
+
+\begin{proposition}[Information Required for Uniqueness]
+\label{prop:info_uniqueness}
+Unique structural determination from initial ambiguity $N_0$ requires total information:
+\begin{equation}
+I_{\text{total}} = k_B \ln N_0
+\end{equation}
+\end{proposition}
+
+For $N_0 \sim 10^{60}$, this gives $I_{\text{total}} \sim 138 k_B \sim 1.9 \times 10^{-21}$ J/K per determined structure.
+
+\subsection{Categorical Distance and Morphism Chains}
+
+\begin{definition}[Categorical Distance]
+\label{def:categorical_distance}
+The \textbf{categorical distance} $\dcat(\Sigma_A, \Sigma_B)$ between partition signatures is the minimum number of allowed transitions transforming $\Sigma_A$ to $\Sigma_B$:
+\begin{equation}
+\dcat(\Sigma_A, \Sigma_B) = \min_{\text{paths}} |\{\Sigma_A \to \Sigma_1 \to \cdots \to \Sigma_B\}|
+\end{equation}
+\end{definition}
+
+Categorical distance quantifies distinguishability: large $\dcat$ indicates easily distinguished structures, small $\dcat$ indicates similar structures requiring high-precision measurements.
+
+\begin{lemma}[Exclusion and Categorical Distance]
+\label{lem:exclusion_distance}
+Measurement with resolution $\delta$ excludes structures within categorical distance $\dcat < \delta^{-1}$ of measured signature.
+\end{lemma}
+
+\begin{proof}
+Measurement precision $\delta$ corresponds to minimum distinguishable signature difference. Structures with $\dcat < \delta^{-1}$ differ by fewer transitions than measurement can resolve, thus appear identical and are not excluded.
+\end{proof}
+
+This connects exclusion factors to measurement precision:
+\begin{equation}
+\epsilon_i \sim \delta_i \cdot \rho_{\text{signature}}
+\end{equation}
+where $\rho_{\text{signature}}$ is signature space density.
+

@@ -1,0 +1,76 @@
+\section{Optical Modality: Spatial Structure Determination}
+\label{sec:optical}
+
+\subsection{Diffraction-Limited Imaging}
+
+Optical microscopy measures intensity distribution $I(\mathbf{r})$ in image plane. Coherent illumination with wavelength $\lambda$ through aperture with numerical aperture NA produces point spread function \cite{Born1999}:
+\begin{equation}
+\text{PSF}(\mathbf{r}) = \left|\frac{2J_1(k\text{NA}|\mathbf{r}|)}{k\text{NA}|\mathbf{r}|}\right|^2
+\end{equation}
+where $J_1$ is first-order Bessel function and $k = 2\pi/\lambda$.
+
+Measured intensity is convolution of object $O(\mathbf{r})$ with PSF:
+\begin{equation}
+I(\mathbf{r}) = \int O(\mathbf{r}') \text{PSF}(\mathbf{r} - \mathbf{r}') d^2\mathbf{r}'
+\end{equation}
+
+Rayleigh criterion \cite{Rayleigh1896} gives resolution:
+\begin{equation}
+\delta x_{\text{optical}} = \frac{0.61\lambda}{\text{NA}} \approx \frac{\lambda}{2\text{NA}}
+\end{equation}
+
+\subsection{Structural Ambiguity from Optical Measurement}
+
+Image with $N_{\text{pixel}}$ pixels at $L$ intensity levels provides:
+\begin{equation}
+I_{\text{optical}} = N_{\text{pixel}} \log_2 L
+\end{equation}
+bits of information.
+
+For $N_{\text{pixel}} = 10^6$ and $L = 256$:
+\begin{equation}
+I_{\text{optical}} = 10^6 \times 8 = 8 \times 10^6 \text{ bits}
+\end{equation}
+
+Microscopic structure with $N_{\text{atoms}} \sim 10^{10}$ atoms, each in $\sim 10^3$ possible electronic/vibrational states, has total state space:
+\begin{equation}
+N_{\text{total}} \sim (10^3)^{10^{10}} = 10^{3 \times 10^{10}}
+\end{equation}
+
+Optical measurement constrains this to:
+\begin{equation}
+N_0 = N_{\text{total}} \times 2^{-I_{\text{optical}}} \approx 10^{3 \times 10^{10}} \times 2^{-8 \times 10^6}
+\end{equation}
+
+Even with generous constraints from chemical bonding, thermodynamic stability, and spatial continuity reducing $N_{\text{total}}$ by factor $\sim 10^{-10^{10}}$, remaining ambiguity is:
+\begin{equation}
+N_0 \sim 10^{60}
+\end{equation}
+
+\subsection{Partition Signatures from Optical Measurement}
+
+Optical intensity relates to partition signatures through oscillatory amplitude. For electromagnetic field with frequency $\omega$:
+\begin{equation}
+I(\mathbf{r}) \propto |\mathbf{E}(\mathbf{r})|^2 = \left|\sum_i E_i e^{i\phi_i}\right|^2
+\end{equation}
+where $E_i$ are amplitudes of modes contributing at $\mathbf{r}$ and $\phi_i$ are phases.
+
+Partition signatures $(n_i, l_i, m_i, s_i)$ determine mode amplitudes through:
+\begin{equation}
+E_i \propto \langle n_i l_i m_i s_i | \hat{E} | 0 \rangle
+\end{equation}
+where $|0\rangle$ is ground state.
+
+However, phase information $\{\phi_i\}$ is lost in intensity measurement, creating ambiguity. Structures with different $\{\phi_i\}$ but identical $\{|E_i|\}$ produce indistinguishable $I(\mathbf{r})$.
+
+\begin{proposition}[Phase Ambiguity Factor]
+\label{prop:phase_ambiguity}
+For $N$ contributing modes, phase ambiguity contributes factor $\sim 2^N$ to structural ambiguity.
+\end{proposition}
+
+\begin{proof}
+Each phase $\phi_i$ can take values $\phi_i \in [0, 2\pi)$. Discretizing to $M$ levels gives $M^N$ phase combinations. For binary discretization ($M = 2$), ambiguity factor is $2^N$.
+\end{proof}
+
+For $N \sim 10^8$ pixels with $\sim 100$ modes per pixel, phase ambiguity alone contributes $\sim 2^{10^{10}}$ factor, explaining large $N_0$.
+
