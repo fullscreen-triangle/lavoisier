@@ -426,7 +426,7 @@ def save_panels(output_dir: Path):
     file1 = output_dir / 'panel_ensemble_sliding_window.png'
     fig1.savefig(file1, bbox_inches='tight', facecolor='white', dpi=150)
     plt.close(fig1)
-    print(f"    ✓ Saved to: {file1}")
+    print(f"    [OK] Saved to: {file1}")
     
     results['panels'].append({
         'name': 'sliding_window',
@@ -440,7 +440,7 @@ def save_panels(output_dir: Path):
     file2 = output_dir / 'panel_ensemble_hardware_mapping.png'
     fig2.savefig(file2, bbox_inches='tight', facecolor='white', dpi=150)
     plt.close(fig2)
-    print(f"    ✓ Saved to: {file2}")
+    print(f"    [OK] Saved to: {file2}")
     
     results['panels'].append({
         'name': 'hardware_mapping',
