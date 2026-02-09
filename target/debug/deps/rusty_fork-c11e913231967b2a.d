@@ -1,0 +1,11 @@
+C:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\deps\rusty_fork-c11e913231967b2a.d: C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\lib.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\sugar.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork_test.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\error.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\cmdline.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\child_wrapper.rs
+
+C:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\deps\librusty_fork-c11e913231967b2a.rmeta: C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\lib.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\sugar.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork_test.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\error.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\cmdline.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\child_wrapper.rs
+
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\lib.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\sugar.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork_test.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\error.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\cmdline.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\fork.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\rusty-fork-0.3.1\src\child_wrapper.rs:

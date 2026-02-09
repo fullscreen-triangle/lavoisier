@@ -1,0 +1,14 @@
+c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\deps\pyo3_build_config-746f8495eff5c8f6.d: C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\lib.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\errors.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\impl_.rs c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config-file.txt c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config.txt
+
+c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\deps\libpyo3_build_config-746f8495eff5c8f6.rlib: C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\lib.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\errors.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\impl_.rs c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config-file.txt c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config.txt
+
+c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\deps\libpyo3_build_config-746f8495eff5c8f6.rmeta: C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\lib.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\errors.rs C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\impl_.rs c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config-file.txt c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config.txt
+
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\lib.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\errors.rs:
+C:\Users\kundai\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\pyo3-build-config-0.20.3\src\impl_.rs:
+c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config-file.txt:
+c:\Users\kundai\Documents\bioinformatics\lavoisier\target\debug\build\pyo3-build-config-5b363fe9de1e656d\out/pyo3-build-config.txt:
+
+# env-dep:CARGO_PKG_VERSION=0.20.3
+# env-dep:OUT_DIR=c:\\Users\\kundai\\Documents\\bioinformatics\\lavoisier\\target\\debug\\build\\pyo3-build-config-5b363fe9de1e656d\\out

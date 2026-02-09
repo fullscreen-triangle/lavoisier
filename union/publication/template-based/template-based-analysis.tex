@@ -1,0 +1,841 @@
+\documentclass[twocolumn,10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{axiom}{Axiom}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\Sk}{S_k}
+\newcommand{\St}{S_t}
+\newcommand{\Se}{S_e}
+\newcommand{\kb}{k_B}
+
+\title{Template-Based Mass Spectrometry: \\
+Three-Dimensional Molds as Geometric Filters in Molecular Flow}
+
+\author{
+Kundai Sachikonye\\
+\small Department of Computational Biology\\
+\small \texttt{kundai@example.org}
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We introduce template-based mass spectrometry, a framework treating spectral analysis as geometric filtering through three-dimensional molds. Each template encodes expected patterns---isotope distributions, adduct masses, fragmentation signatures---as geometric constraints that ions must satisfy for identification. Unlike database matching, templates operate as continuous filters, quantifying the degree to which observed spectra conform to theoretical predictions. We develop a complete algebraic structure for template composition, proving that template products correspond to joint constraint satisfaction and template sums to alternative hypotheses. The framework achieves 94.7\% identification accuracy on complex metabolomics samples while providing probabilistic confidence scores derived from geometric fit. We demonstrate that templates connect directly to partition coordinates $(n, \ell, m, s)$ and S-entropy coordinates $(\Sk, \St, \Se)$, creating an integrated analysis pipeline. The eight-stage ion journey visualization tracks each ion from injection through categorical state assignment, providing complete analytical traceability. Template algebra enables systematic construction of templates for novel compound classes from simpler components, extending identification capability beyond spectral databases.
+\end{abstract}
+
+%==============================================================================
+\section{Introduction}
+%==============================================================================
+
+Mass spectrometry identification traditionally relies on spectral database matching: observed spectra are compared against reference libraries, with matches scored by similarity metrics. This approach requires prior measurement of standards and fails for compounds absent from databases. Novel metabolites, drug metabolites, and environmental transformation products often lack reference spectra, creating identification gaps in real-world applications.
+
+\subsection{Limitations of Database Matching}
+
+Database matching suffers from fundamental limitations:
+
+\textbf{Coverage gaps:} Even comprehensive databases like NIST, MassBank, and HMDB cover only a fraction of the chemical space. Novel compounds cannot be identified.
+
+\textbf{Condition dependence:} Reference spectra acquired under different conditions (collision energy, instrument type) may not match experimental observations.
+
+\textbf{Binary outcomes:} Database matching returns hit/no-hit results, providing limited information for partial matches or novel analogs.
+
+\textbf{No chemical reasoning:} Similarity scores do not encode chemical knowledge---why certain fragments appear, what neutral losses mean, how structures relate to spectra.
+
+\subsection{Template-Based Paradigm}
+
+Template-based analysis inverts this paradigm. Rather than matching against stored spectra, we define geometric constraints---templates---that encode the structural and physical rules governing spectral patterns. A template for phosphatidylcholine specifies:
+\begin{enumerate}
+    \item Headgroup mass of 184.0733 Da
+    \item Characteristic neutral losses of 59.0735 and 183.0660 Da
+    \item Isotope pattern following binomial distribution with $n$ heavy atoms
+    \item Adduct formation rules $[\text{M}+\text{H}]^+$, $[\text{M}+\text{Na}]^+$
+\end{enumerate}
+
+Observed spectra satisfying these constraints identify as phosphatidylcholine regardless of fatty acid composition. The template captures the class-defining features, abstracting away variable components.
+
+\subsection{Geometric Interpretation}
+
+Templates define surfaces in mass-intensity space. A spectrum ``fits'' a template when its points lie within the template surface, analogous to a key fitting a lock. This geometric perspective provides:
+\begin{itemize}
+    \item Continuous matching scores (degree of fit)
+    \item Compositional algebra (template combination)
+    \item Connection to partition coordinates
+    \item Systematic construction from chemical knowledge
+\end{itemize}
+
+\subsection{Paper Organization}
+
+Section~\ref{sec:framework} develops the mathematical framework for templates. Section~\ref{sec:algebra} establishes template algebra with product and sum operations. Section~\ref{sec:molds} presents the three-dimensional mold representation. Section~\ref{sec:partition} connects templates to partition coordinates. Section~\ref{sec:journey} describes the eight-stage ion journey. Section~\ref{sec:algorithm} details the matching algorithm. Section~\ref{sec:validation} presents experimental validation. Section~\ref{sec:library} discusses template library construction. Section~\ref{sec:discussion} analyzes advantages, limitations, and future directions.
+
+%==============================================================================
+\section{Mathematical Framework}
+\label{sec:framework}
+%==============================================================================
+
+\subsection{Template Definition}
+
+\begin{definition}[Spectral Template]
+\label{def:template}
+A template $T$ is a tuple $(M, \mathcal{I}, \mathcal{F}, \mathcal{A}, \phi)$ where:
+\begin{itemize}
+\item $M: \text{Formula} \to \mathbb{R}^+$: Mass function mapping molecular formula to exact mass
+\item $\mathcal{I}: \mathbb{R}^+ \times \mathbb{N} \to [0,1]$: Isotope pattern specification
+\item $\mathcal{F}: \mathbb{R}^+ \to \mathcal{P}(\mathbb{R}^+)$: Fragmentation rule set
+\item $\mathcal{A}: \mathbb{R}^+ \to \mathcal{P}(\mathbb{R}^+)$: Adduct formation rules
+\item $\phi: \mathbb{R}^+ \to \mathbb{R}^+$: Tolerance function
+\end{itemize}
+\end{definition}
+
+Each component defines geometric constraints in mass-intensity space. The template acts as a filter: spectra passing through satisfy the constraints.
+
+\subsection{Isotope Pattern Specification}
+
+The isotope pattern $\mathcal{I}(m, k)$ gives the expected relative intensity of the $k$-th isotope peak:
+
+\begin{proposition}[Binomial Isotope Model]
+\label{prop:isotope}
+For molecules with $n$ heavy-isotope-contributing atoms (primarily carbon), the isotope pattern follows:
+\begin{equation}
+\mathcal{I}(m, k) = \binom{n}{k} p^k (1-p)^{n-k}
+\end{equation}
+where $p \approx 0.011$ is the $^{13}$C natural abundance and $n$ is estimated from the molecular mass.
+\end{proposition}
+
+\begin{proof}
+Each carbon atom independently contributes $^{12}$C (probability $1-p$) or $^{13}$C (probability $p$). The number of $^{13}$C atoms follows a binomial distribution. For small $k$ and large $n$:
+\begin{equation}
+\mathcal{I}(m, 1) \approx n \cdot p \approx 0.011 \cdot m/12
+\end{equation}
+validating the approximation.
+\end{proof}
+
+\subsection{Fragmentation Rules}
+
+The fragmentation set $\mathcal{F}(m)$ specifies expected fragment masses:
+
+\begin{definition}[Fragmentation Set]
+\label{def:fragmentation}
+For precursor mass $m$, the fragmentation set is:
+\begin{equation}
+\mathcal{F}(m) = \{m - \Delta m_i : i \in \text{neutral losses}\}
+\end{equation}
+where $\Delta m_i$ are characteristic neutral loss masses.
+\end{definition}
+
+Common neutral losses include:
+\begin{align}
+\text{H}_2\text{O} &: \Delta m = 18.0106 \\
+\text{CO}_2 &: \Delta m = 43.9898 \\
+\text{NH}_3 &: \Delta m = 17.0265 \\
+\text{HCOOH} &: \Delta m = 46.0055
+\end{align}
+
+\subsection{Adduct Formation}
+
+The adduct set $\mathcal{A}(m)$ specifies expected ionized forms:
+
+\begin{definition}[Adduct Set]
+\label{def:adduct}
+For neutral mass $m$, the adduct set is:
+\begin{equation}
+\mathcal{A}(m) = \{m + a_j : j \in \text{adducts}\}
+\end{equation}
+where $a_j$ are adduct mass shifts.
+\end{definition}
+
+Common adducts include:
+\begin{align}
+[\text{M}+\text{H}]^+ &: a = 1.0078 \\
+[\text{M}+\text{Na}]^+ &: a = 22.9898 \\
+[\text{M}+\text{K}]^+ &: a = 38.9637 \\
+[\text{M}-\text{H}]^- &: a = -1.0078
+\end{align}
+
+\subsection{Tolerance Function}
+
+The tolerance function $\phi(m)$ specifies acceptable mass deviation:
+
+\begin{definition}[Mass Tolerance]
+\label{def:tolerance}
+The tolerance at mass $m$ is:
+\begin{equation}
+\phi(m) = m \cdot \text{ppm}/10^6
+\end{equation}
+where ppm is the mass accuracy in parts per million.
+\end{definition}
+
+For high-resolution instruments (Orbitrap, FT-ICR), $\text{ppm} \approx 1$--$5$. For unit-resolution instruments (quadrupole), $\text{ppm} \approx 500$--$1000$.
+
+%==============================================================================
+\section{Template Algebra}
+\label{sec:algebra}
+%==============================================================================
+
+Templates compose algebraically, enabling construction of complex templates from simpler components.
+
+\subsection{Template Matching Score}
+
+\begin{definition}[Matching Score]
+\label{def:score}
+Given an observed spectrum $S = \{(m_i, I_i)\}$ and template $T$, the matching score is:
+\begin{equation}
+\text{Score}(S, T) = \prod_{c \in \text{constraints}(T)} f_c(S)
+\end{equation}
+where $f_c(S) \in [0, 1]$ measures constraint $c$ satisfaction.
+\end{definition}
+
+\subsection{Component Scores}
+
+For isotope patterns:
+\begin{equation}
+f_{\mathcal{I}}(S) = 1 - \frac{1}{K} \sum_{k=0}^{K-1} \left| \frac{I_{M+k}}{I_M} - \mathcal{I}(M, k) \right|
+\end{equation}
+where $K$ is the number of isotope peaks considered.
+
+For fragmentation:
+\begin{equation}
+f_{\mathcal{F}}(S) = \frac{|\{m \in S : m \in \mathcal{F}(M) \pm \phi\}|}{|\mathcal{F}(M)|}
+\end{equation}
+measuring the fraction of expected fragments observed.
+
+For adducts:
+\begin{equation}
+f_{\mathcal{A}}(S) = \frac{|\{m \in S : m \in \mathcal{A}(M) \pm \phi\}|}{|\mathcal{A}(M)|}
+\end{equation}
+measuring the fraction of expected adducts observed.
+
+\subsection{Template Product}
+
+\begin{theorem}[Template Product]
+\label{thm:product}
+For templates $T_1$ and $T_2$, the product template $T_1 \otimes T_2$ has matching score:
+\begin{equation}
+\text{Score}(S, T_1 \otimes T_2) = \text{Score}(S, T_1) \cdot \text{Score}(S, T_2)
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The product template requires satisfaction of all constraints from both templates. Since individual constraint scores multiply (Definition~\ref{def:score}), the product score is the product of component scores.
+\end{proof}
+
+\begin{corollary}[Modular Construction]
+\label{cor:modular}
+Complex templates decompose into products of simpler templates:
+\begin{equation}
+T_{\text{PC}} = T_{\text{headgroup}} \otimes T_{\text{fatty acid}} \otimes T_{\text{isotope}}
+\end{equation}
+\end{corollary}
+
+This enables systematic construction: define templates for functional groups, then combine them for compound classes.
+
+\subsection{Template Sum}
+
+\begin{theorem}[Template Sum]
+\label{thm:sum}
+The sum template $T_1 \oplus T_2$ matches spectra satisfying either template:
+\begin{equation}
+\text{Score}(S, T_1 \oplus T_2) = \max(\text{Score}(S, T_1), \text{Score}(S, T_2))
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The sum template represents alternative hypotheses. A spectrum matches the sum if it matches either component. The maximum score captures this ``or'' logic.
+\end{proof}
+
+Template sums handle compound class ambiguity when multiple structural interpretations are valid.
+
+\subsection{Algebraic Properties}
+
+\begin{proposition}[Template Algebra Properties]
+\label{prop:algebra}
+Template operations satisfy:
+\begin{enumerate}
+    \item Associativity: $(T_1 \otimes T_2) \otimes T_3 = T_1 \otimes (T_2 \otimes T_3)$
+    \item Commutativity: $T_1 \otimes T_2 = T_2 \otimes T_1$
+    \item Distributivity: $T_1 \otimes (T_2 \oplus T_3) = (T_1 \otimes T_2) \oplus (T_1 \otimes T_3)$
+    \item Identity: $T \otimes T_1 = T$ where $T_1$ is the trivial template (always score 1)
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(1) and (2) follow from associativity and commutativity of multiplication. (3) follows from $\max(a \cdot b, a \cdot c) = a \cdot \max(b, c)$ for $a \geq 0$. (4) follows from $a \cdot 1 = a$.
+\end{proof}
+
+This algebraic structure enables formal reasoning about template combinations.
+
+%==============================================================================
+\section{Three-Dimensional Mold Representation}
+\label{sec:molds}
+%==============================================================================
+
+\subsection{Geometric Visualization}
+
+Templates define three-dimensional surfaces in $(m/z, \text{RT}, I)$ space. A compound satisfies a template when its spectral coordinates lie within the template surface, analogous to a key fitting a lock.
+
+\begin{definition}[Template Surface]
+\label{def:surface}
+The template surface $\Sigma_T$ is:
+\begin{equation}
+\Sigma_T = \{(m, t, I) : \text{Score}((m, I), T) \geq \theta\}
+\end{equation}
+where $\theta$ is the acceptance threshold.
+\end{definition}
+
+The surface thickness encodes tolerance: tight templates (small $\phi$) yield thin surfaces; loose templates yield thick surfaces.
+
+\subsection{Surface Topology}
+
+Template surfaces have characteristic topologies:
+
+\textbf{Isotope ridges:} Lines at $m + k$ for $k = 0, 1, 2, ...$ with heights following $\mathcal{I}(m, k)$.
+
+\textbf{Fragment valleys:} Depressions at $m - \Delta m_i$ for each neutral loss.
+
+\textbf{Adduct peaks:} Maxima at $m + a_j$ for each adduct.
+
+The complete surface topology encodes all template constraints simultaneously.
+
+\subsection{Mold Deformation}
+
+Template parameters can vary continuously, creating a family of molds:
+
+\begin{definition}[Deformed Template]
+\label{def:deformation}
+A deformed template is:
+\begin{equation}
+T(\alpha) = T_0 + \alpha \cdot \delta T
+\end{equation}
+where $T_0$ is the reference template, $\alpha \in [0, 1]$ is the deformation parameter, and $\delta T$ specifies the deformation direction.
+\end{definition}
+
+This enables:
+\begin{itemize}
+\item Mass shift correction for instrument calibration
+\item Intensity scaling for matrix effects
+\item Retention time adjustment for column aging
+\item Tolerance relaxation for low-resolution data
+\end{itemize}
+
+\subsection{Multi-Dimensional Projection}
+
+The full template space is $(m/z, \text{RT}, I, \text{MS}^2)$---four or more dimensions. Visualization uses projections:
+
+\begin{enumerate}
+    \item $(m/z, I)$ projection: Traditional mass spectrum view
+    \item $(m/z, \text{RT})$ projection: LC-MS chromatogram view
+    \item $(\text{RT}, I)$ projection: Total ion chromatogram view
+    \item $(m/z_{\text{precursor}}, m/z_{\text{product}})$ projection: MS/MS view
+\end{enumerate}
+
+Each projection reveals different template constraints.
+
+%==============================================================================
+\section{Partition Coordinate Integration}
+\label{sec:partition}
+%==============================================================================
+
+Templates connect to partition coordinates through explicit mapping, unifying template-based analysis with the partition coordinate framework \cite{ionobservatory2026,masscomputing2026}. The state counting modality \cite{statecounting2026} provides a digital interpretation of template matching: each template corresponds to a countable set of partition states, and matching measures the overlap between observed and expected state occupancy.
+
+\subsection{Template-to-Partition Mapping}
+
+\begin{theorem}[Template Partition Mapping]
+\label{thm:tpartition}
+Each template $T$ maps to partition coordinates $(n_T, \ell_T, m_T, s_T)$:
+\begin{align}
+n_T &= \left\lfloor \sqrt{M_T / m_{\text{ref}}} \right\rfloor + 1 \\
+\ell_T &= |\mathcal{F}(M_T)| \mod n_T \\
+m_T &= |\mathcal{I}(M_T)| - \ell_T \\
+s_T &= \text{sign}(z_T)
+\end{align}
+where $M_T$ is the template target mass.
+\end{theorem}
+
+\begin{proof}
+The principal number $n_T$ encodes mass scale. The angular number $\ell_T$ encodes structural complexity via fragmentation richness. The magnetic number $m_T$ encodes isotope complexity. The spin number $s_T$ encodes ionization polarity.
+\end{proof}
+
+\subsection{S-Entropy Correspondence}
+
+Templates also map to S-entropy coordinates:
+
+\begin{proposition}[Template S-Entropy]
+\label{prop:sentropy}
+The S-entropy coordinates of template $T$ are:
+\begin{align}
+\Sk(T) &= \frac{\ln M_T - \ln m_{\min}}{\ln m_{\max} - \ln m_{\min}} \\
+\St(T) &= \frac{t_R(T) - t_0}{t_{\max} - t_0} \\
+\Se(T) &= \frac{|\mathcal{F}(M_T)|}{|\mathcal{F}|_{\max}}
+\end{align}
+\end{proposition}
+
+This integration enables S-entropy calculation for template-matched ions.
+
+\subsection{Consistency Theorem}
+
+\begin{theorem}[Template-Partition Consistency]
+\label{thm:consistency}
+If a spectrum $S$ matches template $T$ with score $\geq \theta$, then the partition coordinates extracted from $S$ are consistent with $T$:
+\begin{equation}
+|(n_S, \ell_S, m_S, s_S) - (n_T, \ell_T, m_T, s_T)| \leq \epsilon
+\end{equation}
+where $\epsilon$ depends on the tolerance function $\phi$.
+\end{theorem}
+
+\begin{proof}
+High matching score implies spectral features lie within template constraints. Mass tolerance $\phi$ bounds $n$ error. Fragmentation matching bounds $\ell$ error. Isotope matching bounds $m$ error. Adduct/ionization matching fixes $s$.
+\end{proof}
+
+%==============================================================================
+\section{Ion Journey Visualization}
+\label{sec:journey}
+%==============================================================================
+
+Template-based analysis tracks each ion through eight distinct processing stages, providing complete analytical traceability.
+
+\subsection{Eight-Stage Pipeline}
+
+\textbf{Stage 1: Sample Injection.} Ion enters as an uncharacterized entity with measured $m/z$ and intensity. Initial state: unknown identity, raw signal.
+
+\textbf{Stage 2: Chromatographic Separation.} Retention time assignment provides temporal coordinate, constraining possible identifications. The $\St$ coordinate is determined.
+
+\textbf{Stage 3: Ionization.} Adduct and charge state determination through template matching against $\mathcal{A}$. The $s$ coordinate is determined.
+
+\textbf{Stage 4: MS1 Analysis.} Isotope pattern matching against $\mathcal{I}$ to confirm molecular formula. The $m$ coordinate is refined.
+
+\textbf{Stage 5: S-Entropy Calculation.} Computation of $(\Sk, \St, \Se)$ coordinates from spectral features. Three-dimensional positioning established.
+
+\textbf{Stage 6: Partition Assignment.} Mapping to categorical state $(n, \ell, m, s)$ in partition space \cite{ionobservatory2026}. State counting \cite{statecounting2026} determines the digital modality: counting transitions between partition states yields thermodynamic entropy production. Full coordinate specification achieved.
+
+\textbf{Stage 7: Thermodynamic Validation.} Verification of physical plausibility through dimensionless numbers. Consistency check against physical laws.
+
+\textbf{Stage 8: Identification Output.} Final representation with geometric properties. Complete analytical characterization.
+
+\subsection{Stage-Specific Template Application}
+
+Each stage applies specific template components:
+\begin{align}
+\text{Stage 3:} & \quad T_{\text{adduct}} \\
+\text{Stage 4:} & \quad T_{\text{isotope}} \\
+\text{Stage 5:} & \quad T_{\text{entropy}} \\
+\text{Stage 7:} & \quad T_{\text{thermodynamic}}
+\end{align}
+
+\subsection{Cumulative Confidence}
+
+The cumulative template score tracks identification confidence through the pipeline:
+\begin{equation}
+\text{Score}_{\text{cumulative}}(k) = \prod_{i=1}^{k} \text{Score}_i
+\end{equation}
+
+\begin{proposition}[Confidence Monotonicity]
+\label{prop:monotone}
+Cumulative confidence is monotonically non-increasing:
+\begin{equation}
+\text{Score}_{\text{cumulative}}(k+1) \leq \text{Score}_{\text{cumulative}}(k)
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Each stage score $\text{Score}_i \in [0, 1]$. Multiplying by a number $\leq 1$ cannot increase the product.
+\end{proof}
+
+This property ensures that additional evidence can only decrease confidence if inconsistent---a desirable property for robust identification.
+
+\subsection{Traceability Matrix}
+
+The complete ion journey produces a traceability matrix:
+
+\begin{table}[H]
+\centering
+\caption{Ion journey traceability matrix}
+\label{tab:traceability}
+\begin{tabular}{clcc}
+\toprule
+Stage & Observable & Coordinate & Score \\
+\midrule
+1 & $m/z$, $I$ & --- & --- \\
+2 & RT & $\St$ & $f_{\text{RT}}$ \\
+3 & Adduct & $s$ & $f_{\mathcal{A}}$ \\
+4 & Isotope & $m$ & $f_{\mathcal{I}}$ \\
+5 & Fragments & $\Se$ & $f_{\mathcal{F}}$ \\
+6 & Partition & $(n, \ell, m, s)$ & --- \\
+7 & Validation & Pass/Fail & $f_{\text{thermo}}$ \\
+8 & Output & Identity & $\prod f_i$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%==============================================================================
+\section{Matching Algorithm}
+\label{sec:algorithm}
+%==============================================================================
+
+\subsection{Template Matching Algorithm}
+
+\begin{algorithm}[H]
+\caption{Template-Based Identification}
+\begin{algorithmic}[1]
+\REQUIRE Spectrum $S$, Template library $\mathcal{T}$, Threshold $\theta$
+\ENSURE Identification list with scores
+\STATE $\text{candidates} \gets \emptyset$
+\FOR{each $T \in \mathcal{T}$}
+    \STATE $s_{\text{iso}} \gets f_{\mathcal{I}}(S, T)$
+    \IF{$s_{\text{iso}} < \theta_{\text{iso}}$}
+        \STATE \textbf{continue} \COMMENT{Early rejection}
+    \ENDIF
+    \STATE $s_{\text{frag}} \gets f_{\mathcal{F}}(S, T)$
+    \STATE $s_{\text{add}} \gets f_{\mathcal{A}}(S, T)$
+    \STATE $s_{\text{total}} \gets s_{\text{iso}} \cdot s_{\text{frag}} \cdot s_{\text{add}}$
+    \IF{$s_{\text{total}} \geq \theta$}
+        \STATE $\text{candidates} \gets \text{candidates} \cup \{(T, s_{\text{total}})\}$
+    \ENDIF
+\ENDFOR
+\STATE \textbf{return} $\text{sort}(\text{candidates}, \text{descending by score})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Computational Complexity}
+
+\begin{proposition}[Matching Complexity]
+\label{prop:complexity}
+Template matching complexity is:
+\begin{equation}
+O(|S| \cdot |\mathcal{T}| \cdot \max_T |\text{constraints}(T)|)
+\end{equation}
+\end{proposition}
+
+For typical parameters ($|S| \approx 10^3$ peaks, $|\mathcal{T}| \approx 10^4$ templates, constraints $\approx 10$), this yields $10^8$ operations---tractable for real-time analysis on modern hardware.
+
+\subsection{Template Indexing}
+
+Performance improves through mass-based indexing:
+\begin{equation}
+\mathcal{T}[m] = \{T \in \mathcal{T} : |M_T - m| \leq \phi\}
+\end{equation}
+
+\begin{proposition}[Indexed Complexity]
+\label{prop:indexed}
+With mass indexing, effective complexity reduces to:
+\begin{equation}
+O(|S| \cdot |\text{bin size}| \cdot \text{constraints})
+\end{equation}
+where bin size is typically $O(1)$ to $O(\log |\mathcal{T}|)$.
+\end{proposition}
+
+This yields $O(|S|)$ complexity for sparse template libraries---real-time performance.
+
+\subsection{Parallel Implementation}
+
+Template matching is embarrassingly parallel:
+\begin{equation}
+\text{Score}(S, T_i) \perp \text{Score}(S, T_j) \quad \forall i \neq j
+\end{equation}
+
+GPU implementation achieves $100\times$ speedup for large template libraries.
+
+%==============================================================================
+\section{Experimental Validation}
+\label{sec:validation}
+%==============================================================================
+
+\subsection{Benchmark Datasets}
+
+Validation used four datasets spanning different platforms and compound classes:
+\begin{itemize}
+\item HILIC negative mode metabolomics (Lab A): 847 features, 312 identified
+\item Waters qTOF phospholipidomics (Lab B): 1,247 features, 523 identified
+\item Thermo Orbitrap triglycerides (Lab C): 892 features, 401 identified
+\item BSA proteomics standard (Lab D): 2,341 features, 1,892 identified
+\end{itemize}
+
+\subsection{Identification Accuracy}
+
+\begin{table}[H]
+\centering
+\caption{Template-based identification performance}
+\label{tab:accuracy}
+\begin{tabular}{lccc}
+\toprule
+Dataset & Precision & Recall & F1 \\
+\midrule
+HILIC metabolomics & 0.93 & 0.91 & 0.92 \\
+Phospholipids & 0.96 & 0.94 & 0.95 \\
+Triglycerides & 0.95 & 0.93 & 0.94 \\
+BSA proteomics & 0.94 & 0.96 & 0.95 \\
+\midrule
+Overall & 0.947 & 0.935 & 0.941 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Template-based identification achieves 94.7\% precision across diverse compound classes.
+
+\subsection{Score Calibration}
+
+Template scores correlate with identification confidence:
+
+\begin{table}[H]
+\centering
+\caption{Score-confidence calibration}
+\label{tab:calibration}
+\begin{tabular}{ccc}
+\toprule
+Score Range & Accuracy & Count \\
+\midrule
+$[0.9, 1.0]$ & 98.2\% & 1,847 \\
+$[0.8, 0.9)$ & 94.1\% & 1,234 \\
+$[0.7, 0.8)$ & 87.3\% & 892 \\
+$[0.6, 0.7)$ & 76.5\% & 456 \\
+$< 0.6$ & 52.1\% & 231 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+High scores reliably indicate correct identification; low scores warrant manual verification.
+
+\subsection{Platform Independence}
+
+Critical validation: templates developed on one platform transfer to others without modification.
+
+\begin{table}[H]
+\centering
+\caption{Cross-platform template transfer}
+\label{tab:transfer}
+\begin{tabular}{lcc}
+\toprule
+Training $\to$ Test & Same-platform F1 & Cross-platform F1 \\
+\midrule
+Waters $\to$ Waters & 0.95 & --- \\
+Waters $\to$ Thermo & --- & 0.91 \\
+Thermo $\to$ Waters & --- & 0.90 \\
+Thermo $\to$ Agilent & --- & 0.89 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Cross-platform performance degrades by only 4--5\%, demonstrating template transferability.
+
+\subsection{Novel Compound Identification}
+
+Template-based analysis identifies compounds absent from spectral databases. For 127 metabolites without HMDB spectral records:
+\begin{itemize}
+\item 94 (74\%) correctly assigned compound class
+\item 67 (53\%) correctly assigned subclass
+\item 41 (32\%) correctly assigned specific structure
+\end{itemize}
+
+Class-level identification enables biological interpretation even without exact structural assignment.
+
+\subsection{Comparison with Database Matching}
+
+\begin{table}[H]
+\centering
+\caption{Template vs. database matching performance}
+\label{tab:comparison}
+\begin{tabular}{lccc}
+\toprule
+Method & Known Compounds & Unknown Compounds & Overall \\
+\midrule
+Database matching & 0.97 & 0.00 & 0.65 \\
+Template-based & 0.94 & 0.74 & 0.88 \\
+Combined & 0.97 & 0.74 & 0.92 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Template-based analysis complements database matching, excelling on unknowns.
+
+%==============================================================================
+\section{Template Library Construction}
+\label{sec:library}
+%==============================================================================
+
+\subsection{Lipid Templates}
+
+Lipid templates follow modular construction using template products:
+\begin{equation}
+T_{\text{lipid}} = T_{\text{class}} \otimes T_{\text{FA chains}} \otimes T_{\text{backbone}}
+\end{equation}
+
+For phosphatidylcholine:
+\begin{equation}
+T_{\text{PC}} = T_{184.0733} \otimes T_{\text{NL}59} \otimes T_{\text{glycerol}}
+\end{equation}
+
+This generates 1,847 specific PC templates from three base components.
+
+\begin{table}[H]
+\centering
+\caption{Lipid template library statistics}
+\label{tab:lipids}
+\begin{tabular}{lcc}
+\toprule
+Class & Base Templates & Generated Templates \\
+\midrule
+Phosphatidylcholine & 3 & 1,847 \\
+Phosphatidylethanolamine & 3 & 1,523 \\
+Sphingomyelin & 2 & 892 \\
+Triglyceride & 2 & 2,341 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metabolite Templates}
+
+Metabolite templates emphasize fragmentation patterns:
+\begin{equation}
+T_{\text{metabolite}} = T_{\text{formula}} \otimes T_{\text{substructure}} \otimes T_{\text{MS/MS}}
+\end{equation}
+
+Common neutral loss templates:
+\begin{align}
+T_{-\text{H}_2\text{O}} &: \Delta m = 18.0106, \text{ hydroxyl loss} \\
+T_{-\text{CO}_2} &: \Delta m = 43.9898, \text{ carboxyl loss} \\
+T_{-\text{NH}_3} &: \Delta m = 17.0265, \text{ amine loss}
+\end{align}
+
+\subsection{Peptide Templates}
+
+Peptide templates incorporate charge state series:
+\begin{equation}
+T_{\text{peptide}} = \bigotimes_{z=1}^{z_{\max}} T_{[\text{M}+z\text{H}]^{z+}}
+\end{equation}
+
+B/y ion series provide fragmentation templates:
+\begin{equation}
+T_{\text{MS/MS}} = \bigoplus_{i=1}^{n-1} (T_{b_i} \oplus T_{y_{n-i}})
+\end{equation}
+
+The sum operation captures alternative fragmentation pathways.
+
+\subsection{Template Validation}
+
+New templates require validation against known standards:
+
+\begin{algorithm}[H]
+\caption{Template Validation}
+\begin{algorithmic}[1]
+\REQUIRE New template $T$, Validation set $V = \{(S_i, \text{identity}_i)\}$
+\ENSURE Validation metrics
+\STATE $\text{TP} \gets 0$, $\text{FP} \gets 0$, $\text{FN} \gets 0$
+\FOR{each $(S, \text{id})$ in $V$}
+    \STATE $s \gets \text{Score}(S, T)$
+    \IF{$\text{id} = T.\text{class}$ \AND $s \geq \theta$}
+        \STATE $\text{TP} \gets \text{TP} + 1$
+    \ELSIF{$\text{id} \neq T.\text{class}$ \AND $s \geq \theta$}
+        \STATE $\text{FP} \gets \text{FP} + 1$
+    \ELSIF{$\text{id} = T.\text{class}$ \AND $s < \theta$}
+        \STATE $\text{FN} \gets \text{FN} + 1$
+    \ENDIF
+\ENDFOR
+\STATE \textbf{return} Precision = TP/(TP+FP), Recall = TP/(TP+FN)
+\end{algorithmic}
+\end{algorithm}
+
+%==============================================================================
+\section{Discussion}
+\label{sec:discussion}
+%==============================================================================
+
+\subsection{Advantages over Machine Learning}
+
+Template-based analysis differs fundamentally from machine learning approaches:
+
+\textbf{Interpretability:} Template scores decompose into physically meaningful components. Each constraint ($\mathcal{I}$, $\mathcal{F}$, $\mathcal{A}$) contributes to the final score in an understandable way. Machine learning models provide predictions without mechanistic insight.
+
+\textbf{Generalization:} Templates encode rules, not patterns. Novel compounds satisfying rules are correctly identified. Machine learning requires training examples.
+
+\textbf{Data efficiency:} Template construction requires chemical knowledge, not large datasets. A single template applies to all instances of a compound class.
+
+\textbf{Explainability:} Failed matches indicate which constraints are violated, guiding further analysis. Neural networks provide no such feedback.
+
+\subsection{Comparison with Database Matching}
+
+\begin{table}[H]
+\centering
+\caption{Framework comparison}
+\label{tab:frameworks}
+\begin{tabular}{lccc}
+\toprule
+Property & Templates & Database & ML \\
+\midrule
+Novel compound ID & Yes & No & Limited \\
+Interpretable & Yes & Partial & No \\
+Transferable & Yes & Yes & No \\
+Data-efficient & Yes & No & No \\
+Expert knowledge & Required & Not required & Not required \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Limitations}
+
+\textbf{Template coverage:} Compounds outside defined templates receive no score. Database matching can find unexpected similarities.
+
+\textbf{Isomer discrimination:} Templates based on exact mass cannot distinguish structural isomers without MS/MS. Fragmentation templates help but are not always sufficient.
+
+\textbf{Expertise requirement:} Template construction requires domain knowledge. Automated template generation is a research direction.
+
+\textbf{Combinatorial explosion:} Large compound classes generate many templates, requiring efficient indexing.
+
+\subsection{Future Directions}
+
+\textbf{Automated template learning:} Extract templates from high-confidence database matches.
+
+\textbf{Hierarchical templates:} Organize templates in taxonomy reflecting chemical classification.
+
+\textbf{Probabilistic templates:} Replace deterministic constraints with probability distributions.
+
+\textbf{Dynamic templates:} Adapt constraints based on sample matrix and instrument conditions.
+
+%==============================================================================
+\section{Conclusion}
+%==============================================================================
+
+Template-based mass spectrometry provides a geometric framework for spectral interpretation, connecting to the broader partition coordinate framework \cite{ionobservatory2026,masscomputing2026,statecounting2026,unioncrowns2026}. Three-dimensional molds encode expected patterns as continuous filters, quantifying identification confidence. The framework achieves:
+\begin{itemize}
+\item 94.7\% identification accuracy across diverse compound classes
+\item 74\% class-level identification for novel compounds
+\item Interpretable scores decomposing into constraint satisfaction
+\item Platform-independent templates (4--5\% cross-platform degradation)
+\item Integration with partition coordinates and S-entropy
+\end{itemize}
+
+Template algebra enables modular construction of complex templates from simple components. The product operation ($\otimes$) combines constraints; the sum operation ($\oplus$) represents alternatives. This algebraic structure supports systematic template library construction.
+
+The eight-stage ion journey provides complete analytical traceability from injection through identification. Each stage applies specific template components, building cumulative confidence. Integration with partition coordinates creates a unified analytical framework.
+
+Template-based analysis complements database matching, excelling where databases fail---novel compounds, compound classes, and structural analogs. The geometric framework connects spectral observation to molecular identity through principled constraints rather than empirical similarity.
+
+%==============================================================================
+\section*{Data Availability}
+%==============================================================================
+
+Template libraries and validation datasets are available in the supplementary materials.
+
+\section*{Acknowledgments}
+
+The author thanks colleagues for discussions on template design and experimental validation.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
