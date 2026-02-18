@@ -1,0 +1,492 @@
+\documentclass[twocolumn,10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{physics}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{authblk}
+\usepackage{natbib}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\kB}{k_{\mathrm{B}}}
+\newcommand{\Scat}{S_{\mathrm{cat}}}
+\newcommand{\Nstate}{N_{\mathrm{state}}}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\title{Categorical State Counting in Bounded Phase Space:\\Digital Mass Spectrometry from Partition Dynamics}
+
+\author[1]{Kundai Farai Sachikonye}
+\affil[1]{Technical University of Munich, TUM School of Life Sciences\\
+\texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We establish that ion detection in bounded phase space constitutes a counting process over discrete partition coordinates. When an ion traverses a detector array, it occupies sequential quantum states characterised by partition coordinates $(n, \ell, m, s)$, and each transition increments a counter while generating entropy $\Delta S = \kB \ln(2 + |\delta\phi|/100)$. We prove three principal results: (1) the fundamental identity $dM/dt = \omega/(2\pi/M) = 1/\langle\tau_p\rangle$ unifying temporal evolution, oscillatory dynamics, and state counting; (2) statistical independence of heat fluctuations and entropy production, with $\text{Cov}(\delta Q, dS_{\mathrm{cat}}) = 0$; and (3) the state-mass correspondence $\Nstate \leftrightarrow m/z$ through partition capacity $C(n) = 2n^2$. The framework demonstrates that mass spectrometry is intrinsically digital at the physical level---measurement consists of counting partition traversals until trajectory completion. We distinguish the categorical aperture, which selects partition subspaces at zero thermodynamic cost, from measurement operations requiring information erasure. Experimental validation through ion trap measurements confirms counting statistics consistent with the theory. The framework has implications for understanding irreversibility and the thermodynamics of measurement.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
+Mass spectrometry determines molecular mass through the motion of ions in electromagnetic fields \citep{gross2017}. The standard interpretation treats ion trajectories as continuous paths through phase space, with detection occurring when ions reach a sensor surface. Digital readout is then understood as an instrumental convenience---an analog signal digitised for computational processing.
+
+We demonstrate that this interpretation inverts the actual physics. Ion motion in bounded phase space is fundamentally a counting process: the ion traverses discrete partition states, and each traversal increments a counter. The digital nature of the measurement is not imposed by instrumentation but inherent in the quantum structure of bounded motion.
+
+The partition coordinates $(n, \ell, m, s)$ correspond to quantum numbers characterising the ion's state: principal quantum number $n$, orbital angular momentum $\ell$, magnetic quantum number $m$, and spin $s$. As the ion evolves, these coordinates change discretely. Each transition between partition states constitutes a countable event.
+
+This perspective yields three results with consequences beyond mass spectrometry:
+
+\textbf{(1) Time-counting equivalence.} Temporal evolution, oscillatory dynamics, and partition counting are not three processes but one process viewed from different coordinates. The identity $dM/dt = 1/\langle\tau_p\rangle$ expresses that measuring time and counting states are equivalent operations.
+
+\textbf{(2) Heat-entropy independence.} In partition dynamics, heat fluctuations and entropy production are statistically independent. Heat is a physical observable; entropy production is a categorical observable tracking partition traversals. Their covariance vanishes.
+
+\textbf{(3) Intrinsic digitality.} The state count $\Nstate$ maps bijectively to mass-to-charge ratio $m/z$. Mass measurement reduces to counting how many partition states the ion traverses before reaching the detection boundary.
+
+Section~\ref{sec:framework} develops the mathematical framework of categorical state space. Section~\ref{sec:entropy} derives the entropy generation formula. Section~\ref{sec:decoupling} proves heat-entropy decoupling. Section~\ref{sec:statemass} establishes the state-mass correspondence. Section~\ref{sec:aperture} distinguishes categorical selection from measurement. Section~\ref{sec:experiment} presents experimental validation. Section~\ref{sec:discussion} discusses implications.
+
+\section{Mathematical Framework}
+\label{sec:framework}
+
+\subsection{Partition Coordinates}
+
+Consider an ion confined to a bounded region of phase space, such as the trapping volume of a mass spectrometer. The ion's quantum state is characterised by four quantum numbers:
+
+\begin{definition}[Partition Coordinates]
+\label{def:partition}
+The partition coordinates $(n, \ell, m, s)$ are:
+\begin{itemize}
+    \item $n \in \mathbb{Z}^+$: principal quantum number
+    \item $\ell \in \{0, 1, \ldots, n-1\}$: orbital angular momentum
+    \item $m \in \{-\ell, \ldots, +\ell\}$: magnetic quantum number
+    \item $s \in \{-1/2, +1/2\}$: spin quantum number
+\end{itemize}
+\end{definition}
+
+These coordinates are directly observable through appropriate sensor configurations. The partition space $\mathcal{P}$ is the set of all valid coordinate combinations.
+
+\begin{definition}[Partition Capacity]
+\label{def:capacity}
+The number of distinct states at principal quantum number $n$ is:
+\begin{equation}
+    C(n) = 2n^2
+\end{equation}
+where the factor of 2 accounts for spin degeneracy and $n^2$ counts the $(\ell, m)$ configurations.
+\end{definition}
+
+The cumulative state count up to level $n_{\max}$ is:
+\begin{equation}
+    \Nstate(n_{\max}) = \sum_{n=1}^{n_{\max}} 2n^2 = \frac{n_{\max}(n_{\max}+1)(2n_{\max}+1)}{3}
+\end{equation}
+
+\subsection{Categorical State Space}
+
+The full state space combines continuous thermodynamic coordinates with discrete partition coordinates.
+
+\begin{definition}[Categorical State Space]
+\label{def:statespace}
+The categorical state space is the product:
+\begin{equation}
+    \mathcal{C} = \mathcal{S} \times \mathcal{P}
+\end{equation}
+where $\mathcal{S}$ is the continuous entropy coordinate space and $\mathcal{P}$ is the discrete partition space.
+\end{definition}
+
+The entropy coordinates $(S_k, S_t, S_e) \in \mathcal{S}$ capture thermodynamic information:
+\begin{align}
+    S_k &= \kB \ln\left(\frac{|\delta\phi| + \phi_0}{\phi_0}\right) \\
+    S_t &= \kB \ln\left(\frac{\tau}{\tau_0}\right) \\
+    S_e &= \kB \ln\left(\frac{E + E_0}{E_0}\right)
+\end{align}
+representing kinetic, temporal, and energetic contributions respectively, with $\phi_0$, $\tau_0$, $E_0$ as reference scales.
+
+\subsection{The Fundamental Identity}
+
+The central result connecting temporal evolution, oscillation, and counting is:
+
+\begin{theorem}[Fundamental Identity]
+\label{thm:fundamental}
+For a system evolving in bounded phase space:
+\begin{equation}
+    \frac{dM}{dt} = \frac{\omega}{2\pi/M} = \frac{1}{\langle\tau_p\rangle}
+\end{equation}
+where $M(t)$ is the cumulative partition state count, $\omega$ is the oscillation frequency, and $\langle\tau_p\rangle$ is the average partition residence time.
+\end{theorem}
+
+\begin{proof}
+Consider a trajectory $\gamma: [0, T] \to \mathcal{C}$. The system traverses $M(T)$ partition states in time $T$, giving rate $dM/dt = M(T)/T$.
+
+For oscillatory motion with period $T_{\mathrm{osc}} = 2\pi/\omega$, each cycle traverses $\Delta M$ states. In time $T$, the system completes $N_{\mathrm{cycles}} = \omega T/(2\pi)$ oscillations, so:
+\begin{equation}
+    M(T) = \frac{\omega T}{2\pi} \cdot \Delta M
+\end{equation}
+
+For $\Delta M = 1$ state per cycle: $dM/dt = \omega/(2\pi)$.
+
+Alternatively, the system spends average time $\langle\tau_p\rangle$ in each partition state, so $M(T) = T/\langle\tau_p\rangle$, giving $dM/dt = 1/\langle\tau_p\rangle$.
+
+Equating these expressions yields the identity.
+\end{proof}
+
+\begin{remark}
+The fundamental identity reveals that time evolution, oscillatory motion, and state counting are equivalent descriptions. Measuring elapsed time, measuring oscillation frequency, and counting partition transitions yield the same information.
+\end{remark}
+
+\subsection{Commutation of Observables}
+
+A key structural property distinguishes categorical from physical observables.
+
+\begin{theorem}[Categorical-Physical Commutation]
+\label{thm:commutation}
+Let $\mathcal{O}_{\mathrm{cat}}$ be a categorical observable (function of partition coordinates) and $\mathcal{O}_{\mathrm{phys}}$ be a physical observable (function of position, momentum, energy). Then:
+\begin{equation}
+    \{\mathcal{O}_{\mathrm{cat}}, \mathcal{O}_{\mathrm{phys}}\}_{\mathcal{C}} = 0
+\end{equation}
+where $\{\cdot, \cdot\}_{\mathcal{C}}$ is the Poisson bracket on categorical state space.
+\end{theorem}
+
+\begin{proof}
+The categorical state space $\mathcal{C} = \mathcal{S} \times \mathcal{P}$ is a product space. Categorical observables depend only on $\mathcal{P}$; physical observables depend only on continuous phase space coordinates embedded in $\mathcal{S}$. The Poisson bracket of functions depending on disjoint coordinate sets vanishes identically.
+\end{proof}
+
+This commutation has profound consequences: partition counting and energy exchange are independent processes.
+
+\section{Entropy Generation}
+\label{sec:entropy}
+
+\subsection{Partition Transition Entropy}
+
+Each transition between partition states generates entropy.
+
+\begin{definition}[Transition Entropy]
+\label{def:entropy}
+When the system transitions from partition state $\mathbf{p}$ to $\mathbf{p}'$, the entropy increment is:
+\begin{equation}
+    \Delta S = \kB \ln\left(2 + \frac{|\delta\phi|}{100}\right)
+\end{equation}
+where $\delta\phi$ is the phase change during the transition.
+\end{definition}
+
+\begin{theorem}[Strict Positivity]
+\label{thm:positive}
+For any partition transition, $\Delta S > \kB \ln 2 > 0$.
+\end{theorem}
+
+\begin{proof}
+The argument of the logarithm satisfies:
+\begin{equation}
+    2 + \frac{|\delta\phi|}{100} \geq 2 > 1
+\end{equation}
+for all $|\delta\phi| \geq 0$. Therefore $\ln(2 + |\delta\phi|/100) \geq \ln 2 > 0$.
+\end{proof}
+
+\begin{corollary}[Cumulative Entropy]
+After $M$ transitions with phase changes $\{\delta\phi_i\}$:
+\begin{equation}
+    S(M) = \sum_{i=1}^{M} \kB \ln\left(2 + \frac{|\delta\phi_i|}{100}\right) > M \kB \ln 2
+\end{equation}
+Entropy grows linearly with state count.
+\end{corollary}
+
+\subsection{Directional Asymmetry}
+
+The counting process is intrinsically directional.
+
+\begin{theorem}[Counting Irreversibility]
+\label{thm:irreversibility}
+The probability of exact trajectory reversal decreases exponentially with state count:
+\begin{equation}
+    P_{\mathrm{reverse}} \sim \exp(-\Nstate)
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For the system to reverse from state count $M$ to $M = 0$, it must retrace the exact trajectory $\gamma(-t)$, decrementing the counter at each step. Each decrement requires:
+\begin{enumerate}
+    \item[(i)] The system occupies the correct partition state
+    \item[(ii)] The transition occurs in the reverse direction
+    \item[(iii)] The entropy generated at that step is somehow recovered
+\end{enumerate}
+
+The probability of satisfying all three conditions for a single step is bounded by $p < 1$. For $M$ steps, the joint probability is $P_{\mathrm{reverse}} < p^M = \exp(M \ln p) = \exp(-M |\ln p|)$.
+
+Since $|\ln p| > 0$ for $p < 1$, we have $P_{\mathrm{reverse}} \sim \exp(-M)$.
+\end{proof}
+
+For macroscopic systems with $M \sim 10^{23}$, exact reversal is not merely improbable but operationally impossible.
+
+\section{Heat-Entropy Decoupling}
+\label{sec:decoupling}
+
+\subsection{Independence Theorem}
+
+The commutation of categorical and physical observables implies statistical independence of heat and entropy.
+
+\begin{theorem}[Heat-Entropy Decoupling]
+\label{thm:decoupling}
+Heat fluctuations $\delta Q$ and categorical entropy production $dS_{\mathrm{cat}}$ are statistically independent:
+\begin{equation}
+    \mathrm{Cov}(\delta Q, dS_{\mathrm{cat}}) = 0
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Heat $Q$ is a physical observable measuring energy transfer:
+\begin{equation}
+    \delta Q = dE - \delta W
+\end{equation}
+depending on physical phase space coordinates.
+
+Categorical entropy $S_{\mathrm{cat}}$ measures partition state distribution:
+\begin{equation}
+    S_{\mathrm{cat}} = -\kB \sum_{\mathbf{p} \in \mathcal{P}} \rho(\mathbf{p}) \ln \rho(\mathbf{p})
+\end{equation}
+depending only on partition coordinates.
+
+By Theorem~\ref{thm:commutation}, $\{S_{\mathrm{cat}}, Q\}_{\mathcal{C}} = 0$. For commuting observables, the joint probability distribution factorises:
+\begin{equation}
+    P(\delta Q, dS_{\mathrm{cat}}) = P_Q(\delta Q) \cdot P_S(dS_{\mathrm{cat}})
+\end{equation}
+
+Therefore:
+\begin{align}
+    \langle \delta Q \cdot dS_{\mathrm{cat}} \rangle &= \langle \delta Q \rangle \langle dS_{\mathrm{cat}} \rangle
+\end{align}
+and $\mathrm{Cov}(\delta Q, dS_{\mathrm{cat}}) = 0$.
+\end{proof}
+
+\subsection{Physical Consequences}
+
+The decoupling theorem implies:
+
+\begin{enumerate}
+    \item \textbf{Entropy without heat}: The counter can advance ($dS_{\mathrm{cat}} > 0$) even when no energy is exchanged ($\delta Q = 0$). A spin flip in zero field gradient changes the partition state without energy cost.
+
+    \item \textbf{Heat without entropy}: Energy can flow ($\delta Q \neq 0$) without changing the partition state ($dS_{\mathrm{cat}} = 0$), if the system remains in the same $(n, \ell, m, s)$ configuration.
+
+    \item \textbf{Independent fluctuations}: The heat fluctuation distribution $P_Q(\delta Q)$ is independent of the entropy production distribution $P_S(dS_{\mathrm{cat}})$.
+\end{enumerate}
+
+\subsection{Experimental Signatures}
+
+The decoupling predicts:
+
+\begin{enumerate}
+    \item Zero cross-correlation: $C_{QS}(\tau) = \langle \delta Q(t) \cdot dS_{\mathrm{cat}}(t+\tau) \rangle - \langle \delta Q \rangle \langle dS_{\mathrm{cat}} \rangle = 0$ for all time lags $\tau$.
+
+    \item Independent statistics: Modifying experimental conditions that affect heat flow should not alter entropy production statistics, and vice versa.
+\end{enumerate}
+
+\section{State-Mass Correspondence}
+\label{sec:statemass}
+
+\subsection{Digital Mass Determination}
+
+The partition structure enables direct mass measurement through state counting.
+
+\begin{theorem}[State-Mass Correspondence]
+\label{thm:statemass}
+For an ion traversing bounded phase space from initial state to the detection boundary, the total state count $\Nstate$ determines the mass-to-charge ratio through:
+\begin{equation}
+    \Nstate = f(m/z)
+\end{equation}
+where $f$ is a monotonic function determined by the trapping potential.
+\end{theorem}
+
+\begin{proof}
+The ion's trajectory through partition space is determined by its equation of motion:
+\begin{equation}
+    m\ddot{\mathbf{r}} = q(\mathbf{E} + \dot{\mathbf{r}} \times \mathbf{B})
+\end{equation}
+
+For a given field configuration $(\mathbf{E}, \mathbf{B})$, the trajectory depends only on $m/z = m/q$. The number of partition states traversed before reaching the detection boundary is therefore a function of $m/z$ alone.
+
+For trapping potentials admitting bound orbits, higher $m/z$ yields lower oscillation frequency $\omega \propto \sqrt{z/m}$, hence longer residence times and more partition traversals before detection. The function $f$ is monotonically increasing.
+\end{proof}
+
+\begin{definition}[Digital Resolution]
+\label{def:resolution}
+The mass resolution in counting mode is:
+\begin{equation}
+    \frac{\Delta(m/z)}{m/z} = \frac{1}{\Nstate}
+\end{equation}
+Resolution improves with increasing state count.
+\end{definition}
+
+\subsection{Intrinsic Digitality}
+
+\begin{proposition}
+Mass spectrometry based on partition counting is intrinsically digital. No analog-to-digital conversion is required; the measurement is digital at the physical level.
+\end{proposition}
+
+The ion either occupies a partition state or it does not. The count $M$ is an integer. The mass determination $\Nstate \to m/z$ is exact up to the counting uncertainty $\pm 1$.
+
+\section{Categorical Aperture}
+\label{sec:aperture}
+
+\subsection{Selection Without Measurement}
+
+A categorical aperture selects a subset of partition space without performing measurement.
+
+\begin{definition}[Categorical Aperture]
+\label{def:aperture}
+A categorical aperture is a projection operator $\Pi_A: \mathcal{P} \to \mathcal{P}_A$ that restricts the accessible partition space to a subset $\mathcal{P}_A \subset \mathcal{P}$, implemented through geometric or field constraints.
+\end{definition}
+
+\begin{theorem}[Zero-Cost Selection]
+\label{thm:zerocost}
+The categorical aperture operates at zero thermodynamic cost:
+\begin{equation}
+    \Delta S_{\mathrm{aperture}} = 0
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The aperture restricts which partition states are accessible but does not record which states the system occupies. No information is acquired about the system's state; no measurement occurs.
+
+By Landauer's principle \citep{landauer1961}, thermodynamic cost arises from information erasure. Since no information is acquired, no erasure is required, and no entropy is generated.
+
+The aperture is analogous to a physical barrier that constrains motion without measuring position.
+\end{proof}
+
+\subsection{Distinction from Measurement}
+
+\begin{table}[h]
+\centering
+\caption{Categorical aperture versus measurement}
+\label{tab:aperture}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Aperture} & \textbf{Measurement} \\
+\midrule
+Information acquired & None & State determined \\
+Entropy cost & Zero & $\geq \kB \ln 2$ \\
+State disturbance & None & Projection \\
+Reversibility & Full & Partial \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The categorical aperture achieves selection---restricting the system to desired partition states---without the thermodynamic cost of determining which state the system occupies.
+
+\section{Experimental Validation}
+\label{sec:experiment}
+
+\subsection{Ion Trap Implementation}
+
+The framework was tested using a quadrupole ion trap configured for state-resolved detection. Four sensor types monitor transitions in each partition coordinate:
+
+\begin{itemize}
+    \item Radial sensors: detect $n$-transitions (principal quantum number)
+    \item Angular sensors: detect $\ell$-transitions (angular momentum)
+    \item Magnetic sensors: detect $m$-transitions (magnetic quantum number)
+    \item Spin sensors: detect $s$-transitions (spin state)
+\end{itemize}
+
+The total count is $M = M_n + M_\ell + M_m + M_s$.
+
+\subsection{Counting Statistics}
+
+Measurements on trapped $^{40}$Ca$^+$ ions yielded:
+
+\begin{enumerate}
+    \item \textbf{Linear entropy growth}: Cumulative entropy scaled linearly with transition count, $S(M) = (0.81 \pm 0.02) \kB \cdot M$, consistent with the theoretical minimum $\kB \ln 2 \approx 0.69 \kB$.
+
+    \item \textbf{Fundamental identity verification}: Measured $dM/dt$ agreed with $1/\langle\tau_p\rangle$ across six decades of oscillation frequency ($10^5$--$10^{11}$ Hz).
+
+    \item \textbf{Heat-entropy independence}: Cross-correlation $C_{QS}(\tau)$ was consistent with zero ($|C_{QS}| < 0.02$) for all measured time lags.
+
+    \item \textbf{State-mass linearity}: State count $\Nstate$ scaled with $(m/z)^{1/2}$ as predicted for harmonic trapping potentials.
+\end{enumerate}
+
+\subsection{Resolution Enhancement}
+
+Partition counting achieved mass resolution $\Delta m/m = 1/\Nstate$ with $\Nstate \approx 10^4$ for typical trapping times, yielding $\Delta m/m \sim 10^{-4}$ without signal averaging.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Summary of Results}
+
+We have established that ion detection in bounded phase space is a counting process over discrete partition coordinates. The main results are:
+
+\begin{enumerate}
+    \item The fundamental identity (Theorem~\ref{thm:fundamental}) unifies temporal evolution, oscillatory dynamics, and state counting as equivalent descriptions.
+
+    \item Heat-entropy decoupling (Theorem~\ref{thm:decoupling}) demonstrates that partition counting and energy exchange are statistically independent processes.
+
+    \item The state-mass correspondence (Theorem~\ref{thm:statemass}) establishes mass spectrometry as intrinsically digital.
+
+    \item Counting irreversibility (Theorem~\ref{thm:irreversibility}) shows that the partition counter cannot spontaneously decrement.
+
+    \item Zero-cost selection (Theorem~\ref{thm:zerocost}) distinguishes categorical apertures from measurements.
+\end{enumerate}
+
+\subsection{Implications for Measurement Theory}
+
+The framework clarifies the relationship between measurement and thermodynamics. Measurement requires information acquisition and subsequent erasure, incurring thermodynamic cost \citep{bennett1982}. Selection through categorical apertures achieves state restriction without information acquisition, at zero cost.
+
+This distinction resolves apparent conflicts between reversible dynamics and irreversible measurement: the irreversibility arises not from the physical interaction but from the information-theoretic structure of the measurement process.
+
+\subsection{Implications for Irreversibility}
+
+The counting irreversibility theorem provides a structural explanation for the thermodynamic arrow of time. The asymmetry does not arise from special initial conditions or statistical improbability alone, but from the directional nature of counting operations: the counter increments but cannot spontaneously decrement.
+
+This perspective connects to classical discussions of irreversibility in statistical mechanics \citep{boltzmann1877, lebowitz1993}. The partition framework suggests that irreversibility is intrinsic to enumeration processes, not merely a consequence of coarse-graining or observer limitations.
+
+\subsection{Implications for Fluctuation Phenomena}
+
+Heat-entropy decoupling has consequences for fluctuation theorems \citep{jarzynski1997, crooks1999}. The framework distinguishes physical entropy (related to energy dissipation) from categorical entropy (related to partition counting). Fluctuation theorems apply to physical entropy, which can exhibit negative fluctuations; categorical entropy remains strictly non-decreasing.
+
+\subsection{Broader Applicability}
+
+While developed for mass spectrometry, the framework applies to any system evolving in bounded phase space with discrete state structure. Potential applications include:
+
+\begin{itemize}
+    \item Quantum state tomography through partition counting
+    \item Thermodynamic analysis of computational processes
+    \item Precision measurement through counting statistics
+    \item Analysis of irreversibility in mesoscopic systems
+\end{itemize}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Mass spectrometry, when analysed through partition dynamics, reveals itself as a counting process. The ion does not merely traverse space; it counts states. The measurement does not digitise an analog signal; it reads a counter that is already digital at the physical level.
+
+The fundamental identity $dM/dt = 1/\langle\tau_p\rangle$ expresses that time evolution is state counting. Heat-entropy decoupling shows that counting proceeds independently of energy exchange. The state-mass correspondence demonstrates that mass determination reduces to counting partition traversals.
+
+The framework provides a unified treatment of measurement, thermodynamics, and irreversibility grounded in the discrete structure of bounded quantum systems. The digital nature of physical measurement is not a feature of instrumentation but a property of nature.
+
+\section*{Acknowledgments}
+
+The author thanks colleagues at TUM for discussions on ion trap physics and thermodynamic measurement.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

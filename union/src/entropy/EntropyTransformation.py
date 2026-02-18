@@ -23,7 +23,7 @@ References:
 - docs/oscillatory/tandem-mass-spec.tex
 - docs/oscillatory/categorical-completion.tex
 
-Author: Kundai Chinyamakobvu
+Author: Kundai Sachikonye
 """
 
 import numpy as np
