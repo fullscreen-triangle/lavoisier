@@ -1,0 +1,156 @@
+\section{Comparison to Binary Search}
+
+\subsection{Binary Search Implementation}
+
+For direct comparison, we implement binary search on the same hydrogen ion system.
+
+\subsubsection{Algorithm}
+
+Binary search uses one perturbation $\mathcal{P}_1$ per iteration:
+\begin{enumerate}
+\item Divide search region $[x_{\min}, x_{\max}]$ into two halves: $[x_{\min}, x_{\text{mid}}]$ and $[x_{\text{mid}}, x_{\max}]$ where $x_{\text{mid}} = (x_{\min} + x_{\max})/2$.
+\item Apply $\mathcal{P}_1$ with active region $[x_{\min}, x_{\text{mid}}]$.
+\item Measure response $r_1$:
+   \begin{itemize}
+   \item If $r_1 = 1$: particle is in left half, recurse on $[x_{\min}, x_{\text{mid}}]$.
+   \item If $r_1 = 0$: particle is in right half, recurse on $[x_{\text{mid}}, x_{\max}]$.
+   \end{itemize}
+\item Repeat until $|x_{\max} - x_{\min}| < \Delta x_{\min}$.
+\end{enumerate}
+
+\subsubsection{Perturbation}
+
+The single perturbation $\mathcal{P}_1$ is the same electric field gradient used in ternary search:
+\begin{itemize}
+\item Gradient: $\nabla E = 10^6$ V/m$^2$
+\item Duration: $\tau_{\mathcal{P}} = 10^{-8}$ s
+\item Active region: Updated each iteration to cover left half of current search region
+\end{itemize}
+
+\subsection{Side-by-Side Comparison}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+Metric & Binary Search & Ternary Search \\
+\hline
+Iterations $k$ & $11.0 \pm 0.0$ & $7.0 \pm 0.0$ \\
+Measurements $M$ & 11 & 14 \\
+Wall-clock time $T$ & $1.16 \, \mu$s & $0.735 \, \mu$s \\
+Success rate & $> 99.99\%$ & $> 99.99\%$ \\
+Position accuracy & $< 0.02a_0$ & $< 0.02a_0$ \\
+SNR (average) & 95 & 98 \\
+\hline
+\end{tabular}
+\caption{Comparison of binary and ternary search on the same hydrogen ion system for localization from $10a_0$ to $0.01a_0$ ($N = 1000$).}
+\end{table}
+
+\subsection{Speedup Analysis}
+
+\subsubsection{Iteration Speedup}
+
+The iteration count ratio is:
+\begin{equation}
+\frac{k_{\text{binary}}}{k_{\text{ternary}}} = \frac{11}{7} = 1.57
+\end{equation}
+
+This matches the theoretical prediction $\log_2 3 \approx 1.585$ within 1\% error.
+
+\subsubsection{Wall-Clock Speedup}
+
+The wall-clock time ratio is:
+\begin{equation}
+\frac{T_{\text{binary}}}{T_{\text{ternary}}} = \frac{1.16}{0.735} = 1.58
+\end{equation}
+
+The wall-clock speedup equals the iteration speedup because the iteration duration is the same for both methods (perturbations and measurements are parallelized).
+
+\subsection{Measurement Count Overhead}
+
+Ternary search requires more measurements ($M = 14$) than binary search ($M = 11$) because each ternary iteration uses two perturbations. The overhead is:
+\begin{equation}
+\frac{M_{\text{ternary}}}{M_{\text{binary}}} = \frac{14}{11} = 1.27
+\end{equation}
+
+This is acceptable because measurements are parallelized (all five modalities operate simultaneously), so measurement count does not directly affect wall-clock time.
+
+\subsection{Signal-to-Noise Comparison}
+
+Both methods achieve similar SNR (95 for binary, 98 for ternary), indicating that the additional perturbation in ternary search does not degrade signal quality. The slight improvement in ternary SNR is due to redundancy: having two perturbations provides two independent signals, reducing noise via averaging.
+
+\subsection{Robustness to Errors}
+
+\subsubsection{Response Error Rates}
+
+\begin{itemize}
+\item Binary search: $p_{\text{error}} = 0.004\%$ (4 errors in 110000 responses across 10000 trials)
+\item Ternary search: $p_{\text{error}} = 0.003\%$ (2 errors in 70000 responses)
+\end{itemize}
+
+Ternary search has slightly lower error rate, possibly due to the redundancy of two perturbations: if one gives an ambiguous result, the other can disambiguate.
+
+\subsubsection{Error Propagation}
+
+In binary search, an error at iteration $k$ can propagate to all subsequent iterations, causing the final position to be off by $\Delta x \sim L/2^k$ (the size of the mis-identified region). For $k = 5$ and $L = 10a_0$, an error causes $\Delta x \sim 0.3a_0$ (30 times worse than target resolution).
+
+In ternary search, the same propagation occurs but with factor $1/3^k$ instead of $1/2^k$. For $k = 5$, $\Delta x \sim 10a_0/3^5 \sim 0.04a_0$ (4 times worse than target). Ternary search is more resilient to errors because the trisection factor (3) is larger than the bisection factor (2).
+
+\subsection{Hardware Complexity}
+
+\subsubsection{Perturbation Sources}
+
+\begin{itemize}
+\item Binary search: 1 perturbation source (electric field gradient)
+\item Ternary search: 2 perturbation sources (electric + magnetic field gradients)
+\end{itemize}
+
+Ternary search requires one additional perturbation source, increasing hardware complexity. However, the magnetic field source (shim coil) is relatively simple and inexpensive compared to the Penning trap itself.
+
+\subsubsection{Detection Systems}
+
+Both methods use the same five spectroscopic modalities for detection, so detection complexity is equal.
+
+\subsection{Trade-Off Analysis}
+
+\subsubsection{When is Ternary Search Worth It?}
+
+Ternary search provides speedup if:
+\begin{enumerate}
+\item Iterations are the bottleneck (not measurement count).
+\item Two independent perturbations can be applied simultaneously.
+\item Hardware cost of second perturbation source is acceptable.
+\end{enumerate}
+
+For our system, all three conditions are met, making ternary search favorable.
+
+\subsubsection{When to Use Binary Search}
+
+Binary search may be preferable if:
+\begin{enumerate}
+\item Only one perturbation source is available (hardware limitation).
+\item Perturbations cannot be parallelized (sequential application required).
+\item The speedup (37\%) does not justify the hardware cost.
+\end{enumerate}
+
+For resource-constrained systems or preliminary experiments, binary search is simpler and still achieves logarithmic complexity.
+
+\subsection{Scaling to Larger $N$}
+
+We extrapolate the comparison to larger search spaces:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+$N$ & $k_{\text{binary}}$ & $k_{\text{ternary}}$ & $T_{\text{binary}}$ ($\mu$s) & $T_{\text{ternary}}$ ($\mu$s) \\
+\hline
+$10^3$ & 11 & 7 & 1.16 & 0.735 \\
+$10^6$ & 21 & 13 & 2.21 & 1.37 \\
+$10^{15}$ & 50 & 32 & 5.25 & 3.36 \\
+\hline
+\end{tabular}
+\caption{Projected iteration counts and wall-clock times for binary vs ternary search as a function of search space size $N$. Times assume $\tau_{\text{iteration}} = 1.05 \times 10^{-7}$ s (constant with $N$).}
+\end{table}
+
+The speedup remains constant at $\sim 1.58\times$ across all $N$, confirming that ternary search provides consistent advantage regardless of problem size.

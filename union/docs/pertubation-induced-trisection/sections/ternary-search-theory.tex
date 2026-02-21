@@ -1,0 +1,222 @@
+\section{Ternary Search Theory}
+
+\subsection{Abstract Search Spaces}
+
+We formalize the search problem on ordered sets to establish notation and prove complexity bounds.
+
+\begin{definition}[Search Space]
+A search space is a set $\mathcal{S}$ of distinguishable states with a total ordering $\preceq$. The size of the search space is $N = |\mathcal{S}|$.
+\end{definition}
+
+For physical localization, $\mathcal{S}$ represents spatial positions and $\preceq$ represents the natural ordering ($x_1 \preceq x_2$ if $x_1 \leq x_2$). For abstract search, $\mathcal{S}$ can be any finite ordered set.
+
+\begin{definition}[Query]
+A query is a function $q: \mathcal{S} \to \{1, 2, \ldots, m\}$ that maps states to outcomes. The number of outcomes $m$ is the arity of the query.
+\end{definition}
+
+For binary search, $m = 2$ (e.g., $q(s) = 1$ if $s$ is in the left half, $q(s) = 2$ if in the right half). For ternary search, $m = 3$.
+
+\begin{definition}[Search Algorithm]
+A search algorithm is a sequence of queries $\{q_1, q_2, \ldots, q_k\}$ where each query $q_i$ may depend on the outcomes of previous queries $\{q_1, \ldots, q_{i-1}\}$ (adaptive algorithm) or not (non-adaptive algorithm). The algorithm terminates when the target state is uniquely identified.
+\end{definition}
+
+The complexity of a search algorithm is the worst-case number of queries $k$ required to identify any target in $\mathcal{S}$.
+
+\subsection{Binary Search: Review and Complexity}
+
+Binary search is the standard algorithm for searching ordered sets.
+
+\subsubsection{Algorithm Description}
+
+Given a search space $\mathcal{S} = \{s_1, s_2, \ldots, s_N\}$ with $s_1 \prec s_2 \prec \cdots \prec s_N$:
+\begin{enumerate}
+\item Query the midpoint: $q(s) = \begin{cases} 1 & \text{if } s \prec s_{N/2} \\ 2 & \text{if } s \succeq s_{N/2} \end{cases}$
+\item If outcome is 1, recurse on $\{s_1, \ldots, s_{N/2-1}\}$.
+\item If outcome is 2, recurse on $\{s_{N/2}, \ldots, s_N\}$.
+\item Repeat until $|\mathcal{S}| = 1$.
+\end{enumerate}
+
+\subsubsection{Complexity}
+
+After $k$ queries, the search space size is $N_k = N/2^k$. To reach $N_k = 1$, we need:
+\begin{equation}
+2^k = N \quad \Rightarrow \quad k = \log_2 N
+\end{equation}
+
+\begin{theorem}[Binary Search Complexity]
+Binary search requires $\Theta(\log_2 N)$ queries to locate a target in a space of size $N$.
+\end{theorem}
+
+\begin{proof}
+Lower bound: Each query provides at most $\log_2 2 = 1$ bit of information. To distinguish $N$ states requires $\log_2 N$ bits. Therefore, at least $\log_2 N$ queries are necessary.
+
+Upper bound: The algorithm described above achieves $\lceil \log_2 N \rceil$ queries in the worst case (when the target is in the last-remaining element). Therefore, $k \leq \log_2 N + 1 = O(\log_2 N)$.
+
+Combining: $k = \Theta(\log_2 N)$.
+\end{proof}
+
+\subsection{Ternary Search Principle}
+
+Ternary search extends binary search by using three outcomes per query.
+
+\subsubsection{Algorithm Description}
+
+Given a search space $\mathcal{S} = \{s_1, \ldots, s_N\}$:
+\begin{enumerate}
+\item Define two trisection points: $a = s_{N/3}$ and $b = s_{2N/3}$.
+\item Query: $q(s) = \begin{cases} 1 & \text{if } s \prec a \\ 2 & \text{if } a \preceq s \prec b \\ 3 & \text{if } s \succeq b \end{cases}$
+\item Recurse on the identified sub-region: $\{s_1, \ldots, s_{N/3}\}$, $\{s_{N/3}, \ldots, s_{2N/3}\}$, or $\{s_{2N/3}, \ldots, s_N\}$.
+\item Repeat until $|\mathcal{S}| = 1$.
+\end{enumerate}
+
+\subsubsection{Complexity}
+
+After $k$ queries, the search space size is $N_k = N/3^k$. To reach $N_k = 1$:
+\begin{equation}
+3^k = N \quad \Rightarrow \quad k = \log_3 N
+\end{equation}
+
+\begin{theorem}[Ternary Search Complexity]
+Ternary search requires $\Theta(\log_3 N)$ queries to locate a target in a space of size $N$.
+\end{theorem}
+
+\begin{proof}
+Lower bound: Each query provides at most $\log_2 3 \approx 1.585$ bits of information. To distinguish $N$ states requires $\log_2 N$ bits. Therefore, at least $\log_2 N / \log_2 3 = \log_3 N$ queries are necessary.
+
+Upper bound: The algorithm achieves $\lceil \log_3 N \rceil$ queries in the worst case. Therefore, $k \leq \log_3 N + 1 = O(\log_3 N)$.
+
+Combining: $k = \Theta(\log_3 N)$.
+\end{proof}
+
+\subsection{Speedup Factor}
+
+The speedup of ternary over binary search is:
+\begin{equation}
+\text{Speedup} = \frac{k_{\text{binary}}}{k_{\text{ternary}}} = \frac{\log_2 N}{\log_3 N} = \frac{\log_2 N}{\log_2 N / \log_2 3} = \log_2 3 \approx 1.585
+\end{equation}
+
+Equivalently, ternary search requires:
+\begin{equation}
+\frac{k_{\text{ternary}}}{k_{\text{binary}}} = \frac{1}{\log_2 3} \approx 0.631 = 63.1\%
+\end{equation}
+of the queries needed by binary search, a reduction of $37\%$.
+
+\subsection{Information-Theoretic Lower Bound}
+
+The fundamental limit on search complexity is set by information theory.
+
+\begin{theorem}[Information-Theoretic Lower Bound]
+Any search algorithm that distinguishes $N$ states using queries with $m$ outcomes requires at least $\log_m N$ queries.
+\end{theorem}
+
+\begin{proof}
+Each query provides at most $\log_2 m$ bits of information (achieved when all $m$ outcomes are equally likely). To distinguish $N$ states requires $\log_2 N$ bits of information. Therefore:
+\begin{equation}
+k \cdot \log_2 m \geq \log_2 N \quad \Rightarrow \quad k \geq \frac{\log_2 N}{\log_2 m} = \log_m N
+\end{equation}
+\end{proof}
+
+This theorem implies that ternary search ($m = 3$) with $k = \log_3 N$ queries is information-theoretically optimal: it saturates the lower bound.
+
+\subsection{Optimality of Ternary for Three-Outcome Queries}
+
+If exactly three outcomes are available per query, ternary search is optimal in the sense that no algorithm can do better than $\log_3 N$ queries.
+
+\begin{theorem}[Ternary Optimality]
+For queries with $m = 3$ outcomes, ternary search achieves the information-theoretic lower bound $\log_3 N$ and is therefore optimal.
+\end{theorem}
+
+\begin{proof}
+By Theorem 4 (Information-Theoretic Lower Bound), any algorithm requires at least $\log_3 N$ queries. Ternary search (Theorem 2) achieves $\log_3 N$ queries. Therefore, ternary search is optimal.
+\end{proof}
+
+\subsection{Comparison to Higher-Arity Search}
+
+For queries with $m > 3$ outcomes, $m$-ary search achieves $\log_m N$ complexity. The speedup over ternary is:
+\begin{equation}
+\frac{k_{\text{ternary}}}{k_{m\text{-ary}}} = \frac{\log_3 N}{\log_m N} = \log_m 3 = \frac{\log 3}{\log m}
+\end{equation}
+
+For $m = 4$ (quaternary): $\log_4 3 = \log 3 / \log 4 \approx 0.792$. Quaternary search is only $26\%$ faster than ternary.
+
+For $m = 5$ (quinary): $\log_5 3 = \log 3 / \log 5 \approx 0.683$. Quinary search is $46\%$ faster than ternary.
+
+The speedup grows sublinearly with $m$:
+\begin{equation}
+\frac{\partial}{\partial m} \left( \frac{\log 3}{\log m} \right) = -\frac{\log 3}{m (\log m)^2} < 0
+\end{equation}
+
+Thus, the marginal benefit of increasing $m$ decreases. The largest gain occurs from $m = 2$ (binary) to $m = 3$ (ternary), with a $58\%$ speedup. Further increases provide diminishing returns.
+
+\subsection{Adaptive vs Non-Adaptive Ternary Search}
+
+Adaptive algorithms can choose query points based on previous outcomes. Non-adaptive algorithms must fix all query points in advance.
+
+For deterministic ternary search (where the target is a single element), adaptive and non-adaptive algorithms have the same complexity: $\Theta(\log_3 N)$. This is because the optimal strategy is always to trisect at $x = L/3$ and $x = 2L/3$ (for a search space $[0, L]$), regardless of previous outcomes. Any other choice increases the worst-case complexity.
+
+\begin{theorem}[Adaptive-Non-Adaptive Equivalence]
+For deterministic ternary search, adaptive and non-adaptive algorithms have the same worst-case complexity: $\log_3 N$.
+\end{theorem}
+
+\begin{proof}
+Non-adaptive lower bound: The search space must be partitioned into regions of size at most $N/3^k$ after $k$ queries. To reach regions of size 1, $k \geq \log_3 N$.
+
+Adaptive upper bound: The adaptive strategy "always trisect evenly" achieves $k = \log_3 N$. No adaptive strategy can do better than the information-theoretic lower bound.
+
+Therefore, adaptive and non-adaptive have the same complexity.
+\end{proof}
+
+However, for probabilistic or approximate search (where the target distribution is non-uniform), adaptive algorithms can outperform non-adaptive by a constant factor by biasing queries toward high-probability regions.
+
+\subsection{Multi-Dimensional Ternary Search}
+
+In $d$-dimensional space, ternary search trisects along each dimension independently.
+
+\subsubsection{3D Ternary Search}
+
+For a 3D search space $\Omega = [0, L_x] \times [0, L_y] \times [0, L_z]$:
+\begin{enumerate}
+\item Trisect along $x$: divide into three regions $[0, L_x/3]$, $[L_x/3, 2L_x/3]$, $[2L_x/3, L_x]$.
+\item Trisect along $y$: divide into three regions.
+\item Trisect along $z$: divide into three regions.
+\item Result: $3 \times 3 \times 3 = 27$ sub-regions.
+\end{enumerate}
+
+After $k$ iterations, the volume is $V_k = V_0 / 27^k$. To reach resolution $\Delta V$:
+\begin{equation}
+27^k = \frac{V_0}{\Delta V} \quad \Rightarrow \quad k = \log_{27}\left( \frac{V_0}{\Delta V} \right) = \frac{\log_3(V_0/\Delta V)}{3}
+\end{equation}
+
+Compare to 3D binary search: $k_{\text{binary}} = \log_8(V_0/\Delta V) = \frac{\log_2(V_0/\Delta V)}{3}$.
+
+The speedup is:
+\begin{equation}
+\frac{k_{\text{binary}}}{k_{\text{ternary}}} = \frac{\log_2(V_0/\Delta V)}{\log_3(V_0/\Delta V)} = \log_2 3 \approx 1.585
+\end{equation}
+
+The speedup is independent of dimensionality.
+
+\subsection{Continuous vs Discrete Search Spaces}
+
+For continuous search spaces $\mathcal{S} = [0, L] \subset \mathbb{R}$, the notion of "unique identification" must be replaced by "localization to within $\Delta x$."
+
+The number of distinguishable states is $N = L/\Delta x$, so the number of ternary search iterations is:
+\begin{equation}
+k = \log_3 N = \log_3\left( \frac{L}{\Delta x} \right) = \frac{\log(L/\Delta x)}{\log 3}
+\end{equation}
+
+For physical localization with $L = 10 a_0 \approx 5$ Å and $\Delta x = 0.01 a_0 \approx 0.005$ Å:
+\begin{equation}
+k = \log_3\left( \frac{5}{0.005} \right) = \log_3(1000) = \frac{\log 1000}{\log 3} \approx \frac{6.9}{1.1} \approx 6.3
+\end{equation}
+
+Thus, 7 ternary iterations suffice to localize from 5 Å to 0.005 Å.
+
+\subsection{Expected vs Worst-Case Complexity}
+
+The worst-case complexity of ternary search is $\log_3 N$ (when the target is in the last-remaining region). The expected complexity, averaged over all possible targets (assuming uniform distribution), is:
+\begin{equation}
+k_{\text{expected}} = \sum_{i=1}^{\log_3 N} \frac{3^i}{N} \cdot i \approx \log_3 N - \frac{1}{2}
+\end{equation}
+
+The expected complexity is slightly better than worst-case by approximately $1/2$ query. For large $N$, the difference is negligible: $k_{\text{expected}} \approx k_{\text{worst}}$.

@@ -1,0 +1,153 @@
+\section{Complexity Analysis}
+
+\subsection{Iteration Count: Exact Formula}
+
+The number of trisection iterations required to reduce search space from $N$ states to 1 is:
+\begin{equation}
+k = \lceil \log_3 N \rceil
+\end{equation}
+
+The ceiling function accounts for the fact that $k$ must be an integer.
+
+\subsubsection{Numerical Examples}
+
+\begin{align}
+N = 10^3 &\Rightarrow k = \lceil \log_3 10^3 \rceil = \lceil 6.29 \rceil = 7 \\
+N = 10^6 &\Rightarrow k = \lceil \log_3 10^6 \rceil = \lceil 12.6 \rceil = 13 \\
+N = 10^{15} &\Rightarrow k = \lceil \log_3 10^{15} \rceil = \lceil 31.5 \rceil = 32
+\end{align}
+
+For our experimental system with $N = V_0/\Delta V = (10a_0)^3/(0.01a_0)^3 = 10^9$:
+\begin{equation}
+k = \lceil \log_3 10^9 \rceil = \lceil 18.9 \rceil = 19
+\end{equation}
+
+However, we operate in 1D for simplicity (trisecting only along the radial coordinate), giving $N = 10a_0/0.01a_0 = 10^3$ and $k = 7$.
+
+\subsection{Measurement Count}
+
+Each trisection iteration requires two perturbation measurements (one for $\mathcal{P}_1$, one for $\mathcal{P}_2$). Total measurements:
+\begin{equation}
+M = 2k = 2 \lceil \log_3 N \rceil
+\end{equation}
+
+For $N = 10^3$: $M = 14$ measurements. For $N = 10^{15}$: $M = 64$ measurements.
+
+\subsection{Comparison to Binary Search}
+
+Binary search requires:
+\begin{equation}
+k_{\text{binary}} = \lceil \log_2 N \rceil, \quad M_{\text{binary}} = \lceil \log_2 N \rceil
+\end{equation}
+
+(Only one perturbation per iteration, so measurement count equals iteration count.)
+
+The ratio of measurements is:
+\begin{equation}
+\frac{M_{\text{ternary}}}{M_{\text{binary}}} = \frac{2 \log_3 N}{\log_2 N} = \frac{2}{\log_2 3} \approx \frac{2}{1.585} \approx 1.26
+\end{equation}
+
+Ternary search requires 26\% more measurements than binary search. However, the wall-clock time is not proportional to measurement count but to iteration count (since measurements are parallelized). The iteration ratio is:
+\begin{equation}
+\frac{k_{\text{ternary}}}{k_{\text{binary}}} = \frac{\log_3 N}{\log_2 N} = \frac{1}{\log_2 3} \approx 0.631
+\end{equation}
+
+Ternary search requires 37\% fewer iterations, translating to 37\% faster wall-clock time if iterations have equal duration.
+
+\subsection{Wall-Clock Time}
+
+The wall-clock time is:
+\begin{equation}
+T_{\text{total}} = k \cdot \tau_{\text{iteration}}
+\end{equation}
+where $\tau_{\text{iteration}}$ is the time per iteration.
+
+\subsubsection{Iteration Duration}
+
+Each iteration involves:
+\begin{enumerate}
+\item Perturbation application: $\tau_{\mathcal{P}} = 10^{-8}$ s (both perturbations applied simultaneously, so no doubling)
+\item Response measurement: $\tau_{\text{meas}} = 10^{-7}$ s (all five modalities measured in parallel)
+\item Data processing: $\tau_{\text{proc}} = 10^{-8}$ s (trit decoding, negligible)
+\end{enumerate}
+
+Total: $\tau_{\text{iteration}} \approx \tau_{\mathcal{P}} + \tau_{\text{meas}} \approx 1.1 \times 10^{-7}$ s.
+
+\subsubsection{Total Time}
+
+For ternary search with $k = 7$:
+\begin{equation}
+T_{\text{ternary}} = 7 \times 1.1 \times 10^{-7} \approx 7.7 \times 10^{-7} \text{ s} = 0.77 \, \mu\text{s}
+\end{equation}
+
+For binary search with $k = 11$:
+\begin{equation}
+T_{\text{binary}} = 11 \times 1.1 \times 10^{-7} \approx 1.2 \times 10^{-6} \text{ s} = 1.2 \, \mu\text{s}
+\end{equation}
+
+Speedup: $1.2/0.77 \approx 1.56$ (56\% faster), close to the theoretical $\log_2 3 \approx 1.585$.
+
+\subsection{Best-Case vs Worst-Case}
+
+\subsubsection{Best-Case}
+
+The best case occurs when the target is found in the first trisection step without needing full localization. If only coarse localization (to within one of three regions) is required, $k = 1$ iteration suffices.
+
+More generally, if resolution $\Delta x = L/3^k$ is acceptable, then $k$ iterations suffice. The best case is $k = 1$.
+
+\subsubsection{Worst-Case}
+
+The worst case is when full resolution $\Delta x = \Delta x_{\min}$ is required, needing $k = \log_3(L/\Delta x_{\min})$ iterations.
+
+For our system: $L = 10a_0$, $\Delta x_{\min} = 0.01a_0$, giving $k = \log_3(1000) \approx 6.3$, so $k_{\max} = 7$.
+
+\subsection{Amortized Analysis}
+
+For trajectory tracking, we perform localization at each time step. If the particle moves slowly (distance $\delta x \ll L/3$ per step), we can use the previous localization as a starting point, reducing the search region to a neighborhood around the previous position.
+
+\subsubsection{Incremental Trisection}
+
+If the particle moves by $\delta x = L/27$ (one sub-region), the new search region is $[x_{\text{prev}} - L/9, x_{\text{prev}} + L/9]$ (three adjacent sub-regions). This requires only $k = \log_3 3 = 1$ additional iteration beyond the previous localization depth.
+
+The amortized cost is $O(1)$ per time step (constant, independent of total resolution), assuming slow motion.
+
+\subsection{Comparison to Linear Search}
+
+Linear search examines each region sequentially until the target is found. Complexity: $O(N)$.
+
+For $N = 10^3$:
+\begin{itemize}
+\item Linear: 500 measurements (average), 1000 (worst)
+\item Ternary: 14 measurements
+\item Speedup: $500/14 \approx 36\times$ (average), $1000/14 \approx 71\times$ (worst)
+\end{itemize}
+
+Ternary search provides exponential speedup over linear search.
+
+\subsection{Quantum Search (Grover) Comparison}
+
+Grover's algorithm achieves $O(\sqrt{N})$ complexity. For $N = 10^3$:
+\begin{itemize}
+\item Grover: $\sqrt{10^3} \approx 32$ quantum queries
+\item Ternary: $14$ classical queries
+\end{itemize}
+
+Ternary search outperforms Grover for $N < 10^4$ (due to the $\log N$ vs $\sqrt{N}$ crossover). For larger $N$, Grover is asymptotically faster but requires quantum coherence over $\sqrt{N}$ operations, which is experimentally challenging.
+
+\subsection{Scaling to Large $N$}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+$N$ & Linear & Binary & Ternary & Grover \\
+\hline
+$10^3$ & 1000 & 11 & 7 & 32 \\
+$10^6$ & $10^6$ & 21 & 13 & $10^3$ \\
+$10^{15}$ & $10^{15}$ & 50 & 32 & $3 \times 10^7$ \\
+\hline
+\end{tabular}
+\caption{Iteration counts for different search algorithms as a function of search space size $N$.}
+\end{table}
+
+Ternary search is optimal for moderate $N$ (classical complexity $\log N$) and experimentally feasible (no quantum coherence required).

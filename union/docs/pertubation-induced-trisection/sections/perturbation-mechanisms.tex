@@ -1,0 +1,230 @@
+\section{Perturbation Mechanisms}
+
+\subsection{Perturbation as Physical Query}
+
+In physical search, a query is implemented as a perturbation: an external field applied to the system that creates position-dependent dynamics. The particle's response reveals its location.
+
+\begin{definition}[Perturbation]
+A perturbation $\mathcal{P}$ is a time-dependent potential $V(\mathbf{r}, t)$ added to the system Hamiltonian:
+\begin{equation}
+\hat{H}(t) = \hat{H}_0 + \hat{V}_\mathcal{P}(\mathbf{r}, t)
+\end{equation}
+\end{definition}
+
+The perturbation has an \emph{active region} $\Omega_{\mathcal{P}} \subset \mathbb{R}^3$ where $|V_\mathcal{P}| \gg k_B T$ (exceeds thermal energy). Particles in $\Omega_{\mathcal{P}}$ respond measurably; particles outside do not.
+
+\subsection{Two-Perturbation Trisection Protocol}
+
+To implement ternary search, we apply two perturbations $\mathcal{P}_1$ and $\mathcal{P}_2$ with non-overlapping active regions.
+
+\subsubsection{Spatial Configuration}
+
+For one-dimensional search on $x \in [0, L]$, define:
+\begin{align}
+\Omega_{\mathcal{P}_1} &= [0, L/3] \quad \text{(left third)} \\
+\Omega_{\mathcal{P}_2} &= [L/3, 2L/3] \quad \text{(middle third)} \\
+\Omega_{\text{none}} &= [2L/3, L] \quad \text{(right third)}
+\end{align}
+
+Perturbation $\mathcal{P}_1$ is active only in $\Omega_{\mathcal{P}_1}$; $\mathcal{P}_2$ is active only in $\Omega_{\mathcal{P}_2}$; neither is active in $\Omega_{\text{none}}$.
+
+\subsubsection{Response Outcomes}
+
+After applying both perturbations, we measure two binary responses:
+\begin{align}
+r_1 &= \begin{cases} 1 & \text{if particle responds to } \mathcal{P}_1 \\ 0 & \text{otherwise} \end{cases} \\
+r_2 &= \begin{cases} 1 & \text{if particle responds to } \mathcal{P}_2 \\ 0 & \text{otherwise} \end{cases}
+\end{align}
+
+The pair $(r_1, r_2)$ encodes the particle's location:
+\begin{align}
+(r_1, r_2) = (1, 0) &\Rightarrow x \in [0, L/3] \quad (\text{trit } t = 0) \\
+(r_1, r_2) = (0, 1) &\Rightarrow x \in [L/3, 2L/3] \quad (\text{trit } t = 1) \\
+(r_1, r_2) = (0, 0) &\Rightarrow x \in [2L/3, L] \quad (\text{trit } t = 2)
+\end{align}
+
+The outcome $(1, 1)$ (respond to both) should not occur if $\Omega_{\mathcal{P}_1} \cap \Omega_{\mathcal{P}_2} = \emptyset$. If observed, it indicates measurement error or overlapping active regions.
+
+\subsection{Electric Field Gradient Perturbation}
+
+The first perturbation $\mathcal{P}_1$ is an electric field gradient.
+
+\subsubsection{Field Configuration}
+
+An inhomogeneous electric field:
+\begin{equation}
+\mathbf{E}(\mathbf{r}) = E_0 f(x) \hat{z}
+\end{equation}
+where $f(x)$ is a spatial profile function. For trisection, choose:
+\begin{equation}
+f(x) = \begin{cases}
+1 & \text{if } x \in [0, L/3] \\
+0 & \text{if } x > L/3
+\end{cases}
+\end{equation}
+
+This creates a step function: strong field in the left third, zero field elsewhere.
+
+\subsubsection{Perturbation Potential}
+
+The potential energy of a charged particle (charge $-e$) in this field is:
+\begin{equation}
+V_{\mathcal{P}_1}(x, z) = e E_0 f(x) z
+\end{equation}
+
+The force is:
+\begin{equation}
+\mathbf{F} = -\nabla V = -e E_0 \hat{z} f(x) - e E_0 z \hat{x} f'(x)
+\end{equation}
+
+The $z$-component provides a uniform force in the active region. The $x$-component (from $f'(x) = \delta(x - L/3)$, a delta function at the boundary) provides an impulsive force at $x = L/3$.
+
+\subsubsection{Response Signature}
+
+A particle in the active region $(x < L/3)$ experiences force $F_z = -e E_0$, causing acceleration $a_z = eE_0/m$. Over time $\tau_{\mathcal{P}}$, the particle gains velocity:
+\begin{equation}
+\Delta v_z = a_z \tau_{\mathcal{P}} = \frac{e E_0 \tau_{\mathcal{P}}}{m}
+\end{equation}
+
+This velocity change is detected via Doppler shift in spectroscopic signals, or via time-of-flight mass spectrometry, or via image current in the trap electrodes. If $\Delta v_z > v_{\text{threshold}} \sim 10^3$ m/s, the response is classified as positive ($r_1 = 1$).
+
+\subsubsection{Implementation: Quadrupole Electrodes}
+
+In practice, the step-function field is approximated using quadrupole electrodes. Four electrodes at positions $(x, y) = (\pm d, 0), (0, \pm d)$ with voltages $V_1, V_2, V_3, V_4$ create a field:
+\begin{equation}
+\mathbf{E}(x, y) = \frac{V_1 - V_3}{2d} \hat{x} + \frac{V_2 - V_4}{2d} \hat{y}
+\end{equation}
+
+By setting $V_1 \neq V_3$ and $V_2 = V_4$, we produce a gradient along $x$. The active region is defined by $|\mathbf{E}| > E_{\text{threshold}}$.
+
+\subsection{Magnetic Field Gradient Perturbation}
+
+The second perturbation $\mathcal{P}_2$ is a magnetic field gradient.
+
+\subsubsection{Field Configuration}
+
+An inhomogeneous magnetic field:
+\begin{equation}
+\mathbf{B}(\mathbf{r}) = B_0 \hat{z} + (\nabla B) x \hat{z}
+\end{equation}
+where $\nabla B$ is the gradient. For trisection, the gradient is designed such that $|(\nabla B) x| > B_{\text{threshold}}$ for $x \in [L/3, 2L/3]$ (middle third) and $|(\nabla B) x| < B_{\text{threshold}}$ elsewhere.
+
+\subsubsection{Perturbation Potential}
+
+The potential energy of a magnetic moment $\boldsymbol{\mu}$ in this field is:
+\begin{equation}
+V_{\mathcal{P}_2} = -\boldsymbol{\mu} \cdot \mathbf{B} = -\mu_z [B_0 + (\nabla B) x]
+\end{equation}
+
+The force is:
+\begin{equation}
+\mathbf{F} = -\nabla V = \mu_z (\nabla B) \hat{x}
+\end{equation}
+
+This force is constant (independent of $x$) within the active region, providing uniform acceleration.
+
+\subsubsection{Response Signature}
+
+A particle in the active region experiences force $F_x = \mu_z \nabla B$. For an electron with spin magnetic moment $\mu_z = \pm \mu_B$ (Bohr magneton), and gradient $\nabla B = 10$ T/m:
+\begin{equation}
+F_x = \mu_B \cdot 10 \text{ T/m} = 9.3 \times 10^{-24} \text{ J/T} \cdot 10 \text{ T/m} = 9.3 \times 10^{-23} \text{ N}
+\end{equation}
+
+Over time $\tau_{\mathcal{P}} = 10^{-8}$ s, this produces velocity:
+\begin{equation}
+\Delta v_x = \frac{F_x \tau_{\mathcal{P}}}{m} = \frac{9.3 \times 10^{-23} \text{ N} \cdot 10^{-8} \text{ s}}{9.1 \times 10^{-31} \text{ kg}} \approx 10^3 \text{ m/s}
+\end{equation}
+
+This is detectable via cyclotron frequency shift $\Delta \omega_c = (e B_0 / m) (\Delta v_x / v)$ or axial frequency shift.
+
+\subsubsection{Implementation: Magnetic Coil with Current Gradient}
+
+A solenoid with spatially varying current density $J(x)$ produces field:
+\begin{equation}
+\mathbf{B}(x) = \mu_0 n J(x) \hat{z}
+\end{equation}
+where $n$ is the turn density. By designing $J(x)$ to be large in $[L/3, 2L/3]$ and small elsewhere, the active region is localized.
+
+\subsection{Orthogonality of Perturbations}
+
+The two perturbations must be orthogonal: applying one should not affect the response to the other.
+
+\begin{theorem}[Perturbation Orthogonality]
+If $\mathcal{P}_1$ and $\mathcal{P}_2$ couple to independent observables $\hat{O}_1$ and $\hat{O}_2$ with $[\hat{O}_1, \hat{O}_2] = 0$, then the responses are independent: $P(r_1, r_2) = P(r_1) P(r_2)$.
+\end{theorem}
+
+\begin{proof}
+The response $r_i$ is determined by measuring observable $\hat{O}_i$. If $[\hat{O}_1, \hat{O}_2] = 0$, the observables can be measured simultaneously without mutual disturbance (by the spectral theorem). Therefore, the joint probability factorizes: $P(r_1, r_2) = P(r_1) P(r_2)$.
+\end{proof}
+
+For our perturbations:
+\begin{itemize}
+\item $\mathcal{P}_1$ couples to electric dipole moment $\mathbf{d} = -e\mathbf{r}$.
+\item $\mathcal{P}_2$ couples to magnetic moment $\boldsymbol{\mu} = -\mu_B \mathbf{L}/\hbar$ (orbital angular momentum).
+\end{itemize}
+
+These observables commute: $[\mathbf{d}, \boldsymbol{\mu}] = [-e\mathbf{r}, -\mu_B \mathbf{L}/\hbar] = 0$ (position and angular momentum commute for different components). Therefore, the perturbations are orthogonal.
+
+\subsection{Perturbation Strength Requirements}
+
+For reliable response detection, the perturbation energy must exceed thermal energy and orbital energy.
+
+\begin{equation}
+E_{\text{pert}} \gg \max(k_B T, E_{\text{orbital}})
+\end{equation}
+
+For hydrogen in the ground state:
+\begin{align}
+E_{\text{orbital}} &= E_{1s} = 13.6 \text{ eV} \\
+k_B T &= 0.34 \text{ meV at } T = 4 \text{ K}
+\end{align}
+
+The perturbation energies are:
+\begin{align}
+E_{\mathcal{P}_1} &= e E_0 a_0 \approx 1 \text{ eV (for } E_0 = 10^9 \text{ V/m)} \\
+E_{\mathcal{P}_2} &= \mu_B B_0 \approx 0.5 \text{ meV (for } B_0 = 9.4 \text{ T)}
+\end{align}
+
+The electric perturbation exceeds thermal energy by a factor of $\sim 3000$ and is comparable to orbital energy. The magnetic perturbation exceeds thermal energy but is much smaller than orbital energy. Both are sufficient for response detection, though $\mathcal{P}_1$ provides stronger signal.
+
+\subsection{Multi-Dimensional Extension}
+
+In three dimensions, six perturbations are required: two per axis.
+
+\subsubsection{Perturbation Configuration}
+
+\begin{align}
+\mathcal{P}_{x1}: \quad & E_x(x, y, z) = E_0 f_x(x), \quad f_x(x) = \begin{cases} 1 & x \in [0, L_x/3] \\ 0 & \text{otherwise} \end{cases} \\
+\mathcal{P}_{x2}: \quad & E_x(x, y, z) = E_0 g_x(x), \quad g_x(x) = \begin{cases} 1 & x \in [L_x/3, 2L_x/3] \\ 0 & \text{otherwise} \end{cases} \\
+\mathcal{P}_{y1}, \mathcal{P}_{y2}: \quad & \text{Similar along } y \text{-axis} \\
+\mathcal{P}_{z1}, \mathcal{P}_{z2}: \quad & \text{Similar along } z \text{-axis}
+\end{align}
+
+\subsubsection{Response Decoding}
+
+Six binary responses $(r_{x1}, r_{x2}, r_{y1}, r_{y2}, r_{z1}, r_{z2})$ encode three trits:
+\begin{align}
+t_x &= \begin{cases} 0 & \text{if } (r_{x1}, r_{x2}) = (1, 0) \\ 1 & \text{if } (r_{x1}, r_{x2}) = (0, 1) \\ 2 & \text{if } (r_{x1}, r_{x2}) = (0, 0) \end{cases} \\
+t_y, t_z &\quad \text{decoded similarly}
+\end{align}
+
+The triplet $(t_x, t_y, t_z)$ identifies one of $3^3 = 27$ sub-regions.
+
+\subsection{Temporal Considerations}
+
+The perturbations must be applied long enough for the particle to respond but short enough to avoid disturbing the trajectory.
+
+\subsubsection{Rise Time}
+
+The perturbation field must rise from zero to maximum in time $\tau_{\text{rise}} < \tau_{\text{response}}$, where $\tau_{\text{response}} \sim m/(e \nabla E)$ is the time for the particle to accelerate measurably.
+
+For $m = m_e = 9.1 \times 10^{-31}$ kg, $e = 1.6 \times 10^{-19}$ C, $\nabla E = 10^6$ V/m$^2$:
+\begin{equation}
+\tau_{\text{response}} \sim \frac{9.1 \times 10^{-31}}{1.6 \times 10^{-19} \cdot 10^6} \sim 6 \times 10^{-18} \text{ s}
+\end{equation}
+
+Thus, $\tau_{\text{rise}} < 10^{-18}$ s is required. This is achievable with ultrafast pulse generators.
+
+\subsubsection{Perturbation Duration}
+
+The perturbation is applied for time $\tau_{\mathcal{P}} \sim 10^{-8}$ s, long enough for response detection but short compared to the transition timescale $\tau_{\text{transition}} \sim 10^{-9}$ s. This ensures the perturbation is a snapshot measurement, not a prolonged disturbance.

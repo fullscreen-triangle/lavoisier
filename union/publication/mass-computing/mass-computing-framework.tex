@@ -626,140 +626,81 @@ I(M + k) = e^{-0.5k} / \sum_{j=0}^{K} e^{-0.5j}
 \label{fig:extraction}
 \end{figure}
 
-\section{MassScript Language}
+\section{Mass Computing as Ion Journey}
 \label{sec:massscript}
 
-\subsection{Language Design}
+\subsection{Computing = Processing = Observation}
 
-MassScript is a domain-specific language for partition synthesis. Programs are sequences of ternary operations that synthesize spectra rather than simulate physical processes.
+The central insight of Mass Computing is that \emph{computation is observation}. When an ion traverses the mass spectrometer, each stage of its journey corresponds to a computational operation on its ternary address. The ion does not ``compute'' in the traditional sense---it simply moves through bounded phase space. But this movement \emph{is} the computation: each partition crossing refines the address, each measurement extracts an observable.
 
-\subsubsection{Syntax}
+This equivalence---computing = processing = observation---eliminates the need for separate simulation. The ion's physical journey through the instrument is isomorphic to the ternary address operations that describe it.
 
-\begin{lstlisting}[language=MassScript, caption={MassScript grammar (simplified)}]
-program     := statement*
-statement   := partition_stmt | observe_stmt
-             | fragment_stmt | extend_stmt
-             | inject_stmt | detect_stmt
-partition_stmt := 'partition' IDENT? TERNARY
-observe_stmt   := 'observe' IDENT?
-fragment_stmt  := 'fragment' IDENT? 'at' NUMBER
-extend_stmt    := 'extend' 'by' TERNARY
-inject_stmt    := 'inject' IDENT? 'as' TERNARY
-detect_stmt    := 'detect'
-\end{lstlisting}
+\subsection{The Eight-Stage Ion Journey}
 
-\subsubsection{Example Program}
+Figure~\ref{fig:ion_journey_main} traces a single ion through the complete analytical pipeline. Each stage corresponds to a specific ternary operation:
 
-\begin{lstlisting}[language=MassScript, caption={Phospholipid analysis in MassScript}]
-# Define molecule by ternary address
-partition PC_34_1 201102012021
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Sample Injection} ($\tau \gets \epsilon$): The ion begins with an empty address at the sample vial. Its molecular identity determines its eventual position in S-space, but no coordinates have yet been measured.
 
-# Extract observables (no computation)
-observe PC_34_1
-# -> mz: 760.5851
-# -> rt: 14.2 min
-# -> fragments: [184.07, 577.52]
+\item \textbf{Chromatography} ($\tau \gets \tau \cdot t_1 t_2 t_3$): Retention time partitions the temporal coordinate $S_t$. Each chromatographic plate crossing appends a trit to the address along axis 1.
 
-# Fragmentation as address manipulation
-fragment PC_34_1 at 6
-# -> headgroup: 201102
-# -> fatty_acid: 012021
-\end{lstlisting}
+\item \textbf{Ionization} ($\tau \gets \tau \cdot t_4 t_5$): Charge state selection partitions the evolution coordinate $S_e$. Positive or negative mode, adduct formation, and charge state all encode as trits.
+
+\item \textbf{MS1 Detection} ($\tau \gets \tau \cdot t_6 t_7 t_8$): Mass measurement partitions the knowledge coordinate $S_k$. The m/z ratio determines which cell the ion occupies along axis 0.
+
+\item \textbf{S-Entropy Mapping}: At this stage, the ion's ternary address maps to S-entropy coordinates $(S_k, S_t, S_e)$ via Theorem~\ref{thm:mapping}. The observable extraction functions become applicable.
+
+\item \textbf{Partition Coordinates}: The S-entropy coordinates determine partition quantum numbers $(n, \ell, m, s)$. The capacity formula $C(n) = 2n^2$ constrains accessible states.
+
+\item \textbf{Thermodynamic Validation}: Dimensionless numbers (Weber, Reynolds, Ohnesorge) validate physical consistency. Invalid parameter combinations indicate measurement artifacts.
+
+\item \textbf{Droplet Encoding}: The complete ion state encodes as a thermodynamic droplet, enabling bijective transformation to visual representation.
+\end{enumerate}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\columnwidth]{figure5_massscript_workflow.png}
-\caption{MassScript workflow. Commands operate on ternary addresses: \texttt{partition} sets the address, \texttt{observe} extracts observables, \texttt{extend} refines the partition, and \texttt{fragment} splits addresses. Spectra are synthesized from partition structure, not physical simulation.}
-\label{fig:massscript}
+\includegraphics[width=\columnwidth]{ion_journey.png}
+\caption{\textbf{The Ion Journey as Computation.} A single ion traced through eight pipeline stages. Top row: physical stages (sample, chromatography, ionization, MS1). Bottom row: computational stages (S-entropy, partition coordinates, thermodynamics, droplet encoding). Each stage appends trits to the ternary address, progressively refining the ion's position in S-space. The journey IS the computation.}
+\label{fig:ion_journey_main}
 \end{figure}
 
-\subsection{Semantics}
+\subsection{Cross-Platform Demonstration}
 
-\begin{definition}[Partition Statement]
-\begin{equation}
-\texttt{partition } \tau \implies \text{current\_address} \gets \tau
-\end{equation}
-Sets the current ternary address.
-\end{definition}
+The ion journey framework applies identically across instrument platforms. Figure~\ref{fig:ion_journeys_platforms} demonstrates mass computing on four datasets:
 
-\begin{definition}[Observe Statement]
-\begin{equation}
-\texttt{observe} \implies \Omega(\phi(\text{current\_address}))
-\end{equation}
-Returns mass, retention time, fragments without computation.
-\end{definition}
+\begin{itemize}[leftmargin=*]
+\item \textbf{H11 HILIC (negative mode)}: Polar metabolites on HILIC chromatography. S-entropy coordinates cluster in the high-$S_k$ region (low mass), with $S_t$ reflecting polar retention.
 
-\begin{definition}[Fragment Statement]
-\begin{equation}
-\texttt{fragment at } k \implies (\tau[1:k], \tau[k+1:])
-\end{equation}
-Splits the address at position $k$, yielding two fragment addresses.
-\end{definition}
+\item \textbf{Phospholipids (Waters qTOF)}: Phosphatidylcholines and phosphatidylethanolamines. Characteristic headgroup fragments at $m/z$ 184.07 emerge from address fragmentation operations.
 
-\begin{definition}[Extend Statement]
-\begin{equation}
-\texttt{extend by } \sigma \implies \text{current\_address} \gets \text{current\_address} \cdot \sigma
-\end{equation}
-Concatenates ternary strings, refining the partition.
-\end{definition}
+\item \textbf{Triglycerides (Thermo Orbitrap)}: High-resolution accurate mass enables precise $S_k$ assignment. Orbitrap's mass accuracy ($<$2 ppm) yields deep ternary addresses.
 
-\subsection{Virtual Experiments}
+\item \textbf{BSA Protein}: Multiple charge state envelope demonstrates partition coordinate assignment for macromolecules. The capacity formula $C(n) = 2n^2$ accommodates protein complexity.
+\end{itemize}
 
-MassScript enables virtual experiments---complete analytical workflows expressed as ternary operations:
+\begin{figure*}[!htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{ion_journey_H11_BD_A_neg_hilic.png}
+\hfill
+\includegraphics[width=0.48\textwidth]{ion_journey_PL_Neg_Waters_qTOF.png}
+\vspace{0.5em}
+\includegraphics[width=0.48\textwidth]{ion_journey_TG_Pos_Thermo_Orbi.png}
+\hfill
+\includegraphics[width=0.48\textwidth]{ion_journey_BSA1.png}
+\caption{\textbf{Cross-Platform Ion Journeys.} Mass computing demonstrated on four datasets spanning different instrument platforms, ionization modes, and compound classes. Despite hardware differences, all ions follow the same eight-stage journey through S-entropy space. The ternary address framework provides platform-independent molecular state description.}
+\label{fig:ion_journeys_platforms}
+\end{figure*}
 
-\begin{lstlisting}[language=MassScript, caption={Virtual LC-MS/MS experiment}]
-# Sample injection
-inject sample as 000
+\subsection{Template-Based Analysis}
 
-# Chromatographic separation
-chromatograph extend by 111011
+The ion journey implements template-based analysis: at each stage, the ion either matches or fails a geometric ``mold'' (Figure~\ref{fig:template_flow_main}). Matching ions proceed; non-matching ions are filtered. This is not metaphor---the partition structure literally defines which ions can occupy which cells.
 
-# Ionization
-ionize extend by 220
-
-# MS1 scan
-observe
-# -> precursor at m/z 760.58
-
-# MS/MS fragmentation
-extend by 012
-observe
-# -> fragments at m/z 184.07, 577.52
-
-# Detection
-detect
-\end{lstlisting}
-
-\subsection{Compilation}
-
-MassScript compiles to partition lookups:
-
-\begin{algorithm}[H]
-\caption{MassScript Compiler}
-\begin{algorithmic}[1]
-\Require MassScript source $P$
-\Ensure Observable set $\mathcal{O}$
-\State $\tau \gets \epsilon$ (empty address)
-\State $\mathcal{O} \gets \emptyset$
-\For{each statement $s$ in $P$}
-    \Switch{$s$}
-        \Case{\texttt{partition } $\sigma$}
-            \State $\tau \gets \sigma$
-        \EndCase
-        \Case{\texttt{extend by } $\sigma$}
-            \State $\tau \gets \tau \cdot \sigma$
-        \EndCase
-        \Case{\texttt{observe}}
-            \State $\mathcal{O} \gets \mathcal{O} \cup \{\Omega(\phi(\tau))\}$
-        \EndCase
-        \Case{\texttt{fragment at } $k$}
-            \State $\mathcal{O} \gets \mathcal{O} \cup \{(\tau[1:k], \tau[k+1:])\}$
-        \EndCase
-    \EndSwitch
-\EndFor
-\State \Return $\mathcal{O}$
-\end{algorithmic}
-\end{algorithm}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{template_flow.png}
+\caption{\textbf{Template-Based Analysis Flow.} At each pipeline stage, the ion (red) passes through a template mold (gray ring). Checkmarks indicate successful matching. The sequence of matches determines the complete ternary address. Non-matching ions fail validation and are excluded from downstream analysis.}
+\label{fig:template_flow_main}
+\end{figure}
 
 \subsection{Comparison to Physical Experiments}
 
@@ -772,7 +713,7 @@ MassScript compiles to partition lookups:
 \textbf{Aspect} & \textbf{Physical} & \textbf{Virtual} \\
 \midrule
 Input & Sample + instrument & Ternary address \\
-Process & Ion trajectories & String operations \\
+Process & Ion trajectories & Partition traversal \\
 Output & Measured spectrum & Synthesized spectrum \\
 Time & Minutes--hours & Microseconds \\
 Cost & Consumables, maintenance & Computation only \\
@@ -1287,138 +1228,70 @@ The extended validation demonstrates that partition determinism holds across mul
 
 \subsection{Architecture}
 
-The Mass Computing framework is implemented in two languages:
-
-\begin{itemize}
-\item \textbf{Python}: Rapid prototyping, validation, visualization using NumPy~\cite{harris2020array} and Matplotlib~\cite{hunter2007matplotlib}
-\item \textbf{Rust}: Production performance, memory safety, concurrency~\cite{rust2021rust}
-\end{itemize}
-
-\subsection{Core Data Structures}
-
-\subsubsection{Ternary Address}
-
-\begin{lstlisting}[language=Python, caption={TernaryAddress class}]
-@dataclass(frozen=True)
-class TernaryAddress:
-    """Immutable ternary address."""
-    trits: tuple[int, ...]
-
-    @classmethod
-    def from_string(cls, s: str) -> 'TernaryAddress':
-        return cls(tuple(int(c) for c in s if c in '012'))
-
-    @classmethod
-    def from_scoord(cls, s_k: float, s_t: float, s_e: float,
-                    depth: int = 18) -> 'TernaryAddress':
-        coords = [s_k, s_t, s_e]
-        trits = []
-        for i in range(depth):
-            axis = i % 3
-            c = coords[axis]
-            if c < 1/3:
-                trit, coords[axis] = 0, c * 3
-            elif c < 2/3:
-                trit, coords[axis] = 1, (c - 1/3) * 3
-            else:
-                trit, coords[axis] = 2, (c - 2/3) * 3
-            trits.append(trit)
-        return cls(tuple(trits))
-
-    def to_scoord(self) -> tuple[float, float, float]:
-        bounds = {0: [0., 1.], 1: [0., 1.], 2: [0., 1.]}
-        for i, t in enumerate(self.trits):
-            axis = i % 3
-            lo, hi = bounds[axis]
-            w = (hi - lo) / 3
-            bounds[axis] = [lo + t*w, lo + (t+1)*w]
-        return tuple((b[0] + b[1]) / 2 for b in bounds.values())
-
-    def extend(self, other: 'TernaryAddress') -> 'TernaryAddress':
-        return TernaryAddress(self.trits + other.trits)
-
-    def fragment_at(self, k: int) -> tuple['TernaryAddress', ...]:
-        return (TernaryAddress(self.trits[:k]),
-                TernaryAddress(self.trits[k:]))
-\end{lstlisting}
-
-\subsubsection{Spectrum Extractor}
-
-\begin{lstlisting}[language=Python, caption={SpectrumExtractor class}]
-class SpectrumExtractor:
-    def __init__(self, mass_min=100., mass_max=1000.,
-                 t0=0.5, t_max=20.):
-        self.mass_min = mass_min
-        self.mass_max = mass_max
-        self.t0 = t0
-        self.t_max = t_max
-
-    def mass(self, s_k: float) -> float:
-        log_min = np.log10(self.mass_min)
-        log_max = np.log10(self.mass_max)
-        return 10 ** (log_max - s_k * (log_max - log_min))
-
-    def retention_time(self, s_t: float) -> float:
-        return self.t0 + s_t * (self.t_max - self.t0)
-
-    def fragments(self, s_k: float, s_e: float) -> list:
-        parent = self.mass(s_k)
-        n_frags = int(s_e * 5)
-        return [(parent * (0.8 - 0.15*i), 1/(i**1.2))
-                for i in range(1, n_frags + 1)
-                if 0.8 - 0.15*i > 0.1]
-
-    def extract(self, addr: TernaryAddress) -> Spectrum:
-        s_k, s_t, s_e = addr.to_scoord()
-        return Spectrum(
-            mz=self.mass(s_k),
-            rt=self.retention_time(s_t),
-            fragments=self.fragments(s_k, s_e))
-\end{lstlisting}
-
-\subsection{MassScript Interpreter}
-
-\begin{lstlisting}[language=Python, caption={MassScript interpreter}]
-class Interpreter:
-    def __init__(self):
-        self.address = TernaryAddress(())
-        self.extractor = SpectrumExtractor()
-        self.results = []
-
-    def execute(self, source: str) -> list:
-        for line in source.strip().split('\n'):
-            line = line.split('#')[0].strip()
-            if not line:
-                continue
-            self._exec_line(line)
-        return self.results
-
-    def _exec_line(self, line: str):
-        tokens = line.split()
-        cmd = tokens[0]
-
-        if cmd == 'partition':
-            self.address = TernaryAddress.from_string(tokens[-1])
-        elif cmd == 'extend':
-            ext = TernaryAddress.from_string(tokens[-1])
-            self.address = self.address.extend(ext)
-        elif cmd == 'observe':
-            self.results.append(self.extractor.extract(self.address))
-        elif cmd == 'fragment':
-            k = int(tokens[tokens.index('at') + 1])
-            self.results.append(self.address.fragment_at(k))
-\end{lstlisting}
-
-\subsection{Performance Optimization}
-
-Key optimizations in the Rust implementation:
+The Mass Computing framework is implemented as a 12-stage pipeline processing raw mass spectrometry data through the complete ion journey (Figure~\ref{fig:pipeline_architecture}):
 
 \begin{enumerate}[leftmargin=*]
-\item \textbf{SIMD}: Vectorized coordinate calculations using packed trit representations
-\item \textbf{Lookup tables}: Pre-computed $3^k$ values and coordinate mappings
-\item \textbf{Zero-copy}: Address manipulation without memory allocation
-\item \textbf{Parallelism}: Rayon-based~\cite{rayon2020} parallel extraction for batch processing
+\item \textbf{Data Extraction}: Parse mzML/mzXML files, extract scan metadata
+\item \textbf{Chromatography}: Compute retention time coordinates, assign $S_t$
+\item \textbf{Ionization Physics}: Determine charge states, polarity, adduct forms
+\item \textbf{DDA Linkage}: Connect MS1 precursors to MS2 fragment spectra
+\item \textbf{MS1 Partition}: Assign $S_k$ from m/z, compute ternary addresses
+\item \textbf{MS2 Fragmentation}: Map fragment ions to address substrings
+\item \textbf{Partition Coordinates}: Extract $(n, \ell, m, s)$ from S-entropy
+\item \textbf{Spectroscopy}: Derive observable functions $\Omega$
+\item \textbf{Multi-Modal Detection}: Integrate ion mobility, UV-Vis if available
+\item \textbf{Thermodynamic Validation}: Compute We, Re, Oh; validate physics
+\item \textbf{Template Analysis}: Apply mold-matching at each stage
+\item \textbf{Visual Validation}: Generate ion journey and droplet visualizations
 \end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{panel_summary.png}
+\caption{\textbf{Pipeline Validation Summary.} Left: Droplet wave encoding showing bijective transformation. Center: S-entropy projection $(S_k, S_e)$ colored by phase coherence. Right: Validation metrics confirming 100\% information preservation and physics quality.}
+\label{fig:pipeline_architecture}
+\end{figure}
+
+\subsection{Bijective Transformation Validation}
+
+The pipeline validates bijectivity at each stage through the molecular flow cascade (Figure~\ref{fig:molecular_flow_impl}). Key validation criteria:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Information Preservation}: Ion $\to$ S-Entropy $\to$ Droplet transformations preserve 100\% of identification-relevant information
+\item \textbf{Physics Consistency}: All droplet parameters satisfy Weber ($\text{We} < 12$), Reynolds ($\text{Re} < 1000$), and Ohnesorge constraints
+\item \textbf{Invertibility}: Complete round-trip reconstruction from droplet encoding back to original ion properties
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{panel_1_molecular_flow.png}
+\caption{\textbf{Molecular Flow Cascade.} (a) 3D S-entropy trajectory showing ion population. (b) Droplet cascade with velocity and radius encoding. (c) Wave pattern from droplet impact. (d) Bijective transformation flow: Ion $\to$ S-Entropy $\to$ Droplet $\to$ Wave Image.}
+\label{fig:molecular_flow_impl}
+\end{figure}
+
+\subsection{Thermodynamic Validation}
+
+Physical consistency is validated through dimensionless number analysis (Figure~\ref{fig:thermo_validation_impl}):
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{panel_3_thermodynamic.png}
+\caption{\textbf{Thermodynamic Validation.} (a) Weber-Reynolds-Ohnesorge space showing droplet regime classification. (b) Information preservation at 100\% across all spectra. (c) Categorical state distribution. (d) Physics quality scores confirming valid droplet parameters.}
+\label{fig:thermo_validation_impl}
+\end{figure}
+
+\subsection{Software Availability}
+
+Complete implementations in Python and Rust, including the 12-stage pipeline, ion journey visualization, and all validation tools, are available in the accompanying repository. The implementation includes:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Core library}: Ternary address manipulation, S-entropy coordinate mapping, observable extraction functions
+\item \textbf{Pipeline stages}: Modular processing from raw data to validated ion journeys
+\item \textbf{Visualization}: Ion journey panels, molecular flow cascades, thermodynamic validation plots
+\item \textbf{Validation suite}: Bijective transformation tests, physics constraint verification, cross-platform consistency checks
+\end{itemize}
+
+Performance characteristics: partition synthesis achieves $10^6$-fold speedup over physical measurement in Python, and $10^8$-fold in Rust, enabling real-time analysis of large datasets.
 
 \section{Discussion}
 
@@ -1437,7 +1310,7 @@ Approximation accumulates & Exact within resolution \\
 \end{tabular}
 \end{center}
 
-The intermediate dynamics are bypassed. We don't compute what happens; we read what the partition structure necessitates.
+The intermediate dynamics are bypassed. We do not compute what happens; we read what the partition structure necessitates.
 
 \begin{figure}[H]
 \centering

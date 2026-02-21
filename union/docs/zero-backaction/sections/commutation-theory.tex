@@ -1,0 +1,229 @@
+\section{Commutation Theory}
+
+\subsection{Hilbert Space Operators and Commutators}
+
+We begin with the mathematical framework of quantum observables.
+
+\begin{definition}[Observable]
+An observable is a Hermitian operator $\hat{O}$ on a Hilbert space $\mathcal{H}$. The eigenvalues of $\hat{O}$ are the possible measurement outcomes, and the eigenstates are the states with definite values of the observable.
+\end{definition}
+
+\begin{definition}[Commutator]
+The commutator of two operators $\hat{A}$ and $\hat{B}$ is:
+\begin{equation}
+[\hat{A}, \hat{B}] = \hat{A}\hat{B} - \hat{B}\hat{A}
+\end{equation}
+\end{definition}
+
+If $[\hat{A}, \hat{B}] = 0$, the operators commute; otherwise, they do not commute.
+
+\begin{theorem}[Spectral Theorem for Commuting Operators]
+Two Hermitian operators $\hat{A}$ and $\hat{B}$ commute if and only if they share a complete set of simultaneous eigenstates:
+\begin{equation}
+[\hat{A}, \hat{B}] = 0 \quad \Leftrightarrow \quad \exists \text{ basis } \{|\psi_i\rangle\} \text{ such that } \hat{A}|\psi_i\rangle = a_i |\psi_i\rangle, \, \hat{B}|\psi_i\rangle = b_i |\psi_i\rangle
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+($\Rightarrow$) If $[\hat{A}, \hat{B}] = 0$, then for any eigenstate $|\psi\rangle$ of $\hat{A}$ with $\hat{A}|\psi\rangle = a|\psi\rangle$:
+\begin{equation}
+\hat{A}(\hat{B}|\psi\rangle) = \hat{B}(\hat{A}|\psi\rangle) = a(\hat{B}|\psi\rangle)
+\end{equation}
+Thus $\hat{B}|\psi\rangle$ is also an eigenstate of $\hat{A}$ with eigenvalue $a$. If the eigenvalue is non-degenerate, $\hat{B}|\psi\rangle \propto |\psi\rangle$, so $|\psi\rangle$ is a simultaneous eigenstate. If degenerate, the eigenspace can be diagonalized by $\hat{B}$, yielding simultaneous eigenstates.
+
+($\Leftarrow$) If $\{|\psi_i\rangle\}$ are simultaneous eigenstates, then:
+\begin{equation}
+[\hat{A}, \hat{B}]|\psi_i\rangle = (\hat{A}\hat{B} - \hat{B}\hat{A})|\psi_i\rangle = (a_i b_i - b_i a_i)|\psi_i\rangle = 0
+\end{equation}
+Since this holds for all basis states, $[\hat{A}, \hat{B}] = 0$.
+\end{proof}
+
+\subsection{Physical Observable Definition}
+
+\begin{definition}[Physical Observable]
+A physical observable is a Hermitian operator that is a function of the canonical phase space coordinates $\hat{x}$ and $\hat{p}$:
+\begin{equation}
+\hat{O}_{\text{phys}} = f(\hat{x}, \hat{p})
+\end{equation}
+for some function $f: \mathbb{R}^2 \to \mathbb{R}$.
+\end{definition}
+
+Examples of physical observables include:
+\begin{align}
+\text{Position: } & \hat{x} \\
+\text{Momentum: } & \hat{p} \\
+\text{Kinetic energy: } & \hat{T} = \frac{\hat{p}^2}{2m} \\
+\text{Potential energy: } & \hat{V} = V(\hat{x}) \\
+\text{Total energy: } & \hat{H} = \frac{\hat{p}^2}{2m} + V(\hat{x}) \\
+\text{Angular momentum: } & \hat{L} = \hat{x} \times \hat{p}
+\end{align}
+
+Physical observables describe continuous properties of the system's state in phase space. They have continuous spectra (for unbound systems) or dense spectra (for bound systems).
+
+\subsection{Categorical Observable Definition}
+
+\begin{definition}[Categorical Observable]
+A categorical observable is a Hermitian operator with discrete, finite spectrum that labels the partition structure of bounded phase space:
+\begin{equation}
+\hat{O}_{\text{cat}} = \sum_{i=1}^N \lambda_i |P_i\rangle\langle P_i|
+\end{equation}
+where $|P_i\rangle$ are partition states and $\lambda_i$ are the partition labels (integers or half-integers).
+\end{definition}
+
+Examples of categorical observables include:
+\begin{align}
+\text{Principal quantum number: } & \hat{n} = \sum_{n=1}^\infty n |n\rangle\langle n| \\
+\text{Angular momentum quantum number: } & \hat{\ell} = \sum_{\ell=0}^\infty \ell |\ell\rangle\langle \ell| \\
+\text{Magnetic quantum number: } & \hat{m} = \sum_{m=-\ell}^\ell m |m\rangle\langle m| \\
+\text{Spin quantum number: } & \hat{s} = \sum_{s} s |s\rangle\langle s|
+\end{align}
+
+Categorical observables describe discrete structural properties of the system's state: which partition of phase space it occupies. They have finite spectra (for finite systems) or countably infinite spectra (for infinite systems).
+
+\subsection{Commutation Implies Measurement Independence}
+
+\begin{theorem}[Measurement Independence]
+If two observables $\hat{A}$ and $\hat{B}$ commute, then measuring $\hat{A}$ does not affect the outcome of subsequently measuring $\hat{B}$:
+\begin{equation}
+[\hat{A}, \hat{B}] = 0 \quad \Rightarrow \quad P(B=b | A \text{ measured}) = P(B=b | A \text{ not measured})
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $|\psi\rangle$ be the initial state. The probability of obtaining $B = b$ without measuring $\hat{A}$ is:
+\begin{equation}
+P(B=b) = |\langle b | \psi \rangle|^2
+\end{equation}
+
+If $\hat{A}$ is measured first and yields outcome $A = a$, the state collapses to $|\psi'\rangle = |a\rangle$. The probability of subsequently obtaining $B = b$ is:
+\begin{equation}
+P(B=b | A=a) = |\langle b | a \rangle|^2
+\end{equation}
+
+Since $[\hat{A}, \hat{B}] = 0$, the states $|a\rangle$ and $|b\rangle$ are simultaneous eigenstates (by the Spectral Theorem). Therefore, either $\langle b | a \rangle = \delta_{ab}$ (if the eigenvalues are distinct) or $\langle b | a \rangle = 1$ (if the eigenvalues coincide and the states are the same). In either case, measuring $\hat{A}$ does not change the probability distribution of $\hat{B}$.
+
+Summing over all outcomes of $\hat{A}$:
+\begin{equation}
+P(B=b | A \text{ measured}) = \sum_a P(A=a) P(B=b | A=a) = P(B=b)
+\end{equation}
+
+Thus, measuring $\hat{A}$ does not affect $\hat{B}$.
+\end{proof}
+
+This theorem formalizes the intuition that commuting observables can be measured in any order without mutual disturbance.
+
+\subsection{Strong Commutativity}
+
+\begin{definition}[Strong Commutativity]
+Two operators $\hat{A}$ and $\hat{B}$ strongly commute if all their powers and functions commute:
+\begin{equation}
+[f(\hat{A}), g(\hat{B})] = 0 \quad \forall f, g
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Strong Commutativity from Commutativity]
+If $[\hat{A}, \hat{B}] = 0$, then $\hat{A}$ and $\hat{B}$ strongly commute.
+\end{theorem}
+
+\begin{proof}
+If $[\hat{A}, \hat{B}] = 0$, then by induction:
+\begin{equation}
+[\hat{A}^n, \hat{B}^m] = 0 \quad \forall n, m \in \mathbb{N}
+\end{equation}
+
+For any analytic functions $f(\hat{A}) = \sum_n c_n \hat{A}^n$ and $g(\hat{B}) = \sum_m d_m \hat{B}^m$:
+\begin{equation}
+[f(\hat{A}), g(\hat{B})] = \sum_{n,m} c_n d_m [\hat{A}^n, \hat{B}^m] = 0
+\end{equation}
+
+Thus, $\hat{A}$ and $\hat{B}$ strongly commute.
+\end{proof}
+
+This implies that if categorical and physical observables commute, then all functions of categorical observables (e.g., $n^2$, $\ell(\ell+1)$) commute with all functions of physical observables (e.g., $x^2$, $p^4$).
+
+\subsection{Tensor Product Structure}
+
+The commutativity of categorical and physical observables can be understood through the tensor product decomposition of the Hilbert space.
+
+\begin{theorem}[Hilbert Space Factorization]
+For a bounded quantum system, the Hilbert space factorizes as:
+\begin{equation}
+\mathcal{H} = \mathcal{H}_{\text{cat}} \otimes \mathcal{H}_{\text{phys}}
+\end{equation}
+where $\mathcal{H}_{\text{cat}}$ is spanned by partition labels $\{|n,\ell,m,s\rangle\}$ and $\mathcal{H}_{\text{phys}}$ is spanned by position states $\{|\mathbf{r}\rangle\}$ within each partition.
+\end{theorem}
+
+\begin{proof}
+Any state $|\psi\rangle$ in $\mathcal{H}$ can be decomposed as:
+\begin{equation}
+|\psi\rangle = \sum_{n,\ell,m,s} \int d^3r \, c_{n\ell ms}(\mathbf{r}) |n,\ell,m,s\rangle \otimes |\mathbf{r}\rangle
+\end{equation}
+
+This is a sum over categorical quantum numbers and an integral over positions. The decomposition is unique if the partition states $\{|n,\ell,m,s\rangle\}$ and position states $\{|\mathbf{r}\rangle\}$ form orthonormal bases.
+
+The factorization $\mathcal{H} = \mathcal{H}_{\text{cat}} \otimes \mathcal{H}_{\text{phys}}$ means that the full state space is the tensor product of the categorical state space (discrete) and the physical state space (continuous).
+\end{proof}
+
+\begin{corollary}[Commutation from Tensor Product]
+If $\hat{O}_{\text{cat}}$ acts only on $\mathcal{H}_{\text{cat}}$ and $\hat{O}_{\text{phys}}$ acts only on $\mathcal{H}_{\text{phys}}$, then:
+\begin{equation}
+[\hat{O}_{\text{cat}} \otimes \mathbb{1}, \mathbb{1} \otimes \hat{O}_{\text{phys}}] = 0
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+By the tensor product property:
+\begin{equation}
+(\hat{O}_{\text{cat}} \otimes \mathbb{1})(\mathbb{1} \otimes \hat{O}_{\text{phys}}) = \hat{O}_{\text{cat}} \otimes \hat{O}_{\text{phys}} = (\mathbb{1} \otimes \hat{O}_{\text{phys}})(\hat{O}_{\text{cat}} \otimes \mathbb{1})
+\end{equation}
+
+Therefore, the operators commute.
+\end{proof}
+
+This corollary shows that the commutation of categorical and physical observables is a consequence of the tensor product structure: they act on different factors of the Hilbert space.
+
+\subsection{Mathematical Necessity of Commutation}
+
+The commutation $[\hat{O}_{\text{cat}}, \hat{O}_{\text{phys}}] = 0$ is not an empirical accident but a mathematical necessity arising from the structure of bounded phase space.
+
+\begin{theorem}[Necessity of Commutation]
+For any bounded quantum system with partition structure, categorical observables (partition labels) commute with physical observables (phase space functions).
+\end{theorem}
+
+\begin{proof}
+Let $\mathcal{P} = \{P_1, P_2, \ldots, P_N\}$ be a partition of phase space. Define the projection operator onto partition $P_i$:
+\begin{equation}
+\hat{\Pi}_i = \int_{P_i} d^3x d^3p \, |\mathbf{x}, \mathbf{p}\rangle\langle \mathbf{x}, \mathbf{p}|
+\end{equation}
+
+A categorical observable is a function of these projection operators:
+\begin{equation}
+\hat{O}_{\text{cat}} = \sum_i f(i) \hat{\Pi}_i
+\end{equation}
+
+A physical observable is a function of phase space coordinates:
+\begin{equation}
+\hat{O}_{\text{phys}} = \int d^3x d^3p \, g(\mathbf{x}, \mathbf{p}) |\mathbf{x}, \mathbf{p}\rangle\langle \mathbf{x}, \mathbf{p}|
+\end{equation}
+
+The commutator is:
+\begin{align}
+[\hat{O}_{\text{cat}}, \hat{O}_{\text{phys}}] &= \sum_i f(i) [\hat{\Pi}_i, \hat{O}_{\text{phys}}] \\
+&= \sum_i f(i) \left( \hat{\Pi}_i \hat{O}_{\text{phys}} - \hat{O}_{\text{phys}} \hat{\Pi}_i \right)
+\end{align}
+
+For any state $|\psi\rangle$:
+\begin{align}
+(\hat{\Pi}_i \hat{O}_{\text{phys}})|\psi\rangle &= \hat{\Pi}_i \left( \int d^3x d^3p \, g(\mathbf{x}, \mathbf{p}) |\mathbf{x}, \mathbf{p}\rangle\langle \mathbf{x}, \mathbf{p}|\psi\rangle \right) \\
+&= \int_{P_i} d^3x d^3p \, g(\mathbf{x}, \mathbf{p}) |\mathbf{x}, \mathbf{p}\rangle\langle \mathbf{x}, \mathbf{p}|\psi\rangle
+\end{align}
+
+Similarly:
+\begin{equation}
+(\hat{O}_{\text{phys}} \hat{\Pi}_i)|\psi\rangle = \int_{P_i} d^3x d^3p \, g(\mathbf{x}, \mathbf{p}) |\mathbf{x}, \mathbf{p}\rangle\langle \mathbf{x}, \mathbf{p}|\psi\rangle
+\end{equation}
+
+These are equal, so $[\hat{\Pi}_i, \hat{O}_{\text{phys}}] = 0$ for all $i$. Therefore, $[\hat{O}_{\text{cat}}, \hat{O}_{\text{phys}}] = 0$.
+\end{proof}
+
+This proof shows that the commutation is forced by the definition of categorical observables as partition projections and physical observables as phase space functions. There is no freedom to choose otherwise.

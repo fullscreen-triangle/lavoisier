@@ -1,0 +1,157 @@
+\section{Algorithmic Implementation}
+
+\subsection{Complete Algorithm Specification}
+
+We present the complete ternary trisection algorithm with pseudocode and implementation details.
+
+\begin{algorithm}
+\caption{Ternary Trisection for Quantum State Localization}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Initial search region $V_0$, target resolution $\Delta V_{\min}$
+\STATE \textbf{Output:} Final position $\mathbf{r}_{\text{final}}$ to within $\Delta V_{\min}$
+\STATE Initialize: $V_k \leftarrow V_0$, $k \leftarrow 0$, trit string $T \leftarrow \emptyset$
+\WHILE{$|V_k| > \Delta V_{\min}$}
+    \STATE // Divide region into three equal parts
+    \STATE $V_{k,A} \leftarrow$ left third of $V_k$
+    \STATE $V_{k,B} \leftarrow$ middle third of $V_k$
+    \STATE $V_{k,C} \leftarrow$ right third of $V_k$
+    \STATE // Apply two perturbations
+    \STATE Apply $\mathcal{P}_1$ with active region $V_{k,A}$ for time $\tau_{\mathcal{P}}$
+    \STATE Apply $\mathcal{P}_2$ with active region $V_{k,B}$ for time $\tau_{\mathcal{P}}$ (simultaneously)
+    \STATE // Measure responses
+    \STATE $r_1 \leftarrow$ measure response to $\mathcal{P}_1$
+    \STATE $r_2 \leftarrow$ measure response to $\mathcal{P}_2$
+    \STATE // Decode trit
+    \IF{$(r_1, r_2) = (1, 0)$}
+        \STATE $t_k \leftarrow 0$, $V_{k+1} \leftarrow V_{k,A}$
+    \ELSIF{$(r_1, r_2) = (0, 1)$}
+        \STATE $t_k \leftarrow 1$, $V_{k+1} \leftarrow V_{k,B}$
+    \ELSIF{$(r_1, r_2) = (0, 0)$}
+        \STATE $t_k \leftarrow 2$, $V_{k+1} \leftarrow V_{k,C}$
+    \ELSE
+        \STATE \textbf{Error:} Both responses positive, retry measurement
+    \ENDIF
+    \STATE Append $t_k$ to trit string: $T \leftarrow T \| t_k$
+    \STATE $k \leftarrow k + 1$
+\ENDWHILE
+\STATE // Reconstruct position from trit string
+\STATE $\mathbf{r}_{\text{final}} \leftarrow$ decode$(T, V_0)$
+\RETURN $\mathbf{r}_{\text{final}}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Trit Decoding Function}
+
+The final position is decoded from the trit string $T = (t_0, t_1, \ldots, t_{k-1})$ as:
+\begin{equation}
+x = x_0 + \sum_{i=0}^{k-1} t_i \cdot \frac{L}{3^{i+1}}
+\end{equation}
+where $x_0$ is the left edge of the initial search region and $L$ is its width.
+
+\subsection{Three-Dimensional Implementation}
+
+For 3D search, the algorithm runs three independent 1D trisections in parallel along $x$, $y$, $z$ axes:
+
+\begin{algorithm}
+\caption{3D Ternary Trisection}
+\begin{algorithmic}[1]
+\STATE Initialize: $V_k \leftarrow V_0 = [0, L_x] \times [0, L_y] \times [0, L_z]$
+\WHILE{$|V_k| > \Delta V_{\min}$}
+    \STATE // Trisect along x
+    \STATE Apply $\mathcal{P}_{x1}, \mathcal{P}_{x2}$, measure $(r_{x1}, r_{x2})$, decode $t_x$
+    \STATE // Trisect along y
+    \STATE Apply $\mathcal{P}_{y1}, \mathcal{P}_{y2}$, measure $(r_{y1}, r_{y2})$, decode $t_y$
+    \STATE // Trisect along z
+    \STATE Apply $\mathcal{P}_{z1}, \mathcal{P}_{z2}$, measure $(r_{z1}, r_{z2})$, decode $t_z$
+    \STATE // Update region
+    \STATE $V_{k+1} \leftarrow$ sub-cube $(t_x, t_y, t_z)$ of $V_k$
+    \STATE $k \leftarrow k + 1$
+\ENDWHILE
+\RETURN decoded position from trit triplets
+\end{algorithmic}
+\end{algorithm}
+
+The 3D algorithm requires 6 perturbations per iteration but reduces volume by factor of 27 per iteration.
+
+\subsection{Adaptive Trisection with Prior Information}
+
+If prior information suggests the particle is more likely in certain regions, adaptive trisection can bias the partition points to reduce expected number of iterations.
+
+\subsubsection{Weighted Trisection}
+
+Given probability distribution $P(x)$ over search region $[0, L]$, choose partition points $a, b$ to equalize the probabilities:
+\begin{align}
+\int_0^a P(x) dx &= \frac{1}{3} \\
+\int_0^b P(x) dx &= \frac{2}{3}
+\end{align}
+
+This ensures each sub-region has equal probability $1/3$, minimizing expected iterations.
+
+For uniform distribution, $a = L/3$, $b = 2L/3$ (standard trisection). For non-uniform distribution, $a$ and $b$ shift toward high-probability regions.
+
+\subsection{Error Handling and Redundancy}
+
+\subsubsection{Ambiguous Responses}
+
+If $(r_1, r_2) = (1, 1)$ (particle responds to both perturbations), the measurement is ambiguous. Possible causes:
+\begin{enumerate}
+\item Overlapping active regions (design error)
+\item Particle in superposition across both regions (quantum effect)
+\item Measurement error (false positive on one channel)
+\end{enumerate}
+
+The algorithm handles this by:
+\begin{itemize}
+\item \textbf{Retry:} Repeat the measurement. If ambiguity persists, flag error.
+\item \textbf{Majority vote:} Perform 3 measurements, take majority outcome.
+\item \textbf{Fallback to binary:} Use only $\mathcal{P}_1$ for binary trisection (sacrificing speedup for reliability).
+\end{itemize}
+
+\subsubsection{Detection Errors}
+
+False positives/negatives are mitigated by:
+\begin{itemize}
+\item \textbf{Threshold tuning:} Optimize $V_{\text{th}}$ to minimize error rate.
+\item \textbf{Signal averaging:} Repeat each measurement $M$ times, average responses. For Gaussian noise, this reduces error rate by factor $1/\sqrt{M}$.
+\item \textbf{Redundant modalities:} Use all five spectroscopic modalities. If any one gives erroneous result, the others override it via majority vote.
+\end{itemize}
+
+\subsection{Termination Condition and Resolution}
+
+The algorithm terminates when $|V_k| < \Delta V_{\min}$, where $\Delta V_{\min}$ is the target resolution. For physical localization, $\Delta V_{\min}$ is limited by:
+\begin{itemize}
+\item \textbf{Heisenberg uncertainty:} $\Delta x \cdot \Delta p \geq \hbar/2$ implies $\Delta x \geq \hbar/(2\Delta p)$. For $\Delta p \sim p_{\text{Bohr}}$, $\Delta x \sim a_0/2$.
+\item \textbf{Planck length:} $\Delta x \geq \ell_P = 1.6 \times 10^{-35}$ m (fundamental limit).
+\item \textbf{Measurement noise:} Detection noise limits resolution to $\Delta x \sim \sigma_{\text{noise}}/(\text{SNR})$.
+\end{itemize}
+
+For our system, measurement noise is the limiting factor: $\Delta x_{\min} \sim 0.01 a_0 \approx 0.5$ pm.
+
+\subsection{Computational Complexity}
+
+\subsubsection{Time Complexity}
+
+Each trisection step involves:
+\begin{enumerate}
+\item Apply two perturbations: $O(1)$ time (parallel application)
+\item Measure two responses: $O(1)$ time (parallel measurement across 5 modalities)
+\item Decode trit: $O(1)$ time (lookup table)
+\end{enumerate}
+
+Total per iteration: $O(1)$. Number of iterations: $k = O(\log_3 N)$. Overall time complexity: $O(\log_3 N)$.
+
+\subsubsection{Space Complexity}
+
+The algorithm stores:
+\begin{itemize}
+\item Current region $V_k$: $O(1)$ space (6 coordinates in 3D)
+\item Trit string $T$: $O(k)$ space, where $k = O(\log_3 N)$
+\end{itemize}
+
+Overall space complexity: $O(\log N)$.
+
+\subsection{Parallelization}
+
+Multiple particles can be localized in parallel if they occupy distinct regions. If $M$ particles are in the same search region, the algorithm first applies a global trisection (dividing into 27 sub-regions), then measures how many particles respond to each perturbation. Regions with $> 1$ particles are recursively trisected.
+
+This parallel localization achieves $O(\log_3 N + \log_3 M)$ complexity for $M$ particles among $N$ states.
