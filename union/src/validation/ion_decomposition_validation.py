@@ -6,12 +6,12 @@ decomposing it through its complete journey, and showing that partition
 coordinates correctly describe every stage from chromatography to fragmentation.
 
 Key Validation:
-1. Ion Journey: Chromatography → Ionization → MS1 → Fragmentation → MS2
+1. Ion Journey: Chromatography -> Ionization -> MS1 -> Fragmentation -> MS2
 2. Atomic Decomposition: Break ion into constituent atoms with partition coords
 3. Capacity Formula: Validate C(n) = 2n² at every stage
-4. Selection Rules: Validate Δℓ = ±1, Δm ∈ {0, ±1}, Δs = 0 for transitions
-5. Fragment Containment: I(fragments) ⊆ I(precursor)
-6. Bijective Validation: Spectrum ↔ S-Entropy ↔ Droplet Image
+4. Selection Rules: Validate Dl = +/-1, Dm in {0, +/-1}, Ds = 0 for transitions
+5. Fragment Containment: I(fragments) subset_of I(precursor)
+6. Bijective Validation: Spectrum <-> S-Entropy <-> Droplet Image
 
 If we can comprehensively do this for ONE ion, the framework is validated.
 """
@@ -64,26 +64,26 @@ class ValidationStage(Enum):
 @dataclass
 class PartitionCoordinates:
     """
-    Partition coordinates (n, ℓ, m, s) for any state.
+    Partition coordinates (n, l, m, s) for any state.
 
     From the Bounded Phase Space Law:
     - n: Principal partition depth (radial quantum number analog)
-    - ℓ: Angular partition number, ℓ ∈ {0, 1, ..., n-1}
-    - m: Magnetic partition number, m ∈ {-ℓ, ..., +ℓ}
-    - s: Chirality (spin), s ∈ {-1/2, +1/2}
+    - l: Angular partition number, l in {0, 1, ..., n-1}
+    - m: Magnetic partition number, m in {-l, ..., +l}
+    - s: Chirality (spin), s in {-1/2, +1/2}
 
     Capacity at depth n: C(n) = 2n²
     """
     n: int
-    ell: int  # ℓ
+    ell: int  # l
     m: int
-    s: float  # ±0.5
+    s: float  # +/-0.5
 
     def __post_init__(self):
         """Validate constraints."""
-        assert self.ell < self.n, f"Constraint violated: ℓ={self.ell} must be < n={self.n}"
-        assert abs(self.m) <= self.ell, f"Constraint violated: |m|={abs(self.m)} must be ≤ ℓ={self.ell}"
-        assert self.s in [-0.5, 0.5], f"Chirality must be ±0.5, got {self.s}"
+        assert self.ell < self.n, f"Constraint violated: l={self.ell} must be < n={self.n}"
+        assert abs(self.m) <= self.ell, f"Constraint violated: |m|={abs(self.m)} must be <= l={self.ell}"
+        assert self.s in [-0.5, 0.5], f"Chirality must be +/-0.5, got {self.s}"
 
     @property
     def capacity(self) -> int:
@@ -92,14 +92,14 @@ class PartitionCoordinates:
 
     @property
     def subshell_capacity(self) -> int:
-        """Capacity of current subshell: 2(2ℓ + 1)."""
+        """Capacity of current subshell: 2(2l + 1)."""
         return 2 * (2 * self.ell + 1)
 
     @property
     def subshell_name(self) -> str:
         """Spectroscopic notation for subshell."""
         names = ['s', 'p', 'd', 'f', 'g', 'h', 'i']
-        return f"{self.n}{names[self.ell] if self.ell < len(names) else f'ℓ{self.ell}'}"
+        return f"{self.n}{names[self.ell] if self.ell < len(names) else f'l{self.ell}'}"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -111,7 +111,7 @@ class PartitionCoordinates:
 @dataclass
 class SEntropyCoordinates:
     """
-    S-Entropy coordinates (Sk, St, Se) ∈ [0,1]³.
+    S-Entropy coordinates (Sk, St, Se) in [0,1]³.
 
     Platform-independent representation of thermodynamic state.
     """
@@ -180,7 +180,7 @@ class FragmentInfo:
     charge: int
     partition_coords: PartitionCoordinates
     s_entropy: SEntropyCoordinates
-    parent_transition: str  # e.g., "Δℓ = +1, Δm = 0"
+    parent_transition: str  # e.g., "Dl = +1, Dm = 0"
     selection_rule_valid: bool
 
     def to_dict(self) -> Dict[str, Any]:
@@ -270,8 +270,22 @@ class IonDecompositionResult:
 
     def save(self, filepath: str):
         """Save validation results to JSON."""
+        def convert(obj):
+            """Convert numpy types to Python native types."""
+            if isinstance(obj, dict):
+                return {k: convert(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert(v) for v in obj]
+            elif isinstance(obj, (np.bool_, np.integer)):
+                return int(obj)
+            elif isinstance(obj, np.floating):
+                return float(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return obj
+
         with open(filepath, 'w') as f:
-            json.dump(self.to_dict(), f, indent=2)
+            json.dump(convert(self.to_dict()), f, indent=2)
         logger.info(f"Validation results saved to {filepath}")
 
 
@@ -280,14 +294,14 @@ class IonDecompositionValidator:
     Complete ion decomposition validator implementing the Bounded Phase Space Law.
 
     Takes ONE ion and comprehensively validates:
-    1. Molecular structure → partition coordinates
-    2. Chromatographic behavior → partition lag
-    3. Ionization → initial partition state
-    4. MS1 measurement → m/z from partition coords
-    5. Fragmentation → selection rule transitions
-    6. MS2 measurement → fragment partition coords
-    7. Atomic decomposition → C(n) = 2n² validation
-    8. Bijective transformation → spectrum ↔ image
+    1. Molecular structure -> partition coordinates
+    2. Chromatographic behavior -> partition lag
+    3. Ionization -> initial partition state
+    4. MS1 measurement -> m/z from partition coords
+    5. Fragmentation -> selection rule transitions
+    6. MS2 measurement -> fragment partition coords
+    7. Atomic decomposition -> C(n) = 2n² validation
+    8. Bijective transformation -> spectrum <-> image
     """
 
     def __init__(self, temperature_K: float = 298.15):
@@ -298,7 +312,7 @@ class IonDecompositionValidator:
         """
         Parse molecular formula into atom counts.
 
-        Example: "C8H10N4O2" → {'C': 8, 'H': 10, 'N': 4, 'O': 2}
+        Example: "C8H10N4O2" -> {'C': 8, 'H': 10, 'N': 4, 'O': 2}
         """
         import re
         pattern = r'([A-Z][a-z]?)(\d*)'
@@ -322,7 +336,7 @@ class IonDecompositionValidator:
         Uses Aufbau filling to determine highest occupied orbital.
         Returns (config_string, valence_count, partition_coords).
         """
-        # Aufbau filling order: (n, ℓ)
+        # Aufbau filling order: (n, l)
         filling = [
             (1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (4, 0), (3, 2),
             (4, 1), (5, 0), (4, 2), (5, 1), (6, 0), (4, 3), (5, 2),
@@ -446,8 +460,8 @@ class IonDecompositionValidator:
         """
         Validate droplet physics using dimensionless numbers.
 
-        Weber: We = ρv²r/σ ∈ [1, 100]
-        Reynolds: Re = ρvr/μ ∈ [10, 10⁴]
+        Weber: We = ρv²r/σ in [1, 100]
+        Reynolds: Re = ρvr/μ in [10, 10⁴]
         Ohnesorge: Oh = μ/√(ρσr) < 1
         """
         rho = 1000  # kg/m³ (water)
@@ -482,9 +496,9 @@ class IonDecompositionValidator:
         Generate fragment ions following partition selection rules.
 
         Selection rules:
-        - Δℓ = ±1 (angular momentum change)
-        - Δm ∈ {-1, 0, +1} (magnetic projection)
-        - Δs = 0 (chirality conserved)
+        - Dl = +/-1 (angular momentum change)
+        - Dm in {-1, 0, +1} (magnetic projection)
+        - Ds = 0 (chirality conserved)
         """
         fragments = []
         atoms = self.parse_formula(precursor_formula)
@@ -497,35 +511,35 @@ class IonDecompositionValidator:
             new_atoms = atoms.copy()
             new_atoms['H'] -= 2
             new_atoms['O'] -= 1
-            fragment_patterns.append(('[M-H2O]+', new_atoms, 18.0106, 'Δℓ = +1, Δm = 0'))
+            fragment_patterns.append(('[M-H2O]+', new_atoms, 18.0106, 'Dl = +1, Dm = 0'))
 
         # CO2 loss (44)
         if atoms.get('C', 0) >= 1 and atoms.get('O', 0) >= 2:
             new_atoms = atoms.copy()
             new_atoms['C'] -= 1
             new_atoms['O'] -= 2
-            fragment_patterns.append(('[M-CO2]+', new_atoms, 43.9898, 'Δℓ = -1, Δm = 0'))
+            fragment_patterns.append(('[M-CO2]+', new_atoms, 43.9898, 'Dl = -1, Dm = 0'))
 
         # NH3 loss (17)
         if atoms.get('N', 0) >= 1 and atoms.get('H', 0) >= 3:
             new_atoms = atoms.copy()
             new_atoms['N'] -= 1
             new_atoms['H'] -= 3
-            fragment_patterns.append(('[M-NH3]+', new_atoms, 17.0265, 'Δℓ = +1, Δm = +1'))
+            fragment_patterns.append(('[M-NH3]+', new_atoms, 17.0265, 'Dl = +1, Dm = +1'))
 
         # CH3 loss (15)
         if atoms.get('C', 0) >= 1 and atoms.get('H', 0) >= 3:
             new_atoms = atoms.copy()
             new_atoms['C'] -= 1
             new_atoms['H'] -= 3
-            fragment_patterns.append(('[M-CH3]+', new_atoms, 15.0235, 'Δℓ = -1, Δm = -1'))
+            fragment_patterns.append(('[M-CH3]+', new_atoms, 15.0235, 'Dl = -1, Dm = -1'))
 
         # CO loss (28)
         if atoms.get('C', 0) >= 1 and atoms.get('O', 0) >= 1:
             new_atoms = atoms.copy()
             new_atoms['C'] -= 1
             new_atoms['O'] -= 1
-            fragment_patterns.append(('[M-CO]+', new_atoms, 27.9949, 'Δℓ = +1, Δm = 0'))
+            fragment_patterns.append(('[M-CO]+', new_atoms, 27.9949, 'Dl = +1, Dm = 0'))
 
         for frag_name, frag_atoms, loss_mass, transition in fragment_patterns:
             # Remove empty elements
@@ -551,14 +565,14 @@ class IonDecompositionValidator:
                 n=precursor_coords.n,
                 ell=new_ell,
                 m=new_m,
-                s=precursor_coords.s  # Δs = 0
+                s=precursor_coords.s  # Ds = 0
             )
 
             # Fragment S-entropy (constrained by precursor)
             frag_s_entropy = SEntropyCoordinates(
-                s_knowledge=precursor_s_entropy.s_knowledge * 0.9,  # Sk' ≤ Sk
+                s_knowledge=precursor_s_entropy.s_knowledge * 0.9,  # Sk' <= Sk
                 s_time=min(1.0, precursor_s_entropy.s_time * 1.1),  # St' ≥ St
-                s_entropy=precursor_s_entropy.s_entropy * 0.85      # Se' ≤ Se
+                s_entropy=precursor_s_entropy.s_entropy * 0.85      # Se' <= Se
             )
 
             # Validate selection rules
@@ -588,12 +602,12 @@ class IonDecompositionValidator:
     ) -> Tuple[bool, Dict[str, Any]]:
         """
         Validate fragment containment principle:
-        I(fragments) ⊆ I(precursor)
+        I(fragments) subset_of I(precursor)
 
         Fragment S-entropy must satisfy:
-        - Sk' ≤ Sk (information cannot increase)
+        - Sk' <= Sk (information cannot increase)
         - St' ≥ St (fragments appear later)
-        - Se' ≤ Se (fewer accessible states)
+        - Se' <= Se (fewer accessible states)
         """
         results = {'fragments': [], 'all_contained': True}
 
@@ -693,7 +707,7 @@ class IonDecompositionValidator:
                 'retention_time_min': retention_time,
                 'partition_lag_fs': partition_lag_fs,
                 'temperature_K': self.T,
-                'tau_p_formula': 'ℏ/(k_B T)'
+                'tau_p_formula': 'hbar/(k_B T)'
             }
         )
         result.stages.append(stage2)
@@ -751,7 +765,7 @@ class IonDecompositionValidator:
             score=1.0 if selection_valid else 0.5,
             details={
                 'n_fragments': len(fragments),
-                'selection_rules': 'Δℓ = ±1, Δm ∈ {0, ±1}, Δs = 0',
+                'selection_rules': 'Dl = +/-1, Dm in {0, +/-1}, Ds = 0',
                 'all_valid': selection_valid,
                 'fragments': [f.to_dict() for f in fragments]
             }
@@ -772,7 +786,7 @@ class IonDecompositionValidator:
             score=1.0 if containment_valid else 0.5,
             details={
                 'fragment_containment': containment_details,
-                'theorem': 'I(fragments) ⊆ I(precursor)'
+                'theorem': 'I(fragments) subset_of I(precursor)'
             }
         )
         if not containment_valid:
@@ -796,7 +810,7 @@ class IonDecompositionValidator:
             stage7.violations.append("Capacity formula C(n) = 2n² violated")
         result.stages.append(stage7)
 
-        # Stage 8: Bijective Validation (ion ↔ droplet)
+        # Stage 8: Bijective Validation (ion <-> droplet)
         droplet = self.ion_to_droplet(s_entropy)
         result.precursor_droplet = droplet
 
@@ -810,7 +824,7 @@ class IonDecompositionValidator:
             details={
                 'droplet': droplet.to_dict(),
                 'physics_metrics': physics_metrics,
-                'transformation': 'Ion → S-Entropy → Droplet (bijective)'
+                'transformation': 'Ion -> S-Entropy -> Droplet (bijective)'
             }
         )
         if not physics_valid:
@@ -900,7 +914,7 @@ def main():
     print("VALIDATION STAGES:")
     print("-" * 50)
     for stage in result.stages:
-        status = "✓ PASS" if stage.passed else "✗ FAIL"
+        status = "[PASS]" if stage.passed else "[FAIL]"
         print(f"  {stage.stage.value:30s} {status} (score: {stage.score:.2f})")
         if stage.violations:
             for v in stage.violations:
@@ -912,8 +926,8 @@ def main():
     for atom in result.atoms[:5]:  # First 5 atoms
         coords = atom.partition_coords
         print(f"  {atom.element:2s} (Z={atom.atomic_number:2d}): "
-              f"n={coords.n}, ℓ={coords.ell}, m={coords.m:+d}, s={coords.s:+.1f} "
-              f"→ C(n)={coords.capacity}")
+              f"n={coords.n}, l={coords.ell}, m={coords.m:+d}, s={coords.s:+.1f} "
+              f"-> C(n)={coords.capacity}")
     if len(result.atoms) > 5:
         print(f"  ... and {len(result.atoms) - 5} more atoms")
     print()
@@ -921,20 +935,20 @@ def main():
     print("FRAGMENTS (Selection Rules):")
     print("-" * 50)
     for frag in result.fragments:
-        valid = "✓" if frag.selection_rule_valid else "✗"
+        valid = "[OK]" if frag.selection_rule_valid else "[X]"
         print(f"  {valid} {frag.formula:15s} m/z={frag.mz:.4f}  {frag.parent_transition}")
     print()
 
     print("KEY VALIDATIONS:")
     print("-" * 50)
-    print(f"  Capacity C(n) = 2n²:     {'✓ VALIDATED' if result.capacity_formula_validated else '✗ FAILED'}")
-    print(f"  Selection Rules:         {'✓ VALIDATED' if result.selection_rules_validated else '✗ FAILED'}")
-    print(f"  Fragment Containment:    {'✓ VALIDATED' if result.fragment_containment_validated else '✗ FAILED'}")
-    print(f"  Bijective Transform:     {'✓ VALIDATED' if result.bijective_validated else '✗ FAILED'}")
+    print(f"  Capacity C(n) = 2n^2:    {'[VALIDATED]' if result.capacity_formula_validated else '[FAILED]'}")
+    print(f"  Selection Rules:         {'[VALIDATED]' if result.selection_rules_validated else '[FAILED]'}")
+    print(f"  Fragment Containment:    {'[VALIDATED]' if result.fragment_containment_validated else '[FAILED]'}")
+    print(f"  Bijective Transform:     {'[VALIDATED]' if result.bijective_validated else '[FAILED]'}")
     print()
 
     print("=" * 70)
-    print(f"OVERALL: {'✓ VALIDATION PASSED' if result.overall_passed else '✗ VALIDATION FAILED'}")
+    print(f"OVERALL: {'[VALIDATION PASSED]' if result.overall_passed else '[VALIDATION FAILED]'}")
     print(f"Score: {result.overall_score:.1%}")
     print("=" * 70)
 
