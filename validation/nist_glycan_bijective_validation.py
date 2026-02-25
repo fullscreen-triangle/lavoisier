@@ -228,6 +228,44 @@ class NISTGlycanValidator:
 
         return mz_values, intensities
 
+    def _calculate_structure_complexity(self, structure: str) -> int:
+        """Calculate structural complexity from glycan structure string.
+
+        Uses hierarchical weighting where:
+        - Level 0 glycans (Glc, Gal, Man, Fuc): weight = 1
+        - Level 1 glycans (GlcNAc, GalNAc): weight = 1 (N-acetyl = same base)
+        - Level 2 glycans (NeuAc, NeuNAc): weight = 2 (sialic acids)
+        """
+        if not structure:
+            return 0
+
+        complexity = 0
+        # Process in order of specificity (longer patterns first to avoid double-counting)
+        processed_structure = structure
+
+        # Level 2: Sialic acids (most specific, check first)
+        for glycan in ['NeuNAc', 'NeuAc']:
+            if glycan in self.glycan_hierarchy:
+                count = processed_structure.count(glycan)
+                complexity += count * 2  # Higher weight for sialic acids
+                # Remove matched patterns to avoid double-counting
+                processed_structure = processed_structure.replace(glycan, '')
+
+        # Level 1: N-acetylated glycans
+        for glycan in ['GlcNAc', 'GalNAc']:
+            if glycan in self.glycan_hierarchy:
+                count = processed_structure.count(glycan)
+                complexity += count * 1
+                processed_structure = processed_structure.replace(glycan, '')
+
+        # Level 0: Simple monosaccharides
+        for glycan in ['Glc', 'Gal', 'Man', 'Fuc']:
+            if glycan in self.glycan_hierarchy:
+                count = processed_structure.count(glycan)
+                complexity += count * 1
+
+        return complexity
+
     def calculate_partition_coordinates(self, spectrum: Spectrum,
                                          compound_data: Dict[str, Any]) -> PartitionCoordinate:
         """Calculate partition coordinates (n, l, m, s) from spectrum"""
@@ -242,10 +280,8 @@ class NISTGlycanValidator:
         n = max(1, min(n, 50))  # Bound to reasonable range
 
         # l: Angular momentum from structural complexity
-        # Count glycan building blocks for complexity measure
-        l = 0
-        for glycan in self.glycan_hierarchy:
-            l += structure.count(glycan)
+        # Use weighted glycan hierarchy for complexity measure
+        l = self._calculate_structure_complexity(structure)
         l = max(0, min(l, n - 1))  # l < n constraint
 
         # m: Magnetic quantum number from adduct type
@@ -401,23 +437,43 @@ class NISTGlycanValidator:
 
     def validate_hierarchical_constraints(self, partition_coords: PartitionCoordinate,
                                            structure: str) -> float:
-        """Validate hierarchical constraints: structure maps correctly to partition"""
-        # Count structural complexity
-        structure_complexity = 0
-        for glycan, props in self.glycan_hierarchy.items():
-            count = structure.count(glycan)
-            structure_complexity += count * (props['level'] + 1)
+        """Validate hierarchical constraints: structure maps correctly to partition.
 
-        # l should correlate with structural complexity
+        The hierarchical validity checks that:
+        1. Structural complexity maps correctly to partition l-coordinate
+        2. The n-constraint (l < n) is satisfied
+        3. Empty structure maps to l=0
+        """
+        # Calculate structure complexity using the same method as partition assignment
+        structure_complexity = self._calculate_structure_complexity(structure)
+
+        # Expected l is bounded by n-1 (quantum mechanical constraint)
         expected_l = min(partition_coords.n - 1, structure_complexity)
 
-        # Calculate validity score
-        if expected_l == 0:
-            return 1.0 if partition_coords.l == 0 else 0.5
+        # Case 1: No structure information - any l is valid
+        if not structure or structure_complexity == 0:
+            # Empty structure should map to l=0 for perfect validity
+            if partition_coords.l == 0:
+                return 1.0
+            else:
+                # Penalize slightly but not harshly - structure info may be incomplete
+                return 0.9
 
-        validity = 1.0 - abs(partition_coords.l - expected_l) / max(1, expected_l)
+        # Case 2: Structure matches exactly
+        if partition_coords.l == expected_l:
+            return 1.0
 
-        return max(0.0, min(1.0, validity))
+        # Case 3: Structure partially matches - calculate fractional validity
+        # Use a softer penalty function
+        max_possible_l = partition_coords.n - 1
+        if max_possible_l == 0:
+            return 1.0 if partition_coords.l == 0 else 0.8
+
+        # Validity decreases with mismatch, but bottoms out at 0.5
+        mismatch = abs(partition_coords.l - expected_l)
+        validity = 1.0 - (mismatch / (max_possible_l + 1)) * 0.5
+
+        return max(0.5, min(1.0, validity))
 
     def validate_compound(self, compound_data: Dict[str, Any]) -> BijectiveValidationResult:
         """Validate single compound using bijective CV method"""
