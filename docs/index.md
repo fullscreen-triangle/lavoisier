@@ -178,6 +178,71 @@ results/
     └── phase_lock/
 ```
 
+---
+
+## 🎯 NEW: Partition Lagrangian Framework
+
+### Unified Ion Dynamics in Bounded Phase Space
+
+The **Partition Lagrangian** reveals that all mass analyzers implement the same underlying physics: ions traverse discrete partition states seeking a partition depth minimum at the detector.
+
+### Core Theory
+
+**Partition Lagrangian**:
+
+$$\mathcal{L}_{\mathcal{M}} = \frac{1}{2}\mu|\dot{\mathbf{x}}|^2 + \mu\dot{\mathbf{x}}\cdot\mathbf{A}_{\mathcal{M}} - \mathcal{M}(\mathbf{x}, t)$$
+
+**Partition Coordinates** $(n, \ell, m, s)$:
+- $n$: Principal quantum number (radial action)
+- $\ell$: Angular momentum quantum number ($0 \leq \ell \leq n-1$)
+- $m$: Magnetic quantum number ($-\ell \leq m \leq +\ell$)
+- $s$: Spin quantum number ($\pm 1/2$)
+
+**Capacity Formula**: $C(n) = 2n^2$ states per principal quantum number
+
+### Four Analyzers Unified
+
+| Analyzer | Observable | Partition Topology |
+|----------|------------|-------------------|
+| TOF | $T \propto \sqrt{m/z}$ | Linear gradient |
+| Quadrupole | $a,q \propto 1/(m/z)$ | Time-dependent saddle |
+| Orbitrap | $\omega \propto \sqrt{z/m}$ | Quadro-logarithmic |
+| FT-ICR | $\omega_c \propto z/m$ | Magnetic confinement |
+
+### Fundamental Theorems
+
+- **Partition Uncertainty**: $\Delta\mathcal{M} \cdot \tau_p \geq \hbar$
+- **Resolution Limit**: $[\Delta(m/z)/(m/z)]_{\min} = \hbar/(T \cdot \Delta\mathcal{M})$
+- **State Counting**: $dM/dt = 1/\langle\tau_p\rangle$
+
+### NIST Glycan Validation
+
+Bijective CV validation achieves **100% conformance** on NIST glycan libraries:
+
+| Library | Compounds | Pass Rate | Score |
+|---------|-----------|-----------|-------|
+| NIST MS/MS Glycans | 10 | 100% | 1.000 |
+| Human Milk SRM 1953 | 10 | 100% | 1.000 |
+| **Total** | **20** | **100%** | **1.000** |
+
+[View detailed validation results →](../validation/step_results/nist_bijective_validation/)
+
+### Visualization Suite
+
+9 publication-quality panel figures in `validation/visualization/figures/`:
+
+1. **Partition Dynamics** - Field topology, forces, energy landscape
+2. **Four Analyzers** - TOF, Quad, Orbitrap, ICR unified
+3. **Resolution Limits** - Uncertainty validation
+4. **Partition Funnel** - Optimal ion transport
+5. **NIST Validation** - Experimental results
+6. **Ternary Addresses** - State encoding
+7. **State Counting** - Temporal dynamics
+8. **Uncertainty Principle** - Fundamental bounds
+9. **Ion Journey & Drip** - Bijective transformation
+
+---
+
 ## Use Cases
 
 ### 🔬 Scientific Research
@@ -190,20 +255,54 @@ results/
 - **Ion-to-Droplet Conversion**: Thermodynamic image generation
 - **Physics Validation**: Navier-Stokes constrained droplet parameters
 - **Multi-Modal Analysis**: Spectral + visual feature fusion
+- **Bijective CV**: Ion-to-Drip transformation preserving spectral information
 
 ### 🔗 Virtual Instruments
 - **Ensemble Consensus**: Multi-instrument agreement scoring
 - **Hardware Grounding**: Reality validation through oscillation harvesting
 - **Phase-Lock Networks**: Molecular ensemble detection
 
-## Publications
+### 🎯 Partition Framework
+- **Unified Analyzer Theory**: All mass analyzers from single Lagrangian
+- **Partition Coordinates**: $(n, \ell, m, s)$ state description
+- **Resolution Prediction**: Fundamental bounds from uncertainty principle
+- **State Counting**: Mass spectrometry as digital counting process
 
-The framework is documented in several publications under `precursor/publication/`:
+---
 
-- **S-Entropy Coordinates**: Categorical coordinate system for mass spectrometry
-- **Ion-to-Droplet Computer Vision**: Bijective thermodynamic image generation
-- **Virtual Instruments**: Hardware-grounded virtual mass spectrometers
-- **Molecular Language**: Categorical amino acid alphabet and fragmentation grammar
+## Research Publications
+
+### Theoretical Foundations (`union/docs/`)
+
+| Publication | Description |
+|-------------|-------------|
+| **Derivation of Physics** | Physical laws from categorical necessity |
+| **Electron Trajectories** | Deterministic measurement through partitioning |
+| **Light Derivation** | EM radiation from oscillatory principles |
+| **Perturbation-Induced Trisection** | Ternary search theory |
+| **Union of Two Crowns** | Classical-quantum integration |
+| **Zero Backaction** | Measurement without disturbance |
+
+### Publication-Ready Manuscripts (`union/publication/`)
+
+| Publication | Key Contribution |
+|-------------|------------------|
+| **Bounded Phase Space** | $C(n) = 2n^2$ capacity, selection rules |
+| **Ion Observatory** | Single-ion partition detection |
+| **Mass Computing** | MS as computational substrate |
+| **Partitioning Limits** | Analyzer entropy validation |
+| **State Counting MS** | $dM/dt = 1/\langle\tau_p\rangle$ identity |
+| **Bijective Proteomics** | CV protein identification |
+| **Categorical Thermodynamics** | Partition-based framework |
+| **Loschmidt Paradox** | Resolution via partition dynamics |
+
+### Key Results
+
+1. **Partition Lagrangian Unification**: All analyzers from single Lagrangian
+2. **Capacity Formula**: $C(n) = 2n^2$ validated experimentally
+3. **Partition Uncertainty**: $\Delta\mathcal{M} \cdot \tau_p \geq \hbar$
+4. **State Counting**: MS revealed as digital counting
+5. **Bijective CV**: Complete spectral information preservation
 
 ## Contributing
 

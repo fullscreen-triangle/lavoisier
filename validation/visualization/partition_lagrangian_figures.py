@@ -970,6 +970,224 @@ def figure8_uncertainty_principle():
     print("Figure 8: Uncertainty Principle - Complete")
 
 
+def figure9_ion_journey_drip():
+    """Figure 9: Ion Journey and Drip Visualization"""
+    fig = plt.figure(figsize=(14, 3.5))
+    gs = GridSpec(1, 4, figure=fig, wspace=0.3)
+
+    np.random.seed(42)
+
+    # Panel A (3D): Ion journey through partition space - source to detector
+    ax1 = fig.add_subplot(gs[0], projection='3d')
+
+    # Create journey stages: Source -> Ionization -> Analyzer -> Detection
+    n_points = 200
+    t = np.linspace(0, 1, n_points)
+
+    # Journey path through (x, y, z) with z representing partition depth
+    # Starts at high partition depth, descends to detector
+    x_journey = 5 * np.sin(4 * np.pi * t) * (1 - t**0.5)
+    y_journey = 5 * np.cos(4 * np.pi * t) * (1 - t**0.5)
+    z_journey = 10 * (1 - t)**1.5  # Partition depth decreasing
+
+    # Color by journey stage
+    colors_journey = plt.cm.viridis(t)
+
+    # Plot trajectory
+    for i in range(n_points - 1):
+        ax1.plot(x_journey[i:i+2], y_journey[i:i+2], z_journey[i:i+2],
+                color=colors_journey[i], linewidth=2.5)
+
+    # Mark key stages
+    stages = [0, 0.2, 0.5, 0.8, 0.99]
+    stage_labels = ['Source', 'Ion', 'Analyze', 'Focus', 'Detect']
+    stage_colors = ['purple', 'blue', 'green', 'orange', 'red']
+
+    for s, label, col in zip(stages, stage_labels, stage_colors):
+        idx = int(s * (n_points - 1))
+        ax1.scatter([x_journey[idx]], [y_journey[idx]], [z_journey[idx]],
+                   c=col, s=100, marker='o', edgecolors='k', linewidths=1, zorder=5)
+
+    # Detector plane at z=0
+    theta_det = np.linspace(0, 2*np.pi, 30)
+    r_det = np.linspace(0, 1, 10)
+    THETA_det, R_det = np.meshgrid(theta_det, r_det)
+    X_det = R_det * np.cos(THETA_det)
+    Y_det = R_det * np.sin(THETA_det)
+    Z_det = np.zeros_like(X_det)
+    ax1.plot_surface(X_det, Y_det, Z_det, color='gold', alpha=0.5)
+
+    ax1.set_xlabel(r'$x$')
+    ax1.set_ylabel(r'$y$')
+    ax1.set_zlabel(r'$\mathcal{M}$')
+    ax1.set_title('A', loc='left', fontweight='bold')
+    ax1.view_init(elev=25, azim=45)
+
+    # Panel B (2D): Drip spectrum visualization - the visual "droplet" image
+    ax2 = fig.add_subplot(gs[1])
+
+    # Create drip/droplet pattern - concentric intensity patterns
+    n_drip = 100
+    x_drip = np.linspace(-3, 3, n_drip)
+    y_drip = np.linspace(-3, 3, n_drip)
+    X_drip, Y_drip = np.meshgrid(x_drip, y_drip)
+    R_drip = np.sqrt(X_drip**2 + Y_drip**2)
+
+    # Multi-modal drip pattern (simulating mass spectral peaks as concentric rings)
+    drip_intensity = np.zeros_like(R_drip)
+
+    # Central drop (precursor)
+    drip_intensity += 1.0 * np.exp(-R_drip**2 / 0.3)
+
+    # Fragment rings at different radii
+    for r_frag, intensity in [(0.8, 0.7), (1.3, 0.5), (1.8, 0.3), (2.3, 0.2)]:
+        ring = np.exp(-((R_drip - r_frag)**2) / 0.05)
+        # Add angular modulation for asymmetry
+        angular = 1 + 0.3 * np.sin(3 * np.arctan2(Y_drip, X_drip))
+        drip_intensity += intensity * ring * angular
+
+    # Add some droplet texture
+    drip_intensity += 0.1 * np.random.normal(0, 1, drip_intensity.shape)
+    drip_intensity = gaussian_filter(drip_intensity, sigma=1)
+    drip_intensity = np.clip(drip_intensity, 0, None)
+
+    # Plot as image
+    im = ax2.imshow(drip_intensity, extent=[-3, 3, -3, 3], cmap='Blues',
+                   origin='lower', aspect='equal')
+
+    # Add droplet outline
+    theta_outline = np.linspace(0, 2*np.pi, 100)
+    ax2.plot(2.5 * np.cos(theta_outline), 2.5 * np.sin(theta_outline),
+            'b-', linewidth=2, alpha=0.7)
+
+    ax2.set_xlabel(r'$\xi$')
+    ax2.set_ylabel(r'$\eta$')
+    ax2.set_title('B', loc='left', fontweight='bold')
+    ax2.set_xlim(-3, 3)
+    ax2.set_ylim(-3, 3)
+
+    # Panel C (3D): Ion-to-Drip bijective transformation
+    ax3 = fig.add_subplot(gs[2], projection='3d')
+
+    # Show transformation: Ion spectrum -> Drip representation
+    # Left side: Ion (m/z peaks as vertical lines)
+    # Right side: Drip (radial pattern)
+
+    n_peaks = 8
+    mz_peaks = np.sort(np.random.uniform(100, 1000, n_peaks))
+    intensities = np.random.uniform(0.3, 1.0, n_peaks)
+
+    # Ion representation (x < 0)
+    for mz, inten in zip(mz_peaks, intensities):
+        z_pos = (mz - 100) / 900 * 5  # Scale to [0, 5]
+        ax3.plot([-2, -2], [0, 0], [z_pos, z_pos], 'b-', linewidth=1)
+        ax3.scatter([-2], [0], [z_pos], c='blue', s=inten * 80, alpha=0.8)
+
+    # Transformation arrows
+    for i, (mz, inten) in enumerate(zip(mz_peaks, intensities)):
+        z_pos = (mz - 100) / 900 * 5
+        r_drip = 0.5 + 2 * (i / n_peaks)
+        theta_drip = 2 * np.pi * i / n_peaks
+        x_end = 2 + r_drip * np.cos(theta_drip) * 0.3
+        y_end = r_drip * np.sin(theta_drip) * 0.3
+
+        # Arrow from ion to drip
+        ax3.plot([-2, x_end], [0, y_end], [z_pos, 2.5],
+                'g-', alpha=0.4, linewidth=0.8)
+
+    # Drip representation (x > 0)
+    # Draw as points in circular pattern
+    for i, (mz, inten) in enumerate(zip(mz_peaks, intensities)):
+        r_drip = 0.5 + 2 * (i / n_peaks)
+        for j in range(12):
+            theta_drip = 2 * np.pi * j / 12 + np.pi * i / n_peaks
+            x_d = 2 + r_drip * np.cos(theta_drip) * 0.3
+            y_d = r_drip * np.sin(theta_drip) * 0.3
+            ax3.scatter([x_d], [y_d], [2.5], c='cyan', s=inten * 30 / (r_drip + 0.5),
+                       alpha=0.6)
+
+    # Labels for regions
+    ax3.text(-2.5, 0, 5.5, 'Ion', fontsize=9, ha='center')
+    ax3.text(2.5, 0, 5.5, 'Drip', fontsize=9, ha='center')
+
+    ax3.set_xlabel(r'$x$')
+    ax3.set_ylabel(r'$y$')
+    ax3.set_zlabel(r'$z$')
+    ax3.set_title('C', loc='left', fontweight='bold')
+    ax3.view_init(elev=20, azim=30)
+    ax3.set_xlim(-4, 4)
+
+    # Panel D (2D): Multiple drip patterns showing compound diversity
+    ax4 = fig.add_subplot(gs[3])
+
+    # Create grid of mini-drip patterns
+    n_compounds = 9
+    grid_size = 3
+
+    # Compound properties (from validation data)
+    compound_props = [
+        {'n': 4, 'l': 1, 'm': 0, 'name': 'NGA3B'},
+        {'n': 5, 'l': 1, 'm': 1, 'name': 'NGA4'},
+        {'n': 5, 'l': 2, 'm': 2, 'name': 'A1F'},
+        {'n': 4, 'l': 1, 'm': 1, 'name': 'NGA2'},
+        {'n': 5, 'l': 0, 'm': 0, 'name': 'NA2G1F'},
+        {'n': 5, 'l': 4, 'm': 0, 'name': 'Sialyl'},
+        {'n': 6, 'l': 0, 'm': 0, 'name': 'DFLNO'},
+        {'n': 7, 'l': 0, 'm': 0, 'name': 'A4122a'},
+        {'n': 4, 'l': 2, 'm': 0, 'name': 'SialylNAc'},
+    ]
+
+    for idx, props in enumerate(compound_props):
+        row = idx // grid_size
+        col = idx % grid_size
+
+        # Mini drip for this compound
+        x_mini = np.linspace(-1, 1, 30)
+        y_mini = np.linspace(-1, 1, 30)
+        X_mini, Y_mini = np.meshgrid(x_mini, y_mini)
+        R_mini = np.sqrt(X_mini**2 + Y_mini**2)
+
+        # Pattern based on quantum numbers
+        n, l, m = props['n'], props['l'], props['m']
+
+        # Central intensity scales with n
+        pattern = (n / 7) * np.exp(-R_mini**2 / 0.2)
+
+        # Ring structure based on l
+        for ring_idx in range(l + 1):
+            r_ring = 0.3 + 0.15 * ring_idx
+            pattern += 0.3 * np.exp(-((R_mini - r_ring)**2) / 0.02)
+
+        # Angular modulation based on m
+        if m > 0:
+            pattern *= (1 + 0.3 * np.cos(m * np.arctan2(Y_mini, X_mini)))
+
+        pattern = gaussian_filter(pattern, sigma=0.5)
+
+        # Position in grid
+        extent = [col - 0.45, col + 0.45, 2 - row - 0.45, 2 - row + 0.45]
+        ax4.imshow(pattern, extent=extent, cmap='viridis', aspect='equal',
+                  vmin=0, vmax=1.5)
+
+        # Border
+        ax4.plot([col - 0.45, col + 0.45, col + 0.45, col - 0.45, col - 0.45],
+                [2 - row - 0.45, 2 - row - 0.45, 2 - row + 0.45, 2 - row + 0.45, 2 - row - 0.45],
+                'k-', linewidth=0.5)
+
+    ax4.set_xlim(-0.6, 2.6)
+    ax4.set_ylim(-0.6, 2.6)
+    ax4.set_xticks([])
+    ax4.set_yticks([])
+    ax4.set_title('D', loc='left', fontweight='bold')
+    ax4.set_aspect('equal')
+
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / 'figure9_ion_journey_drip.png', bbox_inches='tight')
+    fig.savefig(OUTPUT_DIR / 'figure9_ion_journey_drip.pdf', bbox_inches='tight')
+    plt.close()
+    print("Figure 9: Ion Journey & Drip - Complete")
+
+
 def main():
     """Generate all figures"""
     print("=" * 60)
@@ -986,6 +1204,7 @@ def main():
     figure6_ternary_address()
     figure7_state_counting()
     figure8_uncertainty_principle()
+    figure9_ion_journey_drip()
 
     print()
     print("=" * 60)
