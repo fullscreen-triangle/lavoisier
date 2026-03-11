@@ -9,11 +9,11 @@ export default function Layout({ children }) {
     <>
       <Head>
 
-        <meta name="description" content="Name of your web site" />
-        <meta name="author" content="TrendyCoder" />
+        <meta name="description" content="Partition — A computational framework for mass spectrometry, proteomics, and molecular analysis. Built on the Lavoisier platform." />
+        <meta name="author" content="Kundai Sachikonye" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
-        <title>Cavani | Home</title>
+        <title>Partition | Computational Mass Spectrometry</title>
 
         {/* <!-- STYLES --> */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

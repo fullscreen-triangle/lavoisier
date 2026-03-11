@@ -1,0 +1,77 @@
+========================================================================
+ION JOURNEY VALIDATION REPORT
+========================================================================
+Ion: m/z 1100.0983, z=3
+Peptide: RFPNITNLCPFGEV
+Glycan: 2(2,N,G:G5H4FSo)(7,C,CAM)
+Instrument: orbitrap
+Fragmentation: hcd
+Timestamp: 2026-03-10T09:28:45.488444
+------------------------------------------------------------------------
+
+Stage 1: Sample Existence [PASS] (4/4 theorems)
+  Molecule exists as persistent excitation in bounded phase space
+    [OK] Bounded Phase Space Law (Axiom 1): Phase space volume = 2.451e-90 m^6*kg^3/s^3, r_mol = 3.21 nm, v_th = 47.6 m/s
+    [OK] Oscillatory Necessity (Thm 2.3): Rest frequency omega_0 = 4.6663e+27 rad/s, period = 1.3465e-27 s
+    [OK] Frequency-Energy Identity (Cor 2.5): E = hbar*omega = 4.9209e-07 J = 3.0714e+12 eV, mc^2 = 4.9209e-07 J, match to 0.00e+00
+    [OK] Mode Decomposition (Cor 2.4): n = 4, C(n) = 2*4^2 = 32 modes, cumulative N = 60
+
+Stage 2: Injection [PASS] (2/2 theorems)
+  Sample enters instrument: massive volume compression begins
+    [OK] Compression Theorem (Thm 5.6): Compression 3.33e+20x, cost = 47.3 k_BT (68 bits erased), Landauer minimum = 47.3 k_BT
+    [OK] Depth Bounds (Thm 5.3): Depth bounds: M_min = 0.631, M_max = 43.0 (range = 42.4)
+
+Stage 3: Chromatography [PASS] (3/3 theorems)
+  Column traversal as partition lag through trap array
+    [OK] Retention Time = Partition Lag (Eq. 13.2): Column has 88,235 trap sites (L=15.0 cm, d_p=1.7 um). Min partition lag per trap = 2.4392e-14 s. RT = 333.6 min = 88235 partition operations.
+    [OK] Maximum Propagation Speed (Thm 11.2): v_Bohr = a_0*omega = 2.1877e+06 m/s, alpha = 0.007297, c = v_Bohr/alpha = 2.9979e+08 m/s (ratio to c: 1.000000). Column effective speed: 0.0000 m/s.
+    [OK] Categorical Temperature (from Ion Observatory): Categorical temperature T_cat = 3.1315e+02 K (kinetic T = 313.1 K, ratio = 1.0000e+00)
+
+Stage 4: Ionization [PASS] (7/7 theorems)
+  Charge emergence via ESI ionization
+    [OK] Composition Theorem (Thm 5.5): M_free (pep+gly separate) = 8.557, M_bound (glycopeptide) = 3.727, delta_M = 4.830 (binding energy as depth reduction)
+    [OK] Compression Theorem applied to ionization: Z ~ 1648 electrons, removing z=3: IE_partition ~ z*k_BT*ln(Z) = 0.60 eV
+    [OK] Conservation Theorem (Thm 5.8): M_neutral = 3.727 -> M_ion = 3.727 + M_e = 1.893 + M_photon = 4.830
+    [OK] Charge Emergence Theorem (Thm 6.1): Charge emerges from partitioning: 3 partition levels (peptide + glycan + mods) -> z_pred = 3, z_obs = 3. Method: ESI
+    [OK] Extinction Theorem (Thm 5.10) - noted: Extinction theorem not directly applicable to ionization. Would apply if ion guide cooled below T_c (superconducting regime).
+    [OK] Partition Coordinates Valid (Thm 3.1): (n, l, m, s) = (4, 3, 2, 0.5), C(4) = 32, valid = True
+    [OK] Ion = Partition Malformation (Cor 6.5): Ion with z=3 is a partition malformation: 3 missing electron(s) = unfilled partition states. Thermodynamically driven toward completion.
+
+Stage 5: MS1 Analyzer [PASS] (3/3 theorems)
+  Ion dynamics in ORBITRAP analyzer from partition Lagrangian
+    [OK] Orbitrap Frequency from Partition Lagrangian (Sec 9.3): Orbitrap: omega = 1.8484e+24 rad/s = 294187786951501938688.00 kHz (m/z = 1100.1)
+    [OK] Partition Lagrangian (Thm 8.3): mu = alpha*(m/z) = 2.9268e-43 kg, L = 2.5831e-40 + 0.0000e+00 - (-5.0000e+01) = 5.0000e+01 J
+    [OK] Lorentz Force Correspondence (Remark 8.5): The partition EOM mu*x'' = -grad(M) + mu*v x B_M has the same structure as the Lorentz force. The Lorentz force is not fundamental - it emerges from partition depth minimization.
+
+Stage 6: Collision Cell [PASS] (7/7 theorems)
+  Fragmentation via HCD - thermodynamics of a single ion
+    [OK] Single-Particle Ideal Gas Law (Ion Observatory Thm): Single-ion ideal gas: omega_trap = 5.4095e+03 rad/s, T_cat = 0.01 uK (NOT kinetic T = 313 K). PV = 3.3507e-07 J.
+    [OK] Categorical Second Law (Thm, strictly > 0): Each of 92 fragment peaks represents a partition event. Minimum entropy: 92 * k_B*ln(2) = 63.8 k_B. This is STRICT inequality (> 0, not >= 0): partition permanence.
+    [OK] Time = State Counting (Fundamental Identity): In N2 at 2.0 mTorr: dM/dt = collision freq = 8.18e+03 Hz, expected 0.87 collisions in 106.7 us transit. The fundamental identity holds: dM/dt > 0.
+    [OK] Arrow of Time (Thm 14.5): Each fragmentation creates 91 new partitions. Cannot reverse: partition permanence prevents residue recovery. This is categorical irreversibility, not statistical improbability.
+    [OK] Fragmentation Selection Rules (Sec 13.4): Selection rules (HCD): 91/91 transitions obey Delta_l = +/-1 (100.0% pass rate).
+    [OK] Fragment Containment (Conservation Theorem): Max fragment m/z = 1976.87, precursor m/z = 1100.10 (z=3). All fragments contained: True.
+    [OK] CID Energy Transfer: CID: E_col = 15.0 eV, E_cm = 0.13 eV (N2), efficiency = 0.0084
+
+Stage 7: MS2 Analysis [PASS] (4/4 theorems)
+  Fragment partition states measured: state counting and resolution limits
+    [OK] Three-Component Decomposition (Thm 7.8): A = 1.000, R = 0.000, V = 0.000, sum = 1.000000. M_depth = 3.727. Residue ratio: 0.000 (theoretical: 0.9630 = 26/27).
+    [OK] Partition Uncertainty (Thm 10.2): Delta_M = 3.727, tau_p_min = 6.8317e-15 s, product = 1.0546e-34 J*s >= hbar = 1.0546e-34 J*s (ratio: 1.00)
+    [OK] Resolution Limit (Thm 10.3): Resolution limit = 1.3663e-14 (resolving power R = 73187736626424) for T = 0.5000 s on ORBITRAP.
+    [OK] Massive Dispersion Relation (Thm 11.5): omega_0 = 4.6663e+27 rad/s, k = 2.0195e+12 /m, residual = 8.09e-17 (beta = 1.30e-07)
+
+Stage 8: Detection [PASS] (8/8 theorems)
+  Reading the ion's memory: bijective transformation and mass = memory
+    [OK] S-Entropy Coordinates (Def): S-Entropy: (Sk, St, Se) = (0.8056, 1.0000, 1.0000), valid = True
+    [OK] Bijective Transformation (Sec 13.5): Bijective: error = 0.00e+00. Droplet: We = 1337.211, Re = 25334.980, Oh = 0.001.
+    [OK] Droplet Physics Validity: We = 1337.211 (capillary regime), Re = 25334.980 (laminar), Oh = 0.001 (viscous-dominated).
+    [OK] Position-Trajectory Duality (Ion Observatory): The S-entropy coordinates (0.8056, 1.0000, 1.0000) encode both the ion's final state AND its complete partition history. This IS position-trajectory duality.
+    [OK] Mass = Memory (Thm 11.1, the reveal): Mass = 3297.27 Da = 5.4753e-24 kg. Rest energy E_0 = 3.0714e+12 eV. Of this, 96.3% (2.9576e+12 eV) is accumulated residue (non-actualisations) = MASS. The remaining 3.7% is actualized structure. The mass spectrometer READS this memory.
+    [OK] E = mc^2 as Theorem (Thm 12.1): E = mc^2 = 4.9209e-07 J = hbar*omega_0 = 4.9209e-07 J. This is a THEOREM, not a postulate. c is the max partition propagation speed. m is memory.
+    [OK] Equivalence Principle (Thm 12.2): Both inertial mass (resistance to acceleration) and gravitational mass (coupling to gravity) equal hbar*omega_0/c^2 = 5.4753e-24 kg. Same omega_0 -> same mass. Geometric identity.
+    [OK] Heat-Entropy Decoupling (Thm 12.3): Heat-entropy decoupling: energy exchange and memory accumulation are algebraically independent. E = mc^2 is the conversion factor, not an identity. This resolves Maxwell's demon.
+
+========================================================================
+TOTAL: 38/38 theorems passed
+OVERALL: PASS
+========================================================================

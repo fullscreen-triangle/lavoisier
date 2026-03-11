@@ -39,26 +39,26 @@ export default function ContactDefault({ ActiveIndex }) {
                 <div className="section_inner">
                     <div className="cavani_tm_contact">
                         <div className="cavani_tm_title">
-                            <span>Get in Touch</span>
+                            <span>Collaborate With Us</span>
                         </div>
                         <div className="short_info">
                             <ul>
                                 <li>
                                     <div className="list_inner">
                                         <i className="icon-location"></i>
-                                        <span>Ave Street, New York, USA</span>
+                                        <span>Partition Research Lab</span>
                                     </div>
                                 </li>
                                 <li>
                                     <div className="list_inner">
                                         <i className="icon-mail-3"></i>
-                                        <span><a href="#">hello@cavani.com</a></span>
+                                        <span><a href="#">contact@partition.dev</a></span>
                                     </div>
                                 </li>
                                 <li>
                                     <div className="list_inner">
                                         <i className="icon-mobile"></i>
-                                        <span>+77 022 444 05 05</span>
+                                        <span>API Access Available</span>
                                     </div>
                                 </li>
                             </ul>
@@ -70,11 +70,11 @@ export default function ContactDefault({ ActiveIndex }) {
                                     <form className="contact_form" onSubmit={(e) => onSubmit(e)}>
                                         <div
                                             className="returnmessage"
-                                            data-success="Your message has been received, we will contact you soon."
+                                            data-success="Your message has been received. We will respond shortly."
                                             style={{ display: success ? "block" : "none" }}
                                         >
                                             <span className="contact_success">
-                                                Your message has been received, we will contact you soon.
+                                                Your message has been received. We will respond shortly.
                                             </span>
                                         </div>
                                         <div
@@ -99,7 +99,7 @@ export default function ContactDefault({ ActiveIndex }) {
                                                         name="name"
                                                         id="name"
                                                         type="text"
-                                                        placeholder="Name"
+                                                        placeholder="Name / Institution"
                                                     />
                                                 </li>
                                                 <li
@@ -128,7 +128,7 @@ export default function ContactDefault({ ActiveIndex }) {
                                                         onChange={(e) => onChange(e)}
                                                         value={msg}
                                                         id="message"
-                                                        placeholder="Message"
+                                                        placeholder="Describe your research interest or collaboration proposal"
                                                     />
                                                 </li>
                                             </ul>
@@ -137,7 +137,7 @@ export default function ContactDefault({ ActiveIndex }) {
                                                     className='a'
                                                     type="submit"
                                                     id="send_message"
-                                                    value="Send Message"
+                                                    value="Submit Inquiry"
                                                 />
                                             </div>
                                         </div>

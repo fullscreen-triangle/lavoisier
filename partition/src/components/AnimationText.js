@@ -5,7 +5,7 @@ export const AnimationText1 = () => {
     <Fragment>
       <TypeAnimation
         cursor={true}
-        sequence={[" Designer", 1000, " Developer", 1000, " FreLancer", 1000]}
+        sequence={[" Mass Spectrometry", 1000, " Proteomics", 1000, " Computational Chemistry", 1000]}
         wrapper="span"
         repeat={Infinity}
       />
@@ -13,7 +13,7 @@ export const AnimationText1 = () => {
   );
 };
 
-const skills = ["Designer", "Developer", "Freelancer"];
+const skills = ["Mass Spectrometry", "Proteomics", "Metabolomics"];
 export const RotateTextAnimation = () => {
   const [text, setText] = useState(0);
   useEffect(() => {
@@ -26,7 +26,7 @@ export const RotateTextAnimation = () => {
   return (
     <Fragment>
       <span className="cd-headline rotate-1">
-        <span className="blc">Creative </span>
+        <span className="blc">Computational </span>
         <span className="cd-words-wrapper">
           {skills.map((skill, i) => (
             <b key={i} className={text === i ? "is-visible" : "is-hidden"}>
@@ -50,7 +50,7 @@ export const ZoomTextAnimation = () => {
   return (
     <Fragment>
       <span className="cd-headline zoom">
-        <span className="blc">Creative </span>
+        <span className="blc">Computational </span>
         <span className="cd-words-wrapper">
           {skills.map((skill, i) => (
             <b key={i} className={text === i ? "is-visible" : "is-hidden"}>
@@ -80,7 +80,7 @@ export const LoadingTextAnimation = () => {
   return (
     <Fragment>
       <span className="cd-headline loading-bar">
-        <span className="blc">Creative </span>
+        <span className="blc">Computational </span>
         <span className={`cd-words-wrapper ${loading ? "is-loading" : ""}`}>
           {skills.map((skill, i) => (
             <b key={i} className={text === i ? "is-visible" : "is-hidden"}>

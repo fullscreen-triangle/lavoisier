@@ -7,7 +7,7 @@ export default function Footer() {
                 {/* <!-- FOOTER --> */}
                 <div className="cavani_tm_footer">
                     <div className="copyright">
-                        <p>Copyright &copy; 2022</p>
+                        <p>Partition &copy; 2024 &mdash; Lavoisier Framework by Kundai Sachikonye</p>
                     </div>
                     <div className="social">
                         <ul>

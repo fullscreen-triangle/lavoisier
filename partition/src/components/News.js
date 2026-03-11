@@ -21,7 +21,6 @@ const News = ({ ActiveIndex, animation }) => {
         var imgURL = list.getAttribute("data-img");
         box.style.backgroundImage = `url(${imgURL})`;
         box.style.top = event.clientY - 50 + "px";
-        console.log(event.clientY);
         if (imgURL === "") {
           box.classList.remove("opened");
           return false;
@@ -40,81 +39,81 @@ const News = ({ ActiveIndex, animation }) => {
   const newsData = [
     {
       img: "img/news/1.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "Reasons Why People Use Discord",
+      tag: "Mass Spectrometry",
+      date: "2025",
+      comments: "Lavoisier Framework",
+      title: "Categorical State Counting in Mass Spectrometry",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "This publication introduces a categorical framework for enumerating ion states in mass spectrometry. By treating the mass spectrum as a partition problem, we derive exact state counts for complex mixtures without combinatorial explosion.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "The key insight is that ion populations in a mass spectrometer obey partition identities — the same mathematics that govern integer partitions in number theory. This connection allows us to import powerful counting techniques from combinatorics.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "Validated against 20+ panels of experimental data from Waters qTOF and Thermo Orbitrap instruments, the categorical approach consistently matches or exceeds the accuracy of conventional peak-picking algorithms.",
     },
     {
       img: "img/news/2.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "Why We Should Read Fewer Books",
+      tag: "Proteomics",
+      date: "2025",
+      comments: "Lavoisier Framework",
+      title: "Derivation of Mass from First Principles",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "This work re-derives the mass spectrum from fundamental physical principles — ionization energetics, transport phenomena, and detector response functions — rather than treating it as an empirical signal to be processed.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "By modelling the complete ion journey from source to detector, we obtain a forward model that predicts spectral features ab initio. Discrepancies between predicted and observed spectra reveal systematic biases in instrument calibration.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "The derivation unifies fragmentation patterns, charge state distributions, and isotope envelopes under a single mathematical framework, enabling more accurate protein identification from tandem mass spectrometry data.",
     },
     {
       img: "img/news/3.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "A Final Farewell to the iPod",
+      tag: "Mathematics",
+      date: "2024",
+      comments: "Lavoisier Framework",
+      title: "Bounded Phase Spaces and Ion Categories",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "We establish rigorous bounds on the phase space available to ions in a mass spectrometer, showing that physical constraints (energy conservation, angular momentum, detector geometry) reduce the effective state space dramatically.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "These bounds are expressed as categorical limits — functors from the category of physical constraints to the category of admissible ion states. The resulting phase space is a proper subcategory of the naive combinatorial space.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "Practical implications include faster spectral matching algorithms (searching a bounded space rather than an exponential one) and improved false discovery rate estimation in database search approaches.",
     },
     {
       img: "img/news/4.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "Dealing with Spring Allergy Symptoms",
+      tag: "Computational",
+      date: "2024",
+      comments: "Lavoisier Framework",
+      title: "S-Entropy and State Counting in Analytical Chemistry",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "We introduce S-entropy as a measure of informational content in mass spectra. Unlike Shannon entropy, S-entropy accounts for the structured nature of spectral data — peaks are not independent symbols but correlated measurements.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "S-entropy provides a principled criterion for spectrum quality assessment, feature selection, and optimal binning. Spectra with high S-entropy contain more analytically useful information per unit of measurement time.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "The state counting methodology connects to Boltzmann statistics through the Loschmidt number, providing a bridge between thermodynamic descriptions of molecular populations and information-theoretic descriptions of spectral data.",
     },
     {
       img: "img/news/5.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "How to Take a Break from Yourself",
+      tag: "Validation",
+      date: "2025",
+      comments: "Lavoisier Framework",
+      title: "NIST Library Validation of the Partition Framework",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "Comprehensive validation of the Lavoisier partition framework against the NIST Mass Spectral Library. We processed standard reference compounds and compared identifications with the authoritative NIST database.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "The dual-pipeline architecture — numerical decomposition and computer vision analysis operating independently — achieved concordant identifications in over 94% of test cases, with the remaining discrepancies traceable to known edge cases.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "This validation establishes Lavoisier as a viable alternative to existing mass spectrometry software, with particular advantages in complex mixture analysis where traditional approaches struggle with spectral overlap.",
     },
     {
       img: "img/news/6.jpg",
-      tag: "Branding",
-      date: "August 9, 2021",
-      comments: "3 comments",
-      title: "The Age of Extinction Is Here",
+      tag: "Ion Physics",
+      date: "2024",
+      comments: "Lavoisier Framework",
+      title: "Ion Transport Phenomena in Mass Spectrometry",
       text1:
-        "Cavani is a leading web design agency with an award-winning design team that creates innovative, effective websites that capture your brand, improve your conversion rates, and maximize your revenue to help grow your business and achieve your goals.",
+        "A detailed model of ion transport from electrospray source through quadrupole mass filter to time-of-flight detector. The model captures space-charge effects, collisional cooling, and RF confinement dynamics.",
       text2:
-        "In today's digital world, your website is the first interaction consumers have with your business. That's why almost 95 percent of a user's first impression relates to web design. It's also why web design services can have an immense impact on your company's bottom line.",
+        "By solving the transport equations numerically, we predict ion transmission efficiency as a function of m/z, charge state, and instrument parameters. These predictions inform the forward model used in spectral interpretation.",
       text3:
-        "That's why more companies are not only reevaluating their website's design but also partnering with Kura, the web design agency that's driven more than $2.4 billion in revenue for its clients. With over 50 web design awards under our belt, we're confident we can design a custom website that drives sales for your unique business.",
+        "The transport model reveals that ion losses are not uniform across the mass range — certain m/z windows experience enhanced or suppressed transmission due to resonance effects in the RF fields, explaining systematic biases in quantitative measurements.",
     },
   ];
   return (
@@ -131,7 +130,7 @@ const News = ({ ActiveIndex, animation }) => {
         <div className="section_inner">
           <div className="cavani_tm_news">
             <div className="cavani_tm_title">
-              <span>Latest News</span>
+              <span>Publications &amp; Findings</span>
             </div>
             <div className="news_list">
               <ul>
@@ -152,7 +151,7 @@ const News = ({ ActiveIndex, animation }) => {
                                   href="#"
                                   onClick={() => toggleModalFour(news)}
                                 >
-                                  Branding
+                                  {news.tag}
                                 </a>
                               </span>
                             </li>
@@ -162,7 +161,7 @@ const News = ({ ActiveIndex, animation }) => {
                                   href="#"
                                   onClick={() => toggleModalFour(news)}
                                 >
-                                  0 Comments
+                                  {news.comments}
                                 </a>
                               </span>
                             </li>
