@@ -35,7 +35,7 @@ export default function ContactDefault({ ActiveIndex }) {
     return (
         <>
             {/* <!-- CONTACT --> */}
-            <div className={ActiveIndex === 4 ? "cavani_tm_section active animated fadeInUp" : "cavani_tm_section hidden animated"} id="contact_">
+            <div className={ActiveIndex === 8 ? "cavani_tm_section active animated fadeInUp" : "cavani_tm_section hidden animated"} id="contact_">
                 <div className="section_inner">
                     <div className="cavani_tm_contact">
                         <div className="cavani_tm_title">

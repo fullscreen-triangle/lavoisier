@@ -1,347 +1,296 @@
-import React from 'react'
-import Image from 'next/image'
-import ProgressBar from '../progressBar';
-import { CircularProgressbar } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import React, { useEffect, useRef } from 'react'
+import * as d3 from 'd3'
+import { useScrollReveal } from '../../hooks/useScrollReveal'
 
-const circleProgressData = [
-    {language: 'English', progress: 95 },
-    {language: 'Russian', progress: 80 },
-    {language: 'Arabic', progress: 90 },
-    
-];
+export default function Metabolomics({ ActiveIndex }) {
+  const sectionRef = useRef(null)
+  const spectrumChartRef = useRef(null)
+  const scatterChartRef = useRef(null)
 
-const progressBarData = [
-    { bgcolor: "#7d7789", completed: 60, title: 'HTML & CSS' },
-    { bgcolor: "#7d7789", completed: 85, title: 'Javascript' },
-    { bgcolor: "#7d7789", completed: 90, title: 'WordPress' },
-];
+  useScrollReveal(sectionRef)
 
-const services = [
-    {
-        desc: "Beautiful minimalist design and great, fast response with support. Highly recommend. Thanks Marketify!.",
-        img: "img/testimonials/1.jpg",
-        info1: "Alexander Walker",
-        info2: "Graphics Designer"
+  // Spectrum Distribution Bar Chart
+  useEffect(() => {
+    if (!spectrumChartRef.current) return
 
-    },
-    {
-        desc: "I had a little problem and the support was just awesome to quickly solve the situation. And keep going on.",
-        img: "img/testimonials/2.jpg",
-        info1: "Baraka Clinton",
-        info2: "Construction Engineering"
+    const svg = d3.select(spectrumChartRef.current)
+    svg.selectAll('*').remove()
 
-    },
-    {
-        desc: "These people really know what they are doing! Great customer support availability and supperb kindness.",
-        img: "img/testimonials/3.jpg",
-        info1: "Armin Van Buuren",
-        info2: "Content Manager"
+    const width = 480
+    const height = 280
+    const margin = { top: 30, right: 40, bottom: 40, left: 100 }
+    const innerWidth = width - margin.left - margin.right
+    const innerHeight = height - margin.top - margin.bottom
 
-    },
-]
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
 
-export default function AboutDefault({ActiveIndex}) {
-    return (
-        <>
-            {/* <!-- ABOUT --> */}
-            <div className={ActiveIndex === 1 ? "cavani_tm_section active animated fadeInUp" : "cavani_tm_section active hidden animated"} id="about_">
-                <div className="section_inner">
-                    <div className="cavani_tm_about">
-                        <div className="biography">
-                            <div className="cavani_tm_title">
-                                <span>About Me</span>
-                            </div>
-                            <div className="wrapper">
-                                <div className="left">
-                                    <p>Hello there! My name is <strong>Alan Walker.</strong> I am a graphic designer, and I&#39;m very passionate and dedicated to my work.</p>
-                                    <p>With 20 years experience as a professional a graphic designer, I have acquired the skills and knowledge necessary to make your project a success.</p>
-                                </div>
-                                <div className="right">
-                                    <ul>
-                                        <li><span className="first">Name:</span><span className="second">Alan Walker</span></li>
-                                        <li><span className="first">Address:</span><span className="second">Ave Street, New York, USA</span></li>
-                                        <li><span className="first">Study:</span><span className="second">Univercity of Oxford</span></li>
-                                        <li><span className="first">Degree:</span><span className="second">Master of Science</span></li>
-                                        <li><span className="first">Mail:</span><span className="second"><a href="#">hello@cavani.com</a></span></li>
-                                        <li><span className="first">Phone:</span><span className="second">+77 022 444 05 05</span></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="services">
-                            <div className="wrapper">
-                                <div className="service_list">
-                                    <div className="cavani_tm_title">
-                                        <span>Services</span>
-                                    </div>
-                                    <div className="list">
-                                        <ul>
-                                            <li>Web Development</li>
-                                            <li>Graphic Design</li>
-                                            <li>Landing Page</li>
-                                            <li>On-Page SEO</li>
-                                            <li>Web Hosting</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div className="service_list">
-                                    <div className="cavani_tm_title">
-                                        <span>Interests</span>
-                                    </div>
-                                    <div className="list">
-                                        <ul>
-                                            <li>Painting &amp; Drawing</li>
-                                            <li>Reading &amp; Writing</li>
-                                            <li>Music &amp; Cinema</li>
-                                            <li>Travel &amp; Picnik</li>
-                                            <li>Rain &amp; Snow</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="skills">
-                            <div className="wrapper">
-                                <div className="programming">
-                                    <div className="cavani_tm_title">
-                                        <span>Programming</span>
-                                    </div>
-                                    <div className="cavani_progress">
-                                        {progressBarData.map((item, idx) => (
-                                            <ProgressBar key={idx} bgcolor={item.bgcolor} completed={item.completed} title={item.title} />
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="language">
-                                    <div className="cavani_tm_title">
-                                        <span>Language</span>
-                                    </div>
-                                    <div className="circular_progress_bar">
-                                        <div className='circle_holder'>
-                                            {circleProgressData.map((item, idx) => (
-                                                <div key={idx}>
-                                                    <div className="list_inner">
-                                                        <CircularProgressbar                                                           
-                                                            value={item.progress}
-                                                            text={`${item.progress}%`}
-                                                            strokeWidth={3}
-                                                            stroke='#7d7789'
-                                                            Language={item.language}
-                                                            className={"list_inner"}
-                                                        />
-                                                        <div className="title"><span>{item.language}</span></div>
-                                                    </div>
-                                                </div>
-                                            ))}
+    const data = [
+      { level: 'MS1', count: 96 },
+      { level: 'MS2', count: 21 },
+    ]
 
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="resume">
-                            <div className="wrapper">
-                                <div className="education">
-                                    <div className="cavani_tm_title">
-                                        <span>Education</span>
-                                    </div>
-                                    <div className="list">
-                                        <div className="univ">
-                                            <ul>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2014 - 2016</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Oxford Univercity</h3>
-                                                            <span>Master Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2010 - 2014</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Texas Univercity</h3>
-                                                            <span>Bachelor Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2008 - 2010</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Simone College</h3>
-                                                            <span>Associate Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="experience">
-                                    <div className="cavani_tm_title">
-                                        <span>Experience</span>
-                                    </div>
-                                    <div className="list">
-                                        <div className="univ">
-                                            <ul>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2018 - running</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Envato Elements</h3>
-                                                            <span>Exclusive Author</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2015 - 2018</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Avo Corporation</h3>
-                                                            <span>Content Manager</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2012 - 2015</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>FC Barcelona</h3>
-                                                            <span>Football Player</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="partners">
-                            <div className="cavani_tm_title">
-                                <span>Partners</span>
-                            </div>
-                            <div className="list">
-                                <ul>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/1.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/2.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/3.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/4.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/5.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/1.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/2.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/3.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="testimonials">
-                            <div className="cavani_tm_title">
-                                <span>Testimonials</span>
-                            </div>
-                            <div className="list">
-                                <ul className="">
-                                    <li>
-                                        <Swiper
-                                            slidesPerView={1}
-                                            spaceBetween={30}
-                                            loop={true}
-                                            // navigation={{
-                                            //     prevEl: ".custom_prev",
-                                            //     nextEl: ".custom_next",
-                                            // }}
-                                            className="custom-class"
-                                            breakpoints={{
-                                                768: {
-                                                    slidesPerView: 2,
-                                                }
-                                            }}
-                                        >
-                                            {services.map((item, i) => (
-                                                <SwiperSlide key={i}>
-                                                    <div className="list_inner">
-                                                        <div className="text">
-                                                            <i className="icon-quote-left" />
-                                                            <p>{item.desc}</p>
-                                                        </div>
-                                                        <div className="details">
-                                                            <div className="image">
-                                                                <div className="main" data-img-url={item.img} />
-                                                            </div>
-                                                            <div className="info">
-                                                                <h3>{item.info1}</h3>
-                                                                <span>{item.info2}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+    const x = d3.scaleLinear()
+      .domain([0, 110])
+      .range([0, innerWidth])
 
-                                                </SwiperSlide>
-                                            ))}
-                                        </Swiper>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    const y = d3.scaleBand()
+      .domain(data.map(d => d.level))
+      .range([0, innerHeight])
+      .padding(0.4)
+
+    const colors = { MS1: '#9980FA', MS2: '#f9d77e' }
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
+
+    // X axis
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(x).ticks(5))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+
+    g.selectAll('.domain, line')
+      .attr('stroke', '#333333')
+
+    // Y axis
+    g.append('g')
+      .call(d3.axisLeft(y))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '12px')
+
+    g.selectAll('.domain, line')
+      .attr('stroke', '#333333')
+
+    // Bars
+    g.selectAll('.bar')
+      .data(data)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('y', d => y(d.level))
+      .attr('height', y.bandwidth())
+      .attr('x', 0)
+      .attr('width', 0)
+      .attr('fill', d => colors[d.level])
+      .attr('rx', 3)
+      .transition()
+      .duration(800)
+      .attr('width', d => x(d.count))
+
+    // Labels on bars
+    g.selectAll('.bar-label')
+      .data(data)
+      .enter()
+      .append('text')
+      .attr('class', 'bar-label')
+      .attr('x', d => x(d.count) + 8)
+      .attr('y', d => y(d.level) + y.bandwidth() / 2 + 4)
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '12px')
+      .text(d => d.count)
+
+    // Title
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', 18)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '13px')
+      .text('Spectrum Distribution')
+  }, [])
+
+  // m/z Coverage Scatter
+  useEffect(() => {
+    if (!scatterChartRef.current) return
+
+    const svg = d3.select(scatterChartRef.current)
+    svg.selectAll('*').remove()
+
+    const width = 480
+    const height = 280
+    const margin = { top: 30, right: 30, bottom: 50, left: 60 }
+    const innerWidth = width - margin.left - margin.right
+    const innerHeight = height - margin.top - margin.bottom
+
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
+
+    // Generate synthetic representative points
+    const rng = d3.randomUniform
+    const points = Array.from({ length: 30 }, (_, i) => ({
+      rt: 0.02 + (58.05 / 30) * i + (Math.random() - 0.5) * 3,
+      mz: 50.73 + Math.random() * (1199.98 - 50.73),
+    }))
+
+    const x = d3.scaleLinear()
+      .domain([0, 60])
+      .range([0, innerWidth])
+
+    const y = d3.scaleLinear()
+      .domain([0, 1250])
+      .range([innerHeight, 0])
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
+
+    // X axis
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(x).ticks(6))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+
+    // Y axis
+    g.append('g')
+      .call(d3.axisLeft(y).ticks(6))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+
+    g.selectAll('.domain, line')
+      .attr('stroke', '#333333')
+
+    // Axis labels
+    g.append('text')
+      .attr('x', innerWidth / 2)
+      .attr('y', innerHeight + 40)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+      .text('Retention Time (min)')
+
+    g.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -innerHeight / 2)
+      .attr('y', -45)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+      .text('m/z')
+
+    // Points
+    g.selectAll('circle')
+      .data(points)
+      .enter()
+      .append('circle')
+      .attr('cx', d => x(d.rt))
+      .attr('cy', d => y(d.mz))
+      .attr('r', 0)
+      .attr('fill', '#9980FA')
+      .attr('opacity', 0.6)
+      .transition()
+      .duration(600)
+      .delay((_, i) => i * 30)
+      .attr('r', 4)
+
+    // Title
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', 18)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '13px')
+      .text('m/z Coverage Across Retention Time')
+  }, [])
+
+  return (
+    <div
+      className={
+        ActiveIndex === 1
+          ? 'cavani_tm_section active animated fadeInUp'
+          : 'cavani_tm_section hidden animated'
+      }
+      id="metabolomics_"
+    >
+      <div className="section_inner">
+        <div className="framework-section" ref={sectionRef}>
+          <div className="section-grid">
+            {/* Left column: D3 charts */}
+            <div className="chart-column">
+              <div className="chart-card">
+                <h3 className="chart-title">Spectrum Distribution</h3>
+                <svg ref={spectrumChartRef} width="100%" />
+              </div>
+              <div className="chart-card">
+                <h3 className="chart-title">m/z Coverage</h3>
+                <svg ref={scatterChartRef} width="100%" />
+              </div>
             </div>
-            {/* <!-- ABOUT --> */}
-        </>
-    )
+
+            {/* Right column: findings and stats */}
+            <div className="content-column">
+              <div className="section-header">
+                <span className="section-label">Metabolomics</span>
+                <h2>Metabolomic Profiling Pipeline</h2>
+                <p>
+                  Multi-stage analysis of Waters qTOF mass spectrometry data,
+                  validating the partition framework across small-molecule
+                  metabolites with complete spectral quality conformance.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Multi-Stage Pipeline</h4>
+                <p>
+                  Raw mzML spectra flow through extraction, chromatographic
+                  separation, electrospray ionization, and computational
+                  identification. Each stage preserves the bounded phase-space
+                  constraint, ensuring every ion trajectory maps to a valid
+                  partition state.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Spectral Quality</h4>
+                <p>
+                  100% of the 117 PL_Neg spectra pass high-quality thresholds
+                  with a mean quality score of 0.657. The pipeline processes
+                  spectra at 92.98 per second, demonstrating that partition
+                  validation adds negligible computational overhead.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Phospholipid Profiling</h4>
+                <p>
+                  The PL_Neg dataset captures phospholipids in negative
+                  ionization mode on a Waters qTOF instrument, spanning an m/z
+                  range of 50.73 to 1199.98 and retention times from 0.02 to
+                  58.07 minutes across 5 spectral embedding clusters.
+                </p>
+              </div>
+
+              <div className="stat-row">
+                <div className="stat-item">
+                  <span className="stat-value">117</span>
+                  <span className="stat-label">Spectra</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">20,083</span>
+                  <span className="stat-label">Total Peaks</span>
+                </div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-item">
+                  <span className="stat-value">92.98</span>
+                  <span className="stat-label">Spectra / sec</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">5</span>
+                  <span className="stat-label">Clusters</span>
+                </div>
+              </div>
+
+              <div className="equation">
+                S(n) = p(n) where each spectrum maps to a unique partition state
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }

@@ -1,10 +1,8 @@
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
-import HomeDefault from "../src/components/home/home-default";
+import LandingPage from "../src/components/home/landing-page";
 import Layout from "../src/layout/layout";
-import AuthorDefault from "../src/components/author/author-default";
 import ContactDefault from "../src/components/contact/contact-default";
-import News from "../src/components/News";
 import Header from "../src/layout/header";
 import LeftRightBar from "../src/layout/left-right-bar";
 import Mobilemenu from "../src/layout/mobilemenu";
@@ -12,23 +10,45 @@ import Modalbox from "../src/layout/modalbox";
 import TopBar from "../src/layout/top-bar";
 import Service from "../src/components/service/service-default";
 
-const AboutDefault = dynamic(
-  () => import("../src/components/about/about-default"),
-  {
-    ssr: false,
-  }
+const GLBViewer = dynamic(
+  () => import("../src/components/model/GLBViewer"),
+  { ssr: false }
 );
-const PortfolioDefault = dynamic(
-  () => import("../src/components/portfolio/portfolio-default"),
-  {
-    ssr: false,
-  }
+
+const Metabolomics = dynamic(
+  () => import("../src/components/metabolomics/metabolomics"),
+  { ssr: false }
+);
+
+const Proteomics = dynamic(
+  () => import("../src/components/proteomics/proteomics"),
+  { ssr: false }
+);
+
+const Chromatography = dynamic(
+  () => import("../src/components/chromatography/chromatography"),
+  { ssr: false }
+);
+
+const Charge = dynamic(
+  () => import("../src/components/charge/charge"),
+  { ssr: false }
+);
+
+const Mass = dynamic(
+  () => import("../src/components/mass/mass"),
+  { ssr: false }
+);
+
+const Union = dynamic(
+  () => import("../src/components/union/union"),
+  { ssr: false }
 );
 
 export default function Home() {
   const [ActiveIndex, setActiveIndex] = useState(0);
   const handleOnClick = (index) => {
-    setActiveIndex(index); // remove the curly braces
+    setActiveIndex(index);
   };
 
   const [isToggled, setToggled] = useState(false);
@@ -45,18 +65,24 @@ export default function Home() {
 
         {/* <!-- MAINPART --> */}
         <div className="cavani_tm_mainpart">
-          <AuthorDefault />
+          <GLBViewer />
 
           <div className="main_content">
-            <HomeDefault ActiveIndex={ActiveIndex} handleOnClick={handleOnClick} />
+            <LandingPage ActiveIndex={ActiveIndex} handleOnClick={handleOnClick} />
 
-            <AboutDefault ActiveIndex={ActiveIndex} />
+            <Metabolomics ActiveIndex={ActiveIndex} />
 
-            <PortfolioDefault ActiveIndex={ActiveIndex} />
+            <Proteomics ActiveIndex={ActiveIndex} />
+
+            <Chromatography ActiveIndex={ActiveIndex} />
+
+            <Charge ActiveIndex={ActiveIndex} />
+
+            <Mass ActiveIndex={ActiveIndex} />
+
+            <Union ActiveIndex={ActiveIndex} />
 
             <Service ActiveIndex={ActiveIndex} />
-
-            <News ActiveIndex={ActiveIndex} />
 
             <ContactDefault ActiveIndex={ActiveIndex} />
           </div>

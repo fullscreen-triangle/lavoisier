@@ -1,5 +1,6 @@
+/* eslint-disable react/no-unknown-property */
 // components/AnimatedModel.jsx
-'use client'; // Wichtig für Next.js 13 App Router
+'use client';
 
 import { useRef, useEffect } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';

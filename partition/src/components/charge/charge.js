@@ -1,347 +1,425 @@
-import React from 'react'
-import Image from 'next/image'
-import ProgressBar from '../progressBar';
-import { CircularProgressbar } from "react-circular-progressbar";
-import "react-circular-progressbar/dist/styles.css";
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import React, { useEffect, useRef } from 'react'
+import * as d3 from 'd3'
+import { useScrollReveal } from '../../hooks/useScrollReveal'
 
-const circleProgressData = [
-    {language: 'English', progress: 95 },
-    {language: 'Russian', progress: 80 },
-    {language: 'Arabic', progress: 90 },
-    
-];
+export default function Charge({ ActiveIndex }) {
+  const sectionRef = useRef(null)
+  const capacityChartRef = useRef(null)
+  const gaugeChartRef = useRef(null)
 
-const progressBarData = [
-    { bgcolor: "#7d7789", completed: 60, title: 'HTML & CSS' },
-    { bgcolor: "#7d7789", completed: 85, title: 'Javascript' },
-    { bgcolor: "#7d7789", completed: 90, title: 'WordPress' },
-];
+  useScrollReveal(sectionRef)
 
-const services = [
-    {
-        desc: "Beautiful minimalist design and great, fast response with support. Highly recommend. Thanks Marketify!.",
-        img: "img/testimonials/1.jpg",
-        info1: "Alexander Walker",
-        info2: "Graphics Designer"
+  // Partition Capacity Chart: C(n) = 2n^2
+  useEffect(() => {
+    if (!capacityChartRef.current) return
 
-    },
-    {
-        desc: "I had a little problem and the support was just awesome to quickly solve the situation. And keep going on.",
-        img: "img/testimonials/2.jpg",
-        info1: "Baraka Clinton",
-        info2: "Construction Engineering"
+    const svg = d3.select(capacityChartRef.current)
+    svg.selectAll('*').remove()
 
-    },
-    {
-        desc: "These people really know what they are doing! Great customer support availability and supperb kindness.",
-        img: "img/testimonials/3.jpg",
-        info1: "Armin Van Buuren",
-        info2: "Content Manager"
+    const width = 480
+    const height = 280
+    const margin = { top: 30, right: 50, bottom: 40, left: 60 }
+    const innerWidth = width - margin.left - margin.right
+    const innerHeight = height - margin.top - margin.bottom
 
-    },
-]
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
 
-export default function AboutDefault({ActiveIndex}) {
-    return (
-        <>
-            {/* <!-- ABOUT --> */}
-            <div className={ActiveIndex === 1 ? "cavani_tm_section active animated fadeInUp" : "cavani_tm_section active hidden animated"} id="about_">
-                <div className="section_inner">
-                    <div className="cavani_tm_about">
-                        <div className="biography">
-                            <div className="cavani_tm_title">
-                                <span>About Me</span>
-                            </div>
-                            <div className="wrapper">
-                                <div className="left">
-                                    <p>Hello there! My name is <strong>Alan Walker.</strong> I am a graphic designer, and I&#39;m very passionate and dedicated to my work.</p>
-                                    <p>With 20 years experience as a professional a graphic designer, I have acquired the skills and knowledge necessary to make your project a success.</p>
-                                </div>
-                                <div className="right">
-                                    <ul>
-                                        <li><span className="first">Name:</span><span className="second">Alan Walker</span></li>
-                                        <li><span className="first">Address:</span><span className="second">Ave Street, New York, USA</span></li>
-                                        <li><span className="first">Study:</span><span className="second">Univercity of Oxford</span></li>
-                                        <li><span className="first">Degree:</span><span className="second">Master of Science</span></li>
-                                        <li><span className="first">Mail:</span><span className="second"><a href="#">hello@cavani.com</a></span></li>
-                                        <li><span className="first">Phone:</span><span className="second">+77 022 444 05 05</span></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="services">
-                            <div className="wrapper">
-                                <div className="service_list">
-                                    <div className="cavani_tm_title">
-                                        <span>Services</span>
-                                    </div>
-                                    <div className="list">
-                                        <ul>
-                                            <li>Web Development</li>
-                                            <li>Graphic Design</li>
-                                            <li>Landing Page</li>
-                                            <li>On-Page SEO</li>
-                                            <li>Web Hosting</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div className="service_list">
-                                    <div className="cavani_tm_title">
-                                        <span>Interests</span>
-                                    </div>
-                                    <div className="list">
-                                        <ul>
-                                            <li>Painting &amp; Drawing</li>
-                                            <li>Reading &amp; Writing</li>
-                                            <li>Music &amp; Cinema</li>
-                                            <li>Travel &amp; Picnik</li>
-                                            <li>Rain &amp; Snow</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="skills">
-                            <div className="wrapper">
-                                <div className="programming">
-                                    <div className="cavani_tm_title">
-                                        <span>Programming</span>
-                                    </div>
-                                    <div className="cavani_progress">
-                                        {progressBarData.map((item, idx) => (
-                                            <ProgressBar key={idx} bgcolor={item.bgcolor} completed={item.completed} title={item.title} />
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="language">
-                                    <div className="cavani_tm_title">
-                                        <span>Language</span>
-                                    </div>
-                                    <div className="circular_progress_bar">
-                                        <div className='circle_holder'>
-                                            {circleProgressData.map((item, idx) => (
-                                                <div key={idx}>
-                                                    <div className="list_inner">
-                                                        <CircularProgressbar                                                           
-                                                            value={item.progress}
-                                                            text={`${item.progress}%`}
-                                                            strokeWidth={3}
-                                                            stroke='#7d7789'
-                                                            Language={item.language}
-                                                            className={"list_inner"}
-                                                        />
-                                                        <div className="title"><span>{item.language}</span></div>
-                                                    </div>
-                                                </div>
-                                            ))}
+    const data = [
+      { n: 1, capacity: 2, cumulative: 2 },
+      { n: 2, capacity: 8, cumulative: 10 },
+      { n: 3, capacity: 18, cumulative: 28 },
+      { n: 4, capacity: 32, cumulative: 60 },
+      { n: 5, capacity: 50, cumulative: 110 },
+      { n: 6, capacity: 72, cumulative: 182 },
+      { n: 7, capacity: 98, cumulative: 280 },
+    ]
 
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="resume">
-                            <div className="wrapper">
-                                <div className="education">
-                                    <div className="cavani_tm_title">
-                                        <span>Education</span>
-                                    </div>
-                                    <div className="list">
-                                        <div className="univ">
-                                            <ul>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2014 - 2016</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Oxford Univercity</h3>
-                                                            <span>Master Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2010 - 2014</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Texas Univercity</h3>
-                                                            <span>Bachelor Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2008 - 2010</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Simone College</h3>
-                                                            <span>Associate Degree</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="experience">
-                                    <div className="cavani_tm_title">
-                                        <span>Experience</span>
-                                    </div>
-                                    <div className="list">
-                                        <div className="univ">
-                                            <ul>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2018 - running</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Envato Elements</h3>
-                                                            <span>Exclusive Author</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2015 - 2018</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>Avo Corporation</h3>
-                                                            <span>Content Manager</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                                <li>
-                                                    <div className="list_inner">
-                                                        <div className="time">
-                                                            <span>2012 - 2015</span>
-                                                        </div>
-                                                        <div className="place">
-                                                            <h3>FC Barcelona</h3>
-                                                            <span>Football Player</span>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="partners">
-                            <div className="cavani_tm_title">
-                                <span>Partners</span>
-                            </div>
-                            <div className="list">
-                                <ul>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/1.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/2.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/3.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/4.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/5.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/1.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/2.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div className="list_inner">
-                                            <img src="img/partners/3.png" alt="" />
-                                            <a className="cavani_tm_full_link" href="#"></a>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="testimonials">
-                            <div className="cavani_tm_title">
-                                <span>Testimonials</span>
-                            </div>
-                            <div className="list">
-                                <ul className="">
-                                    <li>
-                                        <Swiper
-                                            slidesPerView={1}
-                                            spaceBetween={30}
-                                            loop={true}
-                                            // navigation={{
-                                            //     prevEl: ".custom_prev",
-                                            //     nextEl: ".custom_next",
-                                            // }}
-                                            className="custom-class"
-                                            breakpoints={{
-                                                768: {
-                                                    slidesPerView: 2,
-                                                }
-                                            }}
-                                        >
-                                            {services.map((item, i) => (
-                                                <SwiperSlide key={i}>
-                                                    <div className="list_inner">
-                                                        <div className="text">
-                                                            <i className="icon-quote-left" />
-                                                            <p>{item.desc}</p>
-                                                        </div>
-                                                        <div className="details">
-                                                            <div className="image">
-                                                                <div className="main" data-img-url={item.img} />
-                                                            </div>
-                                                            <div className="info">
-                                                                <h3>{item.info1}</h3>
-                                                                <span>{item.info2}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+    const x = d3.scaleBand()
+      .domain(data.map(d => d.n))
+      .range([0, innerWidth])
+      .padding(0.25)
 
-                                                </SwiperSlide>
-                                            ))}
-                                        </Swiper>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    const yLeft = d3.scaleLinear()
+      .domain([0, 110])
+      .range([innerHeight, 0])
+
+    const yRight = d3.scaleLinear()
+      .domain([0, 300])
+      .range([innerHeight, 0])
+
+    // Gradient definition
+    const defs = svg.append('defs')
+    const gradient = defs.append('linearGradient')
+      .attr('id', 'capacityGradient')
+      .attr('x1', '0%').attr('y1', '100%')
+      .attr('x2', '0%').attr('y2', '0%')
+    gradient.append('stop').attr('offset', '0%').attr('stop-color', '#9980FA')
+    gradient.append('stop').attr('offset', '100%').attr('stop-color', '#f9d77e')
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`)
+
+    // X axis
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(x).tickFormat(d => `n=${d}`))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+
+    g.selectAll('.domain, line')
+      .attr('stroke', '#333333')
+
+    // Left Y axis (capacity)
+    g.append('g')
+      .call(d3.axisLeft(yLeft).ticks(6))
+      .selectAll('text')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+
+    g.selectAll('.domain, line')
+      .attr('stroke', '#333333')
+
+    // Right Y axis (cumulative)
+    g.append('g')
+      .attr('transform', `translate(${innerWidth},0)`)
+      .call(d3.axisRight(yRight).ticks(6))
+      .selectAll('text')
+      .attr('fill', '#f9d77e')
+      .style('font-size', '10px')
+
+    // Axis labels
+    g.append('text')
+      .attr('x', innerWidth / 2)
+      .attr('y', innerHeight + 35)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+      .text('Principal Quantum Number n')
+
+    g.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -innerHeight / 2)
+      .attr('y', -45)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '11px')
+      .text('Capacity C(n)')
+
+    // Bars
+    g.selectAll('.bar')
+      .data(data)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', d => x(d.n))
+      .attr('width', x.bandwidth())
+      .attr('y', innerHeight)
+      .attr('height', 0)
+      .attr('fill', 'url(#capacityGradient)')
+      .attr('rx', 2)
+      .transition()
+      .duration(800)
+      .delay((_, i) => i * 80)
+      .attr('y', d => yLeft(d.capacity))
+      .attr('height', d => innerHeight - yLeft(d.capacity))
+
+    // Bar labels
+    g.selectAll('.bar-label')
+      .data(data)
+      .enter()
+      .append('text')
+      .attr('class', 'bar-label')
+      .attr('x', d => x(d.n) + x.bandwidth() / 2)
+      .attr('y', d => yLeft(d.capacity) - 5)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '10px')
+      .text(d => d.capacity)
+
+    // Cumulative dashed line (N_state)
+    const line = d3.line()
+      .x(d => x(d.n) + x.bandwidth() / 2)
+      .y(d => yRight(d.cumulative))
+      .curve(d3.curveMonotoneX)
+
+    g.append('path')
+      .datum(data)
+      .attr('fill', 'none')
+      .attr('stroke', '#f9d77e')
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '6,3')
+      .attr('d', line)
+
+    // Cumulative dots
+    g.selectAll('.cum-dot')
+      .data(data)
+      .enter()
+      .append('circle')
+      .attr('cx', d => x(d.n) + x.bandwidth() / 2)
+      .attr('cy', d => yRight(d.cumulative))
+      .attr('r', 3)
+      .attr('fill', '#f9d77e')
+
+    // Title
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', 18)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '13px')
+      .text('Partition Capacity C(n) = 2n\u00B2')
+  }, [])
+
+  // Residue Ratio Gauge
+  useEffect(() => {
+    if (!gaugeChartRef.current) return
+
+    const svg = d3.select(gaugeChartRef.current)
+    svg.selectAll('*').remove()
+
+    const width = 480
+    const height = 280
+    svg.attr('viewBox', `0 0 ${width} ${height}`)
+
+    const cx = width / 2
+    const cy = height * 0.65
+    const radius = 120
+    const startAngle = -Math.PI
+    const endAngle = 0
+
+    const theoretical = 26 / 27 // 0.9630
+    const measured = 0.158
+
+    const arcGenerator = d3.arc()
+      .innerRadius(radius - 18)
+      .outerRadius(radius)
+      .startAngle(startAngle)
+      .cornerRadius(2)
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${cx},${cy})`)
+
+    // Background arc
+    g.append('path')
+      .attr('d', arcGenerator({ endAngle: endAngle }))
+      .attr('fill', '#333333')
+
+    // Filled arc (theoretical value)
+    const theoreticalAngle = startAngle + theoretical * Math.PI
+    g.append('path')
+      .attr('d', arcGenerator({ endAngle: startAngle }))
+      .attr('fill', '#f9d77e')
+      .transition()
+      .duration(1200)
+      .attrTween('d', function () {
+        const interpolate = d3.interpolate(startAngle, theoreticalAngle)
+        return function (t) {
+          return arcGenerator({ endAngle: interpolate(t) })
+        }
+      })
+
+    // Theoretical marker
+    const theoreticalX = -radius * Math.cos(theoretical * Math.PI)
+    const theoreticalY = -radius * Math.sin(theoretical * Math.PI)
+    g.append('circle')
+      .attr('cx', theoreticalX)
+      .attr('cy', theoreticalY)
+      .attr('r', 5)
+      .attr('fill', '#f9d77e')
+      .attr('stroke', '#1a1a2e')
+      .attr('stroke-width', 2)
+
+    g.append('text')
+      .attr('x', theoreticalX + 10)
+      .attr('y', theoreticalY - 8)
+      .attr('fill', '#f9d77e')
+      .style('font-size', '10px')
+      .text('Theoretical: 0.963')
+
+    // Measured marker
+    const measuredAngle = measured * Math.PI
+    const measuredX = -radius * Math.cos(measuredAngle)
+    const measuredY = -radius * Math.sin(measuredAngle)
+    g.append('circle')
+      .attr('cx', measuredX)
+      .attr('cy', measuredY)
+      .attr('r', 5)
+      .attr('fill', '#9980FA')
+      .attr('stroke', '#1a1a2e')
+      .attr('stroke-width', 2)
+
+    g.append('text')
+      .attr('x', measuredX + 10)
+      .attr('y', measuredY + 15)
+      .attr('fill', '#9980FA')
+      .style('font-size', '10px')
+      .text('Mean depth: 0.158')
+
+    // Center text
+    g.append('text')
+      .attr('x', 0)
+      .attr('y', -20)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#f9d77e')
+      .style('font-size', '28px')
+      .style('font-weight', 'bold')
+      .text('26/27')
+
+    g.append('text')
+      .attr('x', 0)
+      .attr('y', 5)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '12px')
+      .text('Residue Ratio')
+
+    g.append('text')
+      .attr('x', 0)
+      .attr('y', 22)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#666')
+      .style('font-size', '10px')
+      .text('(b\u00B3\u2212 1) / b\u00B3 where b = 3')
+
+    // Scale labels
+    g.append('text')
+      .attr('x', -radius - 5)
+      .attr('y', 15)
+      .attr('text-anchor', 'end')
+      .attr('fill', '#666')
+      .style('font-size', '10px')
+      .text('0')
+
+    g.append('text')
+      .attr('x', radius + 5)
+      .attr('y', 15)
+      .attr('text-anchor', 'start')
+      .attr('fill', '#666')
+      .style('font-size', '10px')
+      .text('1')
+
+    // Title
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', 18)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#b0b0b0')
+      .style('font-size', '13px')
+      .text('Partition Residue Ratio Gauge')
+  }, [])
+
+  return (
+    <div
+      className={
+        ActiveIndex === 4
+          ? 'cavani_tm_section active animated fadeInUp'
+          : 'cavani_tm_section hidden animated'
+      }
+      id="charge_"
+    >
+      <div className="section_inner">
+        <div className="framework-section" ref={sectionRef}>
+          <div className="section-grid">
+            {/* Left column: D3 charts */}
+            <div className="chart-column">
+              <div className="chart-card">
+                <h3 className="chart-title">Partition Capacity</h3>
+                <svg ref={capacityChartRef} width="100%" />
+              </div>
+              <div className="chart-card">
+                <h3 className="chart-title">Residue Ratio</h3>
+                <svg ref={gaugeChartRef} width="100%" />
+              </div>
             </div>
-            {/* <!-- ABOUT --> */}
-        </>
-    )
+
+            {/* Right column: findings and stats */}
+            <div className="content-column">
+              <div className="section-header">
+                <span className="section-label">Charge</span>
+                <h2>Charge Emergence from Partition</h2>
+                <p>
+                  Charge is not a fundamental injection -- it emerges when matter
+                  is partitioned. Partition coordinates (n, l, m, s) assign each
+                  ion a unique state, and the observed charge states (+1 to +3 in
+                  positive mode, -2 to -3 in negative mode) arise directly from
+                  the bounded phase-space structure.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Charge as Emergence</h4>
+                <p>
+                  Charge is not injected; it appears when matter is partitioned.
+                  No partition means no charge. The act of confining an ion within
+                  a bounded phase space is what gives rise to its charge state --
+                  charge is a consequence of counting, not a separate postulate.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Partition Coordinates</h4>
+                <p>
+                  Each ion is assigned coordinates (n, l, m, s), exactly analogous
+                  to atomic orbitals. The capacity at each principal level follows
+                  C(n) = 2n&sup2;, and the cumulative state count grows as
+                  N_state(n) = n(n+1)(2n+1)/3, guaranteeing every ion maps to a
+                  unique, countable position.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>The 26/27 Ratio</h4>
+                <p>
+                  The partition residue ratio (b<sup>d</sup>&minus;1)/b<sup>d</sup> = 26/27
+                  for b=3, d=3 is the fraction of phase space that becomes
+                  &quot;mass.&quot; The mean partition depth of 0.166 and mean residue
+                  ratio of 0.158 quantify how deeply each ion is embedded in its
+                  partition tree.
+                </p>
+              </div>
+
+              <div className="finding-block">
+                <h4>Universal Conformance</h4>
+                <p>
+                  100% charge emergence conformance across 4,545 NIST
+                  glycan/glycopeptide entries from 11 independent laboratories.
+                  Every observed charge state maps exactly to the partition
+                  prediction with zero exceptions.
+                </p>
+              </div>
+
+              <div className="stat-row">
+                <div className="stat-item">
+                  <span className="stat-value">4,545</span>
+                  <span className="stat-label">NIST Entries</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">100%</span>
+                  <span className="stat-label">Conformance</span>
+                </div>
+              </div>
+              <div className="stat-row">
+                <div className="stat-item">
+                  <span className="stat-value">26/27</span>
+                  <span className="stat-label">Residue Ratio</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-value">7</span>
+                  <span className="stat-label">Quantum Numbers</span>
+                </div>
+              </div>
+
+              <div className="equation">
+                C(n) = 2n&sup2; &nbsp;&nbsp;|&nbsp;&nbsp; N_state(n) = n(n+1)(2n+1)/3
+              </div>
+              <div className="equation">
+                Residue ratio = (b<sup>d</sup> &minus; 1) / b<sup>d</sup> = 26/27
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
