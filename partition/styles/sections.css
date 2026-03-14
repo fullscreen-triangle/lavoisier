@@ -1,200 +1,187 @@
-/* Section Layout: left charts + right content with scroll-driven animations */
+/* When not on landing page, mainpart goes full width (no GLBViewer) */
+.cavani_tm_mainpart.full-width .main_content {
+  width: 100% !important;
+  left: 0 !important;
+}
 
-.framework-section {
-  min-height: 100vh;
-  padding: 60px 40px;
+/* ============================================= */
+/* Scrollytelling Layout — pinned charts + steps */
+/* ============================================= */
+
+.scrolly-section {
   position: relative;
+  min-height: 100vh;
 }
 
-.framework-section .section-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 60px;
-  align-items: start;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* Left: Charts */
-.framework-section .chart-column {
-  position: sticky;
-  top: 100px;
+/* Chart wrapper: positioned left 40%, pinned by GSAP */
+.scrolly-section .chart-wrapper {
+  width: 38%;
+  position: absolute;
+  left: 0;
+  top: 0;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
+  padding: 30px 24px 30px 0;
 }
 
-.framework-section .chart-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
-  opacity: 0;
-  transform: translateY(30px);
+/* Chart cards */
+.scrolly-section .chart-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
   transition: border-color 0.3s ease;
 }
 
-.framework-section .chart-card.visible {
-  opacity: 1;
-  transform: translateY(0);
+.scrolly-section .chart-card:hover {
+  border-color: #444;
 }
 
-.framework-section .chart-card:hover {
-  border-color: var(--border-hover);
-}
-
-.framework-section .chart-card .chart-title {
-  font-size: 13px;
+.scrolly-section .chart-card .chart-title {
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: var(--accent-primary);
-  margin-bottom: 16px;
+  color: #f9d77e;
+  margin-bottom: 14px;
   font-weight: 600;
 }
 
-.framework-section .chart-card svg {
+.scrolly-section .chart-card svg {
   width: 100%;
+  height: auto;
   overflow: visible;
 }
 
-.framework-section .chart-card svg text {
-  fill: var(--text-secondary);
+.scrolly-section .chart-card svg text {
+  fill: #b0b0b0;
   font-size: 11px;
 }
 
-.framework-section .chart-card svg .axis line,
-.framework-section .chart-card svg .axis path {
-  stroke: var(--border-color);
+/* Scrolling steps: right 60% */
+.scrolly-section .scroll-steps {
+  width: 52%;
+  margin-left: 42%;
+  padding: 20px 0 20px 30px;
+  border-left: 1px solid #2a2a2a;
 }
 
-.framework-section .chart-card svg .tick text {
-  fill: var(--text-muted);
-  font-size: 10px;
+/* Individual step — scrollytelling text box */
+.scrolly-section .step {
+  padding: 28px 24px;
+  margin-bottom: 50vh;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  opacity: 0.15;
+  transition: opacity 0.4s ease;
 }
 
-/* Right: Content */
-.framework-section .content-column {
-  display: flex;
-  flex-direction: column;
-  gap: 48px;
-  padding-top: 20px;
+.scrolly-section .step:last-child {
+  margin-bottom: 30vh;
 }
 
-.framework-section .section-header {
-  margin-bottom: 20px;
+.scrolly-section .step.active {
+  opacity: 1 !important;
 }
 
-.framework-section .section-header .section-label {
-  font-size: 12px;
+/* Header step — accent border */
+.scrolly-section .step.step-header {
+  border-color: #f9d77e;
+  margin-bottom: 60vh;
+}
+
+/* Typography inside steps */
+.scrolly-section .step .step-label {
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--accent-primary);
-  margin-bottom: 12px;
+  color: #f9d77e;
+  margin-bottom: 10px;
   display: block;
 }
 
-.framework-section .section-header h2 {
-  font-size: 32px;
+.scrolly-section .step h2 {
+  font-size: 26px;
   font-weight: 300;
   line-height: 1.3;
-  color: var(--text-primary);
-  margin-bottom: 16px;
+  color: #e0e0e0;
+  margin-bottom: 12px;
 }
 
-.framework-section .section-header p {
+.scrolly-section .step h3,
+.scrolly-section .step h4 {
   font-size: 15px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-  max-width: 520px;
-}
-
-/* Finding blocks */
-.framework-section .finding-block {
-  padding: 28px 0;
-  border-top: 1px solid var(--border-color);
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.framework-section .finding-block.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.framework-section .finding-block h3 {
-  font-size: 18px;
   font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 12px;
+  color: #e0e0e0;
+  margin-bottom: 8px;
 }
 
-.framework-section .finding-block p {
-  font-size: 14px;
+.scrolly-section .step p {
+  font-size: 13px;
   line-height: 1.7;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  color: #b0b0b0;
+  margin-bottom: 8px;
 }
 
 /* Stat highlights */
-.framework-section .stat-row {
+.scrolly-section .stat-row {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
-.framework-section .stat-item {
+.scrolly-section .stat-item {
   display: flex;
   flex-direction: column;
 }
 
-.framework-section .stat-item .stat-value {
-  font-size: 28px;
+.scrolly-section .stat-item .stat-value {
+  font-size: 24px;
   font-weight: 300;
-  color: var(--accent-primary);
+  color: #f9d77e;
   line-height: 1;
 }
 
-.framework-section .stat-item .stat-label {
-  font-size: 11px;
+.scrolly-section .stat-item .stat-label {
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--text-muted);
-  margin-top: 6px;
+  color: #666;
+  margin-top: 4px;
 }
 
 /* Equation blocks */
-.framework-section .equation {
+.scrolly-section .equation {
   font-family: 'Georgia', serif;
   font-style: italic;
-  font-size: 16px;
-  color: var(--accent-primary);
-  padding: 16px 20px;
+  font-size: 13px;
+  color: #f9d77e;
+  padding: 12px 16px;
   background: rgba(249, 215, 126, 0.05);
-  border-left: 2px solid var(--accent-primary);
-  border-radius: 0 8px 8px 0;
-  margin: 12px 0;
+  border-left: 2px solid #f9d77e;
+  border-radius: 0 6px 6px 0;
+  margin: 8px 0;
 }
 
-/* Responsive */
+/* Responsive — stack on narrow screens */
 @media (max-width: 1024px) {
-  .framework-section .section-grid {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  .framework-section .chart-column {
+  .scrolly-section .chart-wrapper {
     position: relative;
-    top: 0;
-  }
-}
-
-@media (max-width: 768px) {
-  .framework-section {
-    padding: 40px 20px;
+    width: 100%;
+    padding: 20px 0;
   }
 
-  .framework-section .section-header h2 {
-    font-size: 24px;
+  .scrolly-section .scroll-steps {
+    width: 100%;
+    margin-left: 0;
+    padding: 20px 0;
+    border-left: none;
+  }
+
+  .scrolly-section .step {
+    margin-bottom: 30vh;
+    opacity: 1;
   }
 }

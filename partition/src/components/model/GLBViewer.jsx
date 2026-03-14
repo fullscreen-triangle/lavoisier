@@ -78,7 +78,10 @@ export default function GLBViewer({
 
       <Canvas
         shadows
-        camera={{ position: [0, 0, 5], fov: 50 }}
+        camera={{        position: [0, 0, 10],  // Move camera further back (was 5)
+                    fov: 45,               // Narrower FOV (was 50) - less distortion
+                    near: 0.1,             // Near clipping plane
+                    far: 1000 }}
         gl={{ 
           antialias: true, 
           alpha: true,
@@ -110,7 +113,7 @@ export default function GLBViewer({
         <Environment preset="city" />
 
         {/* The 3D Model */}
-        <Model url={modelPath} autoRotate={autoRotate} />
+        <Model url={modelPath} autoRotate={autoRotate} scale={0.5}/>
 
         {/* Camera Controls */}
         {showControls && (
@@ -126,24 +129,6 @@ export default function GLBViewer({
         )}
       </Canvas>
 
-      {/* Info Overlay */}
-      {showControls && (
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0, 0, 0, 0.7)',
-          color: '#fff',
-          padding: '10px 20px',
-          borderRadius: '8px',
-          fontSize: '0.9rem',
-          zIndex: 10,
-          backdropFilter: 'blur(10px)'
-        }}>
-          🖱️ Left Click: Rotate | 🖱️ Right Click: Pan | 🖱️ Scroll: Zoom
-        </div>
-      )}
     </div>
   );
 }

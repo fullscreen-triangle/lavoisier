@@ -52,7 +52,7 @@ export default function ContactDefault({ ActiveIndex }) {
                                 <li>
                                     <div className="list_inner">
                                         <i className="icon-mail-3"></i>
-                                        <span><a href="#">contact@partition.dev</a></span>
+                                        <span><a href="#">kundai.sachikonye@bitspark.com</a></span>
                                     </div>
                                 </li>
                                 <li>
@@ -149,10 +149,13 @@ export default function ContactDefault({ ActiveIndex }) {
                                 <div className="map_wrap">
                                     <div className="map" id="ieatmaps">
                                         <iframe
-                                            height={375}
-                                            style={{ width: "100%" }}
-                                            id="gmap_canvas"
-                                            src="https://maps.google.com/maps?q=2880%20Broadway,%20New%20York&t=&z=13&ie=UTF8&iwloc=&output=embed"
+                                          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5189.337178851074!2d11.089074376963971!3d49.43407926002091!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479f576e22610019%3A0xf0b38d41ee6efc55!2sKleestra%C3%9Fe%2021-23%2C%2090461%20N%C3%BCrnberg!5e0!3m2!1sen!2sde!4v1773451898762!5m2!1sen!2sde"
+                                          width="100%"
+                                          height="375"
+                                          style={{ border: 0 }}
+                                          allowFullScreen=""
+                                          loading="lazy"
+                                          referrerPolicy="no-referrer-when-downgrade"
                                         />
                                         <a href="https://www.embedgooglemap.net/blog/divi-discount-code-elegant-themes-coupon" />
                                         <br />

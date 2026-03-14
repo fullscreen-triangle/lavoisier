@@ -8,7 +8,6 @@ import LeftRightBar from "../src/layout/left-right-bar";
 import Mobilemenu from "../src/layout/mobilemenu";
 import Modalbox from "../src/layout/modalbox";
 import TopBar from "../src/layout/top-bar";
-import Service from "../src/components/service/service-default";
 
 const GLBViewer = dynamic(
   () => import("../src/components/model/GLBViewer"),
@@ -64,8 +63,8 @@ export default function Home() {
         <Mobilemenu toggleTrueFalse={toggleTrueFalse} isToggled={isToggled} handleOnClick={handleOnClick} />
 
         {/* <!-- MAINPART --> */}
-        <div className="cavani_tm_mainpart">
-          <GLBViewer />
+        <div className={ActiveIndex === 0 ? "cavani_tm_mainpart" : "cavani_tm_mainpart full-width"}>
+          {ActiveIndex === 0 && <GLBViewer className="glb-viewer-container"/>}
 
           <div className="main_content">
             <LandingPage ActiveIndex={ActiveIndex} handleOnClick={handleOnClick} />
@@ -81,8 +80,6 @@ export default function Home() {
             <Mass ActiveIndex={ActiveIndex} />
 
             <Union ActiveIndex={ActiveIndex} />
-
-            <Service ActiveIndex={ActiveIndex} />
 
             <ContactDefault ActiveIndex={ActiveIndex} />
           </div>

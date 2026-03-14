@@ -16,7 +16,7 @@ export default function LandingPage({ ActiveIndex, handleOnClick }) {
       >
         <div className="cavani_tm_home">
           <div className="content">
-            <h3 className="name">Kundai Sachikonye</h3>
+            <h3 className="name">Partition</h3>
             <span className="line"></span>
             <h3 className="job">
               <RotateTextAnimation />

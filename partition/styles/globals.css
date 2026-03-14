@@ -1,5 +1,8 @@
 /* globals.css */
 
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
 :root {
   /* Dark Theme Colors */
   --bg-primary: #0a0a0a;
@@ -20,32 +23,198 @@
   --card-hover: #252525;
 }
 
-/* Base Styles */
+/* ========================================
+   RESET & BASE STYLES
+   ======================================== */
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-html,
-body {
+html {
+  scroll-behavior: smooth;
   max-width: 100vw;
   overflow-x: hidden;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
 }
 
 body {
+  /* Font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Typography */
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  
+  /* Layout */
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  overflow-x: hidden;
+  
+  /* Colors */
+  background-color: var(--bg-primary);
   color: var(--text-primary);
-  background: var(--bg-primary);
+  
+  /* Scrollbar */
+  -ms-overflow-style: none;
 }
 
+/* ========================================
+   LINKS & BUTTONS
+   ======================================== */
 a {
   color: inherit;
   text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-/* Deine bestehenden Styles - Dark Theme Version */
+button {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ========================================
+   FOCUS STATES
+   ======================================== */
+*:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   MEDIA ELEMENTS
+   ======================================== */
+img, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+  outline: none;
+}
+
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* ========================================
+   3D BACKGROUND & LAYOUT
+   ======================================== */
+.cavani_tm_mainpart {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.cavani_tm_mainpart.full-width {
+  width: 100vw;
+}
+
+/* GLB Viewer - Fixed Background */
+.glb-viewer-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.glb-viewer-container.interactive {
+  pointer-events: auto;
+}
+
+/* Canvas specific styling */
+.glb-viewer-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* Main Content Overlay */
+.main_content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 100vh;
+  padding: 4rem 2rem;
+}
+
+/* Text readability over 3D background */
+.main_content h1,
+.main_content h2,
+.main_content h3,
+.main_content p {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* Optional gradient overlay for better contrast */
+.main_content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 10, 10, 0.6) 0%,
+    rgba(10, 10, 10, 0.3) 50%,
+    rgba(10, 10, 10, 0.6) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ========================================
+   COMPONENT SPECIFIC STYLES
+   ======================================== */
 .cavani_tm_home .job .styles_type__2Teeh {
   font-weight: 600;
   color: var(--accent-primary);
@@ -56,15 +225,405 @@ a {
   margin-left: 2px;
 }
 
-.cavani_tm_mainpart .author_image .jquery-ripples {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  background-image: url(../public/img/about/3.jpg) !important;
-  /* Optional: Dunkler Overlay über dem Bild */
-  filter: brightness(0.8);
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 768px) {
+  .main_content {
+    padding: 2rem 1rem;
+  }
+  
+  /* Reduce 3D complexity on mobile */
+  .glb-viewer-container {
+    opacity: 0.5;
+  }
+  
+  /* Stronger text contrast on mobile */
+  .main_content h1,
+  .main_content h2,
+  .main_content h3 {
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+  }
 }
 
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+  
+  .main_content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.text-shadow-strong {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
+}
+
+.glass-effect {
+  background: rgba(26, 26, 26, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-scroll {
+  overflow: hidden;
+}
+
+/* globals.css */
+
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
+:root {
+  /* Dark Theme Colors */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #808080;
+  
+  --accent-primary: #f9d77e;
+  --accent-secondary: #0070f3;
+  
+  --border-color: #333333;
+  --border-hover: #555555;
+  
+  --card-bg: #1a1a1a;
+  --card-hover: #252525;
+}
+
+/* ========================================
+   RESET & BASE STYLES
+   ======================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  /* Font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Typography */
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  
+  /* Layout */
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  overflow-x: hidden;
+  
+  /* Colors */
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  
+  /* Scrollbar */
+  -ms-overflow-style: none;
+}
+
+/* ========================================
+   LINKS & BUTTONS
+   ======================================== */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+button {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+/* ========================================
+   FOCUS STATES
+   ======================================== */
+*:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   MEDIA ELEMENTS
+   ======================================== */
+img, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+  outline: none;
+}
+
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+/* WebKit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* ========================================
+   3D BACKGROUND & LAYOUT
+   ======================================== */
+.cavani_tm_mainpart {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.cavani_tm_mainpart.full-width {
+  width: 100vw;
+}
+
+/* GLB Viewer - Fixed Background */
+.glb-viewer-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.glb-viewer-container.interactive {
+  pointer-events: auto;
+}
+
+/* Canvas specific styling */
+.glb-viewer-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* Main Content Overlay */
+.main_content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-height: 100vh;
+  padding: 4rem 2rem;
+}
+
+/* Text readability over 3D background */
+.main_content h1,
+.main_content h2,
+.main_content h3,
+.main_content p {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+/* Optional gradient overlay for better contrast */
+.main_content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 10, 10, 0.6) 0%,
+    rgba(10, 10, 10, 0.3) 50%,
+    rgba(10, 10, 10, 0.6) 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ========================================
+   COMPONENT SPECIFIC STYLES
+   ======================================== */
+.cavani_tm_home .job .styles_type__2Teeh {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.styles_type__2Teeh::after {
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+@media (max-width: 768px) {
+  .main_content {
+    padding: 2rem 1rem;
+  }
+  
+  /* Reduce 3D complexity on mobile */
+  .glb-viewer-container {
+    opacity: 0.5;
+  }
+  
+  /* Stronger text contrast on mobile */
+  .main_content h1,
+  .main_content h2,
+  .main_content h3 {
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+  
+  .main_content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+.text-shadow-strong {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.9);
+}
+
+.glass-effect {
+  background: rgba(26, 26, 26, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-scroll {
+  overflow: hidden;
+}
+
+
+/* Clean floating text version */
+.cavani_tm_home .content {
+  position: relative;
+  z-index: 102;
+  padding: 2rem;
+  background: none; /* Remove backdrop */
+  backdrop-filter: none;
+  border: none;
+}
+
+.cavani_tm_home .content .name {
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 8px rgba(0, 0, 0, 0.7),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.cavani_tm_home .content .line,
+.cavani_tm_home .content .job {
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 4px 8px rgba(0, 0, 0, 0.7);
+}
