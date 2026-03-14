@@ -140,6 +140,293 @@ canvas {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
+/* landing-page.css or add to globals.css */
+
+/* ========================================
+   LANDING PAGE STYLES
+   ======================================== */
+
+.landing-page-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.landing-page-container.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.landing-page-container.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* 3D Background Layer */
+.landing-glb-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.landing-glb-background canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Content Overlay Layer */
+.landing-content-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.landing-hero {
+  width: 100%;
+  max-width: 1200px;
+  padding: 2rem;
+  pointer-events: auto;
+}
+
+.landing-text-content {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Typography */
+.landing-title {
+  font-size: clamp(3rem, 10vw, 7rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-shadow: 
+    0 2px 10px rgba(0, 0, 0, 0.8),
+    0 4px 20px rgba(0, 0, 0, 0.6);
+  animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.landing-subtitle {
+  display: block;
+  font-size: clamp(1.2rem, 4vw, 2.5rem);
+  font-weight: 300;
+  color: #b0b0b0;
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+  animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+.landing-job {
+  font-size: clamp(1.5rem, 5vw, 3rem);
+  font-weight: 600;
+  color: var(--accent-primary, #f9d77e);
+  margin-bottom: 3rem;
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.8);
+  animation: fadeInUp 0.8s ease-out 0.6s both;
+}
+
+/* CTA Button */
+.landing-cta {
+  animation: fadeInUp 0.8s ease-out 0.8s both;
+}
+
+.landing-button {
+  display: inline-block;
+  padding: 1.2rem 3.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0a0a0a;
+  background: var(--accent-primary, #f9d77e);
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 15px rgba(249, 215, 126, 0.4),
+    0 0 0 0 rgba(249, 215, 126, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.landing-button:hover {
+  background: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 30px rgba(249, 215, 126, 0.6),
+    0 0 0 8px rgba(249, 215, 126, 0.2);
+}
+
+.landing-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.landing-button:active {
+  transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   RESPONSIVE - LANDING PAGE
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .landing-text-content {
+    padding: 2.5rem 1.5rem;
+  }
+  
+  .landing-title {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-hero {
+    padding: 1rem;
+  }
+  
+  .landing-text-content {
+    padding: 2rem 1.5rem;
+    background: rgba(10, 10, 10, 0.8);
+    border-radius: 20px;
+  }
+  
+  .landing-title {
+    font-size: clamp(2rem, 9vw, 4rem);
+    margin-bottom: 0.8rem;
+  }
+  
+  .landing-subtitle {
+    font-size: clamp(1rem, 4vw, 1.8rem);
+    margin-bottom: 1.5rem;
+  }
+  
+  .landing-job {
+    font-size: clamp(1.2rem, 5vw, 2rem);
+    min-height: 3rem;
+    margin-bottom: 2rem;
+  }
+  
+  .landing-button {
+    padding: 1rem 2.5rem;
+    font-size: 1rem;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-text-content {
+    padding: 1.5rem 1rem;
+    border-radius: 15px;
+  }
+  
+  .landing-title {
+    font-size: clamp(1.8rem, 10vw, 3rem);
+  }
+  
+  .landing-subtitle {
+    font-size: clamp(0.9rem, 4vw, 1.5rem);
+  }
+  
+  .landing-job {
+    font-size: clamp(1rem, 5vw, 1.5rem);
+    min-height: 2.5rem;
+  }
+  
+  .landing-button {
+    padding: 0.9rem 2rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Landscape mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .landing-page-container {
+    height: auto;
+    min-height: 100vh;
+  }
+  
+  .landing-text-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  .landing-title {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .landing-job {
+    min-height: 2rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .landing-title,
+  .landing-subtitle,
+  .landing-job,
+  .landing-cta {
+    animation: none;
+  }
+  
+  .landing-button {
+    transition: none;
+  }
+}
+
+
 /* ========================================
    3D BACKGROUND & LAYOUT
    ======================================== */

@@ -9,10 +9,7 @@ import Mobilemenu from "../src/layout/mobilemenu";
 import Modalbox from "../src/layout/modalbox";
 import TopBar from "../src/layout/top-bar";
 
-const GLBViewer = dynamic(
-  () => import("../src/components/model/GLBViewer"),
-  { ssr: false }
-);
+
 
 const Metabolomics = dynamic(
   () => import("../src/components/metabolomics/metabolomics"),
@@ -62,9 +59,7 @@ export default function Home() {
         <TopBar toggleTrueFalse={toggleTrueFalse} isToggled={isToggled} />
         <Mobilemenu toggleTrueFalse={toggleTrueFalse} isToggled={isToggled} handleOnClick={handleOnClick} />
 
-        {/* <!-- MAINPART --> */}
-        <div className={ActiveIndex === 0 ? "cavani_tm_mainpart" : "cavani_tm_mainpart full-width"}>
-          {ActiveIndex === 0 && <GLBViewer className="glb-viewer-container"/>}
+    
 
           <div className="main_content">
             <LandingPage ActiveIndex={ActiveIndex} handleOnClick={handleOnClick} />
@@ -83,7 +78,7 @@ export default function Home() {
 
             <ContactDefault ActiveIndex={ActiveIndex} />
           </div>
-        </div>
+      
         {/* MAINPART */}
       </Layout>
     </>
