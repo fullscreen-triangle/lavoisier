@@ -1,176 +1,338 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useStore } from "@/lib/state/store";
+import { createWorkerManager } from "@/lib/worker/manager";
+import {
+  createSourceFromFiles,
+  extractFilesFromDataTransfer,
+} from "@/lib/source";
+
+import SourcePicker from "./SourcePicker";
+import FileTree from "./FileTree";
+import AnalyserPanel from "./AnalyserPanel";
+import ShaderCanvas from "./ShaderCanvas";
+import SEntropyViewer from "./SEntropyViewer";
+import ResultsTable from "./ResultsTable";
+import StatusBar from "./StatusBar";
+import DetailPanel from "./DetailPanel";
+import DeepLinkLoader from "./DeepLinkLoader";
 
 /**
- * The Lavoisier workspace — the complete force-free mass spectrometer in the browser.
+ * The Lavoisier workspace — the complete force-free mass spectrometer.
  *
  * Layout:
- *   [  SourcePicker  ]  [  AnalyserPanel  ]  [  StatusBar  ]
- *   [  FileTree    ]  [   ShaderCanvas (S-entropy viewer)   ]
- *                     [   ResultsTable (live stream)        ]
+ *   ┌─────────────────────────────────────────────────────────────────┐
+ *   │ status bar (GPU, source, scan count, quality metrics)           │
+ *   ├──────────────┬───────────────────────────┬──────────────────────┤
+ *   │  Source      │  AnalyserPanel            │  ResultsTable        │
+ *   │  FileTree    │  ShaderCanvas (Pass 1)    │                      │
+ *   │              │  SEntropyViewer (Three.js)│  DetailPanel         │
+ *   └──────────────┴───────────────────────────┴──────────────────────┘
  *
- * This is a skeleton. Individual panels will be wired in as layers come online.
+ * Drop a file or folder anywhere on the workspace and it will load.
  */
 export default function Workspace() {
-  const [gpuReady, setGpuReady] = useState(false);
-  const [source, setSource] = useState(null);
+  const files = useStore((s) => s.files);
+  const selectedFiles = useStore((s) => s.selectedFiles);
+  const analyser = useStore((s) => s.analyser);
+  const analyserCfg = useStore((s) => s.analyserCfg);
+  const appendStates = useStore((s) => s.appendStates);
+  const setTaskState = useStore((s) => s.setTaskState);
+  const resetResults = useStore((s) => s.resetResults);
+  const setSource = useStore((s) => s.setSource);
+  const setFiles = useStore((s) => s.setFiles);
+
+  const managerRef = useRef(null);
+  const [view, setView] = useState("shader"); // "shader" | "viewer"
+  const [processing, setProcessing] = useState(false);
+  const [globalDrag, setGlobalDrag] = useState(false);
+  const [dropError, setDropError] = useState(null);
+  const [shaderUnavailable, setShaderUnavailable] = useState(false);
+
+  const handleShaderUnavailable = useCallback(() => {
+    setShaderUnavailable(true);
+    // Auto-flip to the S-Entropy viewer so the workspace stays useful.
+    setView("viewer");
+  }, []);
+
+  // Lazy-create the worker manager on first need
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    return () => {
+      if (managerRef.current) {
+        managerRef.current.cancelAll();
+      }
+    };
+  }, []);
+
+  /* --------------------------------------------------------------- */
+  /* Workspace-wide drag-and-drop                                    */
+  /* --------------------------------------------------------------- */
+
+  // Track drag state via document-level listeners. dragenter/leave fire
+  // for every child element so we counter-balance with a counter.
+  const dragCounter = useRef(0);
+
+  useEffect(() => {
+    const onEnter = (e) => {
+      // Only react if the drag actually carries files
+      if (!e.dataTransfer?.types?.includes("Files")) return;
+      e.preventDefault();
+      dragCounter.current += 1;
+      if (dragCounter.current === 1) setGlobalDrag(true);
+    };
+    const onLeave = (e) => {
+      e.preventDefault();
+      dragCounter.current -= 1;
+      if (dragCounter.current <= 0) {
+        dragCounter.current = 0;
+        setGlobalDrag(false);
+      }
+    };
+    const onOver = (e) => {
+      if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
+    };
+    const onDrop = async (e) => {
+      e.preventDefault();
+      dragCounter.current = 0;
+      setGlobalDrag(false);
+      if (!e.dataTransfer?.types?.includes("Files")) return;
+      try {
+        const dropped = await extractFilesFromDataTransfer(
+          e.dataTransfer.items?.length ? e.dataTransfer.items : e.dataTransfer.files
+        );
+        if (dropped.length === 0) {
+          setDropError("No files were dropped.");
+          return;
+        }
+        const src = createSourceFromFiles(dropped);
+        setSource(src);
+        const list = await src.listFiles();
+        setFiles(list);
+        if (list.length === 0) {
+          setDropError(
+            "No supported MS files in drop. Lavoisier reads .mzML, .mzXML, .imzML, .mgf and .json."
+          );
+        } else {
+          setDropError(null);
+        }
+      } catch (err) {
+        setDropError(String(err?.message || err));
+      }
+    };
+
+    window.addEventListener("dragenter", onEnter);
+    window.addEventListener("dragleave", onLeave);
+    window.addEventListener("dragover", onOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("dragenter", onEnter);
+      window.removeEventListener("dragleave", onLeave);
+      window.removeEventListener("dragover", onOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, [setSource, setFiles]);
+
+  // Auto-clear drop errors after a few seconds
+  useEffect(() => {
+    if (!dropError) return;
+    const t = setTimeout(() => setDropError(null), 6000);
+    return () => clearTimeout(t);
+  }, [dropError]);
+
+  /* --------------------------------------------------------------- */
+  /* Process selected files                                           */
+  /* --------------------------------------------------------------- */
+
+  const handleProcess = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    if (!managerRef.current) {
+      managerRef.current = createWorkerManager({ concurrency: 4 });
+    }
+    const mgr = managerRef.current;
+
+    resetResults();
+    setProcessing(true);
+
+    const filesToProcess = files.filter((f) => selectedFiles.has(f.id));
+
+    const taskPromises = filesToProcess.map((file) => {
+      setTaskState(file.id, { status: "running", scanCount: 0, pct: 0 });
+
+      const task = mgr.processFile(
+        file,
+        {
+          analyser,
+          analyserCfg: analyserCfg[analyser],
+          ternaryDepth: 18,
+          topN: 32,
+          batchSize: 100,
+          decodeBinary: true,
+        },
+        {
+          onStateBatch(states) {
+            appendStates(states);
+            // Note: setTaskState patches with an object, not a function;
+            // worker scanCount is the source of truth via onDone.
+          },
+          onProgress(p) {
+            setTaskState(file.id, { pct: p.pct ?? 0 });
+          },
+          onDone(summary) {
+            setTaskState(file.id, {
+              status: "done",
+              scanCount: summary.scanCount,
+              pct: 1,
+              elapsedMs: summary.elapsedMs,
+            });
+          },
+          onError(err) {
+            console.warn(`[${file.name}]`, err);
+          },
+        }
+      );
+
+      return task.done.catch((err) => {
+        if (err.message !== "cancelled") {
+          setTaskState(file.id, { status: "error", error: err.message });
+        }
+      });
+    });
+
+    await Promise.allSettled(taskPromises);
+    setProcessing(false);
+  }, [files, selectedFiles, analyser, analyserCfg, appendStates, setTaskState, resetResults]);
 
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-180px)] bg-light dark:bg-dark text-dark dark:text-light">
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-8 py-3 border-b-2 border-dark/10 dark:border-light/10">
-        <div>
-          <div className="text-sm uppercase tracking-wider text-dark/60 dark:text-light/60">
-            Lavoisier Workspace
-          </div>
-          <div className="text-xs text-dark/40 dark:text-light/40 mt-0.5">
-            Force-free mass spectrometer · GPU observation apparatus
-          </div>
-        </div>
-        <div className="flex items-center gap-3 text-xs">
-          <StatusDot ok={gpuReady} label={gpuReady ? "GPU ready" : "GPU waiting"} />
-          <StatusDot ok={!!source} label={source ? "Source connected" : "No source"} />
-        </div>
-      </div>
+    <div className="flex flex-col w-full min-h-[calc(100vh-160px)] bg-light dark:bg-dark text-dark dark:text-light relative">
+      <DeepLinkLoader />
+      <StatusBar />
 
-      {/* Main 3-column layout */}
-      <div className="grid grid-cols-[260px_1fr_360px] gap-0 flex-1 lg:grid-cols-1">
-        {/* Left: Source + File tree */}
+      {/* Global drop overlay */}
+      <AnimatePresence>
+        {globalDrag && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 pointer-events-none flex items-center justify-center"
+          >
+            <div className="absolute inset-0 bg-primary/15 dark:bg-primaryDark/15 backdrop-blur-sm" />
+            <div className="relative rounded-2xl border-4 border-dashed border-primary dark:border-primaryDark
+              bg-light dark:bg-dark px-12 py-10 shadow-2xl">
+              <div className="text-center">
+                <div className="text-5xl mb-3">⬇</div>
+                <div className="text-2xl font-bold text-primary dark:text-primaryDark">
+                  Drop to load
+                </div>
+                <div className="text-sm text-dark/60 dark:text-light/60 mt-1">
+                  .mzML, .mzXML, .imzML, .mgf, .json
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Drop error toast */}
+      <AnimatePresence>
+        {dropError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50
+              rounded-lg bg-red-500/10 border border-red-500/40
+              px-4 py-2 text-xs text-red-700 dark:text-red-300 max-w-md shadow-lg"
+          >
+            <div className="font-bold">Drop failed</div>
+            <div className="mt-0.5">{dropError}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-[280px_1fr_360px] gap-0 flex-1
+        lg:grid-cols-[260px_1fr] xl:grid-cols-1 min-h-0">
+        {/* Left: source + files */}
         <aside className="border-r-2 border-dark/10 dark:border-light/10 p-4 overflow-y-auto">
           <h3 className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-3">
             Source
           </h3>
-          <SourcePlaceholder onSource={setSource} />
+          <SourcePicker />
 
           <h3 className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mt-6 mb-3">
             Files
           </h3>
-          <FileTreePlaceholder />
+          <FileTree onProcess={handleProcess} />
         </aside>
 
-        {/* Centre: Shader canvas + analyser panel */}
-        <main className="flex flex-col p-4 overflow-hidden">
-          <AnalyserPanelPlaceholder />
-          <ShaderCanvasPlaceholder onReady={() => setGpuReady(true)} />
+        {/* Centre: analyser + canvas/viewer */}
+        <main className="flex flex-col p-4 gap-3 min-w-0 min-h-0">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b-2 border-dark/10 dark:border-light/10">
+            <AnalyserPanel compact />
+            <div className="flex items-center gap-1 text-xs">
+              <ViewToggle current={view} onChange={setView} shaderDisabled={shaderUnavailable} />
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col">
+            {view === "shader" ? (
+              <ShaderCanvas onUnavailable={handleShaderUnavailable} />
+            ) : (
+              <SEntropyViewer />
+            )}
+          </div>
         </main>
 
-        {/* Right: Results table */}
-        <aside className="border-l-2 border-dark/10 dark:border-light/10 p-4 overflow-y-auto">
-          <h3 className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-3">
-            Live Results
-          </h3>
-          <ResultsTablePlaceholder />
+        {/* Right: results + detail */}
+        <aside className="border-l-2 border-dark/10 dark:border-light/10 p-4 flex flex-col gap-3 lg:hidden xl:hidden">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60">
+              Live Results
+            </h3>
+            {processing && (
+              <span className="text-[10px] text-primary dark:text-primaryDark animate-pulse">
+                streaming…
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-h-0">
+            <ResultsTable />
+          </div>
+          <DetailPanel />
         </aside>
       </div>
     </div>
   );
 }
 
-function StatusDot({ ok, label }) {
+function ViewToggle({ current, onChange, shaderDisabled = false }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <div
-        className={`w-2 h-2 rounded-full ${
-          ok ? "bg-green-500" : "bg-dark/30 dark:bg-light/30"
+    <div className="flex rounded-md border border-dark/10 dark:border-light/10 overflow-hidden text-xs">
+      <button
+        onClick={() => !shaderDisabled && onChange("shader")}
+        disabled={shaderDisabled}
+        title={shaderDisabled ? "WebGL2 unavailable in this browser" : "Wave-field shader pipeline"}
+        className={`px-3 py-1 ${
+          shaderDisabled
+            ? "opacity-40 cursor-not-allowed line-through"
+            : current === "shader"
+            ? "bg-dark text-light dark:bg-light dark:text-dark"
+            : "hover:bg-dark/5 dark:hover:bg-light/5"
         }`}
-      />
-      <span className={ok ? "text-dark dark:text-light" : "text-dark/50 dark:text-light/50"}>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function SourcePlaceholder({ onSource }) {
-  return (
-    <div className="space-y-2">
-      <button
-        className="w-full px-3 py-2 text-sm rounded border-2 border-dashed border-dark/20 dark:border-light/20
-          hover:border-primary dark:hover:border-primaryDark hover:bg-primary/5 dark:hover:bg-primaryDark/5 transition-colors"
-        onClick={() => {
-          alert("Local folder picker — coming in source layer");
-        }}
       >
-        📁 Open Local Folder
+        Shader
       </button>
-      <div className="text-center text-xs text-dark/40 dark:text-light/40 py-1">or</div>
       <button
-        className="w-full px-3 py-2 text-sm rounded border-2 border-dashed border-dark/20 dark:border-light/20
-          hover:border-primary dark:hover:border-primaryDark hover:bg-primary/5 dark:hover:bg-primaryDark/5 transition-colors"
-        onClick={() => {
-          alert("Repository linker — coming in source layer");
-        }}
+        onClick={() => onChange("viewer")}
+        className={`px-3 py-1 ${
+          current === "viewer"
+            ? "bg-dark text-light dark:bg-light dark:text-dark"
+            : "hover:bg-dark/5 dark:hover:bg-light/5"
+        }`}
       >
-        🔗 Link Repository
+        S-Entropy
       </button>
-    </div>
-  );
-}
-
-function FileTreePlaceholder() {
-  return (
-    <div className="text-xs text-dark/40 dark:text-light/40 italic py-4">
-      No source connected.
-    </div>
-  );
-}
-
-function AnalyserPanelPlaceholder() {
-  const analysers = ["TOF", "Quadrupole", "Orbitrap", "FT-ICR"];
-  return (
-    <div className="flex items-center gap-2 mb-4 pb-4 border-b-2 border-dark/10 dark:border-light/10">
-      <span className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mr-2">
-        Analyser:
-      </span>
-      {analysers.map((a, i) => (
-        <button
-          key={a}
-          className={`px-3 py-1 text-xs rounded border-2 font-medium transition-colors
-            ${
-              i === 0
-                ? "border-primary bg-primary/10 text-primary dark:border-primaryDark dark:bg-primaryDark/10 dark:text-primaryDark"
-                : "border-dark/10 dark:border-light/10 hover:border-dark/30 dark:hover:border-light/30"
-            }`}
-        >
-          {a}
-        </button>
-      ))}
-      <span className="ml-auto text-xs font-mono text-dark/40 dark:text-light/40">
-        Partition Lagrangian: L_M = ½μ|ẋ|² + μẋ·A_M − M(x,t)
-      </span>
-    </div>
-  );
-}
-
-function ShaderCanvasPlaceholder({ onReady }) {
-  React.useEffect(() => {
-    // When the real shader canvas comes online, it calls onReady
-    // For now, just simulate
-    const t = setTimeout(() => onReady(), 600);
-    return () => clearTimeout(t);
-  }, [onReady]);
-
-  return (
-    <div
-      className="flex-1 rounded-lg border-2 border-dark/10 dark:border-light/10
-        bg-gradient-to-br from-dark/5 to-primary/5 dark:from-light/5 dark:to-primaryDark/5
-        flex items-center justify-center min-h-[400px]"
-    >
-      <div className="text-center">
-        <div className="text-xs uppercase tracking-wider text-dark/40 dark:text-light/40 mb-2">
-          Shader Canvas
-        </div>
-        <div className="text-sm text-dark/60 dark:text-light/60">
-          S-entropy space [0,1]³ viewer — coming in GPU layer
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ResultsTablePlaceholder() {
-  return (
-    <div className="text-xs text-dark/40 dark:text-light/40 italic py-4">
-      No observations yet.
     </div>
   );
 }

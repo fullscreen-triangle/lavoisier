@@ -5,11 +5,17 @@ import { AnimatePresence } from "framer-motion";
 import { Montserrat } from "next/font/google";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { registerServiceWorker } from "@/lib/pwa/register";
 
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-mont" });
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   return (
     <>
@@ -20,6 +26,9 @@ export default function App({ Component, pageProps }) {
           content="Lavoisier: force-free mass spectrometry through partition depth minimisation. GPU fragment shaders as observation apparatus. No backend, no stored spectra."
         />
         <meta name="theme-color" content="#1b1b1b" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main
