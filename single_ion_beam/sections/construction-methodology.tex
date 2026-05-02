@@ -1,0 +1,304 @@
+\section{Construction Methodology}
+\label{sec:construction_methodology}
+
+This section is the practical recipe for constructing the quintupartite single-ion observatory. It is organised as a build sequence: bill of materials, eleven assembly phases, alignment and calibration protocols, and first-light operation procedures. The instrument is designed to be buildable in a well-equipped atomic-physics laboratory using commercially available components; no fundamentally new fabrication is required.
+
+\subsection{Overall Architecture}
+\label{subsec:architecture}
+
+The instrument occupies the cold bore of a horizontal-bore $7$~T superconducting magnet. From outside in, the build is layered:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Magnet} (room-temperature exterior, helium bath at 4.2~K, $7$~T persistent field, bore diameter $89$~mm).
+    \item \textbf{Cryostat insert} (4~K stage with vibration-damped suspension, terminating in a $50$~mm internal-diameter cold platform).
+    \item \textbf{UHV chamber} ($\le 5\times10^{-11}$~Torr, OFHC copper body, indium-sealed CF flanges).
+    \item \textbf{Trap stack} (gold-plated copper electrodes, hexagonal $5\times5$ array of cylindrical Penning traps with $1$~mm centre-to-centre spacing, plus one central characterisation trap).
+    \item \textbf{Pickup-coil array and SQUID sensors} (one pickup coil per trap, mutual inductance $1$~nH; SQUIDs at $4$~K stage).
+    \item \textbf{Optical access} (five orthogonal viewports terminating in superpolished aspheres, NA $0.5$).
+    \item \textbf{Laser network} (six laser systems on a separate optical table, fibre-coupled into the cryostat).
+    \item \textbf{Ion injection} (electrospray source coupled through differentially-pumped octupole guide; secondary photoionisation source for atomic references).
+    \item \textbf{Hardware oscillator network and DAQ} (digitiser at $1$~GS/s, $16$~bit, GPS-disciplined oscillator, FPGA-based real-time differential subtraction).
+    \item \textbf{Control computer} running the categorical analysis pipeline.
+\end{enumerate}
+
+The total instrument footprint is approximately $3\times2$~m$^2$ (magnet + optical table); total construction time, with a two-person team, is approximately nine months.
+
+\subsection{Bill of Materials}
+\label{subsec:bom}
+
+\begin{table*}[!htbp]
+\centering
+\small
+\caption{Bill of materials for the quintupartite single-ion observatory. Vendor and part numbers are illustrative; equivalent components from other suppliers are acceptable provided the listed specifications are met.}
+\label{tab:bom}
+\begin{tabular}{p{0.30\textwidth}p{0.30\textwidth}p{0.36\textwidth}}
+\toprule
+\textbf{Subsystem} & \textbf{Component} & \textbf{Specification} \\
+\midrule
+Magnet & Horizontal-bore SC magnet & $7$~T, $89$~mm bore, $\Delta B/B < 10^{-9}$/h passive, persistent mode \\
+\addlinespace
+Cryostat & $^4$He bath cryostat insert & $4.2$~K base, $1$~W cooling, vibration-isolated $50$~mm cold platform \\
+\addlinespace
+UHV pumps & Ion pump + NEG getter & $300$~L/s, base $5\times10^{-11}$~Torr cold \\
+\addlinespace
+Trap electrodes & 5N copper, gold flash & Wire-EDM cylindrical electrodes, $r_0 = 1.0$~mm, $z_0 = 0.71$~mm \\
+\addlinespace
+Trap support & Sapphire spacers & Single-crystal sapphire, $50$~$\mu$m flatness \\
+\addlinespace
+Pickup coils & NbTi multi-strand wire & $0.1$~mm core, $10$ turns, $1$~mm coil ID \\
+\addlinespace
+SQUID sensors & DC SQUID, low-$T_c$ & $S_\Phi^{1/2} \le 1\,\mu\Phi_0/\sqrt{\text{Hz}}$, integrated input transformer \\
+\addlinespace
+Magnet shimming & Resistive shim coils & $\le 8$~ppm/cm$^3$ over $1$~cm$^3$ DSV \\
+\addlinespace
+Optical viewports & Sapphire on CF & 5 ports, AR-coated, $25$~mm clear aperture \\
+\addlinespace
+Cooling lasers & ECDLs & 397~nm (Ca$^+$), 422~nm (Sr$^+$), 493~nm (Ba$^+$), 280~nm (Mg$^+$) \\
+\addlinespace
+Spectroscopy lasers & Ti:Sa + frequency comb & 700--900~nm tunable, locked to optical comb \\
+\addlinespace
+Ion source & ESI + photoionisation & Capillary ESI; pulsed dye laser for two-photon resonant ionisation \\
+\addlinespace
+Octupole guide & RF octupole & $\Omega/2\pi = 1$~MHz, differential pumping $4$ stages \\
+\addlinespace
+Digitiser & PXIe FPGA card & $1$~GS/s, $16$~bit, $2$~GB on-board memory \\
+\addlinespace
+Reference oscillator & GPSDO Rb clock & $\sigma_y(1\,\text{s}) \le 5\times10^{-13}$ \\
+\addlinespace
+Differential electronics & FPGA module & Sub-cycle reference subtraction, $32$ channels, $250$~MHz \\
+\addlinespace
+Control computer & Linux workstation, GPU & RTX-class GPU for shader pipeline; PXIe interface \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Phase 1: Magnet Field Qualification}
+\label{subsec:phase1_magnet}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item Charge the superconducting magnet to $7.000$~T in persistent mode following the manufacturer's ramp protocol. Allow $48$~h for thermal equilibration.
+    \item Map the field over the central $1$~cm$^3$ diametric spherical volume (DSV) using a calibrated Hall probe ($\pm 0.5$~mT) on a three-axis stage. Acceptance: $\Delta B/B \le 10^{-5}$ raw.
+    \item Install the resistive shim set. Iteratively adjust shim currents to flatten the field to $\Delta B/B \le 8\times10^{-6}$ over the DSV. Lock shim currents.
+    \item Measure persistent-mode drift by tracking the Hall-probe reading every $30$~min over $24$~h. Acceptance: $\Delta B/B < 10^{-9}$/h.
+    \item Engage the active flux-locked-loop stabiliser using the shim coils as fast-feedback elements. Final acceptance: $\Delta B/B < 10^{-10}$/h.
+\end{enumerate}
+
+The mass-spectrometric resolving power $R = m/\Delta m$ is bounded above by $B/\Delta B$ (Theorem~\ref{thm:field_stability}). Phase~1 sets the ceiling at $R \sim 10^{10}$.
+
+\subsection{Phase 2: UHV Chamber Construction}
+\label{subsec:phase2_uhv}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item Machine the chamber body from a single OFHC copper billet by wire-EDM. Internal volume $\sim 1$~L, all surfaces electropolished to Ra $< 10$~nm.
+    \item Bake the chamber at $200$\textcelsius{} for $48$~h before final assembly to outgas the copper.
+    \item Install five conflat (CF$2.75$) viewport flanges at $0^\circ$, $\pm 60^\circ$, $\pm 120^\circ$ around the trap region. Use indium gaskets (rather than copper) for cryogenic compatibility.
+    \item Mount the ion pump ($300$~L/s) and NEG getter ($1500$~L/s for H$_2$). Install a $25$~mm gate valve between the chamber and the ion source for source replacement without breaking trap vacuum.
+    \item Pump down. Start with turbomolecular roughing for $24$~h, then ion-pump only. Bake the entire system at $150$\textcelsius{} (cryostat-compatible) for $72$~h.
+    \item After cooldown, the chamber base pressure should be $\le 5\times10^{-11}$~Torr (cold-cathode gauge). Verify by measuring trap lifetime with a dummy laser-cooled $^{40}$Ca$^+$: target $\tau_{\mathrm{trap}} > 8$~h.
+\end{enumerate}
+
+\subsection{Phase 3: Trap Electrode Fabrication and Stack Assembly}
+\label{subsec:phase3_electrodes}
+
+The trap stack is a hexagonal $5\times5 + 1$ array of compensated cylindrical Penning traps. Each trap consists of seven electrodes: ring, two endcaps, two compensation electrodes, and two correction tubes.
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Wire-EDM the electrodes} from $5$N OFHC copper rod. Inner radius $r_0 = 1.000$~mm; endcap-to-ring half-spacing $z_0 = 0.710$~mm; total electrode length $1.50$~mm. Tolerances: $\pm 1$~$\mu$m on $r_0$ and $z_0$.
+    \item \textbf{Surface preparation}: lap each electrode with diamond paste (down to $0.25$~$\mu$m), then chemically polish with a 1:3 nitric:phosphoric solution. Final Ra $< 10$~nm.
+    \item \textbf{Gold flash}: electroplate $1$~$\mu$m of $24$K gold on all surfaces. This eliminates patch potentials and ensures stable workfunction.
+    \item \textbf{Sapphire spacers}: machine single-crystal sapphire spacers ($50$~$\mu$m thickness, $5$~$\mu$m flatness) by laser machining. Sapphire provides electrical isolation ($> 10^{15}$~$\Omega$) at $4$~K.
+    \item \textbf{Stack assembly}: Build the $5\times5+1$ array on a polished sapphire baseplate. Each trap stack: endcap--spacer--compensation--spacer--ring--spacer--compensation--spacer--endcap. Use indexing pins for $\le 5$~$\mu$m alignment between traps.
+    \item \textbf{Trap-centre alignment}: Optically inspect the assembled stack with a calibrated microscope. Each trap centre must lie within $5$~$\mu$m of its nominal lattice position.
+    \item \textbf{Wiring}: Solder Kapton-insulated $0.1$~mm copper wire to each electrode using $63$/$37$ Sn/Pb solder (no flux residue). Route wires to the cold-stage feedthroughs.
+    \item \textbf{Voltage divider}: install a precision voltage divider chain at the cold stage, providing the optimised endcap-to-compensation ratio for each trap (typically $C_2/C_4 = 0.589$ for a perfectly compensated trap).
+\end{enumerate}
+
+After assembly, characterise each trap by measuring $\omega_z$ for a single laser-cooled $^{40}$Ca$^+$ as a function of trap voltage; fit to $\omega_z^2 = qU/(md_0^2)$ to extract the effective trap dimension $d_0$. Acceptance: $d_0$ within $1$\% of design across all $26$ traps.
+
+\subsection{Phase 4: Pickup-Coil and SQUID Installation}
+\label{subsec:phase4_pickup}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Pickup coils}: Hand-wind $10$-turn coils from $0.1$~mm-core NbTi superconducting wire. Coil ID $1.0$~mm, total length $\sim 5$~mm. Each coil sits coaxially with one trap, $1$~mm offset from the upper endcap.
+    \item Measure the mutual inductance $M$ between each pickup coil and a test current carrying loop of known geometry. Acceptance: $M = 1.0 \pm 0.1$~nH.
+    \item \textbf{Twisted-pair routing}: Route superconducting twisted pairs from each pickup coil to the SQUID input transformers, with $\le 1$~cm length to minimise stray inductance.
+    \item \textbf{SQUID mounting}: Mount the SQUID array on a separate sapphire substrate, magnetically shielded by a niobium can. Each SQUID's input transformer is wirebonded to its dedicated pickup-coil twisted pair.
+    \item \textbf{Magnetic shielding}: Surround the SQUID stage with a multi-layer mu-metal can (room-temp) and a niobium can ($T < T_c$). Verify shielding factor $> 80$~dB at $50$~Hz.
+    \item \textbf{Flux-locked loop electronics}: Connect each SQUID to its FLL preamplifier with low-noise twisted-pair leads. Verify white-noise level $S_\Phi^{1/2} \le 1\,\mu\Phi_0/\sqrt{\text{Hz}}$ at $1$~kHz.
+    \item Calibrate each SQUID's transfer function (volts per flux quantum) using a known test current in the pickup coil. Acceptance: linearity within $0.1$\% over the operating dynamic range.
+\end{enumerate}
+
+\subsection{Phase 5: Optical Access and Beam Delivery}
+\label{subsec:phase5_optical}
+
+The five viewports admit beams from the laser table for cooling, repumping, ionisation, photoexcitation, and Raman spectroscopy. All paths are aligned to converge at the central characterisation trap.
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Aspheric lenses}: install a superpolished aspheric lens at each viewport, $f = 12.5$~mm, NA $0.5$, AR-coated for the relevant wavelength. Mount in a five-axis kinematic mount allowing $1$~$\mu$m positional adjustment.
+    \item \textbf{Beam alignment}: For each viewport, deliver a $632$~nm alignment beam through a calibration target placed at the trap centre. Adjust the kinematic mount until the beam passes through the target with $< 5$~$\mu$m offset.
+    \item \textbf{Power monitoring}: After alignment, install in-line power meters on each beam path with $\pm 1\%$ accuracy. The control system logs beam power at $10$~Hz during operation.
+    \item \textbf{Polarisation control}: For circular-polarisation cooling beams, install a quarter-wave plate at each viewport. Verify polarisation purity $\le 10^{-3}$ using a quarter-wave/polariser pair.
+    \item \textbf{Imaging optics}: One viewport is dedicated to fluorescence collection. Install an EMCCD camera with the asphere as the first element of a $40\times$ collection objective; quantum efficiency $\ge 90$\% at $397$~nm.
+\end{enumerate}
+
+\subsection{Phase 6: Laser System Build and Locking}
+\label{subsec:phase6_lasers}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Laser table layout}: Place the laser table at least $1$~m from the magnet to avoid field perturbation. Use a $300$~mm-thick honeycomb optical breadboard.
+    \item \textbf{Cooling laser construction}: For each laser-coolable reference ion, construct an external-cavity diode laser (ECDL) at the appropriate wavelength. Use Littrow configuration with a $1800$~lines/mm grating; thermo-electrically stabilise the laser diode to $\pm 1$~mK.
+    \item \textbf{Frequency reference}: Lock each ECDL to a known atomic or molecular line by saturated-absorption spectroscopy (preferred for Ca$^+$, Sr$^+$) or wavemeter-tracking (for less-stable transitions).
+    \item \textbf{Frequency comb integration}: Use an Er:fibre-based optical frequency comb ($f_{\mathrm{rep}} = 250$~MHz, locked to the GPSDO) as the absolute frequency standard. Beat-note locking of each ECDL to the nearest comb tooth provides $\sigma_y \le 10^{-13}$ stability.
+    \item \textbf{Acousto-optic modulators}: Install a double-pass AOM in each beam path for fast intensity and frequency control ($\sim$$200$~MHz tuning, $1$~$\mu$s switching).
+    \item \textbf{Fibre coupling}: Couple each beam into a polarisation-maintaining single-mode fibre (PM-PCF for UV) and route to the appropriate cryostat viewport. Coupling efficiency $\ge 60$\%.
+\end{enumerate}
+
+\subsection{Phase 7: Ion Source and Loading}
+\label{subsec:phase7_source}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Electrospray source}: Build a heated-capillary ESI source for biomolecules and analytes. Capillary $200$~$\mu$m ID, fused silica with conductive coating; ESI voltage $\pm 3$~kV.
+    \item \textbf{Differential pumping}: Connect the ESI source to the trap chamber through a four-stage differentially pumped octupole RF guide ($\Omega/2\pi = 1$~MHz, peak voltage $200$~V). Pressure drop: $\sim 1$~atm $\to 10^{-10}$~Torr in $\sim 1$~m.
+    \item \textbf{Reference photoionisation}: For atomic reference ions, install a pulsed dye laser (or diode laser tuned to two-photon resonance) and a heated reservoir of metallic Ca, Sr, Ba, Mg. Photoionisation occurs in a separate loading volume coupled to the trap.
+    \item \textbf{Loading sequence}: A complete reference-ion load procedure: heat reservoir, fire ionisation pulse, raise central-trap loading voltage to $-50$~V for $50$~ms, lower to nominal trapping voltage, verify single-ion confinement by fluorescence imaging.
+    \item \textbf{Single-ion confirmation}: Image the trap centre under cooling-laser illumination. A single ion appears as a single $\sim 1$~$\mu$m bright spot; multiple ions show spatial structure. Repeat loading until exactly one ion is present.
+\end{enumerate}
+
+\subsection{Phase 8: Hardware Oscillator Network and Differential Detection}
+\label{subsec:phase8_electronics}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Master oscillator}: GPS-disciplined Rb clock, $10$~MHz output, distributed by an active fan-out to all subsystems. Clock allan deviation $\sigma_y(1\,\text{s}) \le 5\times10^{-13}$.
+    \item \textbf{Digitiser configuration}: Install the $1$~GS/s, $16$-bit PXIe digitiser. Configure $32$ input channels, one per SQUID. Each channel triggers on the master clock; phase relations between channels are preserved to $< 10$~ps.
+    \item \textbf{FPGA differential subtraction}: Program the FPGA to compute $I_{\mathrm{diff}}(t) = I_{\mathrm{total}}(t) - \sum_{k} I_{\mathrm{ref},k}(t)$ in real time. Reference signals are pre-recorded high-SNR traces from each reference ion in isolation. Time alignment of reference traces is locked to the master clock with sub-cycle precision.
+    \item \textbf{FFT processing}: Use the FPGA's on-board FFT cores to transform the differential signal into the frequency domain. Output: complex spectrum with $\sim 1$~mHz resolution after $1000$~s of integration.
+    \item \textbf{Reference-ion library}: Maintain a software library of pre-recorded reference traces for each isotope; the FPGA selects the appropriate set based on which references are loaded.
+    \item \textbf{Sanity check}: With only references loaded, the differential spectrum should be flat noise with no peaks. Acceptance: residual peaks $< -100$~dBc relative to the largest reference peak.
+\end{enumerate}
+
+\subsection{Phase 9: Multi-Modal Spectroscopy Integration}
+\label{subsec:phase9_modalities}
+
+The five measurement modalities are integrated into the single instrument by sharing the optical access from Phase~5 and the digitiser channels from Phase~8.
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Modality~1 -- Optical spectroscopy}: A frequency-comb-locked Ti:Sa scan ($700$--$900$~nm, $\Delta\nu = 1$~MHz steps) is delivered through Viewport~1. Fluorescence is collected through Viewport~3.
+    \item \textbf{Modality~2 -- Refractive index (Raman)}: A $\sim 100$~mW pump beam through Viewport~2 and a Stokes-shifted probe through Viewport~4 enable Raman scattering measurements of the analyte's polarizability tensor.
+    \item \textbf{Modality~3 -- Vibrational spectroscopy}: An IR difference-frequency-generation source ($2$--$10$~$\mu$m) through Viewport~5 drives vibrational transitions; resonance is detected as a frequency shift in the trapped-ion motion via the SQUID readout.
+    \item \textbf{Modality~4 -- Categorical positioning}: For biological analytes, a flow-cell extension to the source allows enzyme assays. Pathway distance is recorded as a sequence of MS$^n$ fragmentation patterns.
+    \item \textbf{Modality~5 -- Temporal-causal dynamics}: The digitiser records the SQUID time series with $\le 1$~ns precision; categorical state evolution is reconstructed from the time-resolved spectra.
+\end{enumerate}
+
+All five modalities can be run sequentially or interleaved on the same trapped ion, since each modality preserves the categorical state (Theorem~\ref{thm:categorical_physical_commutation}).
+
+\subsection{Phase 10: System Integration and Cooldown}
+\label{subsec:phase10_integration}
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item \textbf{Final cabling}: Route all electrical leads from the cold stage to the room-temperature feedthroughs through copper-clad NbTi cables (low thermal load, low pickup).
+    \item \textbf{Cryogenic plumbing}: Connect the $^4$He bath to the gas-handling manifold; verify cryostat hold-time $\ge 24$~h between refills.
+    \item \textbf{Cooldown sequence}: Pre-cool the cryostat to $77$~K with liquid nitrogen ($24$~h), then transfer liquid helium to reach $4.2$~K. Pump the helium bath below the lambda point ($1.8$~K) for $200$~mK SQUID-noise floor.
+    \item \textbf{Subsystem checkout}: Verify each subsystem one at a time:
+    \begin{itemize}[nosep]
+        \item Magnet at $7$~T, persistent (Phase~1).
+        \item Vacuum $\le 5\times10^{-11}$~Torr (Phase~2).
+        \item All $26$ traps holding test voltages (Phase~3).
+        \item All $26$ SQUIDs locked, noise $\le 1\,\mu\Phi_0/\sqrt{\text{Hz}}$ (Phase~4).
+        \item All five viewports aligned to within $5$~$\mu$m of trap centre (Phase~5).
+        \item All laser systems locked to within $\sigma_y \le 10^{-13}$ (Phase~6).
+        \item Loading sequence places single $^{40}$Ca$^+$ in central trap (Phase~7).
+        \item Differential subtraction yields $\le -100$~dBc baseline (Phase~8).
+    \end{itemize}
+    \item \textbf{Integration test}: Load $4$ reference ions ($^{40}$Ca$^+$, $^{88}$Sr$^+$, $^{138}$Ba$^+$, $^{24}$Mg$^+$) in the four-corner traps and $^{40}$Ca$^+$ in the centre trap. Acquire a differential spectrum and verify that the central-trap peak appears at the expected $\omega_c$ within $\sigma/\omega \le 10^{-9}$.
+\end{enumerate}
+
+\subsection{Calibration and Alignment Protocols}
+\label{subsec:calibration}
+
+\subsubsection{Daily}
+\begin{itemize}[leftmargin=1.5em,nosep]
+    \item Re-check magnetic-field drift via a $^{40}$Ca$^+$ cyclotron-frequency measurement; nominal $\omega_c/2\pi = 2.683$~MHz.
+    \item Re-acquire reference traces for the loaded library; recompute differential filters.
+    \item Verify viewport alignment with a target ion; correct any drift $> 5$~$\mu$m.
+    \item Confirm laser locks across all six laser systems.
+\end{itemize}
+
+\subsubsection{Weekly}
+\begin{itemize}[leftmargin=1.5em,nosep]
+    \item Full SQUID noise spectrum measurement; verify $S_\Phi^{1/2}$ remains within specification.
+    \item Cross-check magnet shim currents.
+    \item Measure trap lifetime with a single $^{40}$Ca$^+$; expected $\tau_{\mathrm{trap}} \ge 8$~h.
+\end{itemize}
+
+\subsubsection{Annual}
+\begin{itemize}[leftmargin=1.5em,nosep]
+    \item Full system bake to $150$\textcelsius{} for $48$~h.
+    \item Replace SQUID input transformers if their input noise has degraded.
+    \item Recalibrate the frequency comb against an independent atomic-clock reference.
+\end{itemize}
+
+\subsection{First-Light Operation Protocol}
+\label{subsec:first_light}
+
+The first-light protocol is the standard sequence for a single analyte measurement. With references already loaded:
+
+\begin{enumerate}[leftmargin=1.5em]
+    \item Open the gate valve to the ESI source. Inject $1$~$\mu$L of analyte solution at $1$~$\mu$L/min.
+    \item Detect a single analyte ion arriving in the central trap by fluorescence (if optically active) or by a transient SQUID signal at the expected $\omega_c$ for the analyte's nominal $m/z$.
+    \item Close the gate valve. Verify single-ion occupancy by fluorescence imaging.
+    \item Run Modality~1: scan the Ti:Sa from $700$ to $900$~nm in $1$~MHz steps; record absorption spectrum from fluorescence drop-out.
+    \item Run Modality~2: pump at $532$~nm, probe across $400$--$700$~nm; record Raman spectrum.
+    \item Run Modality~3: scan the IR DFG source $2$--$10$~$\mu$m; record vibrational spectrum.
+    \item Run Modality~4 (if applicable): perform sequential MS$^n$ via collision-induced dissociation in the octupole guide.
+    \item Run Modality~5: $1000$-second high-resolution time-domain SQUID acquisition; FFT to obtain the categorical-frequency spectrum.
+    \item Pass all five modality records to the categorical-analysis pipeline. Verify $N_5 < 1$ (unique identification) before reporting the result.
+    \item If multiple candidates remain, repeat with a longer integration; if still ambiguous, the analyte exceeds the validation envelope of the loaded reference library and a different reference set is required.
+\end{enumerate}
+
+A complete single-analyte measurement takes $\sim 30$~min including all five modalities and analysis. With pre-loaded references and stable laser locks, a working day yields $\sim 10$ unique-molecule identifications at full multi-modal precision; in single-modality screening mode (Modality~5 only), throughput rises to $\sim 1000$ ions/day.
+
+\subsection{Quality Assurance Checks}
+\label{subsec:qa}
+
+\begin{enumerate}[leftmargin=1.5em,nosep]
+    \item \textbf{Reproducibility}: Repeat the first-light sequence on a known analyte (caffeine, $m/z = 195.088$) at five randomly chosen times during the day. Acceptance: $m/z$ standard deviation $\le 10^{-4}$ Da.
+    \item \textbf{Cross-validation}: Compare the categorical fingerprint of caffeine with NIST WebBook reference data for UV, IR, Raman; acceptance $\le 5$\% deviation in absorption maxima and vibrational frequencies.
+    \item \textbf{Background drift}: Acquire a no-analyte differential trace; the integrated baseline should remain within $\pm 0.5$\% of zero across the day.
+    \item \textbf{Throughput}: Verify that $\ge 8$ analytes/h can be measured at full five-modality precision under nominal operating conditions.
+\end{enumerate}
+
+\subsection{Build Schedule}
+\label{subsec:schedule}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Approximate construction timeline, two-person team.}
+\label{tab:build_schedule}
+\begin{tabular}{p{0.55\columnwidth}p{0.35\columnwidth}}
+\toprule
+\textbf{Phase} & \textbf{Duration} \\
+\midrule
+1. Magnet field qualification & 3 weeks \\
+2. UHV chamber construction & 6 weeks \\
+3. Trap electrode fabrication and stack assembly & 8 weeks \\
+4. Pickup-coil and SQUID installation & 4 weeks \\
+5. Optical access and beam delivery & 3 weeks \\
+6. Laser system build and locking & 6 weeks \\
+7. Ion source and loading & 4 weeks \\
+8. Hardware oscillator network and electronics & 5 weeks \\
+9. Multi-modal spectroscopy integration & 4 weeks \\
+10. System integration and cooldown & 3 weeks \\
+First-light testing and calibration & 3 weeks \\
+\midrule
+Total construction & 49 weeks ($\sim$11 months) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A more aggressive parallel schedule (running Phases 6, 7, and 8 in parallel with Phases 3--5) reduces the total to approximately seven months. The single longest serial dependency is the trap electrode fabrication (Phase~3), which gates pickup-coil installation.
+
+\subsection{Summary of Construction Methodology}
+\label{subsec:construction_summary}
+
+The instrument is buildable. None of the components require fabrication beyond standard atomic-physics laboratory practice; all key tolerances ($\mu$m-level alignment, $10^{-9}$ field stability, $\mu\Phi_0/\sqrt{\text{Hz}}$ SQUID noise) are achievable with commercial parts. The single innovation in the build is the simultaneous integration of five measurement modalities through shared optical access on a single trap; the rest is well-established Penning-trap mass-spectrometry technology. The eleven-phase build sequence in this section turns the theoretical framework of subsequent sections into a concrete laboratory recipe. Phase outputs serve as acceptance gates: at each phase, the listed performance criteria must be met before proceeding, ensuring that the assembled instrument achieves the system-level performance derived in the theory sections.
