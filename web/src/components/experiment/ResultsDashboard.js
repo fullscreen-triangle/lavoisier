@@ -1,26 +1,28 @@
 import React from "react";
 import { useStore } from "@/lib/state/store";
-import D3PartitionScatter3D from "./charts/D3PartitionScatter3D";
-import D3SEntropyCube from "./charts/D3SEntropyCube";
-import D3CapacityFormula from "./charts/D3CapacityFormula";
-import D3MassShellHistogram from "./charts/D3MassShellHistogram";
-import D3ClassAbundance from "./charts/D3ClassAbundance";
-import D3AdductDistribution from "./charts/D3AdductDistribution";
-import D3ResolutionSurface from "./charts/D3ResolutionSurface";
-import D3MultimodalReadout from "./charts/D3MultimodalReadout";
-import D3ChainScatter from "./charts/D3ChainScatter";
-import D3PartitionCellGrid from "./charts/D3PartitionCellGrid";
-import D3MassRangeViolin from "./charts/D3MassRangeViolin";
-import D3InfoBitsBar from "./charts/D3InfoBitsBar";
-import D3CoverageMatrix from "./charts/D3CoverageMatrix";
-
-import RecordsTable from "./RecordsTable";
+import { CrossfilterProvider, useCrossfilter } from "./cf/CrossfilterContext";
+import Row1XIC from "./cf/Row1XIC";
+import Row2ClassBubble from "./cf/Row2ClassBubble";
+import Row3SEntropy from "./cf/Row3SEntropy";
+import Row4Partition from "./cf/Row4Partition";
+import Row5Categorical from "./cf/Row5Categorical";
+import Row6Oscillatory from "./cf/Row6Oscillatory";
+import Row7Statistics from "./cf/Row7Statistics";
+import Row8Special from "./cf/Row8Special";
 import RecordDetail from "./RecordDetail";
 import LibraryExport from "./LibraryExport";
 
 /**
- * Six-panel results dashboard. Each panel groups related views, mirroring
- * the publication panels but rendered live with the user's design.
+ * The full crossfiltered dashboard.
+ * Layout (from the design spec):
+ *   Row 1: Full-width XIC + brushable m/z bar histogram
+ *   Row 2: Class bubble chart (filterable)
+ *   Row 3: 4 charts — S-entropy
+ *   Row 4: Partition coordinates (n, ℓ, m, s)
+ *   Row 5: Categorical coordinates (class, adduct, polarity, z)
+ *   Row 6: Oscillatory coordinates (observable, bits, fragments, I)
+ *   Row 7: Statistics (data count + filtered table + class breakdown)
+ *   Row 8: Droplet bijection + heatmap + 3D peak surface
  */
 export default function ResultsDashboard() {
   const records = useStore((s) => s.experimentRecords);
@@ -44,70 +46,53 @@ export default function ResultsDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <CrossfilterProvider records={records}>
+      <DashboardBody summary={summary} design={design} lastRunMs={lastRunMs} />
+    </CrossfilterProvider>
+  );
+}
+
+function DashboardBody({ summary, design, lastRunMs }) {
+  return (
+    <div className="space-y-5">
       <HeaderStrip summary={summary} design={design} lastRunMs={lastRunMs} />
 
-      {/* Panel 1: design landscape */}
-      <Panel title="Design landscape">
-        <Card title="A. Chain composition">
-          <D3ChainScatter records={records} width={460} height={280} />
-        </Card>
-        <Card title="B. m/z violin per class">
-          <D3MassRangeViolin records={records} width={460} height={280} />
-        </Card>
-        <Card title="C. Coverage (X, Y) per class">
-          <D3CoverageMatrix records={records} width={460} height={300} />
-        </Card>
-        <Card title="D. Class abundance">
-          <D3ClassAbundance records={records} width={460} height={280} />
-        </Card>
-      </Panel>
+      <RowSection title="1 · XIC + m/z range">
+        <Row1XIC height={260} />
+      </RowSection>
 
-      {/* Panel 2: partition coordinates */}
-      <Panel title="Partition coordinates">
-        <Card title="A. (n, ℓ, m) scatter (3D)">
-          <D3PartitionScatter3D records={records} width={460} height={360} />
-        </Card>
-        <Card title="B. Capacity C(n)=2n²">
-          <D3CapacityFormula records={records} width={360} height={220} />
-        </Card>
-        <Card title="C. Mass-shell map">
-          <D3MassShellHistogram records={records} width={460} height={260} />
-        </Card>
-        <Card title="D. (ℓ, m) cell grid">
-          <D3PartitionCellGrid records={records} width={320} height={280} />
-        </Card>
-      </Panel>
+      <RowSection title="2 · Lipid class bubbles">
+        <Row2ClassBubble height={300} />
+      </RowSection>
 
-      {/* Panel 3: ionisation & adducts */}
-      <Panel title="Ionisation & adducts">
-        <Card title="A. S-entropy cube (3D)">
-          <D3SEntropyCube records={records} width={460} height={360} />
-        </Card>
-        <Card title="B. Adduct × class">
-          <D3AdductDistribution records={records} width={460} height={260} />
-        </Card>
-        <Card title="C. Multimodal radar per class">
-          <D3MultimodalReadout records={records} width={360} height={320} />
-        </Card>
-        <Card title="D. Information bits per class">
-          <D3InfoBitsBar records={records} width={460} height={220} />
-        </Card>
-      </Panel>
+      <RowSection title="3 · S-entropy">
+        <Row3SEntropy />
+      </RowSection>
 
-      {/* Panel 4: instrument scaling */}
-      <Panel title="Instrument scaling">
-        <Card title="A. R(ω, T) family">
-          <D3ResolutionSurface width={460} height={280} />
-        </Card>
-      </Panel>
+      <RowSection title="4 · Partition coordinates (n, ℓ, m, s)">
+        <Row4Partition />
+      </RowSection>
 
-      {/* Detail of selected record */}
+      <RowSection title="5 · Categorical coordinates">
+        <Row5Categorical />
+      </RowSection>
+
+      <RowSection title="6 · Oscillatory coordinates">
+        <Row6Oscillatory />
+      </RowSection>
+
+      <RowSection title="7 · Statistics">
+        <Row7Statistics />
+      </RowSection>
+
+      <RowSection title="8 · Droplet bijection · heatmap · 3D peak surface">
+        <Row8Special height={300} />
+      </RowSection>
+
       <RecordDetail />
 
-      {/* Records + export */}
       <div className="grid grid-cols-[1fr_320px] gap-4 lg:grid-cols-1">
-        <RecordsTable />
+        <div />
         <LibraryExport />
       </div>
     </div>
@@ -115,18 +100,38 @@ export default function ResultsDashboard() {
 }
 
 function HeaderStrip({ summary, design, lastRunMs }) {
-  if (!summary) return null;
-  const fmt = (n) => n.toLocaleString();
   return (
-    <header className="grid grid-cols-6 lg:grid-cols-3 gap-3 text-[11px]">
-      <Stat label="records" value={fmt(summary.count)} />
-      <Stat label="classes" value={Object.keys(summary.perClass).length} />
-      <Stat label="adducts" value={Object.keys(summary.perAdduct).length} />
-      <Stat label="m/z range"
-        value={`${summary.mzRange[0].toFixed(1)} – ${summary.mzRange[1].toFixed(1)}`} />
-      <Stat label="analyser" value={design.analyser.toUpperCase()} />
-      <Stat label="run time" value={`${lastRunMs.toFixed(0)} ms`} />
+    <header className="flex items-center justify-between flex-wrap gap-2">
+      <div className="grid grid-cols-6 lg:grid-cols-3 gap-3 text-[11px] flex-1">
+        <Stat label="records" value={summary?.count?.toLocaleString() ?? "0"} />
+        <Stat label="classes" value={summary ? Object.keys(summary.perClass).length : 0} />
+        <Stat label="adducts" value={summary ? Object.keys(summary.perAdduct).length : 0} />
+        <Stat label="m/z range"
+          value={summary
+            ? `${summary.mzRange[0].toFixed(1)} – ${summary.mzRange[1].toFixed(1)}`
+            : "-"}
+        />
+        <Stat label="analyser" value={design.analyser.toUpperCase()} />
+        <Stat label="run time" value={`${lastRunMs.toFixed(0)} ms`} />
+      </div>
+      <ResetAllFilters />
     </header>
+  );
+}
+
+function ResetAllFilters() {
+  const { pack, redrawAll } = useCrossfilter();
+  return (
+    <button
+      onClick={() => {
+        for (const d of Object.values(pack.dims)) d.filterAll();
+        redrawAll();
+      }}
+      className="text-[11px] px-3 py-1.5 rounded border border-dark/15 dark:border-light/15
+        hover:bg-dark/5 dark:hover:bg-light/5"
+    >
+      Reset all filters
+    </button>
   );
 }
 
@@ -141,28 +146,15 @@ function Stat({ label, value }) {
   );
 }
 
-function Panel({ title, children }) {
+function RowSection({ title, children }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm uppercase tracking-wider font-bold text-dark/70 dark:text-light/70">
+      <h2 className="text-[11px] uppercase tracking-wider font-bold text-dark/70 dark:text-light/70">
         {title}
       </h2>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+      <div className="rounded-md border border-dark/10 dark:border-light/10 p-3 bg-light dark:bg-dark">
         {children}
       </div>
     </section>
-  );
-}
-
-function Card({ title, children }) {
-  return (
-    <div className="rounded-md border border-dark/10 dark:border-light/10 p-3 bg-light dark:bg-dark">
-      <div className="text-[11px] uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-2">
-        {title}
-      </div>
-      <div className="flex items-center justify-center min-h-[200px]">
-        {children}
-      </div>
-    </div>
   );
 }
