@@ -1,7 +1,7 @@
 import React from "react";
 import PieChart from "./PieChart";
 import RowChart from "./RowChart";
-import { classColor } from "./chartUtils";
+import { classColor, PALETTE } from "./chartUtils";
 
 const POLARITY_COLORS = { "+": "#1f77b4", "-": "#d62728" };
 const Z_COLORS = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"];
@@ -51,8 +51,10 @@ export default function Row5Categorical() {
 
 function Tile({ label, children }) {
   return (
-    <div className="rounded-md border border-dark/10 dark:border-light/10 p-2 bg-light dark:bg-dark">
-      <div className="text-[10px] uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-1">
+    <div className="rounded border p-2"
+      style={{ background: PALETTE.bg, borderColor: PALETTE.grid }}>
+      <div className="text-[9px] uppercase tracking-wider mb-1 font-normal"
+        style={{ color: PALETTE.muted }}>
         {label}
       </div>
       {children}

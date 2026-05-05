@@ -1,6 +1,7 @@
 import React from "react";
 import { useStore } from "@/lib/state/store";
 import { CrossfilterProvider, useCrossfilter } from "./cf/CrossfilterContext";
+import Row0Scatter from "./cf/Row0Scatter";
 import Row1XIC from "./cf/Row1XIC";
 import Row2ClassBubble from "./cf/Row2ClassBubble";
 import Row3SEntropy from "./cf/Row3SEntropy";
@@ -11,18 +12,19 @@ import Row7Statistics from "./cf/Row7Statistics";
 import Row8Special from "./cf/Row8Special";
 import RecordDetail from "./RecordDetail";
 import LibraryExport from "./LibraryExport";
+import { PALETTE } from "./cf/chartUtils";
 
 /**
- * The full crossfiltered dashboard.
- * Layout (from the design spec):
+ * Crossfiltered dashboard.
+ *   Row 0: 2D scatter (m/z × log I), 2D brush filter
  *   Row 1: Full-width XIC + brushable m/z bar histogram
- *   Row 2: Class bubble chart (filterable)
- *   Row 3: 4 charts — S-entropy
+ *   Row 2: Class bubble chart
+ *   Row 3: S-entropy histograms (Sₖ, Sₜ, Sₑ, partition entropy)
  *   Row 4: Partition coordinates (n, ℓ, m, s)
  *   Row 5: Categorical coordinates (class, adduct, polarity, z)
  *   Row 6: Oscillatory coordinates (observable, bits, fragments, I)
  *   Row 7: Statistics (data count + filtered table + class breakdown)
- *   Row 8: Droplet bijection + heatmap + 3D peak surface
+ *   Row 8: Droplet bijection · heatmap · 3D peak surface
  */
 export default function ResultsDashboard() {
   const records = useStore((s) => s.experimentRecords);
@@ -32,14 +34,15 @@ export default function ResultsDashboard() {
 
   if (!records || records.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center
-        text-dark/50 dark:text-light/50">
-        <div className="text-2xl font-bold mb-2 text-dark/70 dark:text-light/70">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center"
+        style={{ color: PALETTE.muted }}>
+        <div className="text-xl font-normal mb-2" style={{ color: PALETTE.text }}>
           virtual instrument idle
         </div>
         <div className="max-w-md text-sm">
-          configure the experiment on the left and click <b>Run virtual experiment</b> to
-          synthesise predictions. nothing is uploaded; everything is computed on this device.
+          configure the experiment on the left and click <b>Run virtual experiment</b>
+          {" "}to synthesise predictions. nothing is uploaded; everything is computed
+          on this device.
         </div>
       </div>
     );
@@ -54,15 +57,19 @@ export default function ResultsDashboard() {
 
 function DashboardBody({ summary, design, lastRunMs }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <HeaderStrip summary={summary} design={design} lastRunMs={lastRunMs} />
 
+      <RowSection title="0 · Scatter (m/z × log I)">
+        <Row0Scatter height={220} />
+      </RowSection>
+
       <RowSection title="1 · XIC + m/z range">
-        <Row1XIC height={260} />
+        <Row1XIC height={220} />
       </RowSection>
 
       <RowSection title="2 · Lipid class bubbles">
-        <Row2ClassBubble height={300} />
+        <Row2ClassBubble height={280} />
       </RowSection>
 
       <RowSection title="3 · S-entropy">
@@ -86,12 +93,12 @@ function DashboardBody({ summary, design, lastRunMs }) {
       </RowSection>
 
       <RowSection title="8 · Droplet bijection · heatmap · 3D peak surface">
-        <Row8Special height={300} />
+        <Row8Special height={280} />
       </RowSection>
 
       <RecordDetail />
 
-      <div className="grid grid-cols-[1fr_320px] gap-4 lg:grid-cols-1">
+      <div className="grid grid-cols-[1fr_300px] gap-4 lg:grid-cols-1">
         <div />
         <LibraryExport />
       </div>
@@ -102,7 +109,7 @@ function DashboardBody({ summary, design, lastRunMs }) {
 function HeaderStrip({ summary, design, lastRunMs }) {
   return (
     <header className="flex items-center justify-between flex-wrap gap-2">
-      <div className="grid grid-cols-6 lg:grid-cols-3 gap-3 text-[11px] flex-1">
+      <div className="grid grid-cols-6 lg:grid-cols-3 gap-2 text-[10px] flex-1">
         <Stat label="records" value={summary?.count?.toLocaleString() ?? "0"} />
         <Stat label="classes" value={summary ? Object.keys(summary.perClass).length : 0} />
         <Stat label="adducts" value={summary ? Object.keys(summary.perAdduct).length : 0} />
@@ -127,32 +134,39 @@ function ResetAllFilters() {
         for (const d of Object.values(pack.dims)) d.filterAll();
         redrawAll();
       }}
-      className="text-[11px] px-3 py-1.5 rounded border border-dark/15 dark:border-light/15
-        hover:bg-dark/5 dark:hover:bg-light/5"
+      className="text-[10px] px-3 py-1.5 rounded border font-normal tracking-wider
+        uppercase transition-opacity hover:opacity-80"
+      style={{
+        background: PALETTE.bg, borderColor: PALETTE.grid, color: PALETTE.muted,
+      }}
     >
-      Reset all filters
+      Reset filters
     </button>
   );
 }
 
 function Stat({ label, value }) {
   return (
-    <div className="rounded bg-dark/5 dark:bg-light/5 px-3 py-2">
-      <div className="text-[9px] uppercase tracking-wider text-dark/50 dark:text-light/50">
+    <div className="rounded px-3 py-1.5"
+      style={{ background: "rgba(255,255,255,0.025)", color: PALETTE.text }}>
+      <div className="text-[8px] uppercase tracking-wider"
+        style={{ color: PALETTE.muted }}>
         {label}
       </div>
-      <div className="font-mono text-[13px] font-bold">{value}</div>
+      <div className="font-mono text-[12px]">{value}</div>
     </div>
   );
 }
 
 function RowSection({ title, children }) {
   return (
-    <section className="space-y-2">
-      <h2 className="text-[11px] uppercase tracking-wider font-bold text-dark/70 dark:text-light/70">
+    <section className="space-y-1.5">
+      <h2 className="text-[9px] uppercase tracking-[0.2em] font-normal"
+        style={{ color: PALETTE.muted }}>
         {title}
       </h2>
-      <div className="rounded-md border border-dark/10 dark:border-light/10 p-3 bg-light dark:bg-dark">
+      <div className="rounded border p-3"
+        style={{ background: PALETTE.bg, borderColor: PALETTE.grid }}>
         {children}
       </div>
     </section>

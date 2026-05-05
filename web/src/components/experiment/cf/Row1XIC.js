@@ -1,18 +1,17 @@
 import React, { useCallback, useRef } from "react";
 import * as d3 from "d3";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
-import { PALETTE, setupSvg, drawAxis, axisLabel, attachXBrush, snapshot } from "./chartUtils";
+import {
+  PALETTE, setupSvg, drawAxis, axisLabel, attachXBrush, snapshot,
+} from "./chartUtils";
 
 /**
- * Row 1: Full width XIC line + brushable m/z bar histogram beneath.
- * The XIC here is the predicted m/z spectrum (m/z vs total intensity within bin).
- * Brushing the bottom bars filters to that m/z range; all other charts redraw.
+ * Row 1: XIC (m/z vs Σ I) line + brushable m/z bar histogram beneath.
  */
-export default function Row1XIC({ height = 240 }) {
+export default function Row1XIC({ height = 220 }) {
   const { pack, redrawAll } = useCrossfilter();
   const lineRef = useRef(null);
   const barRef = useRef(null);
-  const lastBrushRef = useRef(null);
 
   const lineHeight = Math.round(height * 0.62);
   const barHeight = height - lineHeight - 4;
@@ -26,8 +25,10 @@ export default function Row1XIC({ height = 240 }) {
       .filter((d) => d.value > 0)
       .sort((a, b) => a.key - b.key);
 
-    const { g, w, h } = setupSvg(node, width, lineHeight);
+    const { g, w, h } = setupSvg(node, width, lineHeight,
+      { top: 8, right: 12, bottom: 22, left: 38 });
     if (data.length === 0) return;
+
     const x = d3.scaleLinear()
       .domain(d3.extent(data, (d) => d.key)).nice()
       .range([0, w]);
@@ -37,21 +38,16 @@ export default function Row1XIC({ height = 240 }) {
 
     drawAxis(g, x, "bottom", h, 8);
     drawAxis(g, y, "left", h, 4);
-    axisLabel(g, w, h, "m/z", "Σ I (XIC)");
+    axisLabel(g, w, h, "m/z", "Σ I");
 
-    const line = d3.line()
-      .x((d) => x(d.key + pack.mzBinSize / 2))
-      .y((d) => y(d.value))
-      .curve(d3.curveMonotoneX);
+    const xMid = (d) => x(d.key + pack.mzBinSize / 2);
+
     g.append("path").datum(data)
-      .attr("fill", "none").attr("stroke", PALETTE.fill).attr("stroke-width", 1.4)
-      .attr("d", line);
+      .attr("fill", PALETTE.fill).attr("fill-opacity", 0.12)
+      .attr("d", d3.area().x(xMid).y0(h).y1((d) => y(d.value)).curve(d3.curveMonotoneX));
     g.append("path").datum(data)
-      .attr("fill", PALETTE.fill).attr("opacity", 0.18)
-      .attr("d", d3.area()
-        .x((d) => x(d.key + pack.mzBinSize / 2))
-        .y0(h).y1((d) => y(d.value))
-        .curve(d3.curveMonotoneX));
+      .attr("fill", "none").attr("stroke", PALETTE.fill).attr("stroke-width", 1)
+      .attr("d", d3.line().x(xMid).y((d) => y(d.value)).curve(d3.curveMonotoneX));
   }, [pack, lineHeight]);
 
   const renderBars = useCallback(() => {
@@ -63,9 +59,10 @@ export default function Row1XIC({ height = 240 }) {
       .filter((d) => d.value > 0)
       .sort((a, b) => a.key - b.key);
 
-    const { svg, g, w, h } = setupSvg(node, width, barHeight,
-      { top: 4, right: 14, bottom: 24, left: 38 });
+    const { g, w, h } = setupSvg(node, width, barHeight,
+      { top: 2, right: 12, bottom: 18, left: 38 });
     if (data.length === 0) return;
+
     const x = d3.scaleLinear()
       .domain(d3.extent(data, (d) => d.key)).nice()
       .range([0, w]);
@@ -75,14 +72,14 @@ export default function Row1XIC({ height = 240 }) {
 
     drawAxis(g, x, "bottom", h, 8);
 
-    const barW = Math.max(1, w / Math.max(1, data.length) - 1);
+    const barW = Math.max(1, w / Math.max(1, data.length) - 1.5);
     g.selectAll("rect.b").data(data).enter().append("rect")
       .attr("class", "b")
       .attr("x", (d) => x(d.key))
       .attr("y", (d) => y(d.value))
       .attr("width", barW)
       .attr("height", (d) => h - y(d.value))
-      .attr("fill", PALETTE.fill).attr("opacity", 0.65);
+      .attr("fill", PALETTE.fill).attr("fill-opacity", 0.5);
 
     attachXBrush(g, w, h,
       () => {},
@@ -93,7 +90,6 @@ export default function Row1XIC({ height = 240 }) {
           const [a, b] = extent;
           pack.dims.mz.filterRange([x.invert(a), x.invert(b)]);
         }
-        lastBrushRef.current = extent;
         redrawAll();
       });
   }, [pack, barHeight, redrawAll]);

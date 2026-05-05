@@ -1,32 +1,33 @@
 /**
- * Shared palette and chart styles, matching the paper's panels.
+ * Dark palette for the academic dashboard. Bars are thinner, type is
+ * lighter, no bold weights anywhere by default.
  */
 export const PALETTE = {
-  bg: "#ffffff",
-  axis: "#333333",
-  grid: "#dddddd",
-  text: "#222222",
-  muted: "#888888",
+  bg: "#0d0f12",
+  axis: "#9aa3ad",
+  grid: "#222831",
+  text: "#cdd5df",
+  muted: "#6b7280",
 
-  // class colours
-  PC:  "#1f77b4", PE: "#d62728", PS: "#9467bd",
-  PG:  "#e377c2", PI: "#17becf", SM: "#2ca02c",
-  Cer: "#ff7f0e", TAG: "#bcbd22", DAG: "#8c564b",
-  LPC: "#7f7f7f", CE:  "#aec7e8", FA:  "#ffbb78",
+  // class colours (slightly desaturated for the dark bg)
+  PC:  "#5fa8d3", PE: "#e07a7a", PS: "#b388eb",
+  PG:  "#e493b3", PI: "#5dc0d8", SM: "#7cc77c",
+  Cer: "#e6a456", TAG: "#cdc15c", DAG: "#a07a5e",
+  LPC: "#a8b2bd", CE:  "#9cc4d8", FA:  "#e8c598",
 
-  pos: "#1f77b4", neg: "#d62728",
-  pass: "#2ca02c", fail: "#d62728",
-  highlight: "#ff7f0e",
+  pos: "#5fa8d3", neg: "#e07a7a",
+  pass: "#7cc77c", fail: "#e07a7a",
+  highlight: "#e6a456",
 };
 
 export const FRAGMENT_TYPE_COLOR = {
-  precursor:    "#1f77b4",
-  head_charged: "#d62728",
-  head_loss:    "#ff7f0e",
-  fa_loss:      "#2ca02c",
-  fa_anion:     "#9467bd",
-  neutral_loss: "#17becf",
-  isotope:      "#7f7f7f",
+  precursor:    "#5fa8d3",
+  head_charged: "#e07a7a",
+  head_loss:    "#e6a456",
+  fa_loss:      "#7cc77c",
+  fa_anion:     "#b388eb",
+  neutral_loss: "#5dc0d8",
+  isotope:      "#a8b2bd",
 };
 
 export function classColor(classKey) {

@@ -5,21 +5,27 @@ import AcquisitionConfig from "./AcquisitionConfig";
 import VirtualRun from "./VirtualRun";
 import LibraryExport from "./LibraryExport";
 import ResultsDashboard from "./ResultsDashboard";
+import { PALETTE } from "./cf/chartUtils";
 
-/**
- * Top-level workspace: left pane = experiment designer, right pane =
- * results dashboard.
- */
 export default function ExperimentDesigner() {
   return (
-    <div className="flex flex-col w-full min-h-[calc(100vh-160px)] bg-light dark:bg-dark text-dark dark:text-light">
-      <div className="grid grid-cols-[340px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
-        {/* Left: designer */}
-        <aside className="border-r-2 border-dark/10 dark:border-light/10 p-4 overflow-y-auto
-          space-y-5 lg:border-r-0 lg:border-b-2">
+    <div
+      className="flex flex-col w-full min-h-[calc(100vh-160px)]"
+      style={{ background: "#070809", color: PALETTE.text }}
+    >
+      <div className="grid grid-cols-[320px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
+        <aside
+          className="border-r p-4 overflow-y-auto space-y-5
+            lg:border-r-0 lg:border-b"
+          style={{ borderColor: PALETTE.grid, background: PALETTE.bg }}
+        >
           <div>
-            <h2 className="text-base font-bold mb-1">Virtual experiment</h2>
-            <p className="text-[11px] text-dark/60 dark:text-light/60">
+            <h2 className="text-sm font-normal mb-1 tracking-wide"
+              style={{ color: PALETTE.text }}>
+              Virtual experiment
+            </h2>
+            <p className="text-[10px] leading-relaxed"
+              style={{ color: PALETTE.muted }}>
               Design a lipidomics experiment. The instrument runs on this device and
               produces a synthetic library you take to your lab.
             </p>
@@ -32,7 +38,6 @@ export default function ExperimentDesigner() {
           <LibraryExport />
         </aside>
 
-        {/* Right: results */}
         <main className="p-4 overflow-y-auto min-w-0 min-h-0">
           <ResultsDashboard />
         </main>

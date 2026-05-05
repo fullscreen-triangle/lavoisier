@@ -1,15 +1,11 @@
 import React, { useCallback, useState } from "react";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
-import { classColor } from "./chartUtils";
+import { classColor, PALETTE } from "./chartUtils";
 import * as d3 from "d3";
 
-/**
- * Row 7: data count widget + filtered records table (dc.js DataCount/DataTable
- * pattern). Both update under any active crossfilter.
- */
 export default function Row7Statistics() {
   const { pack } = useCrossfilter();
-  const [_, force] = useState(0);
+  const [, force] = useState(0);
 
   const refreshSnapshot = useCallback(() => force((x) => x + 1), []);
   useChartRedraw(refreshSnapshot);
@@ -19,10 +15,8 @@ export default function Row7Statistics() {
   const classBreak = pack.groups.class.all().filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  // top-50 records under current filter
   const rows = pack.dims.intensity.top(50);
 
-  // numeric summary
   const allRecords = pack.dims.mz.bottom(Infinity);
   const mzs = allRecords.map((r) => r.precursorMz);
   const intensities = allRecords.map((r) => r.intensity);
@@ -35,40 +29,46 @@ export default function Row7Statistics() {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-6 lg:grid-cols-3 gap-3">
-        <Stat label="filtered" value={filtered.toLocaleString()} mono />
-        <Stat label="total" value={total.toLocaleString()} mono />
-        <Stat label="m/z mean" value={stats.mzMean.toFixed(2)} mono />
+      <div className="grid grid-cols-6 lg:grid-cols-3 gap-2 text-[10px]">
+        <Stat label="filtered" value={filtered.toLocaleString()} />
+        <Stat label="total" value={total.toLocaleString()} />
+        <Stat label="m/z mean" value={stats.mzMean.toFixed(2)} />
         <Stat label="m/z range"
-          value={`${stats.mzMin.toFixed(0)}–${stats.mzMax.toFixed(0)}`} mono />
-        <Stat label="ī predicted"
-          value={stats.intensityMean.toExponential(1)} mono />
-        <Stat label="modal n"
-          value={stats.nMode ?? "-"} mono />
+          value={`${stats.mzMin.toFixed(0)}–${stats.mzMax.toFixed(0)}`} />
+        <Stat label="ī predicted" value={stats.intensityMean.toExponential(1)} />
+        <Stat label="modal n" value={stats.nMode ?? "-"} />
       </div>
 
-      <div className="grid grid-cols-[1fr_360px] lg:grid-cols-1 gap-3">
-        <div className="rounded-md border border-dark/10 dark:border-light/10 p-2 bg-light dark:bg-dark
-          max-h-[260px] overflow-y-auto">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-1">
-            Filtered records (top 50 by intensity)
+      <div className="grid grid-cols-[1fr_300px] lg:grid-cols-1 gap-3">
+        <div
+          className="rounded border p-2 max-h-[240px] overflow-y-auto"
+          style={{ background: PALETTE.bg, borderColor: PALETTE.grid }}
+        >
+          <div className="text-[9px] uppercase tracking-wider mb-1 font-normal"
+               style={{ color: PALETTE.muted }}>
+            Filtered records (top 50)
           </div>
-          <table className="w-full text-[10px] font-mono">
+          <table className="w-full text-[10px] font-mono"
+                 style={{ color: PALETTE.text }}>
             <thead>
-              <tr className="text-dark/60 dark:text-light/60">
-                <th className="text-left">cls</th>
-                <th className="text-left">name·adduct</th>
-                <th className="text-right">m/z</th>
-                <th className="text-right">I</th>
-                <th className="text-right">n,ℓ,m</th>
+              <tr style={{ color: PALETTE.muted }}>
+                <th className="text-left font-normal">cls</th>
+                <th className="text-left font-normal">name·adduct</th>
+                <th className="text-right font-normal">m/z</th>
+                <th className="text-right font-normal">I</th>
+                <th className="text-right font-normal">n,ℓ,m</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className={i % 2 ? "bg-dark/[0.02] dark:bg-light/[0.02]" : ""}>
+                <tr key={i}
+                  style={i % 2
+                    ? { background: "rgba(255,255,255,0.025)" }
+                    : undefined}
+                >
                   <td className="px-1">
                     <span style={{
-                      display: "inline-block", width: 7, height: 7, borderRadius: 7,
+                      display: "inline-block", width: 6, height: 6, borderRadius: 6,
                       background: classColor(r.analyteClass), marginRight: 3,
                     }} />
                     {r.analyteClass}
@@ -83,26 +83,30 @@ export default function Row7Statistics() {
           </table>
         </div>
 
-        <div className="rounded-md border border-dark/10 dark:border-light/10 p-2 bg-light dark:bg-dark">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-dark/60 dark:text-light/60 mb-1">
-            Class breakdown (filtered)
+        <div
+          className="rounded border p-2"
+          style={{ background: PALETTE.bg, borderColor: PALETTE.grid }}
+        >
+          <div className="text-[9px] uppercase tracking-wider mb-1 font-normal"
+               style={{ color: PALETTE.muted }}>
+            Class breakdown
           </div>
-          <table className="w-full text-[11px]">
+          <table className="w-full text-[10px]" style={{ color: PALETTE.text }}>
             <tbody>
               {classBreak.map((c) => (
                 <tr key={c.key}>
                   <td className="px-1">
                     <span style={{
-                      display: "inline-block", width: 9, height: 9, borderRadius: 9,
-                      background: classColor(c.key), marginRight: 5,
+                      display: "inline-block", width: 7, height: 7, borderRadius: 7,
+                      background: classColor(c.key), marginRight: 4,
                     }} />
-                    <span className="font-bold">{c.key}</span>
+                    <span>{c.key}</span>
                   </td>
                   <td className="px-1 font-mono text-right">{c.value}</td>
                   <td className="px-1">
                     <div style={{
-                      background: classColor(c.key), opacity: 0.5,
-                      height: 4, width: `${100 * c.value / Math.max(1, classBreak[0].value)}%`,
+                      background: classColor(c.key), opacity: 0.55,
+                      height: 3, width: `${100 * c.value / Math.max(1, classBreak[0].value)}%`,
                     }} />
                   </td>
                 </tr>
@@ -115,15 +119,15 @@ export default function Row7Statistics() {
   );
 }
 
-function Stat({ label, value, mono }) {
+function Stat({ label, value }) {
   return (
-    <div className="rounded-md bg-dark/5 dark:bg-light/5 px-3 py-2">
-      <div className="text-[9px] uppercase tracking-wider text-dark/50 dark:text-light/50">
+    <div className="rounded px-3 py-2"
+      style={{ background: "rgba(255,255,255,0.03)", color: PALETTE.text }}>
+      <div className="text-[8px] uppercase tracking-wider"
+        style={{ color: PALETTE.muted }}>
         {label}
       </div>
-      <div className={`${mono ? "font-mono" : ""} text-[13px] font-bold`}>
-        {value}
-      </div>
+      <div className="font-mono text-[12px] font-normal">{value}</div>
     </div>
   );
 }

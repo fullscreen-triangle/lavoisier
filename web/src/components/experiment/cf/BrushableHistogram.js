@@ -1,16 +1,18 @@
 import React, { useCallback, useRef } from "react";
 import * as d3 from "d3";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
-import { PALETTE, setupSvg, drawAxis, axisLabel, attachXBrush, snapshot } from "./chartUtils";
+import {
+  PALETTE, TYPO, applyTextStyle,
+  setupSvg, drawAxis, axisLabel, attachXBrush, snapshot,
+} from "./chartUtils";
 
 /**
  * Generic brushable bar histogram bound to a crossfilter dim+group.
- * Brushing applies dim.filterRange; clicking outside clears.
  */
 export default function BrushableHistogram({
   dimKey, groupKey,
   xLabel, yLabel = "n",
-  height = 180,
+  height = 170,
   tickFmt = null,
   color = PALETTE.fill,
 }) {
@@ -25,7 +27,8 @@ export default function BrushableHistogram({
       .filter((d) => d.value > 0)
       .sort((a, b) => a.key - b.key);
 
-    const { g, w, h } = setupSvg(node, width, height);
+    const { g, w, h } = setupSvg(node, width, height,
+      { top: 8, right: 10, bottom: 22, left: 32 });
     if (data.length === 0) return;
 
     const x = d3.scaleLinear()
@@ -35,26 +38,27 @@ export default function BrushableHistogram({
       .domain([0, d3.max(data, (d) => d.value) * 1.1])
       .range([h, 0]);
 
-    const xAxis = d3.axisBottom(x).ticks(4).tickSizeOuter(0);
+    const xAxis = d3.axisBottom(x).ticks(4).tickSizeOuter(0).tickSize(3);
     if (tickFmt) xAxis.tickFormat(tickFmt);
-    g.append("g").attr("transform", `translate(0,${h})`)
-      .call(xAxis)
-      .call((s) => s.selectAll("text").style("font-size", "9px"))
-      .call((s) => s.selectAll("path,line").attr("stroke", PALETTE.axis));
+    const xg = g.append("g").attr("transform", `translate(0,${h})`).call(xAxis);
+    applyTextStyle(xg.selectAll("text"), TYPO.axis);
+    xg.selectAll("path,line").attr("stroke", PALETTE.axis).attr("stroke-width", 0.5);
+
     drawAxis(g, y, "left", h, 3);
     axisLabel(g, w, h, xLabel, yLabel);
 
+    // Thin bars: leave at least 2px of breathing room
     const binW = data.length > 1
-      ? Math.max(1, x(data[1].key) - x(data[0].key) - 1)
-      : Math.max(1, w / 8 - 1);
+      ? Math.max(1, x(data[1].key) - x(data[0].key) - 2.5)
+      : Math.max(2, w / 8 - 2);
 
     g.selectAll("rect.b").data(data).enter().append("rect")
       .attr("class", "b")
       .attr("x", (d) => x(d.key))
       .attr("y", (d) => y(d.value))
       .attr("width", binW)
-      .attr("height", (d) => h - y(d.value))
-      .attr("fill", color).attr("opacity", 0.78);
+      .attr("height", (d) => Math.max(0.5, h - y(d.value)))
+      .attr("fill", color).attr("fill-opacity", 0.65);
 
     attachXBrush(g, w, h,
       () => {},
