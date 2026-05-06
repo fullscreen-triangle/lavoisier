@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
 import {
@@ -12,6 +12,8 @@ export default function Row1XIC({ height = 220 }) {
   const { pack, redrawAll } = useCrossfilter();
   const lineRef = useRef(null);
   const barRef = useRef(null);
+  const brushDataRef = useRef(null);
+  useEffect(() => { brushDataRef.current = null; }, [pack]);
 
   const lineHeight = Math.round(height * 0.62);
   const barHeight = height - lineHeight - 4;
@@ -81,17 +83,24 @@ export default function Row1XIC({ height = 220 }) {
       .attr("height", (d) => h - y(d.value))
       .attr("fill", PALETTE.fill).attr("fill-opacity", 0.5);
 
+    const initialPx = brushDataRef.current
+      ? [x(brushDataRef.current[0]), x(brushDataRef.current[1])]
+      : null;
+
     attachXBrush(g, w, h,
-      () => {},
       (extent) => {
         if (!extent) {
           pack.dims.mz.filterAll();
+          brushDataRef.current = null;
         } else {
           const [a, b] = extent;
-          pack.dims.mz.filterRange([x.invert(a), x.invert(b)]);
+          const range = [x.invert(a), x.invert(b)];
+          pack.dims.mz.filterRange(range);
+          brushDataRef.current = range;
         }
         redrawAll();
-      });
+      },
+      initialPx);
   }, [pack, barHeight, redrawAll]);
 
   const redraw = useCallback(() => { renderLine(); renderBars(); }, [renderLine, renderBars]);

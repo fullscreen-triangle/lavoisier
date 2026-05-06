@@ -9,7 +9,7 @@ import Row4Partition from "./cf/Row4Partition";
 import Row5Categorical from "./cf/Row5Categorical";
 import Row6Oscillatory from "./cf/Row6Oscillatory";
 import Row7Statistics from "./cf/Row7Statistics";
-import Row8Special from "./cf/Row8Special";
+import { Row8Droplets, Row9HeatmapAndPeak } from "./cf/Row8Special";
 import RecordDetail from "./RecordDetail";
 import LibraryExport from "./LibraryExport";
 import { PALETTE } from "./cf/chartUtils";
@@ -92,8 +92,12 @@ function DashboardBody({ summary, design, lastRunMs }) {
         <Row7Statistics />
       </RowSection>
 
-      <RowSection title="8 · Droplet bijection · heatmap · 3D peak surface">
-        <Row8Special height={280} />
+      <RowSection title="8 · Droplet bijection (Ion → Drip)">
+        <Row8Droplets height={360} />
+      </RowSection>
+
+      <RowSection title="9 · Heatmap · 3D peak surface">
+        <Row9HeatmapAndPeak height={320} />
       </RowSection>
 
       <RecordDetail />

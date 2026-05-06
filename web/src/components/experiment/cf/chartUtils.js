@@ -98,34 +98,56 @@ export function axisLabel(g, w, h, xLabel, yLabel) {
 
 /**
  * Attach a horizontal brush to the inner group g.
+ *
+ * @param {[number,number]|null} initialPx  pixel range to restore (so the
+ *   brush rectangle persists across redraws and remains draggable).
  */
-export function attachXBrush(g, w, h, onBrush, onBrushEnd) {
+export function attachXBrush(g, w, h, onBrushEnd, initialPx = null) {
   const brush = d3.brushX()
     .extent([[0, 0], [w, h]])
-    .on("brush", (e) => onBrush(e.selection))
-    .on("end", (e) => onBrushEnd(e.selection));
+    .on("end", (e) => {
+      // Ignore programmatic brush.move calls (those have null sourceEvent).
+      if (!e.sourceEvent) return;
+      onBrushEnd(e.selection);
+    });
   const grp = g.append("g").attr("class", "brush").call(brush);
   grp.selectAll(".selection")
     .attr("fill", PALETTE.brushFill)
     .attr("stroke", PALETTE.brushStroke)
     .attr("stroke-width", 0.7);
-  return brush;
+  // Hide the leading "overlay" rect handles so the visible brush is just
+  // the selection (matches the dc.js feel — a draggable rectangle).
+  if (initialPx) {
+    const a = Math.max(0, Math.min(w, initialPx[0]));
+    const b = Math.max(0, Math.min(w, initialPx[1]));
+    if (b > a) brush.move(grp, [a, b]);
+  }
+  return { brush, grp };
 }
 
 /**
  * Attach a 2D brush.
+ *
+ * @param {[[number,number],[number,number]]|null} initialPx  rectangle in
+ *   pixel coordinates to restore.
  */
-export function attachXYBrush(g, w, h, onBrush, onBrushEnd) {
+export function attachXYBrush(g, w, h, onBrushEnd, initialPx = null) {
   const brush = d3.brush()
     .extent([[0, 0], [w, h]])
-    .on("brush", (e) => onBrush(e.selection))
-    .on("end", (e) => onBrushEnd(e.selection));
+    .on("end", (e) => {
+      if (!e.sourceEvent) return;
+      onBrushEnd(e.selection);
+    });
   const grp = g.append("g").attr("class", "brush").call(brush);
   grp.selectAll(".selection")
     .attr("fill", PALETTE.brushFill)
     .attr("stroke", PALETTE.brushStroke)
     .attr("stroke-width", 0.7);
-  return brush;
+  if (initialPx) {
+    const [[x0, y0], [x1, y1]] = initialPx;
+    if (x1 > x0 && y1 > y0) brush.move(grp, [[x0, y0], [x1, y1]]);
+  }
+  return { brush, grp };
 }
 
 export function snapshot(group) {

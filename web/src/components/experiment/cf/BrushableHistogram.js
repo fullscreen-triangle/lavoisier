@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
 import {
@@ -8,6 +8,7 @@ import {
 
 /**
  * Generic brushable bar histogram bound to a crossfilter dim+group.
+ * The brush selection persists across redraws so it can be dragged around.
  */
 export default function BrushableHistogram({
   dimKey, groupKey,
@@ -18,6 +19,11 @@ export default function BrushableHistogram({
 }) {
   const { pack, redrawAll } = useCrossfilter();
   const ref = useRef(null);
+  // Persistent brush state in data coordinates [a, b]; null = no brush.
+  const brushDataRef = useRef(null);
+
+  // Reset brush state if the underlying records change.
+  useEffect(() => { brushDataRef.current = null; }, [pack]);
 
   const render = useCallback(() => {
     const node = ref.current;
@@ -47,7 +53,6 @@ export default function BrushableHistogram({
     drawAxis(g, y, "left", h, 3);
     axisLabel(g, w, h, xLabel, yLabel);
 
-    // Thin bars: leave at least 2px of breathing room
     const binW = data.length > 1
       ? Math.max(1, x(data[1].key) - x(data[0].key) - 2.5)
       : Math.max(2, w / 8 - 2);
@@ -60,17 +65,25 @@ export default function BrushableHistogram({
       .attr("height", (d) => Math.max(0.5, h - y(d.value)))
       .attr("fill", color).attr("fill-opacity", 0.65);
 
+    // Reapply persisted brush selection
+    const initialPx = brushDataRef.current
+      ? [x(brushDataRef.current[0]), x(brushDataRef.current[1])]
+      : null;
+
     attachXBrush(g, w, h,
-      () => {},
       (extent) => {
         if (!extent) {
           pack.dims[dimKey].filterAll();
+          brushDataRef.current = null;
         } else {
           const [a, b] = extent;
-          pack.dims[dimKey].filterRange([x.invert(a), x.invert(b)]);
+          const range = [x.invert(a), x.invert(b)];
+          pack.dims[dimKey].filterRange(range);
+          brushDataRef.current = range;
         }
         redrawAll();
-      });
+      },
+      initialPx);
   }, [pack, dimKey, groupKey, xLabel, yLabel, height, tickFmt, color, redrawAll]);
 
   useChartRedraw(render);

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import { useCrossfilter, useChartRedraw } from "./CrossfilterContext";
 import {
@@ -17,6 +17,9 @@ import {
 export default function Row0Scatter({ height = 220 }) {
   const { pack, redrawAll } = useCrossfilter();
   const ref = useRef(null);
+  // [[mzLo, ILo], [mzHi, IHi]] in data coordinates
+  const brushDataRef = useRef(null);
+  useEffect(() => { brushDataRef.current = null; }, [pack]);
 
   const render = useCallback(() => {
     const node = ref.current;
@@ -61,20 +64,29 @@ export default function Row0Scatter({ height = 220 }) {
         `${d.analyte}${d.adduct}\nm/z ${d.precursorMz.toFixed(3)}\nI ${d.intensity.toExponential(2)}`
       );
 
+    const initialPx = brushDataRef.current ? (() => {
+      const [[mzLo, iLo], [mzHi, iHi]] = brushDataRef.current;
+      return [[x(mzLo), y(iHi)], [x(mzHi), y(iLo)]];
+    })() : null;
+
     attachXYBrush(g, w, h,
-      () => {},
       (extent) => {
         if (!extent) {
           pack.dims.mz.filterAll();
           pack.dims.intensity.filterAll();
+          brushDataRef.current = null;
         } else {
           const [[x0, y0], [x1, y1]] = extent;
-          pack.dims.mz.filterRange([x.invert(x0), x.invert(x1)]);
-          // y is log; remember y0 is at top (smaller Y px == larger I)
-          pack.dims.intensity.filterRange([y.invert(y1), y.invert(y0)]);
+          const mzRange = [x.invert(x0), x.invert(x1)];
+          // y axis is log: lower px = higher I, so y1 → I_lo, y0 → I_hi
+          const iRange = [y.invert(y1), y.invert(y0)];
+          pack.dims.mz.filterRange(mzRange);
+          pack.dims.intensity.filterRange(iRange);
+          brushDataRef.current = [[mzRange[0], iRange[0]], [mzRange[1], iRange[1]]];
         }
         redrawAll();
-      });
+      },
+      initialPx);
   }, [pack, height, redrawAll]);
 
   useChartRedraw(render);

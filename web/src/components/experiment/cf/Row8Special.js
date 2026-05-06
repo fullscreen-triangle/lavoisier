@@ -7,12 +7,17 @@ import {
   setupSvg, drawAxis, axisLabel,
 } from "./chartUtils";
 
-export default function Row8Special({ height = 300 }) {
+export function Row8Droplets({ height = 360 }) {
   return (
-    <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
-      <Tile label="Droplet bijection (top filtered)">
-        <DropletSpectra height={height} />
-      </Tile>
+    <Tile label="Droplet bijection — bijective Ion-to-Drip per filtered record">
+      <DropletSpectra height={height} fullWidth />
+    </Tile>
+  );
+}
+
+export function Row9HeatmapAndPeak({ height = 320 }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
       <Tile label="m/z × class intensity heatmap">
         <IntensityHeatmap height={height} />
       </Tile>
@@ -20,6 +25,16 @@ export default function Row8Special({ height = 300 }) {
         <Peak3D height={height} />
       </Tile>
     </div>
+  );
+}
+
+// Backwards-compat default export — renders both rows stacked.
+export default function Row8Special({ height = 300 }) {
+  return (
+    <>
+      <Row8Droplets height={height + 60} />
+      <div className="mt-3"><Row9HeatmapAndPeak height={height} /></div>
+    </>
   );
 }
 
@@ -36,7 +51,7 @@ function Tile({ label, children }) {
   );
 }
 
-function DropletSpectra({ height }) {
+function DropletSpectra({ height, fullWidth = false }) {
   const { pack } = useCrossfilter();
   const ref = useRef(null);
 
@@ -44,7 +59,13 @@ function DropletSpectra({ height }) {
     const node = ref.current;
     if (!node) return;
     const width = node.clientWidth || 360;
-    const top = pack.dims.intensity.top(36);
+    // When the droplet panel owns its row we have lots of horizontal space
+    // — show many more droplets in a wide grid.
+    const cols = fullWidth ? 16 : 6;
+    const cellSize = Math.floor(width / cols);
+    const rowsAvailable = Math.max(1, Math.floor(height / cellSize));
+    const maxDroplets = cols * rowsAvailable;
+    const top = pack.dims.intensity.top(maxDroplets);
 
     const svg = d3.select(node);
     svg.selectAll("*").remove();
@@ -54,7 +75,6 @@ function DropletSpectra({ height }) {
 
     if (top.length === 0) return;
 
-    const cols = 6;
     const rows = Math.ceil(top.length / cols);
     const cellW = width / cols;
     const cellH = height / rows;
@@ -93,7 +113,7 @@ function DropletSpectra({ height }) {
         `${r.analyte}${r.adduct}\nm/z ${r.precursorMz.toFixed(3)}\nI ${r.intensity.toExponential(2)}\n(n,ℓ,m,s)=(${r.n},${r.l},${r.m},${r.s.toFixed(1)})`
       );
     });
-  }, [pack, height]);
+  }, [pack, height, fullWidth]);
 
   useChartRedraw(render);
   return <svg ref={ref} className="w-full" style={{ height }} />;
