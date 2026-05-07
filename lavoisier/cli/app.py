@@ -28,6 +28,10 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 
+# Partition export — lightweight command (requires only pymzml + numpy)
+from lavoisier.cli.commands.export_partition import export_partition as _export_partition_fn
+app.command("export-partition")(_export_partition_fn)
+
 
 
 # Store configuration and orchestrator globally

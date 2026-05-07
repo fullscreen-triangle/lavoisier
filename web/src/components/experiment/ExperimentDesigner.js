@@ -3,6 +3,7 @@ import AnalyteBuilder from "./AnalyteBuilder";
 import IonizationConfig from "./IonizationConfig";
 import AcquisitionConfig from "./AcquisitionConfig";
 import VirtualRun from "./VirtualRun";
+import ResultsImport from "./ResultsImport";
 import LibraryExport from "./LibraryExport";
 import ResultsDashboard from "./ResultsDashboard";
 import { PALETTE } from "./cf/chartUtils";
@@ -35,6 +36,7 @@ export default function ExperimentDesigner() {
           <IonizationConfig />
           <AcquisitionConfig />
           <VirtualRun />
+          <ResultsImport />
           <LibraryExport />
         </aside>
 
