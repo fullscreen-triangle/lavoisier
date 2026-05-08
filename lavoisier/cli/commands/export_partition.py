@@ -1,23 +1,11 @@
 """
-export-partition — process an mzML file through the partition Lagrangian and
-export a .lavoisier.json file that the Lavoisier web dashboard can import.
+export-partition — thin wrapper that delegates to the precursor HPC pipeline.
 
-Usage:
-    lavoisier export-partition samples/plasma_pos.mzML
-    lavoisier export-partition *.mzML --output results/ --analyser orbitrap --ppm 5
+For production analysis use the full pipeline directly:
+    python precursor/export_to_web.py sample.mzML --analyser orbitrap
 
-Algorithm
----------
-1. Parse mzML (DDA or full-scan) with pymzml.
-2. For each MS2 scan: use the precursor as the feature apex; link fragment ions.
-   For high-intensity MS1-only features (above --ms1-threshold): include them too.
-3. Annotate each feature against an in-silico lipid database (12 classes, ±ppm).
-4. Compute partition coordinates (n, ℓ, m, s) from the partition Lagrangian.
-5. Compute S-entropy (Sₖ, Sₜ, Sₑ) from the combined spectrum.
-6. Write {version, source, analyser, records} JSON envelope.
-
-The JSON schema exactly mirrors the web tool's PredictedRecord[] so the same
-crossfilter dashboard visualises it without any conversion.
+This CLI wrapper provides the same interface when the precursor package is
+available; it falls back to the built-in lightweight analyser otherwise.
 """
 
 from __future__ import annotations
@@ -516,6 +504,27 @@ def export_partition(
         console.print(f"[red]Unknown analyser '{analyser}'.  "
                       f"Choose from: {', '.join(_OBSERVABLE_FNS)}[/red]")
         raise typer.Exit(1)
+
+    # ── Prefer the full precursor HPC pipeline when available ───────────────
+    try:
+        import importlib.util, pathlib as _pl
+        _precursor_root = _pl.Path(__file__).parent.parent.parent.parent / "precursor"
+        if (_precursor_root / "export_to_web.py").exists():
+            import subprocess, sys as _sys
+            cmd = [_sys.executable, str(_precursor_root / "export_to_web.py")]
+            for f in input_files:
+                cmd.append(str(f))
+            if output:
+                cmd += ["--output", str(output)]
+            cmd += ["--analyser", analyser, "--ppm", str(ppm),
+                    "--ms1-threshold", str(int(ms1_threshold))]
+            if polarity_override:
+                cmd += ["--polarity", polarity_override]
+            console.print("[cyan]Using full precursor HPC pipeline …[/cyan]")
+            subprocess.run(cmd, check=True)
+            return
+    except Exception:
+        pass  # fall through to built-in lightweight analyser
 
     analyser_cfg: dict = {}  # use defaults; could be exposed as options later
 
