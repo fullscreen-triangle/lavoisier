@@ -8,6 +8,78 @@ import LibraryExport from "./LibraryExport";
 import ResultsDashboard from "./ResultsDashboard";
 import { PALETTE } from "./cf/chartUtils";
 
+function Divider({ label }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 border-t" style={{ borderColor: PALETTE.grid }} />
+      <span className="text-[8px] uppercase tracking-[0.2em]"
+        style={{ color: PALETTE.muted }}>
+        {label}
+      </span>
+      <div className="flex-1 border-t" style={{ borderColor: PALETTE.grid }} />
+    </div>
+  );
+}
+
+function DownloadTool() {
+  return (
+    <div className="space-y-2">
+      <p className="text-[10px] leading-relaxed" style={{ color: PALETTE.muted }}>
+        Run the analysis tool locally on your own mzML files.
+        No data leaves your machine.
+      </p>
+
+      <div className="rounded border p-2.5 space-y-2"
+        style={{ borderColor: PALETTE.grid, background: "rgba(255,255,255,0.02)" }}>
+        <div className="text-[9px] uppercase tracking-wider"
+          style={{ color: PALETTE.muted }}>
+          workflow
+        </div>
+        <ol className="text-[10px] space-y-1 list-none" style={{ color: PALETTE.text }}>
+          {[
+            "Download the analysis tool below",
+            "Run it on your mzML files locally",
+            "Load the resulting .lavoisier.json here",
+          ].map((step, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="font-mono text-[9px] mt-0.5 shrink-0"
+                style={{ color: PALETTE.muted }}>
+                {i + 1}.
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <a
+        href="https://github.com/fullscreen-triangle/lavoisier/releases/latest"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between w-full py-2 px-3 rounded
+          text-[11px] tracking-wide border transition-opacity hover:opacity-70"
+        style={{
+          borderColor: PALETTE.grid,
+          color:       PALETTE.text,
+          background:  "transparent",
+          textDecoration: "none",
+        }}
+      >
+        <span>↓  Download analysis tool</span>
+        <span className="text-[9px]" style={{ color: PALETTE.muted }}>
+          github releases
+        </span>
+      </a>
+
+      <div className="rounded border px-2.5 py-1.5 font-mono text-[9px]"
+        style={{ borderColor: PALETTE.grid, color: PALETTE.muted,
+                 background: "rgba(255,255,255,0.015)" }}>
+        python export_to_web.py sample.mzML
+      </div>
+    </div>
+  );
+}
+
 export default function ExperimentDesigner() {
   return (
     <div
@@ -20,15 +92,17 @@ export default function ExperimentDesigner() {
             lg:border-r-0 lg:border-b"
           style={{ borderColor: PALETTE.grid, background: PALETTE.bg }}
         >
+          {/* ── Virtual instrument ───────────────────────────────────── */}
           <div>
             <h2 className="text-sm font-normal mb-1 tracking-wide"
               style={{ color: PALETTE.text }}>
-              Virtual experiment
+              Virtual instrument
             </h2>
             <p className="text-[10px] leading-relaxed"
               style={{ color: PALETTE.muted }}>
-              Design a lipidomics experiment. The instrument runs on this device and
-              produces a synthetic library you take to your lab.
+              Design a lipidomics experiment. The forward simulation runs
+              on this device and produces a predicted library — take it to
+              your lab as a reference before acquisition.
             </p>
           </div>
 
@@ -36,8 +110,20 @@ export default function ExperimentDesigner() {
           <IonizationConfig />
           <AcquisitionConfig />
           <VirtualRun />
-          <ResultsImport />
           <LibraryExport />
+
+          {/* ── Real data ────────────────────────────────────────────── */}
+          <Divider label="real data" />
+
+          <div>
+            <h2 className="text-sm font-normal mb-1 tracking-wide"
+              style={{ color: PALETTE.text }}>
+              Local analysis
+            </h2>
+          </div>
+
+          <DownloadTool />
+          <ResultsImport />
         </aside>
 
         <main className="p-4 overflow-y-auto min-w-0 min-h-0">

@@ -80,10 +80,6 @@ export default function ResultsImport() {
 
   return (
     <div className="space-y-1.5">
-      <div className="text-[9px] uppercase tracking-wider"
-        style={{ color: PALETTE.muted }}>
-        Or load from CLI
-      </div>
       <input
         ref={fileRef}
         type="file"

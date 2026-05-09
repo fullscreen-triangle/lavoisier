@@ -1,0 +1,37 @@
+[package]
+name = "lavoisier-export"
+version = "0.1.0"
+edition = "2021"
+description = "CLI: mzML → .lavoisier.json for the Lavoisier web dashboard"
+authors = ["Kundai Sachikonye"]
+license = "MIT"
+
+[[bin]]
+name = "lavoisier-export"
+path = "src/main.rs"
+
+[dependencies]
+# Internal: only the pure-Rust mass-computing logic, no Python bindings
+lavoisier-mass-computing = { path = "../lavoisier-mass-computing", default-features = false }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Serialisation
+serde_json = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+
+# Parallel processing
+rayon = { workspace = true }
+
+# mzML XML parsing
+quick-xml = "0.31"
+base64 = "0.22"
+
+# Binary array decoding
+byteorder = { workspace = true }
+
+# Zlib decompression for mzML binary arrays
+flate2 = { workspace = true }
