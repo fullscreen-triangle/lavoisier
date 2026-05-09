@@ -74,7 +74,7 @@ function DownloadTool() {
       <div className="rounded border px-2.5 py-1.5 font-mono text-[9px]"
         style={{ borderColor: PALETTE.grid, color: PALETTE.muted,
                  background: "rgba(255,255,255,0.015)" }}>
-        python export_to_web.py sample.mzML
+        lavoisier-export sample.mzML
       </div>
     </div>
   );

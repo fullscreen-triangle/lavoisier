@@ -84,7 +84,6 @@ fn parse_mzml(path: &Path, rt_start: f64, rt_end: f64) -> Result<Vec<ScanData>> 
         .with_context(|| format!("cannot open {}", path.display()))?;
     let buf_reader = std::io::BufReader::with_capacity(1 << 20, file);
     let mut xml = Reader::from_reader(buf_reader);
-    xml.config_mut().trim_text(true);
 
     let mut scans: Vec<ScanData> = Vec::new();
     let mut current: Option<ScanData> = None;
@@ -280,7 +279,6 @@ const LOG_MASS_RANGE: f64 = 1.4771212547_f64; // log10(1500) - log10(50)
 /// S_t encodes chromatographic retention (linear RT)
 /// S_e encodes fragmentation state (spectral Shannon entropy)
 fn compute_sentropy(
-    mz_array: &[f64],
     intensity_array: &[f64],
     precursor_mz: f64,
     rt: f64,
@@ -467,8 +465,8 @@ impl LipidDb {
 
                     let analyte = format!("{}({}:{})", hg.class, x, y);
 
-                    // Positive-mode adducts
-                    for (adduct, abbr, dm) in &[
+                    // Positive-mode adducts — &(pat) dereferences the array ref
+                    for &(adduct, adduct_abbr, dm) in &[
                         ("[M+H]+",   "+H",   elem::PROTON),
                         ("[M+Na]+",  "+Na",  elem::SODIUM),
                         ("[M+NH4]+", "+NH4", elem::NH4),
@@ -480,14 +478,14 @@ impl LipidDb {
                             y: *y,
                             neutral_mass,
                             adduct,
-                            adduct_abbr: abbr,
+                            adduct_abbr,
                             precursor_mz: neutral_mass + dm,
                             z: 1,
                             polarity: '+',
                         });
                     }
                     // Negative-mode adducts
-                    for (adduct, abbr, dm) in &[
+                    for &(adduct, adduct_abbr, dm) in &[
                         ("[M-H]-",   "-H",  -elem::PROTON),
                         ("[M+Cl]-",  "+Cl",  elem::CL),
                     ] {
@@ -498,7 +496,7 @@ impl LipidDb {
                             y: *y,
                             neutral_mass,
                             adduct,
-                            adduct_abbr: abbr,
+                            adduct_abbr,
                             precursor_mz: neutral_mass + dm,
                             z: 1,
                             polarity: '-',
@@ -573,6 +571,7 @@ fn build_record(
         .iter()
         .map(|p| json!([p[0], p[1]]))
         .collect();
+    let peaks_json = ms2_json.clone();
 
     json!({
         "analyte":         analyte,
@@ -600,7 +599,7 @@ fn build_record(
         "partitionEntropy": p_entropy,
         "ms1":             [],
         "ms2":             ms2_json,
-        "peaksAll":        ms2_json.clone(),
+        "peaksAll":        peaks_json,
         "bitsTotal":       (address.len() as f64 * 3.0_f64.log2()) as i64,
     })
 }
@@ -681,7 +680,6 @@ fn process_file(args: &Args, mzml_path: &Path, lipid_db: &LipidDb) -> Result<Pat
 
             // S-entropy coordinates
             let scoord = compute_sentropy(
-                &scan.mz,
                 &scan.intensity,
                 pmz,
                 scan.retention_time,
@@ -700,19 +698,25 @@ fn process_file(args: &Args, mzml_path: &Path, lipid_db: &LipidDb) -> Result<Pat
             let lipid = lipid_db.annotate(pmz, polarity_char, args.ppm);
 
             // Look up MS1 apex intensity from the nearest preceding MS1 scan
-            let ms1_intensity = ms1_scans
-                .iter()
-                .rev()
-                .find(|ms1| ms1.retention_time <= scan.retention_time)
-                .and_then(|ms1| {
+            let ms1_scan_rt = scan.retention_time;
+            let ms1_intensity = {
+                let preceding = ms1_scans
+                    .iter()
+                    .rev()
+                    .find(|&&s| s.retention_time <= ms1_scan_rt);
+                if let Some(&ms1) = preceding {
                     ms1.mz
                         .iter()
-                        .zip(ms1.intensity.iter())
-                        .filter(|(m, _)| ((*m - pmz) / pmz * 1e6).abs() < 15.0)
-                        .map(|(_, &i)| i)
+                        .copied()
+                        .zip(ms1.intensity.iter().copied())
+                        .filter(|&(m, _)| ((m - pmz) / pmz * 1e6).abs() < 15.0)
+                        .map(|(_, i)| i)
                         .reduce(f64::max)
-                })
-                .unwrap_or(0.0);
+                        .unwrap_or(0.0)
+                } else {
+                    0.0
+                }
+            };
 
             build_record(
                 scan,
