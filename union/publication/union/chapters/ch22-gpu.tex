@@ -1,0 +1,86 @@
+% ============================================================
+%  Chapter 22: GPU Fragment Shaders as Observation Apparatus
+%  Source: oxford/publications/observation-framework/
+%          mass-computing-observation-framework.tex
+% ============================================================
+
+\epigraph{%
+  The shader evaluates the partition function.\\
+  The partition function is the physical observable.\\
+  Therefore the shader is a physical measurement.%
+}{}
+
+\section{From Triple Equivalence to GPU Observation}
+\label{sec:ch22-gpu-obs}
+
+The Triple Equivalence $\Osc \cong \Cat \cong \Part$ has a striking practical
+consequence.
+In the $\Part$ description, a physical measurement is the identification of a
+partition cell.
+A GPU fragment shader, when programmed to evaluate the partition depth field
+$\Depth(\mathbf{x})$ on a pixel grid, is performing exactly this operation:
+for each pixel (corresponding to a spatial point in the analyser field), it
+identifies the partition cell and evaluates $\Depth$.
+By $\Part \cong \Osc$, this is a physical observation of the ion's trajectory.
+
+\begin{remark}
+  This is not a simulation.
+  A simulation approximates a physical process; the GPU shader \emph{is}
+  the physical process, in the categorical sense.
+  The distinction matters for the S-entropy of the result: a simulation
+  accumulates simulation error; a partition observation accumulates only the
+  Floor theorem's irreducible uncertainty $S_\mathrm{flat}(R) > 0$.
+\end{remark}
+
+\section{The Triple Observation Architecture}
+\label{sec:ch22-triple}
+
+The observation framework implements the triple equivalence as a dual-path
+architecture:
+
+\paragraph{Oscillatory path ($\Osc$).}
+The Runge--Kutta integrator propagates the ion's classical trajectory through
+the analyser field using the partition Lagrangian~\eqref{eq:partitionlagrangian}.
+Output: time-series of position and momentum.
+
+\paragraph{Partition path ($\Part$).}
+The fragment shader evaluates the partition depth field at each point on a
+spatial grid.
+Output: spatial map of $\Depth(\mathbf{x})$.
+
+\paragraph{Categorical path ($\Cat$).}
+The S-entropy tracker monitors $(\Sk, \St, \Se)$ at each step, ensuring that
+the observation respects the Floor theorem.
+Output: S-entropy time-series.
+
+The three paths converge to the same mass spectrum.
+Discrepancy between the paths is an instrument calibration metric.
+
+\section{Quality Metrics and Training Signal}
+\label{sec:ch22-quality}
+
+The dual-path interference --- the discrepancy between $\Osc$ and $\Part$
+outputs --- provides a natural training signal for instrument calibration:
+\begin{equation}
+  \Delta_\mathrm{obs} = \|\Sk^\mathrm{osc} - \Sk^\mathrm{part}\|_2.
+\end{equation}
+A well-calibrated instrument has $\Delta_\mathrm{obs} \to 0$.
+The Floor theorem bounds: $\Delta_\mathrm{obs} \geq S_\mathrm{flat}(R)$.
+
+%%  SOURCE: integrate full derivations and panels from
+%%          mass-computing-observation-framework.tex
+%%  ADD: panel 1 (triple observation scheme), panel 2 (quality memory),
+%%       panel 3 (training dual-path), panel 4 (throughput scaling).
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 22 Summary}}]
+\begin{itemize}[noitemsep]
+  \item By the Triple Equivalence, a GPU fragment shader evaluating the
+    partition depth field is a physical observation apparatus.
+  \item The triple observation architecture runs $\Osc$, $\Part$, and $\Cat$
+    paths in parallel; all three converge to the same spectrum.
+  \item Dual-path interference provides a natural calibration metric bounded
+    below by the Floor theorem.
+\end{itemize}
+\end{tcolorbox}

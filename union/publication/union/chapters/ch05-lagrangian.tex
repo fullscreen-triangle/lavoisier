@@ -1,0 +1,109 @@
+% ============================================================
+%  Chapter 5: The Partition Lagrangian
+%  Source: bounded-phase-space-trajectory.tex, Consequence 15
+% ============================================================
+
+\epigraph{%
+  The equation of motion is not a force law.\\
+  It is gradient descent on the partition depth.%
+}{}
+
+\section{Deriving the Lagrangian from the Axiom}
+\label{sec:ch5-derive}
+
+Classical mechanics is usually \emph{defined} by a Lagrangian or Hamiltonian,
+taken as a given for the physical system in question.
+Here we derive the unique Lagrangian consistent with BPSL from first
+principles, without assuming Newton's second law.
+
+The argument has three steps:
+\begin{enumerate}
+  \item Identify the scalar field that the system naturally extremises.
+  \item Write the most general Lagrangian coupling a particle to that field
+    that is consistent with Galilean invariance and completeness of
+    scalar-plus-vector coupling.
+  \item Show that the Euler--Lagrange equations take the Lorentz-force shape
+    but are force-free.
+\end{enumerate}
+
+\section{The Partition Depth Field}
+\label{sec:ch5-depth}
+
+The partition algebra $\mathcal{A}_\infty$ assigns to every point $\mathbf{x}$
+in configuration space a partition depth --- the finest partition level at
+which $\mathbf{x}$ is an interior point of a cell.
+We define the \emph{partition depth field}:
+\begin{equation}
+  \Depth(\mathbf{x}, t) : \mathbb{R}^3 \times \mathbb{R} \to \mathbb{R}_{\geq 0}.
+\end{equation}
+The system minimises $\Depth$ along its trajectory: dynamics is gradient descent
+on the partition depth field.
+
+\section{The Partition Lagrangian}
+\label{sec:ch5-lagrangian}
+
+\begin{consequence}{Partition Lagrangian}{partitionlagrangian}
+  The unique Galilean-invariant, scalar-plus-vector-complete Lagrangian
+  coupling a particle of mass parameter $\mu$ to the partition depth field
+  $\Depth$ is:
+  \begin{equation}\label{eq:partitionlagrangian}
+    \Lagr = \tfrac{1}{2}\mu|\dot{\mathbf{x}}|^2
+            + \mu\dot{\mathbf{x}} \cdot \Apartition
+            - \Depth(\mathbf{x}, t),
+  \end{equation}
+  where $\Apartition(\mathbf{x}, t)$ is the \emph{partition vector potential},
+  defined as the curl-free part of the velocity field that minimises $\Depth$.
+\end{consequence}
+
+\begin{proof}[Proof sketch]
+  By the completeness theorem for Lagrangians (Helmholtz conditions), the
+  most general Lagrangian linear in $\dot{\mathbf{x}}$ and $\Depth$ with
+  Galilean symmetry is of the form~\eqref{eq:partitionlagrangian}.
+  Galilean invariance forbids terms of order $|\dot{\mathbf{x}}|^0$ other
+  than $\Depth$ and terms of order $|\dot{\mathbf{x}}|^2$ other than the
+  kinetic term.
+\end{proof}
+
+\section{The Partition Equation of Motion}
+\label{sec:ch5-eom}
+
+Applying the Euler--Lagrange equations to~\eqref{eq:partitionlagrangian}:
+\begin{equation}\label{eq:lorentz-shape}
+  \mu\ddot{\mathbf{x}} = \mu\dot{\mathbf{x}} \times
+  (\nabla \times \Apartition) - \nabla\Depth,
+\end{equation}
+where $\mathbf{B}_\mathcal{M} = \nabla \times \Apartition$ plays the role of
+the magnetic field and $-\nabla\Depth$ plays the role of the electric force.
+
+Crucially, this equation has the \emph{shape} of the Lorentz force law but is
+\emph{force-free} in the electromagnetic sense: $\Apartition$ and $\Depth$ are
+not external fields but geometric properties of the partition structure.
+The ``force'' is gradient descent on the partition depth of the bounded phase
+space.
+
+\begin{remark}[Force-free ion trajectories]
+  In the mass spectrometric context (Part~VIII), this means that an ion
+  in an instrument does not experience forces in the traditional sense.
+  It follows the path of steepest descent on the partition depth landscape
+  created by the instrument's field configuration.
+  The ion trajectory is geometrically determined.
+  The GPU implementation (Chapter~\ref{ch:gpu}) uses exactly this gradient
+  descent formulation, making the shader pipeline a physical observable of
+  the partition depth field.
+\end{remark}
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 5 Summary}}]
+\begin{itemize}[noitemsep]
+  \item The partition depth field $\Depth(\mathbf{x},t)$ is a scalar field
+    derived from the partition algebra.
+  \item The unique Galilean-invariant Lagrangian coupling a particle to
+    $\Depth$ has the form $\Lagr = \half\mu|\dot{\mathbf{x}}|^2
+    + \mu\dot{\mathbf{x}}\cdot\Apartition - \Depth$.
+  \item The Euler--Lagrange equations have the Lorentz-force shape but are
+    force-free: dynamics is gradient descent on $\Depth$.
+  \item Newton's second law is a special case of this equation when the
+    partition depth gradient is the Newtonian potential.
+\end{itemize}
+\end{tcolorbox}

@@ -1,0 +1,96 @@
+% ============================================================
+%  Chapter 21: The Force-Free Ion --- Partition Depth Minimisation
+%  Source: oxford/publications/shader-depth-minimisation/
+%          shader-partition-depth-minimisation.tex
+% ============================================================
+
+\epigraph{%
+  The ion does not follow a force.\\
+  It descends the partition depth landscape.%
+}{}
+
+\section{The Force-Free Formulation}
+\label{sec:ch21-forcefree}
+
+Chapter~\ref{ch:lagrangian} showed that the equation of motion for a bounded
+system has the Lorentz-force shape but is force-free: it is gradient descent
+on the partition depth field $\Depth(\mathbf{x}, t)$.
+Applied to an ion in a mass spectrometer, this means:
+
+\begin{itemize}
+  \item There are no ``electric forces''.
+    The electric field $\mathbf{E} = -\nabla\Depth$ is the gradient of the
+    partition depth field, and the ion moves along this gradient.
+  \item There are no ``magnetic forces''.
+    The magnetic field appears as the curl of the partition vector potential
+    $\Apartition$, and the cyclotron orbit is geodesic motion in the
+    $(\Depth, \Apartition)$ landscape.
+  \item Fragmentation is not a force event.
+    It is a partition-depth transition: the parent ion moves to a new region
+    of partition space occupied by its fragments.
+\end{itemize}
+
+\section{The Six-Pass GPU Pipeline}
+\label{sec:ch21-sixpass}
+
+The partition Lagrangian translates directly into a six-pass GPU rendering
+pipeline:
+
+\begin{enumerate}
+  \item \textbf{Pass 1 (Ionisation)}: assign initial partition coordinates
+    $(n_0, l_0, m_0, s_0)$ from the ESI droplet model.
+  \item \textbf{Pass 2 (Drift)}: propagate the ion through the RF multipole
+    using the Mathieu stability shader.
+  \item \textbf{Pass 3 (Depth descent)}: compute $\nabla\Depth$ in the
+    analyser field and advance the ion's partition depth.
+  \item \textbf{Pass 4 (Fragmentation)}: detect partition-depth transitions
+    above the CID energy threshold; spawn fragment ions.
+  \item \textbf{Pass 5 (Detection)}: collect ions at the detector partition
+    surface; accumulate image charges.
+  \item \textbf{Pass 6 (Spectral reconstruction)}: Fourier-transform the
+    image charge time-series to produce $m/z$ and intensity.
+\end{enumerate}
+
+Each pass is a fragment shader operating on a texture representing the
+partition depth field at that stage.
+By the Triple Equivalence (Chapter~\ref{ch:triple}), this computation is
+physically equivalent to a measurement: the shader pipeline \emph{is} the
+instrument.
+
+\section{Comparison with Four Analyser Technologies}
+\label{sec:ch21-comparison}
+
+\begin{table}[htbp]
+\centering
+\caption{%
+  Six-pass GPU pipeline correspondence with physical analyser stages.
+}
+\begin{tabular}{@{}llll@{}}
+\toprule
+GPU Pass & Physical Stage & Partition Operation & Observable \\
+\midrule
+1 & ESI & Depth initialisation & Initial $m/z$ \\
+2 & Ion transfer & Mathieu stability filter & Transmission window \\
+3 & Mass analysis & Depth gradient descent & $\omega_z$, $\omega_c$, $t_\mathrm{flight}$ \\
+4 & CID & Depth transition & Fragment $m/z$ \\
+5 & Detection & Boundary accumulation & Image current \\
+6 & Spectral output & Koopman FT & $m/z$ spectrum \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%%  SOURCE: integrate full derivations and figures from
+%%          shader-partition-depth-minimisation.tex
+%%  ADD: panels 1 (force elimination), 2 (transport/superconductivity),
+%%       3 (six-pass pipeline), 4 (GPU journey comparison).
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 21 Summary}}]
+\begin{itemize}[noitemsep]
+  \item Ion trajectories are force-free: gradient descent on $\Depth(\mathbf{x},t)$.
+  \item The six-pass GPU pipeline maps exactly to the six physical stages of a
+    mass spectrometric measurement.
+  \item By the Triple Equivalence, the GPU pipeline is a physical instrument.
+\end{itemize}
+\end{tcolorbox}

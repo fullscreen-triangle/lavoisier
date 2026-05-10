@@ -1,0 +1,88 @@
+% ============================================================
+%  Chapter 23: The Generative Spectral Database
+%  Source: oxford/publications/prompt-based-spectral-database/
+%          context-based-spectral-database.tex
+% ============================================================
+
+\epigraph{%
+  The database is not a list of spectra.\\
+  It is a traversal of phase space.%
+}{}
+
+\section{The Database as Phase Space}
+\label{sec:ch23-phase-space}
+
+A conventional spectral database stores pre-computed spectra as records,
+indexed by molecular formula or identifier.
+Query complexity is $O(N)$ where $N$ is the number of records.
+
+In the partition framework, a molecule's mass spectrum is determined by its
+partition cell at each fragmentation depth.
+The ``database'' is the partition hierarchy of molecular space itself:
+the S-entropy coordinate system $(\Sk, \St, \Se)$ is the address of any
+molecular spectrum in the partition space.
+There are no stored records; there is only the partition tree.
+
+\begin{consequence}{O(k) Query Complexity}{Okquery}
+  Query complexity of the generative spectral database is $O(k)$, where $k$
+  is the partition depth of the target spectrum, independent of the total
+  number of possible spectra $N$.
+\end{consequence}
+
+\begin{proof}[Proof sketch]
+  Each query is a walk down the partition tree: at each depth level, one
+  sub-cell is selected.
+  A walk of depth $k$ requires $k$ steps.
+  The total number of possible spectra $N = T(k_\mathrm{max}, d)$
+  (composition inflation, Chapter~\ref{ch:inflation}) enters only in the
+  maximum depth, not in the query time.
+\end{proof}
+
+\section{S-Entropy Coordinates as Database Address}
+\label{sec:ch23-address}
+
+The spectral address $(\Sk, \St, \Se)$ of a molecule uniquely identifies its
+partition cell in the database:
+\begin{itemize}
+  \item $\Sk$ (knowledge entropy) indexes the chemical class and substructure.
+  \item $\St$ (temporal entropy) indexes the chromatographic retention time.
+  \item $\Se$ (partition entropy) indexes the mass analyser resolution depth.
+\end{itemize}
+
+Searching by $(\Sk, \St, \Se)$ is equivalent to walking the partition tree;
+it is $O(k)$.
+
+\section{Resolution Cascade and Bijection}
+\label{sec:ch23-resolution}
+
+A resolution cascade is the sequence of partition depths traversed from a
+low-resolution ESI survey scan down to high-resolution MS$^n$ fragmentation.
+Each step in the cascade:
+\begin{enumerate}
+  \item Narrows the $\Sk$ interval by the information content of the new
+    measurement.
+  \item Descends one level in the partition tree.
+  \item Produces a new $(\Sk, \St, \Se)$ address for the candidate molecule.
+\end{enumerate}
+
+The ion--droplet bijection ensures that each ion droplet from ESI maps to a
+unique path in the partition tree; there are no collisions at the resolution
+depth of the instrument.
+
+%%  SOURCE: integrate full derivations and panels from
+%%          context-based-spectral-database.tex
+%%  ADD: panel 1 (S-entropy space), panel 2 (analyser trajectories),
+%%       panel 3 (cohesion clustering), panel 4 (bijection complexity).
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 23 Summary}}]
+\begin{itemize}[noitemsep]
+  \item The database is the partition hierarchy itself; spectra are
+    partition-tree paths.
+  \item Query complexity is $O(k)$ --- independent of database size $N$.
+  \item S-entropy coordinates $(\Sk, \St, \Se)$ are the database address
+    of any spectrum.
+  \item The resolution cascade narrows the address at each MS$^n$ step.
+\end{itemize}
+\end{tcolorbox}

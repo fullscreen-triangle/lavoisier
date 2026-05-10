@@ -1,0 +1,75 @@
+% ============================================================
+%  Chapter 19: Composition Inflation
+%  Source: oxford/publications/sources/composition-inflation.tex
+% ============================================================
+
+\epigraph{%
+  Each additional dimension of state space\\
+  multiplies the number of distinguishable trajectories.%
+}{}
+
+\section{Distinguishable Trajectories in $d$-Dimensional Partition Space}
+\label{sec:ch19-distinguishable}
+
+\begin{definition}[Composition inflation]
+  Let a partition hierarchy have branching factor $b$ and be embedded in a
+  $d$-dimensional state space.
+  The number of \emph{distinguishable trajectories} from the root to depth $n$ is
+  \begin{equation}\label{eq:composition-inflation}
+    T(n, d) = d\,(d+1)^{n-1}.
+  \end{equation}
+\end{definition}
+
+\begin{proof}[Derivation]
+  At depth 1 there are $d$ choices of sub-partition.
+  At each subsequent depth, the number of choices grows by a factor of $(d+1)$:
+  the current cell can either continue in the same direction (1 choice) or
+  branch to any of the $d$ sub-cells (giving $d+1$ total choices per step).
+  Iterating: $T(n, d) = d \cdot (d+1)^{n-1}$.
+\end{proof}
+
+For $d = 3$ (three spatial dimensions):
+$T(n, 3) = 3 \cdot 4^{n-1}$, growing as $4^n$.
+This exponential growth is \emph{composition inflation}: the number of
+distinguishable molecular configurations explodes with increasing depth.
+
+\section{Application to Molecular Structure Space}
+\label{sec:ch19-molecular}
+
+A molecule of $N$ heavy atoms in a three-dimensional partition space at depth
+$n$ contributes $T(n, 3)^N$ distinguishable configurations.
+For a drug-like molecule ($N \sim 30$, $n \sim 4$):
+$T(4, 3) = 3 \cdot 4^3 = 192$ configurations per atom,
+giving $192^{30} \approx 10^{68}$ total configurations --- far exceeding the
+number of synthesisable compounds ($\sim 10^{60}$).
+
+Composition inflation explains the combinatorial explosion of chemical space
+and places it on a mathematical foundation.
+
+\section{Application to Spectral Complexity}
+\label{sec:ch19-spectral}
+
+The number of distinguishable mass spectra of a molecule at partition depth $n$
+is $T(n, 3)$ per fragment ion, growing exponentially with fragmentation depth.
+This is the theoretical basis for the generative spectral database
+(Chapter~\ref{ch:database}): the database generates spectra by walking the
+partition tree at depth $n$, not by exhaustive enumeration.
+The $O(k)$ query complexity (independent of database size $N$) follows from
+the fact that $T(n,d)$ is determined by depth alone.
+
+%%  SOURCE: integrate full derivations from
+%%          oxford/publications/sources/composition-inflation.tex
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 19 Summary}}]
+\begin{itemize}[noitemsep]
+  \item Distinguishable trajectories in a $d$-dimensional partition space
+    grow as $T(n,d) = d(d+1)^{n-1}$.
+  \item For $d=3$: $T(n,3) = 3\cdot 4^{n-1}$, exponential in depth.
+  \item This composition inflation quantifies chemical space size and
+    spectral complexity.
+  \item The generative database (Chapter~\ref{ch:database}) exploits
+    the tree structure to achieve $O(k)$ query complexity.
+\end{itemize}
+\end{tcolorbox}

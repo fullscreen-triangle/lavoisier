@@ -1,0 +1,92 @@
+% ============================================================
+%  Chapter 14: The Floor Theorem
+%  Source: unconstrained-subtask-recursion.tex
+% ============================================================
+
+\epigraph{%
+  No bounded receiver can know everything.\\
+  This is not a limitation.  It is the axiom.%
+}{}
+
+\section{The Floor Theorem}
+\label{sec:ch14-floor}
+
+\begin{theorem}[Floor Theorem]
+  For any receiver $R = (\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$ satisfying
+  BPSL and any non-trivial question $q$:
+  \begin{equation}
+    \mathbf{S}_\mathrm{flat}(R) \;\stackrel{\mathrm{def}}{=}\;
+    \inf_{K_R \in \Sigma_R} \mathbf{S}[R, q] > 0.
+  \end{equation}
+  No bounded receiver can attain $S = 0$ on any non-trivial question.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+  $\Sigma_R$ is bounded (BPSL clause~i); its partition algebra $\mathcal{A}_\infty$
+  is countable (Consequence~\ref{cons:partitionalgebra}).
+  The truth about $q$ is a single point in the truth space $\mathcal{T}_q$.
+  The receiver's finest resolution is the atoms of $\mathcal{A}_\infty$, which
+  are cells of positive measure.
+  A positive-measure cell cannot isolate a single point; therefore
+  $\mathbf{S}[R,q] \geq \kB\log(\mu(\mathrm{smallest cell})) > 0$.
+\end{proof}
+
+\begin{remark}[Physical interpretation]
+  The Floor Theorem is the information-theoretic analogue of Heisenberg's
+  uncertainty principle: no receiver with finite information capacity can make
+  an exact measurement.
+  But the Floor Theorem is stronger: it does not depend on quantum mechanics.
+  It holds for any bounded receiver, classical or quantum.
+  The uncertainty principle is a special case.
+\end{remark}
+
+\section{Information Catalysts}
+\label{sec:ch14-catalysts}
+
+A surprising consequence of the S-calculus is the existence of
+\emph{information catalysts}: observations that reduce the S-value of multiple
+questions simultaneously, with multiplicative rather than additive benefit.
+
+\begin{theorem}[Information Catalyst]
+  If observation $o$ satisfies
+  $\mathbf{S}[R \oplus o, q_1] \cdot \mathbf{S}[R \oplus o, q_2] <
+  \mathbf{S}[R,q_1] \cdot \mathbf{S}[R,q_2]$,
+  then $o$ is an information catalyst: it reduces the joint S-value
+  super-additively.
+\end{theorem}
+
+In mass spectrometry, a high-resolution MS/MS spectrum is an information
+catalyst: a single fragmentation event simultaneously reduces $\Sk$
+(structure), $\St$ (retention time prediction), and $\Se$ (partition depth)
+for multiple candidate molecules.
+
+\section{The Unconstrained Subtask Theorem}
+\label{sec:ch14-subtask}
+
+\begin{theorem}[Unconstrained Subtask Recursion]
+  If the global S-value $\mathbf{S}[R, q]$ is fixed, the local S-values of
+  independent subtasks $q_1, q_2, \ldots, q_k$ (where $q = q_1 \wedge \cdots
+  \wedge q_k$) are individually unconstrained: any assignment
+  $(\mathbf{S}[R,q_1], \ldots, \mathbf{S}[R,q_k])$ consistent with the
+  additivity axiom is achievable.
+\end{theorem}
+
+This theorem underpins the GPU multi-pass architecture of Chapter~\ref{ch:gpu}:
+the global spectral reconstruction task is decomposed into independent shader
+passes, each with its own S-value, free to be minimised independently.
+
+%%  SOURCE: integrate full proofs from
+%%          unconstrained-subtask-recursion.tex
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 14 Summary}}]
+\begin{itemize}[noitemsep]
+  \item The Floor Theorem: no bounded receiver attains $S = 0$.
+    The floor is strictly positive for any non-trivial question.
+  \item Information catalysts reduce multiple S-values simultaneously with
+    multiplicative benefit.
+  \item The Unconstrained Subtask Theorem: local S-values of independent
+    subtasks are free when the global S-value is fixed.
+\end{itemize}
+\end{tcolorbox}

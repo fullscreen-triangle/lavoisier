@@ -1,0 +1,96 @@
+% ============================================================
+%  Chapter 24: Purpose-Based Analysis and the Molecular Maxwell Demon
+%  Source: oxford/publications/purpose-based-analysis/
+%          purpose-based-spectral-analysis.tex
+% ============================================================
+
+\epigraph{%
+  The instrument does not just observe.\\
+  It selects.  And selection has a price.%
+}{}
+
+\section{Purpose as a Partition Filter}
+\label{sec:ch24-purpose}
+
+A mass spectrometric analysis is never purpose-free.
+A targeted analysis (e.g., quantifying a specific drug in plasma) has a
+different optimal measurement strategy than an untargeted metabolomics
+discovery experiment.
+The partition framework formalises this as a \emph{purpose function}.
+
+\begin{definition}[Purpose function]
+  A purpose function $\mathcal{P} : \mathcal{A}_\infty \to [0, 1]$ assigns
+  to each partition cell $A$ a relevance weight $\mathcal{P}(A) \in [0,1]$.
+  An analysis is \emph{purpose-directed} if it preferentially explores
+  partition cells with high $\mathcal{P}(A)$.
+\end{definition}
+
+\section{The Molecular Maxwell Demon}
+\label{sec:ch24-demon}
+
+Maxwell's Demon is an entity that selects molecules by a criterion (fast or slow)
+at zero energetic cost --- an apparent violation of the second law.
+Szilard (1929) showed that the demon must pay an information cost of $\kB\ln 2$
+per selection.
+
+In the mass spectrometric context, the ``molecular Maxwell demon'' is the data
+acquisition system: it selects which $m/z$ values to measure in MS$^2$ based
+on the current spectral data.
+The information cost is real:
+
+\begin{theorem}[Landauer cost of targeted selection]
+  Each purpose-directed partition selection (targeting a specific $m/z$ range
+  for fragmentation) costs at minimum:
+  \begin{equation}
+    \Delta S_\mathrm{Landauer} = \kB\ln 2 \cdot \log_2\frac{1}{\mathcal{P}(A)}
+    \quad\text{bits of heat dissipated per selection}.
+  \end{equation}
+\end{theorem}
+
+High-selectivity targeting (small $\mathcal{P}(A)$) costs more energy;
+broad surveys are thermodynamically cheaper per measurement.
+
+\section{Purpose-Constrained Spectrum Generation}
+\label{sec:ch24-generation}
+
+The purpose function can be used to generate spectra selectively.
+Rather than traversing the entire partition tree, the generator:
+\begin{enumerate}
+  \item Computes $\mathcal{P}(A)$ for each candidate sub-cell.
+  \item Descends preferentially to high-$\mathcal{P}$ branches.
+  \item Prunes low-$\mathcal{P}$ branches at the Floor threshold.
+\end{enumerate}
+
+This produces \emph{purpose-constrained spectra}: the partition walk is
+biased by the analytical goal.
+
+\section{Cross-Domain Performance}
+\label{sec:ch24-crossdomain}
+
+The purpose-based framework was validated across multiple mass spectrometric
+domains:
+metabolomics, proteomics, lipidomics, and pharmaceutical analysis.
+In each domain, the purpose function is defined by the analytical context;
+the spectral generation adapts accordingly.
+Cross-domain maximum mean discrepancy (MMD) between generated and reference
+spectra is $< 0.05$ in all tested cases.
+
+%%  SOURCE: integrate full derivations and panels from
+%%          purpose-based-spectral-analysis.tex
+%%  ADD: panel 1 (resonance comparison), panel 2 (purpose constraints),
+%%       panel 3 (selective generation), panel 4 (cross-domain MMD).
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 24 Summary}}]
+\begin{itemize}[noitemsep]
+  \item The purpose function $\mathcal{P} : \mathcal{A}_\infty \to [0,1]$
+    formalises analytical intent as a partition weight.
+  \item The molecular Maxwell demon is the data-acquisition selector;
+    its Landauer cost is $\kB\ln 2 \cdot \log_2(1/\mathcal{P}(A))$ per selection.
+  \item Purpose-constrained spectrum generation descends the partition tree
+    biased by $\mathcal{P}$.
+  \item Cross-domain validation (metabolomics, proteomics, lipidomics, pharma)
+    confirms MMD $< 0.05$.
+\end{itemize}
+\end{tcolorbox}

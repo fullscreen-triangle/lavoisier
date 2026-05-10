@@ -1,0 +1,120 @@
+% ============================================================
+%  Chapter 13: The S-Entropy Calculus
+%  Source: union/publication/support/unconstrained-subtask-recursion.tex
+% ============================================================
+
+\epigraph{%
+  Knowledge is distance from truth,\\
+  measured on a bounded scale.%
+}{}
+
+\section{Motivation: Why a New Entropy?}
+
+Shannon entropy $H$ and thermodynamic entropy $S$ both measure uncertainty,
+but neither is indexed to a specific receiver's epistemic state.
+Shannon entropy is defined relative to a source distribution; thermodynamic
+entropy is defined relative to a macrostate.
+Neither gives the distance between a receiver's current knowledge and the
+truth about a specific question.
+
+The S-entropy calculus supplies this missing piece.
+It is not a generalisation of Shannon or Boltzmann entropy; it is a distinct
+axiomatic system that measures \emph{distance to truth} on a bounded scale,
+relative to a specified receiver.
+
+\section{The S-Scale}
+\label{sec:ch13-scale}
+
+\begin{definition}[S-scale]
+  The S-scale is the bounded interval $[0, 100] \subset \mathbb{R}$, where
+  $S = 100$ represents complete ignorance (maximum distance from truth) and
+  $S = 0$ would represent perfect knowledge.
+  The scale is receiver-relative: $S$ is defined with respect to a specified
+  receiver $R$.
+\end{definition}
+
+The bounds are not arbitrary.
+$S = 100$ corresponds to the maximum entropy state of the receiver's bounded
+information capacity (a consequence of BPSL applied to receivers).
+$S = 0$ is the limit of perfect knowledge, which the Floor Theorem
+(Chapter~\ref{ch:floor}) shows no bounded receiver can attain.
+
+\section{The Receiver Quadruple}
+\label{sec:ch13-receiver}
+
+\begin{definition}[Receiver]
+  A \emph{receiver} is a quadruple $R = (\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$
+  where:
+  \begin{itemize}
+    \item $\Sigma_R$ is the receiver's state space (a bounded partition space
+      satisfying BPSL);
+    \item $\Phi_R : \Sigma_R \to \Sigma_R$ is the receiver's update dynamics
+      (measure-preserving);
+    \item $K_R \subset \Sigma_R$ is the receiver's current knowledge state;
+    \item $\mathrm{dec}_R : \Sigma_R \to \{0,1\}^*$ is the receiver's
+      decoding function (the map from internal state to expressed beliefs).
+  \end{itemize}
+\end{definition}
+
+A mass spectrometer is a receiver: $\Sigma_R$ is the partition space of
+measurable $m/z$ values; $\Phi_R$ is the update from one scan to the next;
+$K_R$ is the current spectral library; $\mathrm{dec}_R$ maps detected peaks
+to molecular formula assignments.
+
+\section{The S-Functional: Four Axioms}
+\label{sec:ch13-functional}
+
+\begin{definition}[S-functional]
+  The \emph{S-functional} $\mathbf{S}[R, q]$ is the S-value assigned by
+  receiver $R$ to question $q$.
+  It satisfies four axioms:
+  \begin{enumerate}
+    \item \textbf{Boundedness.} $0 \leq \mathbf{S}[R,q] \leq 100$ for all $R$
+      and $q$.
+    \item \textbf{Monotone informativeness.} If observation $o$ at receiver $R$
+      increases the probability of the correct answer to $q$, then
+      $\mathbf{S}[R \oplus o, q] \leq \mathbf{S}[R, q]$.
+    \item \textbf{Additivity under independence.} If $q_1$ and $q_2$ are
+      independent questions, $\mathbf{S}[R, q_1 \wedge q_2] = \mathbf{S}[R,q_1]
+      + \mathbf{S}[R,q_2] - \mathbf{S}[R,q_1]\mathbf{S}[R,q_2]/100$.
+    \item \textbf{Continuity.} $\mathbf{S}[R, q]$ varies continuously in the
+      receiver state $K_R$ under the topology induced by the partition algebra.
+  \end{enumerate}
+\end{definition}
+
+\section{The S-Expression Triple}
+\label{sec:ch13-triple}
+
+In mass spectrometric applications, the relevant questions are:
+\begin{itemize}
+  \item $\Sk$: S-value for the question ``what is the molecular structure?''
+    (knowledge from spectral matching)
+  \item $\St$: S-value for the question ``at what time does this ion arrive?''
+    (temporal resolution of the instrument)
+  \item $\Se$: S-value for the question ``which partition cell does this ion
+    occupy?''  (entropy of the partition at the instrument's resolution depth)
+\end{itemize}
+
+The triple $(\Sk, \St, \Se)$ is the S-expression tuple instantiated for
+mass spectrometric observables.
+Each component is bounded in $[0, 100]$; their joint variation maps the
+instrument's epistemic state.
+
+%%  SOURCE: integrate full formalism from
+%%          union/publication/support/unconstrained-subtask-recursion.tex
+%%  ADD: formal proofs of all four axioms; S-functional derivation from BPSL;
+%%       examples with specific instruments.
+
+\bigskip
+\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+                  title={\textbf{Chapter 13 Summary}}]
+\begin{itemize}[noitemsep]
+  \item S-entropy measures distance to truth on $[0, 100]$ relative to a
+    specific receiver $R$.
+  \item The receiver is a quadruple $(\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$;
+    a mass spectrometer is a receiver.
+  \item The S-functional satisfies four axioms: boundedness, monotone
+    informativeness, additivity under independence, and continuity.
+  \item The mass spectrometric S-expression triple is $(\Sk, \St, \Se)$.
+\end{itemize}
+\end{tcolorbox}

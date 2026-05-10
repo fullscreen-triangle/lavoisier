@@ -1,0 +1,430 @@
+% ============================================================
+%  Union of Two Crowns
+%  A Monograph on Bounded Phase Space and Mass Spectrometric Observation
+%
+%  Kundai Farai Sachikonye
+%  Technical University of Munich
+%
+%  Master document.  Compile with:
+%    pdflatex monograph && bibtex monograph && pdflatex monograph && pdflatex monograph
+% ============================================================
+
+\documentclass[12pt, twoside, openright]{book}
+
+% ---- Typography & layout -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage[a4paper,
+            top=30mm, bottom=30mm,
+            inner=32mm, outer=24mm,
+            headsep=10mm]{geometry}
+
+% ---- Mathematics -------------------------------------------
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{bm}          % bold math
+\usepackage{physics}     % \dd, \pdv, \dv helpers
+
+% ---- Figures & tables --------------------------------------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{subcaption}
+
+% ---- Colour -------------------------------------------------
+\usepackage[dvipsnames]{xcolor}
+\definecolor{crownblue}{RGB}{0,56,101}
+\definecolor{crowngold}{RGB}{180,140,0}
+
+% ---- Headers & chapter styling -----------------------------
+\usepackage{fancyhdr}
+\usepackage[explicit]{titlesec}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\nouppercase{\leftmark}}
+\fancyhead[RO]{\small\nouppercase{\rightmark}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Chapter heading: flush-right rule + number + title
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{crownblue}}
+  {\filleft\Large\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {1ex}
+  {\titlerule[0.8pt]\vspace{1ex}\filright #1}
+  [\vspace{1ex}\titlerule[0.4pt]]
+
+% ---- Hyperlinks --------------------------------------------
+\usepackage[colorlinks=true,
+            linkcolor=crownblue,
+            citecolor=crowngold,
+            urlcolor=crownblue,
+            bookmarks=true,
+            pdfauthor={Kundai Farai Sachikonye},
+            pdftitle={Union of Two Crowns}]{hyperref}
+\usepackage{cleveref}
+
+% ---- Bibliography ------------------------------------------
+\usepackage[numbers, sort&compress]{natbib}
+
+% ---- Miscellaneous -----------------------------------------
+\usepackage{epigraph}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems, skins}
+\usepackage{verbatim}
+\usepackage{listings}
+
+% Figure search path (relative to this file)
+\graphicspath{
+  {figures/}
+  {../crowns/figures/}
+  {../bounded-space-categories/figures/}
+  {../../../oxford/publications/observation-framework/figures/}
+  {../../../oxford/publications/prompt-based-spectral-database/figures/}
+  {../../../oxford/publications/purpose-based-analysis/figures/}
+  {../../../oxford/publications/shader-depth-minimisation/figures/}
+}
+
+% ============================================================
+%  THEOREM ENVIRONMENTS
+% ============================================================
+
+\tcbset{
+  axiomstyle/.style={
+    enhanced, colback=crownblue!5, colframe=crownblue!60!black,
+    fonttitle=\bfseries, separator sign={\ ---}
+  },
+  consequencestyle/.style={
+    enhanced, colback=crowngold!8, colframe=crowngold!70!black,
+    fonttitle=\bfseries
+  }
+}
+
+\newtcbtheorem[number within=chapter]{axiom}{Axiom}{axiomstyle}{ax}
+\newtcbtheorem[number within=chapter]{consequence}{Consequence}{consequencestyle}{cons}
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+% ============================================================
+%  MACROS
+%  Combined from all source papers.  Do not redefine locally.
+% ============================================================
+
+% --- S-entropy triple (unconstrained-subtask-recursion) -----
+\newcommand{\Sk}{S_{\mathrm{osc}}}          % oscillatory entropy
+\newcommand{\St}{S_{\mathrm{cat}}}          % categorical entropy
+\newcommand{\Se}{S_{\mathrm{part}}}         % partition entropy
+\newcommand{\Osc}{\mathfrak{O}}             % oscillatory category
+\newcommand{\Cat}{\mathfrak{E}}             % categorical (epistemological) category
+\newcommand{\Part}{\mathfrak{P}}            % partition category
+
+% --- Partition fields (bounded-phase-space-trajectory) ------
+\newcommand{\kB}{k_{\mathrm{B}}}
+\newcommand{\Depth}{\mathcal{M}}            % partition depth field
+\newcommand{\taup}{\tau_{\mathrm{p}}}       % partition lag time
+\newcommand{\Apartition}{\mathbf{A}_{\mathcal{M}}}  % partition vector potential
+\newcommand{\Partition}{\mathcal{P}}
+\newcommand{\Hilbert}{\mathcal{H}}
+\newcommand{\Residue}{\mathcal{R}}          % unactualised residue
+\newcommand{\Lagr}{\mathcal{L}}
+
+% --- Convenience --------------------------------------------
+\newcommand{\hbar}{\hslash}
+\newcommand{\half}{\tfrac{1}{2}}
+\newcommand{\iu}{\mathrm{i}}
+\newcommand{\eu}{\mathrm{e}}
+\DeclareMathOperator{\mz}{m/z}
+
+% ============================================================
+%  DOCUMENT
+% ============================================================
+
+\begin{document}
+
+\frontmatter
+
+% ---- Half-title --------------------------------------------
+\begin{titlepage}
+  \vspace*{4cm}
+  \begin{flushright}
+    {\Huge\bfseries\color{crownblue} Union of Two Crowns}\\[1.5ex]
+    {\large\itshape A Monograph on Bounded Phase Space\\
+     and Mass Spectrometric Observation}
+    \vfill
+    {\large Kundai Farai Sachikonye}\\[0.5ex]
+    {\normalsize Technical University of Munich}\\[3ex]
+    {\normalsize\today}
+  \end{flushright}
+\end{titlepage}
+
+% ---- Epigraph / dedication ---------------------------------
+\cleardoublepage
+\vspace*{\fill}
+\begin{center}
+\itshape
+For every measurement ever made:\\
+bounded, recurrent, discrete.
+\end{center}
+\vspace*{\fill}
+\cleardoublepage
+
+% ---- Preface -----------------------------------------------
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+\input{chapters/preface}
+
+% ---- Table of contents -------------------------------------
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ============================================================
+\mainmatter
+% ============================================================
+
+% ============================================================
+\part{One Ion, Two Crowns}
+\label{part:opening}
+% ============================================================
+
+\epigraph{%
+  The two descriptions are not rivals.
+  They are the same bounded oscillation,
+  written in two alphabets.%
+}{}
+
+\chapter{The Ion's Journey: Classical and Quantum in Concert}
+\label{ch:ion-journey}
+\input{chapters/ch01-ion-journey}
+
+% ============================================================
+\part{The Axiom}
+\label{part:axiom}
+% ============================================================
+
+\epigraph{%
+  Physical systems are bounded.\\
+  Everything else follows.%
+}{}
+
+\chapter{The Bounded Phase Space Law}
+\label{ch:axiom}
+\input{chapters/ch02-axiom}
+
+\chapter{Oscillatory Necessity and the Discrete Spectrum}
+\label{ch:oscillation}
+\input{chapters/ch03-oscillation}
+
+\chapter{Partition Coordinates and the Geometry of States}
+\label{ch:coordinates}
+\input{chapters/ch04-coordinates}
+
+% ============================================================
+\part{The First Crown --- Classical Mechanics from Boundedness}
+\label{part:classical}
+% ============================================================
+
+\epigraph{%
+  Newton did not write down a law of nature.\\
+  He wrote a consequence of boundedness.%
+}{}
+
+\chapter{The Partition Lagrangian}
+\label{ch:lagrangian}
+\input{chapters/ch05-lagrangian}
+
+\chapter{The Propagation Bound and Lorentz Invariance}
+\label{ch:lorentz}
+\input{chapters/ch06-lorentz}
+
+\chapter{Mass as Accumulated Non-Actualisation}
+\label{ch:mass}
+\input{chapters/ch07-mass}
+
+\chapter{Charge as a Boundary Property}
+\label{ch:charge}
+\input{chapters/ch08-charge}
+
+% ============================================================
+\part{The Second Crown --- Quantum Structure from Geometry}
+\label{part:quantum}
+% ============================================================
+
+\epigraph{%
+  The quantum numbers are not postulated.\\
+  They are counted from the partition.%
+}{}
+
+\chapter{The Shell Capacity and Selection Rules}
+\label{ch:shells}
+\input{chapters/ch09-shells}
+
+\chapter{Atomic Structure from Partition Depth}
+\label{ch:atomic}
+\input{chapters/ch10-atomic}
+
+\chapter{Nuclear Structure and Magic Numbers}
+\label{ch:nuclear}
+\input{chapters/ch11-nuclear}
+
+\chapter{Sub-Nucleon Physics and Confinement}
+\label{ch:subnucleon}
+\input{chapters/ch12-subnucleon}
+
+% ============================================================
+\part{The Union --- S-Entropy and Triple Equivalence}
+\label{part:union}
+% ============================================================
+
+\epigraph{%
+  $\Osc \cong \Cat \cong \Part$.\\
+  This is not a metaphor.%
+}{}
+
+\chapter{The S-Entropy Calculus}
+\label{ch:sentropy}
+\input{chapters/ch13-sentropy}
+
+\chapter{The Floor Theorem}
+\label{ch:floor}
+\input{chapters/ch14-floor}
+
+\chapter{Triple Equivalence}
+\label{ch:triple}
+\input{chapters/ch15-triple}
+
+% ============================================================
+\part{Thermodynamics and Collective Behaviour}
+\label{part:thermo}
+% ============================================================
+
+\epigraph{%
+  The ideal gas law is a theorem.
+  So is superconductivity.%
+}{}
+
+\chapter{Triple Entropy Equivalence and the Ideal Gas}
+\label{ch:idealgas}
+\input{chapters/ch16-idealgas}
+
+\chapter{Universal Transport and Partition Extinction}
+\label{ch:transport}
+\input{chapters/ch17-transport}
+
+\chapter{Electrical Transport from Categorical Propagation}
+\label{ch:electrical}
+\input{chapters/ch18-electrical}
+
+% ============================================================
+\part{Cosmological Consequences}
+\label{part:cosmology}
+% ============================================================
+
+\epigraph{%
+  The acceleration of the universe\\
+  is the recurrence time of the cosmos.%
+}{}
+
+\chapter{Composition Inflation}
+\label{ch:inflation}
+\input{chapters/ch19-inflation}
+
+\chapter{Gravity, Dark Matter, and Dark Energy}
+\label{ch:gravity}
+\input{chapters/ch20-gravity}
+
+% ============================================================
+\part{Mass Spectrometry as Physical Measurement}
+\label{part:instrument}
+% ============================================================
+
+\epigraph{%
+  The mass spectrometer does not measure a molecule.\\
+  It enumerates the accessible partition cells of a bounded ion.%
+}{}
+
+\chapter{The Force-Free Ion: Partition Depth Minimisation}
+\label{ch:forcefree}
+\input{chapters/ch21-forcefree}
+
+\chapter{GPU Fragment Shaders as Observation Apparatus}
+\label{ch:gpu}
+\input{chapters/ch22-gpu}
+
+\chapter{The Generative Spectral Database}
+\label{ch:database}
+\input{chapters/ch23-database}
+
+\chapter{Purpose-Based Analysis and the Molecular Maxwell Demon}
+\label{ch:purpose}
+\input{chapters/ch24-purpose}
+
+% ============================================================
+\part{Empirical Confirmation}
+\label{part:empirical}
+% ============================================================
+
+\epigraph{%
+  One hundred and forty-two predictions.\\
+  Twenty-four orders of magnitude.\\
+  No failures.%
+}{}
+
+\chapter{One Hundred and Forty-Two Predictions}
+\label{ch:predictions}
+\input{chapters/ch25-predictions}
+
+% ============================================================
+%  CODA
+% ============================================================
+
+\part*{Coda: What Remains When One Axiom Suffices}
+\addcontentsline{toc}{part}{Coda: What Remains When One Axiom Suffices}
+
+\chapter{The Union}
+\label{ch:union}
+\input{chapters/ch26-union}
+
+% ============================================================
+\backmatter
+% ============================================================
+
+\appendix
+
+\chapter{Deductive Flow Chart}
+\label{app:flowchart}
+\input{chapters/app-a-flowchart}
+
+\chapter{Mathematical Notation and Glossary}
+\label{app:notation}
+\input{chapters/app-b-notation}
+
+\chapter{Experimental Predictions Summary}
+\label{app:predictions}
+\input{chapters/app-c-predictions}
+
+% ---- Bibliography ------------------------------------------
+\bibliographystyle{plainnat}
+\bibliography{%
+  ../crowns/references,%
+  ../support/references,%
+  ../bounded-space-categories/references,%
+  ../../../oxford/publications/observation-framework/references,%
+  ../../../oxford/publications/prompt-based-spectral-database/references,%
+  ../../../oxford/publications/purpose-based-analysis/references,%
+  ../../../oxford/publications/shader-depth-minimisation/references%
+}
+
+\end{document}
