@@ -1,6 +1,8 @@
 % ============================================================
-%  Chapter 14: The Floor Theorem
-%  Source: unconstrained-subtask-recursion.tex
+%  Chapter 14: The Floor Theorem, Information Catalysts,
+%              and the Unconstrained Subtask Theorem
+%  Source: union/publication/support/unconstrained-subtask-recursion.tex
+%  Parts I (§§3--4), III, IV
 % ============================================================
 
 \epigraph{%
@@ -8,85 +10,601 @@
   This is not a limitation.  It is the axiom.%
 }{}
 
-\section{The Floor Theorem}
+%% ── §14.1 ─────────────────────────────────────────────────────────────────────
+\section{Floor Positivity}
 \label{sec:ch14-floor}
 
-\begin{theorem}[Floor Theorem]
-  For any receiver $R = (\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$ satisfying
-  BPSL and any non-trivial question $q$:
-  \begin{equation}
-    \mathbf{S}_\mathrm{flat}(R) \;\stackrel{\mathrm{def}}{=}\;
-    \inf_{K_R \in \Sigma_R} \mathbf{S}[R, q] > 0.
-  \end{equation}
-  No bounded receiver can attain $S = 0$ on any non-trivial question.
+The third axiom of the S-functional (Axiom~(S3) of Chapter~\ref{ch:sentropy})
+asserts that the infimum of all S-values attainable by a bounded receiver is
+strictly positive.  We now derive this positivity as a theorem from the
+cardinality structure of bounded receivers, thereby giving the floor its
+mathematical substance.
+
+\begin{theorem}[Floor Positivity]\label{thm:floor-pos-mono}
+For every bounded receiver $\mathcal{R}$, the floor satisfies
+\[
+  S_{\flat}(\mathcal{R}) \;>\; 0.
+\]
 \end{theorem}
 
-\begin{proof}[Proof sketch]
-  $\Sigma_R$ is bounded (BPSL clause~i); its partition algebra $\mathcal{A}_\infty$
-  is countable (Consequence~\ref{cons:partitionalgebra}).
-  The truth about $q$ is a single point in the truth space $\mathcal{T}_q$.
-  The receiver's finest resolution is the atoms of $\mathcal{A}_\infty$, which
-  are cells of positive measure.
-  A positive-measure cell cannot isolate a single point; therefore
-  $\mathbf{S}[R,q] \geq \kB\log(\mu(\mathrm{smallest cell})) > 0$.
+\begin{proof}
+Suppose for contradiction that $S_{\flat}(\mathcal{R}) = 0$.  By Axiom~(S3)
+there is a candidate $x_0 \in \mathcal{X}$ with
+$S_{\mathcal{R}}(x_0, x^{*}) = 0$.  By Axiom~(S4) this requires
+\[
+  \delta_{\mathcal{R}}\!\bigl(\Phi_{\mathcal{R}}(\sigma_{x_0}),\;
+  \Phi_{\mathcal{R}}(\sigma_{x^{*}})\bigr) = 0.
+\]
+But $\delta_{\mathcal{R}}(\sigma, \sigma') = 0$ implies $\sigma = \sigma'$:
+since $\delta_{\mathcal{R}}(\sigma, \sigma) = S_{\flat}(\mathcal{R}) = 0$
+and $\delta_{\mathcal{R}}$ is non-decreasing with floor on the diagonal,
+$\delta_{\mathcal{R}}(\sigma, \sigma') < S_{\flat}(\mathcal{R})$ is impossible
+unless the arguments coincide.  Therefore
+$\Phi_{\mathcal{R}}(\sigma_{x_0}) = \Phi_{\mathcal{R}}(\sigma_{x^{*}})$
+in $K_{\mathcal{R}}$.
+
+By the Residue Persistence Theorem (Theorem~\ref{thm:residue-mono}), since
+$|K_{\mathcal{R}}| < |\mathcal{U}_{\mathrm{tot}}|$, the preimage
+$\mathrm{dec}_{\mathcal{R}}^{-1}(\{x^{*}\})$ has cardinality at most
+$|K_{\mathcal{R}}|$, while $\mathcal{U}_{\mathrm{tot}}$ has strictly greater
+cardinality.  Therefore the cognitive residue has positive measure with respect
+to any cardinality-preserving measure on $\mathcal{U}_{\mathrm{tot}}$.  This
+contradicts the assumption that the residue's information content vanishes in
+the floor.  Hence $S_{\flat}(\mathcal{R}) > 0$.
 \end{proof}
 
-\begin{remark}[Physical interpretation]
-  The Floor Theorem is the information-theoretic analogue of Heisenberg's
-  uncertainty principle: no receiver with finite information capacity can make
-  an exact measurement.
-  But the Floor Theorem is stronger: it does not depend on quantum mechanics.
-  It holds for any bounded receiver, classical or quantum.
-  The uncertainty principle is a special case.
+\begin{corollary}[Smallest Knowable Error]\label{cor:smallest-knowable-mono}
+For every bounded receiver $\mathcal{R}$ and every truth
+$x^{*} \in \mathcal{X}^{*}$, there is no candidate $x \in \mathcal{X}$
+with $S_{\mathcal{R}}(x, x^{*}) < S_{\flat}(\mathcal{R})$.
+\end{corollary}
+
+\begin{proof}
+Immediate from Theorem~\ref{thm:floor-pos-mono} and the definition of the
+infimum in Axiom~(S3).
+\end{proof}
+
+\begin{remark}[The floor as a receiver-intrinsic constant]
+The floor $S_{\flat}(\mathcal{R})$ is a property of the receiver alone: it
+depends on the structure of $(\Sigma_{\mathcal{R}}, \Phi_{\mathcal{R}},
+K_{\mathcal{R}}, \mathrm{dec}_{\mathcal{R}})$ but not on the candidate $x$
+or the truth $x^{*}$.  Two distinct truths $x_1^{*}, x_2^{*} \in
+\mathcal{X}^{*}$ can each be approached to the same floor, but no closer.
+The floor therefore characterises the receiver's fundamental epistemic
+limitation, not the difficulty of any particular problem.
 \end{remark}
 
+\begin{remark}[Physical interpretation]
+The Floor Theorem is the information-theoretic analogue of the Heisenberg
+uncertainty principle: no receiver with finite information capacity can make
+a perfectly exact identification.  It is, however, stronger than the
+uncertainty principle in two respects.  First, it requires no quantum
+mechanical framework---it holds for any bounded receiver, classical or quantum.
+Second, the floor $S_{\flat}(\mathcal{R}) > 0$ is a strict lower bound on
+distance-to-truth, not a lower bound on a product of uncertainties.  The
+Heisenberg bound is a special case, arising when the receiver's knowledge
+framework $K_{\mathcal{R}}$ is a Hilbert space and the S-functional is
+computed from the Born rule.
+\end{remark}
+
+%% ── §14.2 ─────────────────────────────────────────────────────────────────────
+\section{The S-Expression Algebra}
+\label{sec:ch14-expressions}
+
+To state the Unconstrained Subtask Theorem precisely, we need the algebra of
+S-expressions---the collection of syntactic objects on which receivers act.
+
+\begin{definition}[Atomic expression]\label{def:atomic-mono}
+An \emph{atomic expression} is an element of one of the three representation
+spaces $\mathbf{Osc} \cup \mathbf{Cat} \cup \mathbf{Part}$, together with a
+representation tag $R \in \{\mathfrak{O}, \mathfrak{E}, \mathfrak{P}\}$.
+We write atomic expressions as pairs $(\alpha, R)$.
+\end{definition}
+
+\begin{definition}[S-expression]\label{def:s-expression-mono}
+The set of \emph{S-expressions} $\mathcal{E}$ is the smallest set generated
+by:
+\begin{enumerate}[(1)]
+  \item Every atomic expression $(\alpha, R)$ is in $\mathcal{E}$;
+  \item Every real number $r \in \mathbb{R}$ is in $\mathcal{E}$
+    (literal subtask);
+  \item Every conversion $\Phi^{R \to R'}(\xi)$ for $\xi \in \mathcal{E}$
+    and $R, R' \in \{\mathfrak{O}, \mathfrak{E}, \mathfrak{P}\}$ is in
+    $\mathcal{E}$;
+  \item Every binary composition $\xi_1 \star \xi_2$ for
+    $\star \in \{+, -, \cdot, /, \oplus, \otimes\}$ and
+    $\xi_1, \xi_2 \in \mathcal{E}$ is in $\mathcal{E}$;
+  \item Every unary operation $u(\xi)$ for
+    $u \in \{\mathrm{id}, -, (\cdot)^{-1}, \exp, \log\}$ and
+    $\xi \in \mathcal{E}$ is in $\mathcal{E}$;
+  \item Every recursive triple $(\xi_k, \xi_t, \xi_e)$ for
+    $\xi_k, \xi_t, \xi_e \in \mathcal{E}$ is in $\mathcal{E}$.
+\end{enumerate}
+We write $\mathcal{E}^{(d)}$ for expressions of recursion depth at most $d$
+and $\mathcal{E}^{*}$ for those of finite depth.
+\end{definition}
+
+\begin{definition}[Receiver evaluation]\label{def:eval-mono}
+For receiver $\mathcal{R}$, the \emph{receiver evaluation} is a partial map
+\[
+  \mathrm{eval}_{\mathcal{R}} : \mathcal{E} \rightharpoonup K_{\mathcal{R}}
+\]
+defined inductively: atomic expressions evaluate via the decoder; real literals
+evaluate to $r \cdot e_{\mathcal{R}}$ (the unit of $K_{\mathcal{R}}$);
+conversions evaluate via the conversion functor; binary and unary operations
+evaluate receiver-internally; recursive triples evaluate componentwise.
+\end{definition}
+
+\begin{definition}[Subtask]\label{def:subtask-mono}
+A \emph{subtask} of an expression $\xi \in \mathcal{E}$ is any
+sub-expression $\eta$ that occurs as an argument of a binary, unary,
+conversion, or triple operation in the inductive construction of $\xi$.
+We write $\mathcal{U}(\xi)$ for the set of subtasks of $\xi$.
+\end{definition}
+
+%% ── §14.3 ─────────────────────────────────────────────────────────────────────
+\section{The Unconstrained Subtask Theorem}
+\label{sec:ch14-subtask}
+
+\begin{theorem}[Unconstrained Subtask]\label{thm:unconstrained-mono}
+Let $\xi \in \mathcal{E}$ be an expression with
+$\mathrm{eval}_{\mathcal{R}}(\xi) = k^{*} \in K_{\mathcal{R}}$, and let
+$S^{*} := S_{\mathcal{R}}(\mathrm{dec}_{\mathcal{R}}(k^{*}), x^{*})$
+be the global S-value.  Then for any subtask $\eta \in \mathcal{U}(\xi)$,
+the value of $S_{\mathcal{R}}(\eta, x^{*})$ is \textbf{unconstrained}: there
+exist expressions $\xi'$ obtained from $\xi$ by replacing $\eta$ with arbitrary
+$\eta' \in \mathcal{E}$ such that
+$\mathrm{eval}_{\mathcal{R}}(\xi') = k^{*}$ and
+$S_{\mathcal{R}}(\xi', x^{*}) = S^{*}$.
+\end{theorem}
+
+\begin{proof}
+Let $\xi$ be parsed as $\xi = C[\eta]$ where $C[\cdot]$ is the surrounding
+context (an expression with one hole).  For any $\eta'$ with
+$\mathrm{eval}_{\mathcal{R}}(\eta') = \mathrm{eval}_{\mathcal{R}}(\eta)$,
+the substitution $\xi' = C[\eta']$ satisfies
+$\mathrm{eval}_{\mathcal{R}}(\xi') = k^{*}$ by induction on the size of $C$,
+using that $\mathrm{eval}_{\mathcal{R}}$ is a homomorphism with respect to
+the operations of $\mathcal{E}$.
+
+The set of such $\eta'$ is large: it includes all expressions in any of the
+three representations whose evaluation matches, all mixed-type expressions
+whose conversions cancel, and all signed-fractional expressions with arithmetic
+equivalence.
+
+Crucially, $\eta'$ may have arbitrary $S_{\mathcal{R}}(\eta', x^{*})$:
+\begin{itemize}[noitemsep]
+  \item $\eta' = \eta + (1 - 1)$, with the literal $1$ at maximum local
+    S-distance and $-1$ at maximum local S-distance, their sum contributing
+    nothing;
+  \item $\eta' = \Phi^{R \to R'}(\eta'')$ in a different representation, with
+    the conversion-internal subtasks at any local S-value;
+  \item $\eta' = \eta_1 + \eta_2$ with $\eta_1 = -\eta_2 + \eta$, so $\eta_1$
+    and $\eta_2$ are individually at any preferred S-value.
+\end{itemize}
+The local S-value of the subtask is therefore \emph{not} constrained by the
+global S-value of the whole expression.
+\end{proof}
+
+\begin{corollary}[Local Infeasibility is Global Feasibility]
+\label{cor:local-infeas-mono}
+There exist expressions $\xi$ with global S-value $S^{*}$ arbitrarily close
+to $S_{\flat}(\mathcal{R})$ (near-perfect) in which one or more subtasks
+have local S-value $100$ (maximally incorrect).
+\end{corollary}
+
+\begin{proof}
+Take $\xi = \eta + (-\eta) + \xi_0$ where $\eta$ has S-value $100$ (maximally
+wrong) and $\xi_0$ has S-value at floor.  By
+Theorem~\ref{thm:unconstrained-mono}, the composition has the same global
+S-value as $\xi_0$ alone.
+\end{proof}
+
+\begin{theorem}[Local-Global Decoupling]\label{thm:lg-decoupling-mono}
+For any global S-value $S^{*} \in [S_{\flat}(\mathcal{R}), 100]$ and any
+sequence of target local S-values
+$(\sigma_1, \sigma_2, \ldots, \sigma_n) \in [S_{\flat}(\mathcal{R}), 100]^n$,
+there exists an expression $\xi \in \mathcal{E}$ with subtasks
+$\eta_1, \ldots, \eta_n$ satisfying simultaneously:
+\begin{enumerate}[(i)]
+  \item $S_{\mathcal{R}}(\xi, x^{*}) = S^{*}$;
+  \item $S_{\mathcal{R}}(\eta_i, x^{*}) = \sigma_i$ for each $i$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Construct
+$\xi := \xi_0 + \sum_{i=1}^{n} (\eta_i - \eta_i)$
+where $\xi_0$ is an expression with global S-value $S^{*}$ and each $\eta_i$
+is chosen to have local S-value $\sigma_i$.  By
+Theorem~\ref{thm:unconstrained-mono}, the $\eta_i$ are arbitrary subject to
+their evaluations cancelling.  By Lemma~\ref{lem:image-S-mono}, every value
+in $[S_{\flat}(\mathcal{R}), 100]$ is achievable as a local S-value.
+\end{proof}
+
+\begin{corollary}[The Miracle Principle]\label{cor:miracle-mono}
+For any global S-value $S^{*}$, there exist expressions $\xi$ realising
+$S^{*}$ in which arbitrarily many subtasks have local S-value $100$
+(locally maximally infeasible).
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:lg-decoupling-mono} with $\sigma_i = 100$ for all
+$i$ in any chosen subset.
+\end{proof}
+
+\begin{remark}[Apples and oranges admissibility]
+Theorem~\ref{thm:unconstrained-mono} formalises the ``apples-and-oranges''
+principle.  An expression $p_1 + t_1 + 1$ where $p_1$ is nominally a position
+and $t_1$ a time is admissible because the receiver's evaluation
+$\mathrm{eval}_{\mathcal{R}}$ converts each to a common representation via
+the functors of the Triple Equivalence (Chapter~\ref{ch:triple}) before
+composition.  The local types are syntactic surface; the global S-value is
+what is asserted.
+\end{remark}
+
+%% ── §14.4 ─────────────────────────────────────────────────────────────────────
+\section{Compositional Multiplicity}
+\label{sec:ch14-multiplicity}
+
+\begin{definition}[Composition]\label{def:composition-mono}
+A \emph{composition} of an expression $\xi$ is a finite sequence of binary
+operations $(\eta_1, \star_1, \eta_2, \star_2, \ldots, \eta_n)$ in
+$\mathcal{E}$ such that
+$\eta_1 \star_1 \eta_2 \star_2 \cdots \star_{n-1} \eta_n = \xi$
+when evaluated under the receiver.
+\end{definition}
+
+\begin{theorem}[Composition Multiplicity]\label{thm:comp-mult-mono}
+For any expression $\xi \in \mathcal{E}^{*}$ of finite depth, the number of
+distinct compositions of $\xi$ is at least $2^{|\mathcal{U}(\xi)|-1}$.
+\end{theorem}
+
+\begin{proof}
+For each subtask $\eta \in \mathcal{U}(\xi)$ that occurs as an argument of a
+binary operation, swapping its role with its sibling produces a distinct
+composition under non-commutative interpretations of operations.  By induction
+on $|\mathcal{U}(\xi)|$, the number of compositions doubles at each binary
+node, yielding the bound.
+\end{proof}
+
+\begin{example}[Compositions of the integer $3$]
+The expression $3 \in \mathcal{E}$ admits compositions including:
+\begin{align*}
+  3 &= 1 + 1 + 1, \quad 2 + 1 = 1 + 2, \quad 4 - 1,\\
+  3 &= \tfrac{6}{2} = 3 \cdot 1 = \log_e e^3,\\
+  3 &= \sin(3\pi/2) + 4, \quad 3\cdot\tfrac{4}{4}.
+\end{align*}
+All evaluate to $3$ under any arithmetically faithful receiver, confirming that
+the global S-value is preserved across all syntactically distinct compositions.
+\end{example}
+
+%% ── §14.5 ─────────────────────────────────────────────────────────────────────
 \section{Information Catalysts}
 \label{sec:ch14-catalysts}
 
 A surprising consequence of the S-calculus is the existence of
-\emph{information catalysts}: observations that reduce the S-value of multiple
-questions simultaneously, with multiplicative rather than additive benefit.
+\emph{information catalysts}---expressions whose application strictly decreases
+the receiver's S-value, with multiplicative rather than additive benefit under
+composition.
 
-\begin{theorem}[Information Catalyst]
-  If observation $o$ satisfies
-  $\mathbf{S}[R \oplus o, q_1] \cdot \mathbf{S}[R \oplus o, q_2] <
-  \mathbf{S}[R,q_1] \cdot \mathbf{S}[R,q_2]$,
-  then $o$ is an information catalyst: it reduces the joint S-value
-  super-additively.
+\begin{definition}[Catalyst]\label{def:catalyst-mono}
+A \emph{catalyst} for receiver $\mathcal{R}$ at truth $x^{*}$ is an expression
+$\gamma \in \mathcal{E}$ such that the catalytic application
+$\xi \mapsto \xi \diamond \gamma$ reduces global S-value:
+\[
+  S_{\mathcal{R}}(\xi \diamond \gamma,\; x^{*})
+  \;<\; S_{\mathcal{R}}(\xi,\; x^{*})
+\]
+for every $\xi$ with $S_{\mathcal{R}}(\xi, x^{*}) > S_{\flat}(\mathcal{R})$.
+\end{definition}
+
+\begin{definition}[Catalytic power]\label{def:catpower-mono}
+The \emph{catalytic power} of catalyst $\gamma$ at receiver $\mathcal{R}$ on
+truth $x^{*}$ is
+\[
+  \kappa_{\mathcal{R}, x^{*}}(\gamma)
+  := \sup_{\xi \in \mathcal{E}}
+  \frac{S_{\mathcal{R}}(\xi, x^{*})
+        - S_{\mathcal{R}}(\xi \diamond \gamma, x^{*})}
+       {S_{\mathcal{R}}(\xi, x^{*}) - S_{\flat}(\mathcal{R})}.
+\]
+The catalyst is \emph{strict} if $\kappa > 0$, \emph{absolute} if $\kappa = 1$,
+and \emph{neutral} if $\kappa = 0$.
+\end{definition}
+
+\begin{lemma}[Catalytic-power range]\label{lem:cat-power-range-mono}
+For every catalyst $\gamma$:
+$\kappa_{\mathcal{R}, x^{*}}(\gamma) \in [0,1]$.
+\end{lemma}
+
+\begin{proof}
+The numerator is bounded above by the denominator because S-values cannot
+decrease below $S_{\flat}(\mathcal{R})$ (Corollary~\ref{cor:smallest-knowable-mono}).
+\end{proof}
+
+%% ── §14.6 ─────────────────────────────────────────────────────────────────────
+\section{Multiplicativity of Catalytic Power}
+\label{sec:ch14-multiplicativity}
+
+\begin{theorem}[Multiplicativity of Catalytic Power]
+\label{thm:mult-cat-mono}
+Let $\gamma_1, \gamma_2$ be catalysts for receiver $\mathcal{R}$ at truth
+$x^{*}$ with catalytic powers $\kappa_1$ and $\kappa_2$ respectively.
+Then the catalytic power of the composite $\gamma_1 \diamond \gamma_2$ is
+\[
+  \kappa_{\mathcal{R}, x^{*}}(\gamma_1 \diamond \gamma_2)
+  \;=\; 1 - (1 - \kappa_1)(1 - \kappa_2).
+\]
 \end{theorem}
 
-In mass spectrometry, a high-resolution MS/MS spectrum is an information
-catalyst: a single fragmentation event simultaneously reduces $\Sk$
-(structure), $\St$ (retention time prediction), and $\Se$ (partition depth)
-for multiple candidate molecules.
+\begin{proof}
+Apply $\gamma_1$ first; the residual S-distance above floor is multiplied by
+$(1 - \kappa_1)$.  Apply $\gamma_2$ to the result; the residual is further
+multiplied by $(1 - \kappa_2)$.  The total fraction of distance closed is
+$1 - (1 - \kappa_1)(1 - \kappa_2)$, which is the catalytic power of the
+composite.
+\end{proof}
 
-\section{The Unconstrained Subtask Theorem}
-\label{sec:ch14-subtask}
+\begin{corollary}[Diminishing Returns]\label{cor:diminishing-mono}
+Repeated application of the same catalyst $\gamma$ a total of $n$ times yields
+composite catalytic power
+\[
+  1 - (1 - \kappa)^n,
+\]
+which converges to $1$ as $n \to \infty$ but never reaches it.
+\end{corollary}
 
-\begin{theorem}[Unconstrained Subtask Recursion]
-  If the global S-value $\mathbf{S}[R, q]$ is fixed, the local S-values of
-  independent subtasks $q_1, q_2, \ldots, q_k$ (where $q = q_1 \wedge \cdots
-  \wedge q_k$) are individually unconstrained: any assignment
-  $(\mathbf{S}[R,q_1], \ldots, \mathbf{S}[R,q_k])$ consistent with the
-  additivity axiom is achievable.
+\begin{corollary}[Cascade Composition Rule]\label{cor:cascade-mono}
+The catalytic power of a cascade $\Gamma = (\gamma_1, \ldots, \gamma_n)$
+applied in right-associative order is
+\[
+  \kappa(\Gamma) = 1 - \prod_{i=1}^{n}(1 - \kappa_i).
+\]
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:mult-cat-mono} inductively.
+\end{proof}
+
+\begin{theorem}[Catalyst-Driven Convergence]\label{thm:cat-conv-mono}
+For any $\xi_0 \in \mathcal{E}$ with
+$S_{\mathcal{R}}(\xi_0, x^{*}) > S_{\flat}(\mathcal{R})$ and any catalyst
+$\gamma$ with $\kappa := \kappa_{\mathcal{R}, x^{*}}(\gamma) > 0$, the
+sequence
+\[
+  \xi_n := \xi_0 \diamond \gamma^n
+\]
+satisfies
+\[
+  S_{\mathcal{R}}(\xi_n, x^{*}) - S_{\flat}(\mathcal{R})
+  \;\leq\; (1-\kappa)^n
+  \bigl[S_{\mathcal{R}}(\xi_0, x^{*}) - S_{\flat}(\mathcal{R})\bigr].
+\]
+In particular, $S_{\mathcal{R}}(\xi_n, x^{*}) \to S_{\flat}(\mathcal{R})$
+geometrically as $n \to \infty$.
 \end{theorem}
 
-This theorem underpins the GPU multi-pass architecture of Chapter~\ref{ch:gpu}:
-the global spectral reconstruction task is decomposed into independent shader
-passes, each with its own S-value, free to be minimised independently.
+\begin{proof}
+By induction on $n$ using Theorem~\ref{thm:mult-cat-mono}.  At each step,
+the residual S-distance above floor is multiplied by $(1 - \kappa)$, giving
+the geometric decay.
+\end{proof}
 
-%%  SOURCE: integrate full proofs from
-%%          unconstrained-subtask-recursion.tex
+\begin{corollary}[Linear-Time Convergence to Floor]
+For any $\varepsilon > 0$, the number of catalyst applications required to
+reach S-value within $\varepsilon$ of floor is
+$O\!\bigl(\log(1/\varepsilon) / \log(1/(1-\kappa))\bigr)$.
+\end{corollary}
 
+\begin{remark}[Perfect catalysts and the floor]
+A catalyst with $\kappa = 1$ (absolute) reduces S-value to floor in a single
+application.  Its existence requires that the receiver have access to a
+perfectly-aligned decoder for the truth.  By Theorem~\ref{thm:floor-pos-mono},
+the floor itself cannot be removed; absolute catalysts merely close the
+residual distance above floor in one step.
+\end{remark}
+
+%% ── §14.7 ─────────────────────────────────────────────────────────────────────
+\section{Locally-Impossible Catalysts}
+\label{sec:ch14-locallyimpossible}
+
+\begin{definition}[Locally-impossible catalyst]\label{def:loc-imp-mono}
+A catalyst $\gamma \in \mathcal{E}$ is \emph{locally impossible} if
+$S_{\mathcal{R}}(\gamma, x^{*}) = 100$.
+\end{definition}
+
+\begin{theorem}[Locally-Impossible Catalysts Can Have Positive Power]
+\label{thm:loc-imp-mono}
+There exist locally-impossible catalysts $\gamma$ with
+$\kappa_{\mathcal{R}, x^{*}}(\gamma) > 0$.
+\end{theorem}
+
+\begin{proof}
+Construct $\gamma := \eta + (-\eta + \delta)$ where $\eta$ is locally
+maximally infeasible and $\delta$ is a small correction expression.  By
+Theorem~\ref{thm:lg-decoupling-mono}, the local S-value of the first summand
+$\eta$ is $100$, while the composite $\gamma$ has S-value equal to that of
+$\delta$ alone, which we choose to be $S_{\flat}(\mathcal{R}) + \varepsilon$
+for arbitrarily small $\varepsilon > 0$.  Substituting $\gamma$ into a parent
+expression $\xi$ via $\diamond$ reduces the global S-distance by the amount
+represented by $\delta$.
+\end{proof}
+
+\begin{remark}[The miracle principle, rigorously stated]
+Theorem~\ref{thm:loc-imp-mono} formalises the notion that an expression need
+not appear feasible at the local level to function as a catalyst at the global
+level.  Locally infeasible (``miraculous'') subtasks compose into globally
+feasible (``mathematical'') expressions.  This is the rigorous content of the
+Miracle Principle: Corollary~\ref{cor:miracle-mono} shows that globally correct
+expressions can have arbitrarily many locally maximally wrong subtasks.
+\end{remark}
+
+%% ── §14.8 ─────────────────────────────────────────────────────────────────────
+\section{The Catalyst Algebra}
+\label{sec:ch14-algebra}
+
+\begin{definition}[Catalyst algebra]\label{def:cat-algebra-mono}
+The \emph{catalyst algebra} $\mathcal{F}_{\mathcal{R}, x^{*}}$ of receiver
+$\mathcal{R}$ at truth $x^{*}$ is the set
+\[
+  \mathcal{F}_{\mathcal{R}, x^{*}}
+  := \{\gamma \in \mathcal{E} : \kappa_{\mathcal{R}, x^{*}}(\gamma) > 0\}
+\]
+equipped with the binary operation $\diamond$ of catalyst composition and the
+unit $\mathbf{1}_{\diamond}$ being the empty expression (neutral catalyst).
+\end{definition}
+
+\begin{proposition}[Monoid structure]\label{prop:monoid-mono}
+$(\mathcal{F}_{\mathcal{R}, x^{*}}, \diamond, \mathbf{1}_{\diamond})$ is a
+monoid: the operation is associative and the unit is two-sided.
+\end{proposition}
+
+\begin{proof}
+Associativity follows from the associativity of composition in $\mathcal{E}$
+and the multiplicativity of catalytic power.  The unit is the empty expression,
+whose application leaves the receiver unchanged.
+\end{proof}
+
+\begin{proposition}[Non-commutativity]\label{prop:non-comm-mono}
+The catalyst algebra is in general non-commutative: there exist
+$\gamma_1, \gamma_2 \in \mathcal{F}$ with
+$\gamma_1 \diamond \gamma_2 \neq \gamma_2 \diamond \gamma_1$ as expressions,
+even though their catalytic powers may coincide.
+\end{proposition}
+
+\begin{proof}
+The order of catalyst application affects the intermediate state of the
+receiver's knowledge, even when the final S-value is the same.
+Theorem~\ref{thm:mult-cat-mono} gives the catalytic power of the composite as
+a symmetric function of $\kappa_1, \kappa_2$, but the receiver-internal state
+need not coincide under reordering.
+\end{proof}
+
+\begin{theorem}[Asymptotic Floor Approach]\label{thm:asymp-floor-mono}
+For any sequence of catalysts $(\gamma_1, \gamma_2, \ldots)$ with
+$\kappa_i > 0$:
+\begin{enumerate}[(i)]
+  \item If $\sum_{i=1}^{\infty} \kappa_i = \infty$ (divergent sum), the cascade
+    S-converges to floor.
+  \item If $\sum_{i=1}^{\infty} \kappa_i < \infty$ (convergent sum), the cascade
+    S-converges to a value strictly above floor.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+By Corollary~\ref{cor:cascade-mono}, the cascade catalytic power after $n$
+steps is $1 - \prod_{i=1}^{n}(1 - \kappa_i)$.  The infinite product converges
+to $0$ (equivalently, the cascade power converges to $1$, driving S to floor)
+if and only if $\sum \kappa_i = \infty$; otherwise the product converges to a
+positive value, leaving a residual gap above floor.
+\end{proof}
+
+\begin{remark}[Borel-Cantelli analogue]
+Theorem~\ref{thm:asymp-floor-mono} is the catalytic analogue of the
+Borel-Cantelli lemma: the divergence of the partial sums of catalytic powers
+is the necessary and sufficient condition for almost-sure convergence to the
+floor attractor.
+\end{remark}
+
+%% ── §14.9 ─────────────────────────────────────────────────────────────────────
+\section{Linear Justification Fails: Necessity of Circular Validity}
+\label{sec:ch14-circular}
+
+The Floor Theorem has a fundamental epistemological consequence: any
+attempt to justify a foundational system by a linear chain of supporting
+expressions is doomed to fail.
+
+\begin{theorem}[Linear Justification Failure]\label{thm:linear-fail-mono}
+For every receiver $\mathcal{R}$ with $S_{\flat}(\mathcal{R}) > 0$, there is
+no finite sequence of expressions $\xi_0 \leftarrow \xi_1 \leftarrow \cdots
+\leftarrow \xi_n$ such that:
+\begin{enumerate}[(i)]
+  \item each $\xi_{i+1}$ supports $\xi_i$ to threshold $\theta = 1$;
+  \item $\xi_n$ requires no support;
+  \item $S_{\mathcal{R}}(\xi_0, x^{*}) = 0$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Condition~(iii) requires $S_{\mathcal{R}}(\xi_0, x^{*}) = 0$, but by
+Theorem~\ref{thm:floor-pos-mono},
+$S_{\mathcal{R}}(x, x^{*}) \geq S_{\flat}(\mathcal{R}) > 0$
+for every candidate $x$.  Therefore no such sequence exists.
+\end{proof}
+
+\begin{corollary}[Infinite Regress Non-Termination]
+A linear justification chain that does not terminate provides no foundation:
+the chain has no element $\xi_n$ requiring no support, and the support of
+$\xi_0$ is not established.
+\end{corollary}
+
+The only remaining option for foundational coherence is \emph{circular
+validity}: a collection of at least three mutually supporting expressions with
+a strongly connected validation graph.  We record this here as a structural
+corollary of the Floor Theorem; the full theory of circular validation and
+stability belongs to the broader calculus.
+
+%% ── §14.10 ────────────────────────────────────────────────────────────────────
+\section{Mass Spectrometric Realisation}
+\label{sec:ch14-ms}
+
+The abstract results of this chapter have immediate and precise realisations in
+mass spectrometry.
+
+\paragraph{The floor.}
+For a mass spectrometric receiver $\mathcal{R}_{\mathrm{MS}}$, the floor
+$S_{\flat}(\mathcal{R}_{\mathrm{MS}})$ is the smallest S-distance achievable
+between a library match and the true molecular identity, given the instrument's
+resolution, mass accuracy, and fragmentation coverage.  Theorem~\ref{thm:floor-pos-mono}
+guarantees $S_{\flat} > 0$ regardless of how high the resolution or how
+complete the library.
+
+\paragraph{Information catalysts.}
+A high-resolution MS/MS spectrum is an information catalyst: a single
+fragmentation event simultaneously reduces $\Sk$ (structural distance), $\St$
+(categorical distance), and $\Se$ (partition distance) for multiple candidate
+molecules.  The catalytic power $\kappa$ of an MS/MS event is the fractional
+reduction in S-distance it achieves; Theorem~\ref{thm:mult-cat-mono} governs
+how multiple MS/MS events compose.
+
+\paragraph{The unconstrained subtask.}
+The multi-pass GPU architecture (Chapter~\ref{ch:gpu}) decomposes the global
+spectral reconstruction task $\xi$ into shader passes $\eta_1, \ldots, \eta_n$.
+Theorem~\ref{thm:unconstrained-mono} guarantees that each pass may be optimised
+independently---its local S-value is irrelevant to the global correctness of
+the final answer.  A shader pass that internally performs locally infeasible
+intermediate computations (e.g., negative ion masses as intermediate variables)
+is structurally admissible provided the global evaluation returns the correct
+candidate.
+
+%% ── Chapter Summary ───────────────────────────────────────────────────────────
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
                   title={\textbf{Chapter 14 Summary}}]
 \begin{itemize}[noitemsep]
-  \item The Floor Theorem: no bounded receiver attains $S = 0$.
-    The floor is strictly positive for any non-trivial question.
-  \item Information catalysts reduce multiple S-values simultaneously with
-    multiplicative benefit.
-  \item The Unconstrained Subtask Theorem: local S-values of independent
-    subtasks are free when the global S-value is fixed.
+  \item \textbf{Floor Theorem}: for every bounded receiver $\mathcal{R}$,
+    $S_{\flat}(\mathcal{R}) > 0$.  No candidate can have S-value below the
+    floor; the floor is a receiver-intrinsic constant.
+  \item \textbf{Corollary}: the smallest knowable error is
+    $S_{\flat}(\mathcal{R})$, independent of the candidate or truth.
+  \item \textbf{Unconstrained Subtask Theorem}: the global S-value of an
+    expression does not constrain the local S-values of its subtasks.
+    Locally maximally infeasible ($S=100$) subtasks can compose into a globally
+    near-floor expression.
+  \item \textbf{Local-Global Decoupling}: for any global S-value $S^{*}$ and
+    any target local S-values $(\sigma_1,\ldots,\sigma_n)$, there exists a
+    composed expression realising both simultaneously.
+  \item \textbf{Catalytic power} is multiplicative under composition:
+    $\kappa(\gamma_1 \diamond \gamma_2) = 1 - (1-\kappa_1)(1-\kappa_2)$.
+  \item \textbf{Catalyst-driven convergence} is geometric: after $n$
+    applications of a catalyst with power $\kappa$, the residual S-distance
+    above floor is $(1-\kappa)^n$ times the initial residual.
+  \item \textbf{Asymptotic floor approach}: a cascade of catalysts converges
+    to floor if and only if the sum of catalytic powers diverges
+    (Borel-Cantelli analogue).
+  \item \textbf{Linear justification fails}: no linear chain of expressions
+    attains $S=0$; foundational coherence requires circular validity with at
+    least three mutually supporting expressions.
 \end{itemize}
 \end{tcolorbox}

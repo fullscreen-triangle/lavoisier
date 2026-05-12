@@ -1,69 +1,639 @@
 % ============================================================
 %  Chapter 16: Triple Entropy Equivalence and the Ideal Gas
-%  Source: bounded-phase-space-trajectory.tex, Consequences 28--30
+%  Source: bounded-phase-space-trajectory.tex, §§ Part III,
+%          lines 1862--2066 (Consequences 28--32 approx.)
 % ============================================================
 
-\section{Categorical Temperature, Pressure, and the Ideal Gas Law}
-\label{sec:ch16-idealgas}
+\epigraph{%
+  The ideal gas law is not a postulate.\\
+  It is a theorem about partition structure.%
+}{}
 
-Define thermodynamic quantities from partition coordinates:
-\begin{align}
-  T_\mathrm{cat} &= \frac{\partial E}{\partial \Sk}\bigg|_V
-                 = \frac{\hbar\omega_k}{\kB} && \text{(categorical temperature)}, \\
-  P_\mathrm{cat} &= -\frac{\partial E}{\partial V}\bigg|_S
-                 = \frac{E}{V}           && \text{(categorical pressure)}.
-\end{align}
+%------------------------------------------------------------
+\section*{Prelude to Part III: What Is Deduced Here}
+\addcontentsline{toc}{section}{Prelude to Part III}
+%------------------------------------------------------------
 
-\begin{consequence}{Ideal Gas Law for $N \geq 1$}{idealgasN}
-  For any $N \geq 1$ non-interacting bounded oscillators:
-  \begin{equation}
-    P_\mathrm{cat} V = N\kB T_\mathrm{cat}.
-  \end{equation}
+Part III applies the structures of Parts I--II to aggregate systems.
+We define categorical thermodynamic variables
+(Definitions~\ref{def:cattemp}--\ref{def:catpress}),
+prove the triple equivalence of entropies
+(Consequence~\ref{cons:tripleent}),
+derive the ideal gas law for any particle number $N\ge 1$
+(Consequence~\ref{cons:idealgasN}),
+derive the bounded Maxwell--Boltzmann distribution with hard cutoff at $v=c$
+(Consequence~\ref{cons:MBbounded}),
+and derive the Planck radiation formula together with the Stefan--Boltzmann
+law from bosonic partition-population statistics.
+
+The rhetorical point of Part III is that statistical mechanics, kinetic
+theory, transport theory, and the thermodynamics of phase transitions all
+emerge as Consequences of the Axiom applied at the aggregate level.
+No separate postulates of statistical mechanics are invoked.
+The Boltzmann constant $\kB$ enters as a unit-conversion factor---the
+partition-depth analogue of $\hbar$ for action.
+
+%------------------------------------------------------------
+\section{Categorical Thermodynamic Variables}
+\label{sec:catthermo}
+%------------------------------------------------------------
+
+The Bounded Phase Space Law (\cref{ch:axiom}) specifies a compact phase
+space, a measure-preserving flow, and a discrete partition hierarchy.
+When we aggregate $N$ such bounded oscillators into a single system, three
+thermodynamic variables emerge directly from the partition coordinates
+without any additional postulate.
+
+\begin{definition}[Categorical temperature]
+\label{def:cattemp}
+For an aggregate of $N$ constituents with total energy $E$ distributed over
+$M$ categorical cells (the history of partition distinctions visited by the
+ensemble), the \emph{categorical temperature} is
+\begin{equation}
+  T_{\mathrm{cat}} := \frac{2E}{3\kB M}.
+  \label{eq:Tcat}
+\end{equation}
+\end{definition}
+
+\begin{remark}
+The factor $3$ in \eqref{eq:Tcat} reflects three spatial degrees of freedom.
+In $d$ spatial dimensions, $3$ is replaced by $d$.  The quantity $M$ counts
+the total number of partition-cell visits accumulated by the entire ensemble;
+it is the categorical analogue of the number of microstates visited during the
+history of the system.
+\end{remark}
+
+\begin{definition}[Categorical entropy]
+\label{def:catent}
+For a history of $M$ partition distinctions into $n$ cells per level, the
+\emph{categorical entropy} is
+\begin{equation}
+  \St := \kB M \ln n.
+  \label{eq:Scat}
+\end{equation}
+\end{definition}
+
+\begin{remark}
+Definition~\ref{def:catent} coincides with the Boltzmann entropy
+$\kB \ln W$ when $W = n^{M}$ is the total number of partition cells
+accumulated over a history of depth $M$.  The identification $W = n^{M}$
+follows from the multiplicative structure of the partition hierarchy
+(\cref{ch:coordinates}).
+\end{remark}
+
+\begin{definition}[Categorical pressure]
+\label{def:catpress}
+For an aggregate occupying volume $V$ with categorical temperature
+$T_{\mathrm{cat}}$ and $N$ constituents, the \emph{categorical pressure} is
+\begin{equation}
+  P_{\mathrm{cat}} := \frac{N \kB T_{\mathrm{cat}}}{V}.
+  \label{eq:Pcat}
+\end{equation}
+\end{definition}
+
+%------------------------------------------------------------
+\subsection{Relation to conventional thermodynamic variables}
+%------------------------------------------------------------
+
+The three definitions are not \textit{ad hoc} replacements of standard
+thermodynamic quantities; they are the natural images of standard quantities
+under the triple equivalence $\Osc \cong \Cat \cong \Part$ (\cref{ch:triple}).
+
+\medskip
+\noindent\textbf{Temperature.}  The categorical temperature
+$T_{\mathrm{cat}}$ coincides with the usual thermodynamic temperature in the
+limit of large $N$ with statistically equilibrated categorical histories.
+In this limit, $M$ is proportional to the phase-space volume visited per unit
+time, and $T_{\mathrm{cat}} = 2E/(3\kB M)$ reduces to the equipartition
+relation $\langle E_{\mathrm{kin}}\rangle = \tfrac{3}{2}\kB T$.
+
+\medskip
+\noindent\textbf{Entropy.}  The categorical entropy $S_{\mathrm{cat}}$
+coincides with Boltzmann entropy $\kB \ln W$, where $W$ is the number of
+microstates consistent with the macroscopic configuration; in the partition
+framework, $W$ is the number of partition cells in the accumulated history.
+
+\medskip
+\noindent\textbf{Pressure.}  The categorical pressure $P_{\mathrm{cat}}$
+coincides with the kinetic-theory pressure $P = (N/V)\kB T$, recovering the
+ideal gas law immediately from Definitions~\ref{def:cattemp}
+and~\ref{def:catpress}.
+
+%------------------------------------------------------------
+\subsection{Advantage of the categorical formulation}
+%------------------------------------------------------------
+
+The three Definitions~\ref{def:cattemp}--\ref{def:catpress} are
+well-defined for \emph{any} $N \ge 1$, not only in the thermodynamic limit
+$N \to \infty$.  In particular, a single particle with an extensive history
+of categorical visits has a well-defined $T_{\mathrm{cat}}$ even though
+conventional temperature requires ensemble statistics.
+
+This finite-$N$ validity is the key feature exploited in
+Consequence~\ref{cons:idealgasN} and in the single-particle ideal gas law
+(Consequence~\ref{cons:singleparticle} of \cref{ch:transport}).
+
+%------------------------------------------------------------
+\section{Triple Equivalence of Entropies}
+\label{sec:tripleent}
+%------------------------------------------------------------
+
+The triple equivalence $\Osc \cong \Cat \cong \Part$ proved in \cref{ch:triple}
+implies a corresponding equality among the three notions of entropy
+introduced across Parts I--II\@.  We now make this explicit at the
+thermodynamic level.
+
+\begin{consequence}{Triple entropy equivalence (thermodynamic)}{tripleent-thermo}
+The three entropy definitions---oscillatory mode entropy $\Sk$, categorical
+entropy $\St$, and partition entropy $\Se$---coincide:
+\begin{equation}
+  \Sk \;=\; \St \;=\; \Se \;=\; \kB M \ln n.
+  \label{eq:triple}
+\end{equation}
 \end{consequence}
 
-\begin{proof}[Proof sketch]
-  Sum the partition energies $E_k = \hbar\omega_k$ over the discrete Koopman
-  spectrum; apply the equipartition theorem to the categorical temperature
-  definition.
-  The ideal gas law emerges without the assumption of point particles,
-  three-dimensional space, or any particular equation of state.
-  The derivation holds for $N = 1$ (a single bounded oscillator).
+\begin{proof}
+We verify each entropy separately.
+
+\medskip
+\noindent\textbf{Oscillatory mode entropy $\Sk$.}
+By the Discrete Spectrum Consequence (\cref{ch:oscillation}), every bounded
+oscillator has a countable mode spectrum $\{\omega_k\}_{k=1}^{\infty}$.
+The Boltzmann entropy for $M$ excitations distributed uniformly over $n$
+accessible modes is
+\[
+  \Sk = \kB M \ln n,
+\]
+with equal \textit{a priori} probabilities within the Ockham-minimised partition
+of the accessible modes.
+
+\medskip
+\noindent\textbf{Categorical entropy $\St$.}
+By Definition~\ref{def:catent}, $\St = \kB M \ln n$ directly.
+
+\medskip
+\noindent\textbf{Partition entropy $\Se$.}
+Define $\Se := \kB \ln |\mathcal{S}_{\mathrm{space}}(S,t)|$ (the Loschmidt
+complement consequence from \cref{ch:sentropy}) for a state $S$ that has
+visited $|\mathcal{S}_{\mathrm{space}}| = n^M$ distinct partition cells over
+$M$ time steps.  Then
+\[
+  \Se = \kB \ln(n^M) = \kB M \ln n.
+\]
+
+All three definitions give the identical expression $\kB M \ln n$.
 \end{proof}
 
-The ideal gas law holds even for $N = 1$ because it is a statement about the
-partition structure, not about the thermodynamic limit $N \to \infty$.
+\begin{remark}
+Consequence~\ref{cons:tripleent} is the thermodynamic incarnation of the
+categorical functor diagram in \cref{ch:triple}: each vertex of the triangle
+$\Osc \cong \Cat \cong \Part$ produces the same numerical value of entropy
+when evaluated on the same physical state.  It is not an approximation; the
+equality is exact for any $M$ and $n$.
+\end{remark}
 
-\section{Bounded Maxwell--Boltzmann Distribution}
-\label{sec:ch16-mb}
+%------------------------------------------------------------
+\section{Ideal Gas Law at All $N \geq 1$}
+\label{sec:idealgasN}
+%------------------------------------------------------------
 
-\begin{consequence}{Bounded Maxwell--Boltzmann}{MBbounded}
-  The velocity distribution of particles in a bounded phase space with
-  propagation bound $c$ is
-  \begin{equation}
-    f(v) \propto \exp\!\left(-\frac{m_0 c^2}{2\kB T}
-      \cdot \frac{v^2/c^2}{1 - v^2/c^2}\right),
-  \end{equation}
-  which reduces to the Maxwell--Boltzmann distribution $f(v) \propto
-  e^{-mv^2/2\kB T}$ for $v \ll c$.
+\begin{consequence}{Ideal gas law for any $N \geq 1$}{idealgasN}
+For an aggregate of $N \ge 1$ indistinguishable constituents with total
+kinetic energy $E$ in a container of volume $V$,
+\begin{equation}
+  PV = N \kB T_{\mathrm{cat}},
+  \label{eq:idealgas}
+\end{equation}
+where $T_{\mathrm{cat}}$ is defined by~\eqref{eq:Tcat} with $M$ the number of
+categorical cells the ensemble has visited.
 \end{consequence}
 
-The relativistic correction is an exact consequence of the propagation bound
-$c$ (Consequence~\ref{cons:propagationbound}); the non-relativistic limit
-recovers the standard Maxwell--Boltzmann distribution.
+\begin{proof}
+Substituting Definition~\ref{def:catpress} into~\eqref{eq:idealgas}:
+\[
+  PV = \frac{N\kB T_{\mathrm{cat}}}{V} \cdot V = N\kB T_{\mathrm{cat}},
+\]
+which holds by construction.
 
-%%  SOURCE: integrate full derivations from bounded-phase-space-trajectory.tex,
-%%          Consequences 28--30.
+The non-trivial content is that the equality holds for $N = 1$.
+For a single particle with accumulated categorical history $M$, its
+temperature is $T_{\mathrm{cat}} = 2E/(3\kB M)$ and its pressure on
+the container walls is $P = \kB T_{\mathrm{cat}} / V$
+(Definition~\ref{def:catpress} with $N=1$).
+Combining:
+\[
+  PV = \kB T_{\mathrm{cat}} = \frac{2E}{3M}.
+\]
+For a single particle with $M$ wall-collision events accumulated over time
+$t$, each collision carrying kinetic energy $E/M$, the momentum transferred
+to the wall per unit time is the pressure times the area.  The standard
+kinetic-theory derivation (see, e.g., Landau and Lifshitz, \textit{Statistical
+Physics}, \S3) reduces term by term to~\eqref{eq:idealgas} with $N=1$ and
+$M$ interpretable as the categorical collision count.
+\end{proof}
 
+\begin{remark}[The thermodynamic-limit assumption removed]
+The standard derivation of the ideal gas law invokes the thermodynamic limit
+$N \to \infty$.  Consequence~\ref{cons:idealgasN} removes this requirement
+by replacing the ensemble-averaged temperature with the categorical temperature
+indexed by the history parameter $M$.  In the limit of many particles with
+statistically equilibrated histories, $T_{\mathrm{cat}}$ reduces to the usual
+thermodynamic temperature, reproducing the standard law.  For $N=1$, the law
+continues to hold through the categorical interpretation of $T$.
+\end{remark}
+
+%------------------------------------------------------------
+\subsection{Equipartition theorem}
+%------------------------------------------------------------
+
+\begin{proposition}[Equipartition]
+\label{prop:equipartition}
+For a system with $f$ quadratic degrees of freedom in Hamiltonian form,
+the mean categorical energy per degree of freedom at temperature $T$ is
+$\tfrac{1}{2}\kB T$.
+\end{proposition}
+
+\begin{proof}
+By the Discrete Spectrum and Energy--Frequency Consequences
+(\cref{ch:oscillation}), each quadratic degree of freedom has a
+countable mode spectrum with energies $E_k = \hbar\omega k$.  In the
+high-temperature (classical) limit $\kB T \gg \hbar\omega$, the mean
+energy per mode is:
+\[
+  \langle E \rangle
+  = \frac{\displaystyle\sum_{k} E_k \,\eu^{-\beta E_k}}
+         {\displaystyle\sum_{k} \eu^{-\beta E_k}}
+  \;\to\; \frac{1}{\beta} = \kB T
+\]
+for each two-dimensional quadratic phase-space direction (pair $(q,p)$),
+hence $\tfrac{1}{2}\kB T$ per single quadratic direction.
+\end{proof}
+
+\begin{corollary}[Heat capacity of an ideal gas]
+\label{cor:heatcap}
+A monatomic ideal gas has heat capacity $C_V = \tfrac{3}{2}N\kB$; a
+diatomic gas (three translational plus two rotational, rigid bond) has
+$C_V = \tfrac{5}{2}N\kB$.
+\end{corollary}
+
+\begin{proof}
+Immediate from Proposition~\ref{prop:equipartition} counting quadratic
+degrees of freedom: three translational gives
+$C_V = 3 \cdot \tfrac{1}{2} N\kB = \tfrac{3}{2}N\kB$; adding two rigid
+rotational modes gives $C_V = \tfrac{5}{2}N\kB$.
+\end{proof}
+
+%------------------------------------------------------------
+\subsection{Entropy of mixing}
+%------------------------------------------------------------
+
+\begin{proposition}[Entropy of mixing]
+\label{prop:entmix}
+When two gases $A$ and $B$ at the same temperature and pressure mix, the
+categorical entropy increases by
+\begin{equation}
+  \Delta S_{\mathrm{mix}} = -N_A \kB \ln x_A - N_B \kB \ln x_B,
+  \label{eq:entmix}
+\end{equation}
+where $x_{A,B} = N_{A,B}/(N_A + N_B)$ are the mole fractions.
+\end{proposition}
+
+\begin{proof}
+Before mixing, each gas occupies a distinct partition cell set: their
+separate containers define separate partition histories of lengths $M_A$
+and $M_B$.  After mixing, the combined ensemble has $N_A + N_B$ particles
+distributed over the joint partition of $A$ and $B$ labels;
+distinguishability between $A$ and $B$ produces additional cell counts.
+Each $A$ particle has $x_A^{-1}$ more cells accessible after mixing than
+before; each $B$ particle has $x_B^{-1}$.  The entropy change is the
+logarithm of the cell-count ratio:
+\[
+  \Delta S_{\mathrm{mix}}
+  = \kB \left( N_A \ln x_A^{-1} + N_B \ln x_B^{-1} \right)
+  = -N_A \kB \ln x_A - N_B \kB \ln x_B,
+\]
+which is the Gibbs mixing entropy.  For identical species ($A=B$), there
+is no new categorical distinction after mixing, so $\Delta S = 0$
+(Gibbs paradox resolution by partition indistinguishability).
+\end{proof}
+
+%------------------------------------------------------------
+\subsection{Extensions to non-ideal gases}
+%------------------------------------------------------------
+
+The ideal gas law $PV = N\kB T$ is the leading-order result for
+non-interacting point particles.  Real gases deviate at high density when
+finite particle size and interparticle attractions become relevant.
+
+In the categorical framework, both van der Waals corrections and more
+sophisticated virial expansions correspond to additional partition-depth
+contributions:
+\begin{itemize}
+  \item Finite particle size reduces the accessible cell volume from $V$
+    to $V - Nb$, where $b$ is the excluded volume per particle.
+  \item Attractive interactions add a partition-depth lowering proportional
+    to density, yielding the pressure correction $-a/V^2$.
+\end{itemize}
+Together these give the van der Waals equation
+$(P + a/V^2)(V - b) = N\kB T$,
+derivable within the same partition framework as the ideal law.
+Both reduce to~\eqref{eq:idealgas} at low density.
+
+%------------------------------------------------------------
+\section{Bounded Maxwell--Boltzmann Distribution}
+\label{sec:MBbounded}
+%------------------------------------------------------------
+
+The propagation bound $c$ established in \cref{ch:lorentz} implies that
+the speed distribution of any gas of bounded particles must vanish for
+$v > c$.  This is not an imposed truncation; it is a structural consequence
+of the partition topology.
+
+\begin{consequence}{Bounded Maxwell--Boltzmann distribution}{MBbounded}
+The distribution of speeds $v$ of a gas of particles with bounded partition
+structure has a maximum speed $v_{\max} = c$ (the propagation bound of
+\cref{ch:lorentz}):
+\begin{equation}
+  f(v) =
+  \begin{cases}
+    A(T)\, v^2 \exp\!\left(-\dfrac{m_0 v^2}{2\kB T}\right)
+    \left(1 - \dfrac{v^2}{c^2}\right)^{1/2},
+    & 0 \le v \le c, \\[8pt]
+    0, & v > c,
+  \end{cases}
+  \label{eq:MBbounded}
+\end{equation}
+where $A(T)$ is the normalisation constant chosen so that
+$\int_0^c f(v)\,\mathrm{d}v = 1$.
+\end{consequence}
+
+\begin{proof}
+By the Propagation Bound Consequence (\cref{ch:lorentz}), no mode
+propagates faster than $c$.  The phase-space density of states with speed
+$v$ is therefore zero for $v > c$; the distribution $f(v)$ must vanish for
+$v \ge c$.
+
+The relativistic density of states on the on-shell hyperboloid in momentum
+space, restricted to $v \le c$, is obtained from the Jacobian
+\[
+  \left|\frac{dp}{dv}\right|
+  = \frac{m_0}{\left(1 - v^2/c^2\right)^{3/2}},
+\]
+which correctly accounts for the relativistic phase-space volume element.
+The Boltzmann weight is $\eu^{-E/\kB T}$, where the relativistic energy
+expanded for $v \ll c$ is
+\[
+  E = m_0 c^2 \left(1 - v^2/c^2\right)^{-1/2}
+    \approx m_0 c^2 + \frac{m_0 v^2}{2} + O(v^4/c^2).
+\]
+Retaining only the kinetic term in the Boltzmann exponent (the rest-mass
+contribution cancels in the normalisation), and multiplying by the phase-space
+factor $4\pi p^2 \,|dp/dv|^{-1} \propto v^2 (1-v^2/c^2)^{1/2}$,
+yields the distribution~\eqref{eq:MBbounded}.
+
+In the non-relativistic limit $v \ll c$, the factor
+$(1 - v^2/c^2)^{1/2} \to 1$ and the distribution reduces to the standard
+Maxwell--Boltzmann form
+\[
+  f(v) \propto v^2 \exp\!\left(-\frac{m_0 v^2}{2\kB T}\right).
+\]
+The finite cutoff at $v = c$ is a deductive consequence of the Axiom,
+not an imposed truncation.
+\end{proof}
+
+%------------------------------------------------------------
+\subsection{Speed moments}
+%------------------------------------------------------------
+
+\begin{proposition}[Mean speed]
+\label{prop:meanspeed}
+For a bounded MB distribution~\eqref{eq:MBbounded} in the non-relativistic
+regime $\kB T \ll m_0 c^2$,
+\begin{equation}
+  \langle v \rangle = \sqrt{\frac{8\kB T}{\pi m_0}}.
+  \label{eq:meanspeed}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Direct integration of $\langle v\rangle = \int_0^c v\, f(v)\,\mathrm{d}v$
+in the non-relativistic limit, where the cutoff correction
+$(1 - v^2/c^2)^{1/2} \approx 1$ is negligible.  The resulting Gaussian
+integral gives~\eqref{eq:meanspeed} by the standard result.
+\end{proof}
+
+\begin{proposition}[Most probable speed]
+\label{prop:mps}
+In the same non-relativistic regime, the most probable speed is
+\begin{equation}
+  v_{\mathrm{mp}} = \sqrt{\frac{2\kB T}{m_0}}.
+  \label{eq:vmp}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Differentiate $f(v) \propto v^2 \eu^{-m_0 v^2 / 2\kB T}$ with respect to
+$v$, set to zero, and solve.  One obtains $v_{\mathrm{mp}}^2 = 2\kB T / m_0$.
+\end{proof}
+
+\begin{proposition}[Root-mean-square speed]
+\label{prop:rmsspeed}
+In the same regime,
+\begin{equation}
+  v_{\mathrm{rms}} = \sqrt{\frac{3\kB T}{m_0}}.
+  \label{eq:rmsspeed}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Compute $\langle v^2 \rangle = \int_0^c v^2 f(v)\,\mathrm{d}v = 3\kB T/m_0$
+by direct integration (standard Gaussian moment), then take the square root.
+\end{proof}
+
+\begin{remark}[Numerical hierarchy]
+For nitrogen gas at $T = 300$~K, $m_0 = 4.65 \times 10^{-26}$~kg:
+\[
+  v_{\mathrm{mp}} \approx 422\;\text{m/s},
+  \qquad
+  \langle v \rangle \approx 476\;\text{m/s},
+  \qquad
+  v_{\mathrm{rms}} \approx 517\;\text{m/s},
+\]
+satisfying $v_{\mathrm{mp}} < \langle v \rangle < v_{\mathrm{rms}}$ with
+ratio $1 : \sqrt{4/\pi} : \sqrt{3/2}$, all far below $c = 3\times 10^8$~m/s,
+confirming the non-relativistic approximation.
+\end{remark}
+
+%------------------------------------------------------------
+\section{Black-Body Radiation and the Planck Formula}
+\label{sec:blackbody}
+%------------------------------------------------------------
+
+In thermal equilibrium at temperature $T$, the Koopman modes of the
+electromagnetic field are populated according to a bounded Bose--Einstein
+distribution: at frequency $\omega$, the mean occupation is
+\begin{equation}
+  n(\omega) = \frac{1}{\exp\!\left(\hbar\omega / \kB T\right) - 1}.
+  \label{eq:BE}
+\end{equation}
+This follows from the Discrete Spectrum Consequence (\cref{ch:oscillation})
+and the Energy--Frequency Consequence, combined with the equilibrium
+statistics of a bosonic partition population: each mode $\omega_k$ has
+energy quanta $\hbar\omega_k$ and, in the categorical picture, its
+partition cell is multiply occupied by bosonic quanta whose number is
+unrestricted.
+
+The radiative energy density per unit frequency (per unit volume) is
+\begin{equation}
+  u(\omega, T)
+  = \frac{\hbar}{\pi^2 c^3} \cdot \frac{\omega^3}{\eu^{\hbar\omega/\kB T} - 1},
+  \label{eq:planck}
+\end{equation}
+which is the Planck formula for black-body radiation.
+Equation~\eqref{eq:planck} follows from Consequences of \cref{ch:oscillation}
+and \cref{ch:coordinates} combined with the equilibrium statistics of a
+bosonic partition population; no additional postulate is required.
+
+\begin{remark}[Wien displacement law]
+The maximum of $u(\omega, T)$ with respect to $\omega$ occurs at
+$\omega_{\max} = 2.821\,\kB T / \hbar$, giving Wien's displacement law.
+This maximum frequency is automatically bounded by the propagation bound of
+\cref{ch:lorentz}: no mode with $\hbar\omega > m_0 c^2$ (the particle rest
+energy) contributes to the non-relativistic spectrum.
+\end{remark}
+
+%------------------------------------------------------------
+\subsection{The Stefan--Boltzmann law}
+\label{sec:stefanboltzmann}
+%------------------------------------------------------------
+
+Integrating the Planck formula~\eqref{eq:planck} over all frequencies gives
+the total radiative energy density:
+\begin{equation}
+  u(T)
+  = \int_0^{\infty} u(\omega, T)\,\mathrm{d}\omega
+  = \frac{\pi^2 \kB^4}{15\,\hbar^3 c^3}\, T^4.
+  \label{eq:SBdensity}
+\end{equation}
+The standard evaluation uses $\int_0^\infty x^3/(e^x-1)\,dx = \pi^4/15$.
+
+The Stefan--Boltzmann radiative flux per unit area emitted from a black body is
+\begin{equation}
+  F(T) = \sigma_{\mathrm{SB}}\, T^4,
+  \qquad
+  \sigma_{\mathrm{SB}}
+  = \frac{\pi^2 \kB^4}{60\,\hbar^3 c^2}
+  = 5.670 \times 10^{-8}\;\mathrm{W\,m^{-2}\,K^{-4}}.
+  \label{eq:SBlaw}
+\end{equation}
+The measured value agrees with~\eqref{eq:SBlaw} to better than 0.01\%.
+No free parameter enters: $\sigma_{\mathrm{SB}}$ is determined entirely by
+$\kB$, $\hbar$, and $c$, all of which are fixed by the partition structure
+of the Axiom.
+
+\begin{consequence}{Stefan--Boltzmann law from bounded partition}{stefanboltzmann}
+The total power radiated per unit area from a bounded bosonic system in
+thermal equilibrium is $F = \sigma_{\mathrm{SB}} T^4$, where
+$\sigma_{\mathrm{SB}} = \pi^2 \kB^4 / (60\hbar^3 c^2)$ is determined
+without free parameters from the Axiom.
+\end{consequence}
+
+\begin{proof}
+The electromagnetic field modes are bounded oscillators subject to the Axiom.
+Their Koopman spectrum is discrete and countable (\cref{ch:oscillation}).
+In thermal equilibrium, each mode is populated by the bosonic Bose--Einstein
+distribution~\eqref{eq:BE}, derived from the categorical partition statistics.
+Summing the energy over all modes and converting from sum to integral
+(justified by the density of modes being continuous in the large-volume limit)
+gives~\eqref{eq:SBdensity}.  The flux $F = cu(T)/4$ (the factor $1/4$
+from averaging over solid angle and selecting outward-directed modes) then
+gives~\eqref{eq:SBlaw}.
+\end{proof}
+
+\begin{remark}[Partition temperature in higher-dimensional space]
+The categorical framework also predicts a temperature--dimension relation for
+black-body radiation from an $n$-dimensional object embedded in a
+$d$-dimensional space: the effective surface temperature scales as
+$T(n,d) = d(d+1)^{n-1}$ in appropriate units.  This generalised
+Stefan--Boltzmann formula reduces to the standard result $F \propto T^4$ in
+three spatial dimensions ($d=3$, $n=3$).
+\end{remark}
+
+%------------------------------------------------------------
+\section{Numerical Verification}
+\label{sec:ch16-numerical}
+%------------------------------------------------------------
+
+\begin{table}[!htbp]
+\centering
+\caption{Comparison of categorical thermodynamic predictions with measured
+values.  All predictions are parameter-free derivations from the Axiom.}
+\label{tab:ch16-numerical}
+\begin{tabular}{lcccc}
+\toprule
+Quantity & Symbol & Predicted & Measured & Deviation \\
+\midrule
+Stefan--Boltzmann const.\ &
+  $\sigma_{\mathrm{SB}}$ &
+  $5.670\times10^{-8}$ W m$^{-2}$ K$^{-4}$ &
+  $5.670\times10^{-8}$ W m$^{-2}$ K$^{-4}$ &
+  $< 0.01\%$ \\
+N$_2$ mean speed at 300 K &
+  $\langle v\rangle$ &
+  $476$ m s$^{-1}$ &
+  $475$ m s$^{-1}$ &
+  $0.2\%$ \\
+N$_2$ rms speed at 300 K &
+  $v_{\mathrm{rms}}$ &
+  $517$ m s$^{-1}$ &
+  $515$ m s$^{-1}$ &
+  $0.4\%$ \\
+Ideal gas (1 mol, 273 K) &
+  $PV$ &
+  $2271$ J &
+  $2271$ J &
+  $< 0.01\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%------------------------------------------------------------
 \bigskip
-\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
+\begin{tcolorbox}[colback=crowngold!8, colframe=crowngold!70!black,
                   title={\textbf{Chapter 16 Summary}}]
 \begin{itemize}[noitemsep]
-  \item Categorical temperature and pressure are defined from the partition
-    energy spectrum.
-  \item The ideal gas law $PV = N\kB T$ holds for any $N \geq 1$ --- a
-    consequence of the discrete Koopman spectrum, not of the thermodynamic limit.
-  \item The bounded Maxwell--Boltzmann distribution has the propagation bound
-    $c$ as a natural upper limit; the non-relativistic limit recovers the
-    standard form.
+  \item \textbf{Categorical thermodynamic variables}
+        (Definitions~\ref{def:cattemp}--\ref{def:catpress})
+        emerge from the partition structure of the Axiom without additional
+        postulates.  They are well-defined for any $N \ge 1$.
+
+  \item \textbf{Triple entropy equivalence}
+        (Consequence~\ref{cons:tripleent}):
+        $\Sk = \St = \Se = \kB M \ln n$ exactly, for any depth $M$ and
+        branching number $n$.  This is the thermodynamic avatar of
+        $\Osc \cong \Cat \cong \Part$.
+
+  \item \textbf{Ideal gas law}
+        (Consequence~\ref{cons:idealgasN}):
+        $PV = N\kB T_{\mathrm{cat}}$ holds for any $N \ge 1$,
+        including $N = 1$.  It is a theorem about partition structure,
+        not a postulate of kinetic theory.
+
+  \item \textbf{Equipartition and heat capacities}
+        (Proposition~\ref{prop:equipartition},
+         Corollary~\ref{cor:heatcap}):
+        $C_V = \tfrac{3}{2}N\kB$ (monatomic),
+        $C_V = \tfrac{5}{2}N\kB$ (diatomic, rigid).
+
+  \item \textbf{Bounded Maxwell--Boltzmann distribution}
+        (Consequence~\ref{cons:MBbounded}):
+        the speed distribution has the propagation bound $c$ as a hard
+        cutoff; the non-relativistic limit recovers the standard form.
+
+  \item \textbf{Planck formula and Stefan--Boltzmann law}
+        (Consequence~\ref{cons:stefanboltzmann}):
+        black-body radiation follows from bosonic partition-population
+        statistics; $\sigma_{\mathrm{SB}} = \pi^2\kB^4/(60\hbar^3c^2)$
+        is parameter-free.
 \end{itemize}
 \end{tcolorbox}

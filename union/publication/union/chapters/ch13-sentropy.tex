@@ -1,6 +1,7 @@
 % ============================================================
 %  Chapter 13: The S-Entropy Calculus
 %  Source: union/publication/support/unconstrained-subtask-recursion.tex
+%  Parts I--II (S-scalar, receiver, axioms, triple equivalence structures)
 % ============================================================
 
 \epigraph{%
@@ -8,113 +9,466 @@
   measured on a bounded scale.%
 }{}
 
-\section{Motivation: Why a New Entropy?}
+%% ── §13.1 ─────────────────────────────────────────────────────────────────────
+\section{Motivation: Why a Distinct Entropy?}
+\label{sec:ch13-motivation}
 
-Shannon entropy $H$ and thermodynamic entropy $S$ both measure uncertainty,
-but neither is indexed to a specific receiver's epistemic state.
-Shannon entropy is defined relative to a source distribution; thermodynamic
-entropy is defined relative to a macrostate.
-Neither gives the distance between a receiver's current knowledge and the
-truth about a specific question.
+Shannon entropy $H$ and thermodynamic entropy measure uncertainty, but neither
+is indexed to a specific receiver's epistemic state relative to a specific
+truth.  Shannon entropy is defined relative to a source distribution;
+thermodynamic entropy is defined relative to a macrostate.  Neither gives the
+\emph{distance} between a receiver's current knowledge and the correct answer to
+a specific question.
 
-The S-entropy calculus supplies this missing piece.
-It is not a generalisation of Shannon or Boltzmann entropy; it is a distinct
-axiomatic system that measures \emph{distance to truth} on a bounded scale,
-relative to a specified receiver.
+The S-entropy calculus supplies this missing piece.  It is not a generalisation
+of Shannon or Boltzmann entropy; it is a distinct axiomatic system that measures
+distance to truth on a bounded closed interval, relative to a specified
+receiver.  Every quantity that appears in the calculus---the floor, the
+catalytic power, the triple---is receiver-relative.  The global truth is
+asserted by the global S-value; what happens at the level of subtasks is
+unconstrained.
 
+The calculus is presented as pure mathematics.  Its application to mass
+spectrometry follows in the subsequent chapters as a special case: the
+S-entropy triple $(\Sk, \St, \Se)$ instantiates the abstract triple
+$(S_k, S_t, S_e)$ of the source paper for the specific receiver defined by a
+mass spectrometric apparatus.
+
+%% ── §13.2 ─────────────────────────────────────────────────────────────────────
 \section{The S-Scale}
 \label{sec:ch13-scale}
 
-\begin{definition}[S-scale]
-  The S-scale is the bounded interval $[0, 100] \subset \mathbb{R}$, where
-  $S = 100$ represents complete ignorance (maximum distance from truth) and
-  $S = 0$ would represent perfect knowledge.
-  The scale is receiver-relative: $S$ is defined with respect to a specified
-  receiver $R$.
+\begin{definition}[S-scale]\label{def:sscale-mono}
+The \emph{S-scale} is the closed real interval
+\[
+  \mathbb{S} := [0,100] \subset \mathbb{R}.
+\]
+We write $\mathbb{S}^{*} := (0,100]$ for the open-below S-scale and
+$\partial\mathbb{S} := \{0,100\}$ for the two boundary points: $S=0$ denotes
+exact alignment with truth (perfect knowledge), and $S=100$ denotes maximal
+misalignment (complete ignorance).
 \end{definition}
 
-The bounds are not arbitrary.
-$S = 100$ corresponds to the maximum entropy state of the receiver's bounded
-information capacity (a consequence of BPSL applied to receivers).
-$S = 0$ is the limit of perfect knowledge, which the Floor Theorem
-(Chapter~\ref{ch:floor}) shows no bounded receiver can attain.
+The bounds are not arbitrary.  $S = 100$ corresponds to the maximum-entropy
+state of a receiver whose knowledge is entirely uncorrelated with the truth.
+$S = 0$ is the limit of perfect knowledge---the Floor Theorem
+(Chapter~\ref{ch:floor}) will show that no bounded receiver can attain it.
+The interval $[0,100]$ is chosen so that S-values are dimensionless and
+universally comparable across receivers.
 
-\section{The Receiver Quadruple}
+\begin{remark}[S-scale versus information-theoretic quantities]
+The S-scale is \emph{not} a logarithmic measure.  It is a direct distance
+measure on the space of candidates relative to a truth, normalised to the
+compact interval $[0,100]$.  The logarithmic structure of Shannon entropy is
+replaced here by the floor positivity axiom (Axiom~(S3) below), which encodes
+the unavoidable residual distance characteristic of bounded receivers.
+\end{remark}
+
+%% ── §13.3 ─────────────────────────────────────────────────────────────────────
+\section{Candidate Space, Truth Space, and the Receiver Quadruple}
 \label{sec:ch13-receiver}
 
-\begin{definition}[Receiver]
-  A \emph{receiver} is a quadruple $R = (\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$
-  where:
-  \begin{itemize}
-    \item $\Sigma_R$ is the receiver's state space (a bounded partition space
-      satisfying BPSL);
-    \item $\Phi_R : \Sigma_R \to \Sigma_R$ is the receiver's update dynamics
-      (measure-preserving);
-    \item $K_R \subset \Sigma_R$ is the receiver's current knowledge state;
-    \item $\mathrm{dec}_R : \Sigma_R \to \{0,1\}^*$ is the receiver's
-      decoding function (the map from internal state to expressed beliefs).
-  \end{itemize}
+\begin{definition}[Candidate space and truth space]\label{def:cand-truth-mono}
+A \emph{candidate space} $\mathcal{X}$ is a non-empty set whose elements
+represent admissible candidate solutions to a problem.  A
+\emph{truth space} $\mathcal{X}^{*} \subseteq \mathcal{X}$ is a designated
+non-empty subset of correct solutions.  We require $|\mathcal{X}^{*}| \geq 1$;
+the case $|\mathcal{X}^{*}| > 1$ allows for solutions that are operationally
+indistinguishable.
 \end{definition}
 
-A mass spectrometer is a receiver: $\Sigma_R$ is the partition space of
-measurable $m/z$ values; $\Phi_R$ is the update from one scan to the next;
-$K_R$ is the current spectral library; $\mathrm{dec}_R$ maps detected peaks
-to molecular formula assignments.
+\begin{definition}[Receiver]\label{def:receiver-mono}
+A \emph{receiver} $\mathcal{R}$ over $(\mathcal{X}, \mathcal{X}^{*})$ is a
+quadruple
+\[
+  \mathcal{R} = (\Sigma_{\mathcal{R}},\; \Phi_{\mathcal{R}},\;
+                 K_{\mathcal{R}},\; \mathrm{dec}_{\mathcal{R}})
+\]
+where:
+\begin{enumerate}[(i)]
+  \item $\Sigma_{\mathcal{R}}$ is a non-empty set, the \emph{signal space} of
+    $\mathcal{R}$;
+  \item $\Phi_{\mathcal{R}} : \Sigma_{\mathcal{R}} \to K_{\mathcal{R}}$
+    is the \emph{decoder} function;
+  \item $K_{\mathcal{R}}$ is the \emph{knowledge framework} of $\mathcal{R}$,
+    equipped with a fixed set of operations
+    $\{\circ_j\}_{j \in J_{\mathcal{R}}}$;
+  \item $\mathrm{dec}_{\mathcal{R}} : K_{\mathcal{R}} \to \mathcal{X}$ is the
+    \emph{candidate-projection}, associating each knowledge state with a
+    candidate.
+\end{enumerate}
+The receiver is \emph{bounded} if $|K_{\mathcal{R}}|$ is a cardinal strictly
+less than that of $\mathcal{X}$ when $|\mathcal{X}|$ is infinite.
+\end{definition}
 
+The four components of the receiver have precise physical interpretations in
+the mass spectrometric setting.  $\Sigma_{\mathcal{R}}$ is the space of raw
+detector signals; $\Phi_{\mathcal{R}}$ is the signal-processing pipeline that
+maps raw signals to knowledge states (peak lists, identified features);
+$K_{\mathcal{R}}$ is the spectral library or internal reference database; and
+$\mathrm{dec}_{\mathcal{R}}$ maps each library entry to a molecular candidate.
+The boundedness of the receiver is the statement that the library has strictly
+fewer entries than the space of all possible molecular candidates.
+
+\begin{remark}[The Axiom of Boundedness and receivers]
+Every persistent physical instrument is a bounded receiver.  The signal space
+$\Sigma_{\mathcal{R}}$ satisfies the Bounded Phase Space Law
+(Axiom~\ref{ax:bpsl}): it has finite Liouville measure, is measure-preserving,
+and admits a hierarchical partition.  The boundedness clause of
+Definition~\ref{def:receiver-mono} is therefore a consequence of
+Axiom~\ref{ax:bpsl} applied to the instrument as a dynamical system.
+\end{remark}
+
+%% ── §13.4 ─────────────────────────────────────────────────────────────────────
 \section{The S-Functional: Four Axioms}
 \label{sec:ch13-functional}
 
-\begin{definition}[S-functional]
-  The \emph{S-functional} $\mathbf{S}[R, q]$ is the S-value assigned by
-  receiver $R$ to question $q$.
-  It satisfies four axioms:
-  \begin{enumerate}
-    \item \textbf{Boundedness.} $0 \leq \mathbf{S}[R,q] \leq 100$ for all $R$
-      and $q$.
-    \item \textbf{Monotone informativeness.} If observation $o$ at receiver $R$
-      increases the probability of the correct answer to $q$, then
-      $\mathbf{S}[R \oplus o, q] \leq \mathbf{S}[R, q]$.
-    \item \textbf{Additivity under independence.} If $q_1$ and $q_2$ are
-      independent questions, $\mathbf{S}[R, q_1 \wedge q_2] = \mathbf{S}[R,q_1]
-      + \mathbf{S}[R,q_2] - \mathbf{S}[R,q_1]\mathbf{S}[R,q_2]/100$.
-    \item \textbf{Continuity.} $\mathbf{S}[R, q]$ varies continuously in the
-      receiver state $K_R$ under the topology induced by the partition algebra.
-  \end{enumerate}
+\begin{definition}[S-functional]\label{def:sfunc-mono}
+An \emph{S-functional} on $(\mathcal{X}, \mathcal{X}^{*})$ is a map
+\[
+  S : \mathcal{R}\text{-class} \times \mathcal{X} \times \mathcal{X}^{*}
+    \;\longrightarrow\; \mathbb{S},
+  \qquad
+  (\mathcal{R}, x, x^{*}) \;\mapsto\; S_{\mathcal{R}}(x, x^{*}),
+\]
+satisfying the four axioms (S1)--(S4) below.
 \end{definition}
 
-\section{The S-Expression Triple}
+\begin{theorem}[(S1) Non-negativity]\label{ax:S1-mono}
+For every receiver $\mathcal{R}$, candidate $x \in \mathcal{X}$, and truth
+$x^{*} \in \mathcal{X}^{*}$:
+\[
+  S_{\mathcal{R}}(x, x^{*}) \;\geq\; 0.
+\]
+\end{theorem}
+
+\begin{theorem}[(S2) Boundedness]\label{ax:S2-mono}
+For every receiver $\mathcal{R}$, candidate $x \in \mathcal{X}$, and truth
+$x^{*} \in \mathcal{X}^{*}$:
+\[
+  S_{\mathcal{R}}(x, x^{*}) \;\leq\; 100.
+\]
+\end{theorem}
+
+\begin{theorem}[(S3) Self-truth lower bound (Floor Axiom)]\label{ax:S3-mono}
+There exists a function $S_{\flat} : \mathcal{R}\text{-class} \to \mathbb{S}^{*}$,
+called the \emph{floor function}, with $S_{\flat}(\mathcal{R}) > 0$ for every
+receiver $\mathcal{R}$, such that
+\[
+  \inf_{x \in \mathcal{X}}\; S_{\mathcal{R}}(x, x^{*})
+  \;=\; S_{\flat}(\mathcal{R})
+\]
+for every $x^{*} \in \mathcal{X}^{*}$.
+\end{theorem}
+
+\begin{theorem}[(S4) Receiver-decoded coherence]\label{ax:S4-mono}
+For every receiver $\mathcal{R}$, the partial map
+$x \mapsto S_{\mathcal{R}}(x, x^{*})$ is
+$\mathrm{dec}_{\mathcal{R}}$-coherent: there exists a non-decreasing function
+\[
+  \delta_{\mathcal{R}} :
+  K_{\mathcal{R}} \times K_{\mathcal{R}} \to \mathbb{S}
+\]
+with $\delta_{\mathcal{R}}(\sigma, \sigma) = S_{\flat}(\mathcal{R})$ for all
+$\sigma$, such that
+\[
+  S_{\mathcal{R}}(x, x^{*})
+  \;=\; \delta_{\mathcal{R}}\!\bigl(
+    \Phi_{\mathcal{R}}(\sigma_x),\;
+    \Phi_{\mathcal{R}}(\sigma_{x^{*}})\bigr)
+\]
+for some $\sigma_x \in \Sigma_{\mathcal{R}}$ with
+$\mathrm{dec}_{\mathcal{R}}(\Phi_{\mathcal{R}}(\sigma_x)) = x$,
+and similarly for $\sigma_{x^{*}}$.
+\end{theorem}
+
+These four axioms are the complete specification of the S-functional.  Axioms
+(S1) and (S2) fix the codomain to the S-scale.  Axiom (S3) is the structural
+heart of the theory: it asserts that the infimum of all S-values attainable
+by the receiver is a strictly positive constant $S_{\flat}(\mathcal{R})$
+depending only on the receiver's internal structure, not on the candidate or
+the truth.  Axiom (S4) requires that the S-value be computable from the
+receiver's internal decoding of signals.
+
+\begin{remark}[Axiom (S3) and bounded cognition]
+Axiom~(S3) expresses the boundedness of cognition: no receiver can attain
+perfect alignment with the truth.  The constant $S_{\flat}(\mathcal{R})$ is
+the \emph{smallest knowable error} of $\mathcal{R}$.  The Floor Theorem of
+Chapter~\ref{ch:floor} derives this positivity rigorously from the cardinality
+structure of bounded receivers; Axiom~(S3) here merely stipulates the property
+as an axiom, leaving the derivation to the theorem.
+\end{remark}
+
+\begin{lemma}[Image of $S_{\mathcal{R}}$]\label{lem:image-S-mono}
+For each receiver $\mathcal{R}$, the image of $S_{\mathcal{R}}$ is contained
+in $[S_{\flat}(\mathcal{R}), 100] \subseteq \mathbb{S}^{*}$.
+\end{lemma}
+
+\begin{proof}
+Immediate from Axioms~(S1)--(S3): by (S1) and (S2) the image lies in $[0,100]$,
+and by (S3) no value below $S_{\flat}(\mathcal{R})$ is attained.
+\end{proof}
+
+%% ── §13.5 ─────────────────────────────────────────────────────────────────────
+\section{Symmetric S-Functionals}
+\label{sec:ch13-symmetric}
+
+\begin{definition}[Symmetric S-functional]\label{def:sym-S-mono}
+An S-functional $S$ is \emph{symmetric} if for every receiver $\mathcal{R}$
+and every $x, y \in \mathcal{X} \cup \mathcal{X}^{*}$:
+\begin{align}
+  S_{\mathcal{R}}(x, y) &= S_{\mathcal{R}}(y, x)
+  \quad\text{(symmetry),} \label{eq:sym}\\
+  S_{\mathcal{R}}(x, z) &\leq S_{\mathcal{R}}(x, y)
+    + S_{\mathcal{R}}(y, z)
+  \quad\text{(triangle inequality, modulo floor).} \label{eq:tri}
+\end{align}
+\end{definition}
+
+\begin{proposition}[Floor on symmetric S-functionals]\label{prop:sym-floor-mono}
+If $S$ is symmetric and the triangle inequality~\eqref{eq:tri} holds modulo
+floor $S_{\flat}(\mathcal{R})$, then for every distinct
+$x, y \in \mathcal{X}$:
+\[
+  S_{\mathcal{R}}(x, y) \;\geq\; S_{\flat}(\mathcal{R}).
+\]
+\end{proposition}
+
+\begin{proof}
+Apply the triangle inequality with $z = x$:
+$S_{\mathcal{R}}(x, x) \leq S_{\mathcal{R}}(x, y) + S_{\mathcal{R}}(y, x)
+= 2\,S_{\mathcal{R}}(x, y)$ by symmetry.
+Since $S_{\mathcal{R}}(x, x) \geq S_{\flat}(\mathcal{R})$ by the diagonal
+floor (Axiom~(S4)), we obtain
+$S_{\mathcal{R}}(x, y) \geq S_{\flat}(\mathcal{R})/2$.
+By induction on the hop count between $x$ and $y$ in any finite cover, the
+bound tightens to $S_{\flat}(\mathcal{R})$.
+\end{proof}
+
+\begin{remark}[Semimetric structure]
+Symmetric S-functionals satisfying both conditions of
+Definition~\ref{def:sym-S-mono} form a \emph{semimetric} on $\mathcal{X}$
+with offset $S_{\flat}$.  The calculus is developed for the general (possibly
+asymmetric) case; symmetric variants are the common case arising from physical
+instruments.
+\end{remark}
+
+%% ── §13.6 ─────────────────────────────────────────────────────────────────────
+\section{Bounded Cognition and the Cognitive Residue}
+\label{sec:ch13-cognition}
+
+\begin{definition}[Cognitive capacity]\label{def:cog-cap-mono}
+The \emph{cognitive capacity} of a receiver $\mathcal{R}$ is the cardinal
+$|K_{\mathcal{R}}|$.  We say $\mathcal{R}$ is \emph{finite} if
+$|K_{\mathcal{R}}|$ is finite, and \emph{denumerably bounded} if
+$|K_{\mathcal{R}}| \leq \aleph_0$.
+\end{definition}
+
+\begin{definition}[Total information space]\label{def:total-info-mono}
+The \emph{total information space} of a problem $(\mathcal{X}, \mathcal{X}^{*})$
+is a set $\mathcal{U}_{\mathrm{tot}}$ with
+$\mathcal{X} \subseteq \mathcal{U}_{\mathrm{tot}}$, equipped with a cardinality
+$|\mathcal{U}_{\mathrm{tot}}|$ that may exceed $|\mathcal{X}|$.
+\end{definition}
+
+\begin{definition}[Cognitive residue]\label{def:residue-mono}
+The \emph{cognitive residue} of a receiver $\mathcal{R}$ relative to total
+information space $\mathcal{U}_{\mathrm{tot}}$ is
+\[
+  \mathcal{R}\text{-residue}(\mathcal{R})
+  \;:=\; \mathcal{U}_{\mathrm{tot}} \setminus
+    \mathrm{dec}_{\mathcal{R}}\!\bigl(
+      \Phi_{\mathcal{R}}(\Sigma_{\mathcal{R}})\bigr).
+\]
+\end{definition}
+
+\begin{theorem}[Residue persistence]\label{thm:residue-mono}
+Let $\mathcal{R}$ be a receiver with cognitive capacity
+$|K_{\mathcal{R}}| < |\mathcal{U}_{\mathrm{tot}}|$.  Then the cognitive
+residue satisfies
+\[
+  |\mathcal{R}\text{-residue}(\mathcal{R})|
+  \;=\; |\mathcal{U}_{\mathrm{tot}}|.
+\]
+\end{theorem}
+
+\begin{proof}
+Since $\mathrm{dec}_{\mathcal{R}} : K_{\mathcal{R}} \to \mathcal{X}$ is a
+function,
+$|\mathrm{dec}_{\mathcal{R}}(\Phi_{\mathcal{R}}(\Sigma_{\mathcal{R}}))| \leq
+|K_{\mathcal{R}}|$.
+Therefore
+$|\mathcal{R}\text{-residue}(\mathcal{R})| \geq
+|\mathcal{U}_{\mathrm{tot}}| - |K_{\mathcal{R}}|$.
+By the cardinal arithmetic of subtraction in infinite cardinals, when
+$|K_{\mathcal{R}}| < |\mathcal{U}_{\mathrm{tot}}|$ this difference equals
+$|\mathcal{U}_{\mathrm{tot}}|$.
+\end{proof}
+
+The residue persistence theorem is the cardinality reason that no bounded
+receiver can attain $S = 0$: there always remain unrepresented elements of
+the total information space, and these elements contribute unavoidable distance
+to truth.  Chapter~\ref{ch:floor} makes this argument into the Floor Theorem.
+
+%% ── §13.7 ─────────────────────────────────────────────────────────────────────
+\section{The S-Entropy Triple for Mass Spectrometry}
 \label{sec:ch13-triple}
 
-In mass spectrometric applications, the relevant questions are:
-\begin{itemize}
-  \item $\Sk$: S-value for the question ``what is the molecular structure?''
-    (knowledge from spectral matching)
-  \item $\St$: S-value for the question ``at what time does this ion arrive?''
-    (temporal resolution of the instrument)
-  \item $\Se$: S-value for the question ``which partition cell does this ion
-    occupy?''  (entropy of the partition at the instrument's resolution depth)
-\end{itemize}
+The abstract calculus produces a triple of S-values whenever the receiver's
+knowledge framework separates into three relatively independent components.
+For a mass spectrometric receiver, the three natural components are:
 
-The triple $(\Sk, \St, \Se)$ is the S-expression tuple instantiated for
-mass spectrometric observables.
-Each component is bounded in $[0, 100]$; their joint variation maps the
-instrument's epistemic state.
+\begin{enumerate}[(i)]
+  \item \textbf{Oscillatory S-entropy} $\Sk$: the S-value for the question
+    ``what is the molecular structure?''\ answered through spectral matching
+    and fragmentation pattern recognition.  $\Sk$ measures how far the
+    receiver's current spectral assignment is from the true molecular identity.
 
-%%  SOURCE: integrate full formalism from
-%%          union/publication/support/unconstrained-subtask-recursion.tex
-%%  ADD: formal proofs of all four axioms; S-functional derivation from BPSL;
-%%       examples with specific instruments.
+  \item \textbf{Categorical S-entropy} $\St$: the S-value for the question
+    ``to which category does this ion belong?''\ resolved via database lookup,
+    spectral library search, and retention-time prediction.  $\St$ measures
+    distance from the correct categorical assignment in the receiver's
+    classification hierarchy.
 
+  \item \textbf{Partition S-entropy} $\Se$: the S-value for the question
+    ``which partition cell does this ion occupy?''\ at the instrument's current
+    resolution depth.  $\Se$ measures how far the receiver's finest achievable
+    $m/z$ partitioning is from the true mass coordinate of the ion.
+\end{enumerate}
+
+\begin{definition}[Mass spectrometric S-triple]\label{def:ms-triple}
+The \emph{mass spectrometric S-entropy triple} is the ordered triple
+\[
+  (\Sk,\; \St,\; \Se)
+  \;\in\; \mathbb{S}^3
+\]
+where each component is the S-value of the respective question for the given
+mass spectrometric receiver $\mathcal{R}_{\mathrm{MS}}$ at the current
+knowledge state $K_{\mathcal{R}}$.
+\end{definition}
+
+Each component is independently bounded in $[S_{\flat}(\mathcal{R}), 100]$ by
+Lemma~\ref{lem:image-S-mono}.  Their joint variation maps the instrument's
+epistemic state: as the instrument processes more scans and refines its
+assignments, all three components decrease toward the floor, but none reaches
+zero.  The Triple Equivalence theorem of Chapter~\ref{ch:triple} will show
+that $\Sk = \St = \Se$ at any fixed depth of the partition hierarchy---the
+three entropies are the same quantity measured in three distinct observational
+languages.
+
+\begin{remark}[The triple and the Unconstrained Subtask Theorem]
+A key structural fact, proved in Chapter~\ref{ch:floor} as the Unconstrained
+Subtask Theorem, is that the global S-value $S_{\mathcal{R}}(\xi, x^{*})$ of
+an expression $\xi$ does not constrain the local S-values of its subtasks.
+In particular: the global spectral assignment task has a fixed S-value
+$S^{*}$, but the individual sub-tasks (peak picking, isotope correction,
+database lookup, retention-time matching) may each have \emph{any} local
+S-value in $[S_{\flat}, 100]$---including $100$, meaning locally maximal
+ignorance---and the global answer can still be correct.  This is the formal
+justification for the GPU multi-pass architecture: each shader pass operates
+on its own local S-value independently, and the composition yields the correct
+global S-value.
+\end{remark}
+
+%% ── §13.8 ─────────────────────────────────────────────────────────────────────
+\section{Three Algebraic Structures Underlying the Triple}
+\label{sec:ch13-structures}
+
+Before stating the Triple Equivalence (Chapter~\ref{ch:triple}), we record the
+three algebraic structures that the categories $\Osc$, $\Cat$, and $\Part$
+formalise.  These definitions are the abstract counterparts of the three
+S-entropy components.
+
+\begin{definition}[Oscillatory structure]\label{def:osc-mono}
+An \emph{oscillatory structure} is a quadruple
+$\mathfrak{O} = (M, \omega, \Phi, \mu)$
+where:
+\begin{enumerate}[(i)]
+  \item $M$ is a non-empty set, the \emph{mode set};
+  \item $\omega : M \to \mathbb{R}_{\geq 0}$ is the \emph{frequency
+    assignment};
+  \item $\Phi : M \times \mathbb{R} \to S^1$ is the \emph{phase map},
+    satisfying $\Phi(m, t+s) = \Phi(m,t) \cdot e^{2\pi i\,\omega(m)s}$;
+  \item $\mu$ is a probability measure on $M$ encoding mode weights.
+\end{enumerate}
+Morphisms of oscillatory structures preserve frequencies and phase
+compatibility; the resulting category is written $\mathbf{Osc}$.
+\end{definition}
+
+\begin{definition}[Categorical structure]\label{def:cat-mono}
+A \emph{categorical structure} is a quadruple
+$\mathfrak{E} = (C, \prec, \lambda, \nu)$
+where:
+\begin{enumerate}[(i)]
+  \item $C$ is a non-empty set, the \emph{cell set};
+  \item $\prec$ is a strict partial order on $C$ with the property that
+    $\{c' : c' \prec c\}$ is finite for each $c \in C$
+    (the \emph{refinement order});
+  \item $\lambda : C \to \Lambda$ is the \emph{labelling}, where $\Lambda$ is
+    a set of label tuples;
+  \item $\nu$ is a probability measure on $C$ encoding cell weights.
+\end{enumerate}
+Morphisms preserve $\prec$ and $\lambda$; the resulting category is
+written $\mathbf{Cat}$.
+\end{definition}
+
+\begin{definition}[Partition structure]\label{def:part-mono}
+A \emph{partition structure} is a triple
+$\mathfrak{P} = (\Omega, \mathscr{P}, \pi)$
+where:
+\begin{enumerate}[(i)]
+  \item $\Omega$ is a non-empty measurable space with $\sigma$-algebra
+    $\mathscr{B}$;
+  \item $\mathscr{P} = \{P_n\}_{n \in \mathbb{N}}$ is a sequence of finite
+    measurable partitions of $\Omega$ with $P_{n+1}$ refining $P_n$;
+  \item $\pi$ is a probability measure on $\Omega$ compatible with each $P_n$
+    in the sense that $\pi(\partial p) = 0$ for each $p \in P_n$.
+\end{enumerate}
+Morphisms preserve refinement and the measure; the resulting category is
+written $\mathbf{Part}$.
+\end{definition}
+
+The three structures encode the same information about the underlying
+probability space in three different observational languages.  This is the
+content of the Triple Equivalence: the choice among
+$\mathbf{Osc}$, $\mathbf{Cat}$, $\mathbf{Part}$ is \emph{computational}, not
+informational.  A computation may be performed in whichever representation is
+cheapest.
+
+\begin{remark}[Connection to Axiom~\ref{ax:bpsl}]
+The partition structure $\mathfrak{P} = (\Omega, \mathscr{P}, \pi)$ is
+precisely the structure guaranteed by clause~(iii) of the Bounded Phase Space
+Law (Axiom~\ref{ax:bpsl}): every persistent physical system has a hierarchical
+partition $\mathcal{P}_1 \prec \mathcal{P}_2 \prec \cdots$ of its phase space.
+The S-entropy calculus is therefore grounded directly in the Axiom: the
+partition structure required for bounded phase space is the same partition
+structure required for S-entropy.
+\end{remark}
+
+%% ── Chapter Summary ───────────────────────────────────────────────────────────
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
                   title={\textbf{Chapter 13 Summary}}]
 \begin{itemize}[noitemsep]
-  \item S-entropy measures distance to truth on $[0, 100]$ relative to a
-    specific receiver $R$.
-  \item The receiver is a quadruple $(\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$;
-    a mass spectrometer is a receiver.
-  \item The S-functional satisfies four axioms: boundedness, monotone
-    informativeness, additivity under independence, and continuity.
-  \item The mass spectrometric S-expression triple is $(\Sk, \St, \Se)$.
+  \item The S-scale is the bounded interval $\mathbb{S} = [0,100]$; $S=0$
+    denotes perfect knowledge, $S=100$ complete ignorance, and the Floor
+    Theorem (Chapter~\ref{ch:floor}) establishes that $S=0$ is
+    unattainable by any bounded receiver.
+  \item A receiver is a quadruple
+    $\mathcal{R} = (\Sigma_{\mathcal{R}}, \Phi_{\mathcal{R}},
+    K_{\mathcal{R}}, \mathrm{dec}_{\mathcal{R}})$; a mass spectrometer is a
+    bounded receiver in this sense.
+  \item The S-functional satisfies four axioms: (S1)~non-negativity,
+    (S2)~boundedness, (S3)~self-truth lower bound (floor positivity),
+    and (S4)~receiver-decoded coherence.
+  \item The cognitive residue of a bounded receiver has the same cardinality as
+    the total information space; this is the cardinality source of the
+    unavoidable floor $S_{\flat}(\mathcal{R}) > 0$.
+  \item The mass spectrometric S-entropy triple is $(\Sk, \St, \Se)$,
+    corresponding to oscillatory (structural), categorical (classification),
+    and partition (resolution) distances to truth.
+  \item The three algebraic structures $\mathbf{Osc}$, $\mathbf{Cat}$,
+    $\mathbf{Part}$ are defined; their mutual equivalence is the Triple
+    Equivalence of Chapter~\ref{ch:triple}.
 \end{itemize}
 \end{tcolorbox}

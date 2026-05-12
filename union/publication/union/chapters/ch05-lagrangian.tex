@@ -1,109 +1,574 @@
 % ============================================================
 %  Chapter 5: The Partition Lagrangian
-%  Source: bounded-phase-space-trajectory.tex, Consequence 15
+%  Source: bounded-phase-space-trajectory.tex, §§ on Partition
+%  Lagrangian, Consequence 15 (cons:partitionlagrangian).
+%  Part II begins at line 1096 of the source.
 % ============================================================
 
 \epigraph{%
-  The equation of motion is not a force law.\\
-  It is gradient descent on the partition depth.%
-}{}
+  The equation of motion is not a force law imposed from outside.
+  It is gradient descent on the partition depth,
+  written in the alphabet of calculus of variations.%
+}{\textit{On the necessity of the Lagrangian form}}
 
-\section{Deriving the Lagrangian from the Axiom}
-\label{sec:ch5-derive}
+\noindent
+Part~I of this monograph established the mathematical scaffolding:
+partition coordinates, shell capacity, selection rules, Pauli exclusion,
+and the Koopman spectral structure of bounded recurrent dynamics.
+Part~II turns to dynamics proper.
+This chapter derives the unique Lagrangian consistent with the Bounded Phase
+Space Law (Axiom~\ref{ax:bpsl}) from first principles, without assuming
+Newton's second law or the existence of forces.
 
-Classical mechanics is usually \emph{defined} by a Lagrangian or Hamiltonian,
-taken as a given for the physical system in question.
-Here we derive the unique Lagrangian consistent with BPSL from first
-principles, without assuming Newton's second law.
-
-The argument has three steps:
-\begin{enumerate}
-  \item Identify the scalar field that the system naturally extremises.
-  \item Write the most general Lagrangian coupling a particle to that field
-    that is consistent with Galilean invariance and completeness of
-    scalar-plus-vector coupling.
-  \item Show that the Euler--Lagrange equations take the Lorentz-force shape
-    but are force-free.
+The argument has four steps:
+\begin{enumerate}[nosep]
+  \item Introduce the \emph{partition depth field} $\Depth(\mathbf{x},t)$
+        --- the scalar field that the system naturally extremises.
+  \item Introduce the \emph{partition vector potential} $\Apartition(\mathbf{x})$
+        --- the unique divergence-free vector field encoding partition vorticity.
+  \item Write the unique Lagrangian coupling a label carrier to these fields
+        that is consistent with Galilean invariance and completeness of
+        scalar-plus-vector couplings (Consequence~\ref{cons:partitionlagrangian}).
+  \item Derive the Euler--Lagrange equation and show that it has the
+        Lorentz-force shape but is force-free in the electromagnetic sense.
 \end{enumerate}
 
-\section{The Partition Depth Field}
-\label{sec:ch5-depth}
+\noindent
+Noether's theorem then yields the familiar conservation laws of Hamiltonian
+mechanics --- momentum, angular momentum, energy --- as partition-depth
+symmetries, not as independent postulates.
 
-The partition algebra $\mathcal{A}_\infty$ assigns to every point $\mathbf{x}$
-in configuration space a partition depth --- the finest partition level at
-which $\mathbf{x}$ is an interior point of a cell.
-We define the \emph{partition depth field}:
-\begin{equation}
-  \Depth(\mathbf{x}, t) : \mathbb{R}^3 \times \mathbb{R} \to \mathbb{R}_{\geq 0}.
-\end{equation}
-The system minimises $\Depth$ along its trajectory: dynamics is gradient descent
-on the partition depth field.
+% ============================================================
+\section{The Partition Depth Field and the Partition Vector Potential}
+\label{sec:partitionlagrangian}
+% ============================================================
 
-\section{The Partition Lagrangian}
-\label{sec:ch5-lagrangian}
+\begin{definition}[Partition depth field]
+\label{def:depthfield}
+For each point $\mathbf{x}\in\mathbb{R}^{3}$ and time $t$, the
+\emph{partition depth field} $\Depth(\mathbf{x},t)$ is the principal depth
+index $n(\mathbf{x},t)$ of the partition hierarchy extended continuously to
+$\mathbb{R}^{3}$ by
+\[
+  \Depth(\mathbf{x},t)
+    := -\kB T\ln\!\left(\frac{\mu\!\left(C_{n(\mathbf{x},t)}(\mathbf{x})\right)}%
+                              {\mu(\Omega)}\right),
+\]
+where $C_{n}(\mathbf{x})$ is the cell of $\Partition_{n}$ containing
+$\mathbf{x}$, $\mu$ is the invariant measure of Axiom~\ref{ax:bpsl}, and $T$
+is the temperature parameter of the partition ensemble.
+\end{definition}
 
-\begin{consequence}{Partition Lagrangian}{partitionlagrangian}
-  The unique Galilean-invariant, scalar-plus-vector-complete Lagrangian
-  coupling a particle of mass parameter $\mu$ to the partition depth field
-  $\Depth$ is:
-  \begin{equation}\label{eq:partitionlagrangian}
-    \Lagr = \tfrac{1}{2}\mu|\dot{\mathbf{x}}|^2
-            + \mu\dot{\mathbf{x}} \cdot \Apartition
-            - \Depth(\mathbf{x}, t),
-  \end{equation}
-  where $\Apartition(\mathbf{x}, t)$ is the \emph{partition vector potential},
-  defined as the curl-free part of the velocity field that minimises $\Depth$.
-\end{consequence}
-
-\begin{proof}[Proof sketch]
-  By the completeness theorem for Lagrangians (Helmholtz conditions), the
-  most general Lagrangian linear in $\dot{\mathbf{x}}$ and $\Depth$ with
-  Galilean symmetry is of the form~\eqref{eq:partitionlagrangian}.
-  Galilean invariance forbids terms of order $|\dot{\mathbf{x}}|^0$ other
-  than $\Depth$ and terms of order $|\dot{\mathbf{x}}|^2$ other than the
-  kinetic term.
-\end{proof}
-
-\section{The Partition Equation of Motion}
-\label{sec:ch5-eom}
-
-Applying the Euler--Lagrange equations to~\eqref{eq:partitionlagrangian}:
-\begin{equation}\label{eq:lorentz-shape}
-  \mu\ddot{\mathbf{x}} = \mu\dot{\mathbf{x}} \times
-  (\nabla \times \Apartition) - \nabla\Depth,
-\end{equation}
-where $\mathbf{B}_\mathcal{M} = \nabla \times \Apartition$ plays the role of
-the magnetic field and $-\nabla\Depth$ plays the role of the electric force.
-
-Crucially, this equation has the \emph{shape} of the Lorentz force law but is
-\emph{force-free} in the electromagnetic sense: $\Apartition$ and $\Depth$ are
-not external fields but geometric properties of the partition structure.
-The ``force'' is gradient descent on the partition depth of the bounded phase
-space.
-
-\begin{remark}[Force-free ion trajectories]
-  In the mass spectrometric context (Part~VIII), this means that an ion
-  in an instrument does not experience forces in the traditional sense.
-  It follows the path of steepest descent on the partition depth landscape
-  created by the instrument's field configuration.
-  The ion trajectory is geometrically determined.
-  The GPU implementation (Chapter~\ref{ch:gpu}) uses exactly this gradient
-  descent formulation, making the shader pipeline a physical observable of
-  the partition depth field.
+\begin{remark}[Physical reading of $\Depth$]
+The quantity $\Depth(\mathbf{x},t)$ is the free-energy cost of localising
+the system to the partition cell containing $\mathbf{x}$ at depth $n$.
+A deep partition cell (small measure) carries a large depth; a shallow cell
+(large measure) carries a small depth.
+The system, driven by measure-preserving dynamics, descends toward smaller
+$\Depth$ values --- toward states that occupy more of the available phase
+volume.
 \end{remark}
 
+\begin{definition}[Partition vector potential]
+\label{def:partitionA}
+The \emph{partition vector potential} $\Apartition(\mathbf{x})$ is the unique
+divergence-free vector field on $\mathbb{R}^{3}$ such that
+$\nabla\times\Apartition$ equals the local vorticity of the partition
+flow --- specifically, the antisymmetric part of the Jacobian of the
+partition re-labelling map under infinitesimal time evolution.
+\end{definition}
+
+\begin{remark}[Gauge freedom of $\Apartition$]
+\label{rem:gauge}
+The vector potential $\Apartition$ is defined only up to addition of
+the gradient of an arbitrary smooth function $\chi(\mathbf{x},t)$: the
+replacement $\Apartition\to\Apartition+\nabla\chi$ leaves the vorticity
+$\nabla\times\Apartition$ unchanged because $\nabla\times\nabla\chi=0$.
+This gauge freedom is not postulated; it is a direct consequence of the
+definition via the curl.
+\end{remark}
+
+% ============================================================
+\section{The Partition Lagrangian}
+\label{sec:lagrangian-main}
+% ============================================================
+
+\begin{consequence}{Partition Lagrangian}{partitionlagrangian}
+The evolution of a partition label carrier of inertial parameter $\mu>0$
+under the partition depth field admits the Lagrangian formulation
+\begin{equation}
+  \Lagr_{\Depth}(\mathbf{x},\dot{\mathbf{x}},t)
+    = \tfrac{1}{2}\mu|\dot{\mathbf{x}}|^{2}
+      + \mu\,\dot{\mathbf{x}}\cdot\Apartition(\mathbf{x})
+      - \Depth(\mathbf{x},t),
+  \label{eq:partitionlagrangian}
+\end{equation}
+with Euler--Lagrange equation
+\begin{equation}
+  \mu\ddot{\mathbf{x}}
+    = -\nabla\Depth(\mathbf{x},t)
+      + \mu\,\dot{\mathbf{x}}\times\!\left(\nabla\times\Apartition\right)\!(\mathbf{x}).
+  \label{eq:partitionel}
+\end{equation}
+\end{consequence}
+
+\begin{proof}
+We derive~\eqref{eq:partitionlagrangian} from four constraints imposed by
+Axiom~\ref{ax:bpsl} and the requirement that $\Lagr_{\Depth}$ produce
+well-posed equations of motion.
+
+\smallskip
+\noindent\textit{Kinetic term.}
+The only Galilean-invariant, velocity-quadratic, boundedness-preserving
+scalar is $\tfrac{1}{2}\mu|\dot{\mathbf{x}}|^{2}$, up to multiplicative
+constants absorbed into $\mu$.
+Higher-order velocity terms (quartic, etc.) either violate Galilean
+invariance (for velocity-dependent terms that do not transform as scalars)
+or violate the boundedness of kinetic energy on bounded domains
+(for terms that blow up as $v\to c$).
+The relativistic generalisation $\mu c^{2}(1-\sqrt{1-v^{2}/c^{2}})$ reduces
+to $\tfrac{1}{2}\mu v^{2}$ in the non-relativistic limit.
+
+\smallskip
+\noindent\textit{Scalar coupling.}
+The only velocity-independent scalar coupling to an external field
+$\Depth(\mathbf{x},t)$ is $-\Depth(\mathbf{x},t)$, with the sign fixed by
+the Euler--Lagrange requirement that gradient descent on $\Depth$ be
+attractive.
+The sign is forced by the requirement that a depth minimum be a dynamical
+attractor.
+
+\smallskip
+\noindent\textit{Vector coupling.}
+The only velocity-linear, gauge-invariant coupling of a vector field
+$\Apartition$ to the trajectory is $\mu\,\dot{\mathbf{x}}\cdot\Apartition$.
+A term $\mu(\dot{\mathbf{x}}\cdot\Apartition)^{2}$ or higher violates
+velocity-linearity; a term $|\Apartition|^{2}$ without a velocity factor is
+absorbable into $\Depth$; a term with a second derivative of $\Apartition$
+is not a linear coupling.
+
+\smallskip
+\noindent\textit{Completeness.}
+We have exhausted the space of couplings of a position-velocity degree of
+freedom to a scalar-plus-vector background.
+Any coupling must be a polynomial in $(\mathbf{x},\dot{\mathbf{x}},\Depth,
+\Apartition)$; velocity-constant terms give scalar coupling, velocity-linear
+terms give vector coupling, velocity-quadratic terms are either kinetic
+(with coefficient $\mu$) or absorbable.
+The three terms in~\eqref{eq:partitionlagrangian} are the complete list.
+
+Summing the three pieces gives~\eqref{eq:partitionlagrangian}.
+The Euler--Lagrange equation from
+$\tfrac{d}{dt}\tfrac{\partial\Lagr_{\Depth}}{\partial\dot{x}^{i}}
+  - \tfrac{\partial\Lagr_{\Depth}}{\partial x^{i}}=0$,
+after standard manipulations of the $\dot{\mathbf{x}}\cdot\Apartition$
+coupling, yields~\eqref{eq:partitionel}.
+\end{proof}
+
+\begin{remark}[Structural interpretation of \eqref{eq:partitionel}]
+Equation~\eqref{eq:partitionel} has the mathematical form of the Lorentz
+force law of electromagnetism.
+No claim is made here that the partition depth field $\Depth$ \emph{is}
+the electromagnetic scalar potential, nor that $\Apartition$ is the
+electromagnetic vector potential.
+The point is purely structural: the equation of motion of any label carrier
+over a scalar-plus-vector partition background has this shape.
+The physical content of $\Depth$ in specific applications is fixed by
+further Consequences (the emergence of Coulomb's law from charge as a
+boundary property is derived in Chapter~\ref{ch:charge}).
+\end{remark}
+
+\begin{remark}[Gauge invariance as a deduced, not postulated, symmetry]
+By Remark~\ref{rem:gauge}, the replacement
+$\Apartition\to\Apartition+\nabla\chi$ leaves~\eqref{eq:partitionel}
+invariant because $\nabla\times\nabla\chi=0$.
+Equivalently, the Lagrangian changes by a total time derivative
+$\mu\dot{\mathbf{x}}\cdot\nabla\chi=\mu\tfrac{d\chi}{dt}$, which does not
+affect the equations of motion.
+Gauge invariance appears here not as a postulated symmetry but as a
+consequence of the vector-coupling structure forced on the Lagrangian by
+Galilean invariance and completeness of linear couplings.
+\end{remark}
+
+% ============================================================
+\subsection{Explicit Euler--Lagrange Calculation}
+\label{subsec:elcalc}
+% ============================================================
+
+We derive~\eqref{eq:partitionel} explicitly in coordinates.
+The canonical momentum conjugate to $x^{i}$ is
+\begin{equation*}
+  p_{i}
+    = \frac{\partial\Lagr_{\Depth}}{\partial\dot{x}^{i}}
+    = \mu\dot{x}^{i} + \mu A_{i},
+\end{equation*}
+where $A_{i}$ are the Cartesian components of $\Apartition$.
+The Euler--Lagrange equation is
+\begin{equation*}
+  \frac{d}{dt}\!\left(\mu\dot{x}^{i}+\mu A_{i}\right)
+    - \frac{\partial\Lagr_{\Depth}}{\partial x^{i}} = 0.
+\end{equation*}
+Computing the partial derivative:
+\[
+  \frac{\partial\Lagr_{\Depth}}{\partial x^{i}}
+    = \mu\dot{x}^{j}\partial_{i}A_{j} - \partial_{i}\Depth.
+\]
+Expanding the time derivative of $\mu A_{i}$ via the chain rule
+($\dot{A}_{i} = \dot{x}^{j}\partial_{j}A_{i}$) and rearranging:
+\begin{equation*}
+  \mu\ddot{x}^{i}
+    = -\partial_{i}\Depth
+      + \mu\dot{x}^{j}\!\left(\partial_{i}A_{j}-\partial_{j}A_{i}\right).
+\end{equation*}
+Defining the vorticity tensor $F_{ij}:=\partial_{i}A_{j}-\partial_{j}A_{i}$
+and using $\dot{x}^{j}F_{ji}=\dot{x}^{j}\epsilon_{ijk}(\nabla\times
+\Apartition)_{k}$, the last term becomes
+$\mu(\dot{\mathbf{x}}\times(\nabla\times\Apartition))_{i}$.
+In vector form:
+\begin{equation}
+  \mu\ddot{\mathbf{x}}
+    = -\nabla\Depth + \mu\dot{\mathbf{x}}\times(\nabla\times\Apartition),
+\end{equation}
+reproducing~\eqref{eq:partitionel}. \qed
+
+% ============================================================
+\subsection{Beyond the Lorentz-Force Shape}
+\label{subsec:beyondlorentz}
+% ============================================================
+
+The equation of motion~\eqref{eq:partitionel} has the Lorentz-force shape.
+At lowest order this is structurally equivalent to classical electromagnetism,
+but the interpretation differs: $\Depth$ is the partition depth (a scalar
+potential for the partition structure, not the electrostatic potential
+\textit{per se}); $\Apartition$ is the partition vector potential (a vector
+potential of the partition flow, not the magnetic vector potential).
+
+In the limit where $\Depth$ reduces to the electrostatic potential $\Phi$
+and $\Apartition$ reduces to the magnetic vector potential, the partition
+Lagrangian reduces exactly to the Lagrangian of a charged particle in an
+electromagnetic field.
+This reduction requires identifying partition boundaries with charge sources,
+which is established in Chapter~\ref{ch:charge}.
+
+Away from this limit, the partition Lagrangian governs dynamics over other
+partition structures.
+In particular, the gravitational equation of motion (geodesic in spacetime)
+can in principle be derived from a partition depth field of appropriate
+structure; the derivation requires extending the Lagrangian to its
+general-relativistic form and is beyond the scope of this monograph.
+
+% ============================================================
+\section{Noether's Theorem and the Conservation Laws}
+\label{sec:noether}
+% ============================================================
+
+\begin{proposition}[Noether charge]
+\label{prop:noether}
+If the partition depth field $\Depth$ and vector potential $\Apartition$ are
+invariant under a continuous symmetry group $G$, there exists a conserved
+quantity $Q_{G}$ along every trajectory of~\eqref{eq:partitionel}.
+\end{proposition}
+
+\begin{proof}
+This is Noether's theorem applied to the Lagrangian~\eqref{eq:partitionlagrangian}.
+For each continuous symmetry of $\Lagr_{\Depth}$, the associated conserved
+current has time-integrated charge $Q_{G}$.
+Translational invariance of $\Depth$ along a direction gives momentum
+conservation; rotational invariance gives angular-momentum conservation;
+time-translation invariance of $\Depth$ gives energy conservation.
+Each conservation law is a consequence of the symmetry of the partition depth
+field along the relevant direction.
+\end{proof}
+
+\begin{corollary}[Momentum conservation]
+\label{cor:momcon}
+If the partition depth field $\Depth$ is translation-invariant along a
+direction $\hat{\mathbf{n}}$, the component $\mathbf{p}\cdot\hat{\mathbf{n}}$
+of the canonical momentum is conserved along every trajectory.
+\end{corollary}
+
+\begin{proof}
+Direct application of Proposition~\ref{prop:noether} to the translation
+subgroup of the Lagrangian's symmetry group.
+\end{proof}
+
+\begin{corollary}[Angular-momentum conservation]
+\label{cor:angmom}
+If the partition depth field $\Depth$ is rotation-invariant about an axis
+$\hat{\mathbf{n}}$, the component $\mathbf{L}\cdot\hat{\mathbf{n}}$ of the
+canonical angular momentum is conserved.
+\end{corollary}
+
+\begin{proof}
+Direct application of Proposition~\ref{prop:noether} to the rotation
+subgroup of the Lagrangian's symmetry group.
+\end{proof}
+
+\begin{corollary}[Energy conservation]
+\label{cor:encon}
+If $\Depth$ is time-independent, the Hamiltonian derived from $\Lagr_{\Depth}$
+is a conserved quantity along trajectories.
+\end{corollary}
+
+\begin{proof}
+The Legendre transform of $\Lagr_{\Depth}$ gives the Hamiltonian
+\begin{equation*}
+  H_{\Depth}
+    = \mathbf{p}\cdot\dot{\mathbf{x}} - \Lagr_{\Depth}
+    = \frac{|\mathbf{p}-\mu\Apartition|^{2}}{2\mu} + \Depth(\mathbf{x}),
+\end{equation*}
+where the canonical momentum is
+$\mathbf{p}=\partial\Lagr_{\Depth}/\partial\dot{\mathbf{x}}
+  =\mu\dot{\mathbf{x}}+\mu\Apartition$.
+Time-independence of $\Depth$ and $\Apartition$ gives
+$dH_{\Depth}/dt=0$ along trajectories.
+\end{proof}
+
+\begin{remark}[Emergence of Hamiltonian mechanics]
+Corollaries~\ref{cor:momcon}--\ref{cor:encon} show that the familiar
+conservation laws of Hamiltonian mechanics emerge from Axiom~\ref{ax:bpsl}
+via the partition Lagrangian.
+Momentum, angular momentum, and energy are not postulated quantities; they
+are Noether charges of the partition-depth symmetries.
+When the partition depth field has the full Euclidean symmetry (translation
+in three directions, rotation about three axes, time translation), the
+complete set of ten conserved quantities of Galilean mechanics is recovered.
+Newton's second law in the force-free case ($\nabla\Depth=0$,
+$\Apartition=0$) is the statement that a partition label carrier moves
+on a straight line at constant velocity --- not a law of nature, but a
+consequence of zero partition-depth gradient.
+\end{remark}
+
+% ============================================================
+\section{Partition Spatial and Temporal Resolution}
+\label{sec:resolution}
+% ============================================================
+
+The partition Lagrangian depends on two geometric scales of the partition
+hierarchy that will recur throughout Part~II.
+We define them here for reference.
+
+\begin{definition}[Partition spatial resolution]
+\label{def:partitionspatial}
+At partition depth $n$, the \emph{spatial resolution} $\ell_{n}$ is defined
+by
+\[
+  \ell_{n} := \mu(\Omega)^{1/3}\cdot b^{-n/3},
+\]
+where $b$ is the branching base of the partition tree.
+\end{definition}
+
+\begin{definition}[Partition temporal resolution]
+\label{def:partitiontemporal}
+At partition depth $n$, the \emph{temporal resolution} $\taup^{(n)}$ is the
+inverse of the maximum Koopman frequency $\omega_{n,\max}$ accessible to
+observations at depth $n$:
+\[
+  \taup^{(n)} := 2\pi/\omega_{n,\max}.
+\]
+\end{definition}
+
+\begin{remark}[The partition lag in dynamics]
+The temporal resolution $\taup^{(n)}$ at depth $n$ is the \emph{partition
+lag}: the minimum time required to complete a categorical distinction at that
+depth.
+Partition lag plays a role in the partition Lagrangian because the
+velocity $\dot{\mathbf{x}}$ is the ratio of spatial displacement to temporal
+displacement; at depth $n$, this ratio is bounded by
+$\ell_{n}/\taup^{(n)}=\ell_{n}\omega_{n,\max}/(2\pi)$.
+The universality of this bound across all depths is the origin of the
+propagation bound $c$, derived in Chapter~\ref{ch:lorentz}.
+\end{remark}
+
+% ============================================================
+\section{Partition Lag and Undetermined Residue}
+\label{sec:partitionlag}
+% ============================================================
+
+Every partition operation takes a finite time $\taup$ to complete.
+During that interval, the system continues to evolve, generating a portion
+of its trajectory that is never assigned a partition coordinate.
+This \emph{undetermined residue} has far-reaching consequences.
+
+\begin{consequence}{Minimum Partition Lag}{minlag}
+For any partition operation refining a Koopman mode of energy uncertainty
+$\Delta E$, the partition lag satisfies
+\begin{equation}
+  \taup \geq \frac{\hbar}{\Delta E}.
+  \label{eq:minlag}
+\end{equation}
+\end{consequence}
+
+\begin{proof}
+The partition operation is a measurement that distinguishes states differing
+in energy by at most $\Delta E$.
+By the time--energy uncertainty relation, the operation cannot complete in a
+time shorter than $\hbar/\Delta E$.
+\end{proof}
+
+\begin{consequence}{Residue Generation}{residuegen}
+Let a bounded oscillator with state-evolution rate $|d|\psi\rangle/dt|=v$
+undergo a partition operation of duration $\taup$.
+The state at partition completion differs from the state at partition
+initiation by
+\begin{equation}
+  \mathcal{R}
+    = \int_{t_{0}}^{t_{0}+\taup}\frac{d|\psi\rangle}{dt}\,dt
+  \qquad\Longrightarrow\qquad
+  |\mathcal{R}| \geq v\cdot\taup > 0,
+  \label{eq:residue}
+\end{equation}
+for any non-static system.
+The quantity $\mathcal{R}$ is the \emph{undetermined residue}: the portion
+of the system that existed at $t_{0}$ but moved before partition completion
+at $t_{0}+\taup$, and was therefore never assigned a partition coordinate.
+\end{consequence}
+
+\begin{proof}
+Direct integration of the state-evolution equation over the partition-lag
+interval gives the displacement.
+By Consequence~\ref{cons:oscillatory}, $v=0$ would imply static dynamics,
+contradicting Axiom~\ref{ax:bpsl} for non-trivial systems.
+Hence $|\mathcal{R}|>0$ for every partition operation acting on a bounded
+oscillator.
+\end{proof}
+
+\begin{remark}[The status of residue]
+Residue is neither absent (it existed at $t_{0}$) nor present in any
+actualised partition cell (it moved before completion).
+It is undetermined in the strict sense that no partition coordinate
+$(n,l,m,s)$ is assigned to it.
+Properties requiring partition --- charge, position, identity --- are
+therefore undefined for residue.
+Residue retains dynamical influence through the partition-depth field
+$\Depth$ but is not directly observable via any partition-based measurement.
+\end{remark}
+
+\begin{consequence}{Cumulative Residue}{cumulativeresidue}
+For a sequence of $k$ independent partition operations on a bounded
+oscillator with characteristic evolution rate $v$,
+\begin{equation}
+  \mathcal{R}_{\mathrm{total}}
+    = \sum_{i=1}^{k}\mathcal{R}_{i}
+    = k\,v\,\taup.
+  \label{eq:cumulativeresidue}
+\end{equation}
+\end{consequence}
+
+\begin{consequence}{Residue Fraction per Operation}{residuefraction}
+For a partition operation in $d$-dimensional partition space with branching
+factor $b$, the fraction of phase-space volume that becomes residue (rather
+than actualised partition) is
+\begin{equation}
+  f_{\mathcal{R}} = \frac{b^{d}-1}{b^{d}}.
+  \label{eq:residuefrac}
+\end{equation}
+For $b=3$, $d=3$ (the partition base and spatial dimension),
+$f_{\mathcal{R}}=26/27\approx 0.963$.
+\end{consequence}
+
+\begin{proof}
+At each partition level, the categorical volume divides into $b^{d}$ cells.
+By the geometry of the partition operation, exactly one cell becomes the
+actualised partition target; the remaining $b^{d}-1$ cells become residue
+because the system evolves into them during the lag interval $\taup$ before
+they are categorically resolved.
+The fraction is $(b^{d}-1)/b^{d}$.
+\end{proof}
+
+\begin{remark}[Three system components]
+\label{rem:threecomponents}
+Combining Consequences~\ref{cons:residuegen}, \ref{cons:cumulativeresidue},
+and~\ref{cons:residuefraction}, every bounded system at any time decomposes
+into three mutually exclusive and exhaustive components:
+\begin{enumerate}[nosep, label=(\roman*)]
+  \item \textbf{Actualised partitions} $\mathcal{A}$: fully partitioned
+        structures with complete partition coordinates;
+  \item \textbf{Accumulated residue} $\mathcal{R}$: undetermined portions
+        from partition lag, lacking partition coordinates;
+  \item \textbf{Partition potential} $\Pi$: unrealised capacity for further
+        partition operations.
+\end{enumerate}
+The total content is conserved: $\mathcal{A}+\mathcal{R}+\Pi=\mathrm{const}$.
+This decomposition recurs in later chapters: in Chapter~\ref{ch:mass},
+accumulated residue is identified with inertial mass; the cosmological
+dark-to-ordinary matter ratio can in principle be derived from the residue
+fraction $f_{\mathcal{R}}$ of Consequence~\ref{cons:residuefraction}.
+\end{remark}
+
+% ============================================================
+\section{Force-Free Ion Trajectories in Mass Spectrometry}
+\label{sec:forcefree-ion}
+% ============================================================
+
+The partition Lagrangian has direct application to the mass spectrometric
+setting that motivates this monograph.
+
+\begin{remark}[Gradient descent in the instrument]
+In the mass spectrometric context (Part~VIII), the partition Lagrangian
+means that an ion in an instrument does not experience forces in the
+traditional sense.
+It follows the path of steepest descent on the partition depth landscape
+$\Depth(\mathbf{x},t)$ created by the instrument's field configuration
+(electric sector, magnetic sector, rf quadrupole, time-of-flight drift
+region).
+The ion trajectory is geometrically determined by the partition structure.
+
+The GPU implementation (Chapter~\ref{ch:gpu}) uses exactly this gradient
+descent formulation: the shader pipeline computes $-\nabla\Depth$ at each
+step, making the hardware a physical observable of the partition depth field.
+Each fragment shader evaluation is a discrete partition operation; the
+accumulated render output is the actualised partition of the ion's
+trajectory.
+\end{remark}
+
+\begin{remark}[Newton's second law as a special case]
+Newton's second law $m\ddot{\mathbf{x}}=\mathbf{F}$ is a special case of
+the partition equation of motion~\eqref{eq:partitionel} in the limit where:
+(a) the vector potential $\Apartition=0$ (no vorticity of the partition
+flow); and (b) the partition depth gradient $-\nabla\Depth$ is identified
+with the Newtonian force $\mathbf{F}$.
+In this limit, the partition Lagrangian reduces to the standard mechanical
+Lagrangian $\Lagr=T-V$ with $V=\Depth$.
+Newton's second law is thus a consequence of the Axiom, not a foundational
+postulate.
+\end{remark}
+
+% ============================================================
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
-                  title={\textbf{Chapter 5 Summary}}]
+                  title={\textbf{Chapter~5 Summary: The Partition Lagrangian}}]
 \begin{itemize}[noitemsep]
-  \item The partition depth field $\Depth(\mathbf{x},t)$ is a scalar field
-    derived from the partition algebra.
-  \item The unique Galilean-invariant Lagrangian coupling a particle to
-    $\Depth$ has the form $\Lagr = \half\mu|\dot{\mathbf{x}}|^2
-    + \mu\dot{\mathbf{x}}\cdot\Apartition - \Depth$.
-  \item The Euler--Lagrange equations have the Lorentz-force shape but are
-    force-free: dynamics is gradient descent on $\Depth$.
-  \item Newton's second law is a special case of this equation when the
-    partition depth gradient is the Newtonian potential.
+  \item The \textbf{partition depth field} $\Depth(\mathbf{x},t)$ assigns to
+        every point of configuration space the free-energy cost of its finest
+        partition localisation; it is defined canonically from the partition
+        measure of Axiom~\ref{ax:bpsl}.
+  \item The \textbf{partition vector potential} $\Apartition(\mathbf{x})$ is
+        the unique divergence-free field encoding the vorticity of the
+        partition re-labelling flow; its gauge ambiguity
+        $\Apartition\to\Apartition+\nabla\chi$ is a deduced, not postulated,
+        symmetry.
+  \item \textbf{Consequence~\ref{cons:partitionlagrangian}} (Partition
+        Lagrangian): the unique Galilean-invariant, scalar-plus-vector-complete
+        Lagrangian coupling a label carrier of parameter $\mu$ to these fields
+        is $\Lagr_{\Depth}=\half\mu|\dot{\mathbf{x}}|^{2}
+        +\mu\dot{\mathbf{x}}\cdot\Apartition-\Depth$.
+  \item The Euler--Lagrange equations have the \textbf{Lorentz-force shape}
+        but are force-free: dynamics is gradient descent on $\Depth$, with
+        the curl of $\Apartition$ generating transverse deflections.
+  \item \textbf{Noether's theorem} applied to partition-depth symmetries
+        recovers momentum, angular momentum, and energy conservation without
+        any additional postulate.
+  \item \textbf{Newton's second law} is a special case
+        ($\Apartition=0$, $-\nabla\Depth\equiv\mathbf{F}$); it is a
+        consequence of the Axiom, not a foundation.
+  \item Every partition operation generates \textbf{undetermined residue}
+        (Consequences \ref{cons:residuegen}--\ref{cons:residuefraction}):
+        the fraction $f_{\mathcal{R}}=(b^{d}-1)/b^{d}$ of phase-space volume
+        that moves during the partition lag $\taup$ and is never assigned a
+        partition coordinate.
+  \item The partition-depth and partition-lag scales $(\ell_{n},\taup^{(n)})$
+        feed directly into the universal propagation bound $c$ derived in
+        Chapter~\ref{ch:lorentz}.
 \end{itemize}
 \end{tcolorbox}

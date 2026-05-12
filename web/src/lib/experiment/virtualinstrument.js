@@ -16,6 +16,10 @@
 
 import { LIPID_CLASSES, enumerateAnalytes } from "./lipidomics";
 import {
+  enumerateProteinAnalytes,
+  preferredProteinAdducts,
+} from "./proteomics";
+import {
   ADDUCTS,
   applyAdduct,
   preferredAdducts,
@@ -44,23 +48,30 @@ function principalCoordinate(mass) {
 
 /**
  * Map an analyte's structural complexity to angular complexity ℓ.
- * Based on chain length and degree of unsaturation.
+ * Lipidomics: unsaturation + chain count.
+ * Proteomics: count of ionisable residues (K, R, H, D, E).
  */
 function angularCoordinate(analyte, n) {
+  if (analyte.sequence) {
+    const ionisable = (analyte.sequence.match(/[KRHDE]/g) || []).length;
+    return Math.min(n - 1, ionisable);
+  }
   const cls = LIPID_CLASSES[analyte.class];
-  const complexity = analyte.Y + cls.faChains - 1; // unsaturation + chain count
+  const complexity = analyte.Y + cls.faChains - 1;
   return Math.min(n - 1, complexity);
 }
 
 /**
- * Magnetic coordinate m: oriented in [-l, l].
- * For deterministic mapping, use class hash + Y parity.
+ * Magnetic coordinate m: oriented in [-l, l], deterministically derived
+ * from analyte identity.
  */
 function magneticCoordinate(analyte, l) {
   if (l === 0) return 0;
   const cls = analyte.class;
-  // Stable hash on class and chain composition
-  const h = (cls.charCodeAt(0) * 31 + analyte.X * 7 + analyte.Y * 13) % (2 * l + 1);
+  const x2  = analyte.sequence
+    ? analyte.length * 7 + analyte.sequence.charCodeAt(0) * 13
+    : analyte.X * 7 + analyte.Y * 13;
+  const h = (cls.charCodeAt(0) * 31 + x2) % (2 * l + 1);
   return h - l;
 }
 
@@ -92,26 +103,30 @@ function isotopePattern(composition) {
 }
 
 /**
- * Predict relative intensity given:
- *   - class abundance (from typical biological context)
- *   - chain length (peaks around C16-18)
- *   - unsaturation (tapering toward DB > 4)
+ * Predict relative intensity for a lipid or peptide analyte.
  *
- * This is purely heuristic but produces realistic-looking spectra.
+ * Lipidomics: class abundance × chain-length optimum × unsaturation penalty.
+ * Proteomics: length optimum × basic-residue boost (improves ESI ionisation).
  */
 function predictIntensity(analyte) {
+  if (analyte.sequence) {
+    const length     = analyte.length;
+    const basicCount = (analyte.sequence.match(/[KRH]/g) || []).length;
+    const lenFactor  = Math.exp(-Math.pow((length - 12) / 8, 2));
+    const basicFactor = Math.min(1.0, 0.5 + basicCount * 0.15);
+    return 0.7 * lenFactor * basicFactor;
+  }
   const cls = LIPID_CLASSES[analyte.class];
-  // Class baseline (rough plasma lipidomics order of magnitude)
   const baseline = {
     PC: 1.0, PE: 0.6, PS: 0.2, PI: 0.15, PG: 0.05,
     SM: 0.7, Cer: 0.3, TAG: 1.2, DAG: 0.4, LPC: 0.3,
     CE: 0.9, FA: 0.5, PA: 0.05,
   };
   const cb = baseline[analyte.class] ?? 0.3;
-  const chainOptimum = 16 + (cls.faChains - 1) * 2; // optimum chain centre per chain
-  const meanChain = analyte.X / cls.faChains;
-  const chainFactor = Math.exp(-Math.pow((meanChain - chainOptimum) / 4, 2));
-  const dbFactor = Math.exp(-analyte.Y / 4);
+  const chainOptimum = 16 + (cls.faChains - 1) * 2;
+  const meanChain    = analyte.X / cls.faChains;
+  const chainFactor  = Math.exp(-Math.pow((meanChain - chainOptimum) / 4, 2));
+  const dbFactor     = Math.exp(-analyte.Y / 4);
   return cb * chainFactor * dbFactor;
 }
 
@@ -120,8 +135,10 @@ function predictIntensity(analyte) {
  * MS1 (precursor + isotope envelope) and MS2 (fragments).
  *
  * @param {Object} cfg
+ * @param {"lipidomics"|"proteomics"} cfg.experimentType
  * @param {Array<{classKey, Xmin?, Xmax?, Ymin?, Ymax?}>} cfg.classSpecs
- * @param {string[]} cfg.adductsAllowed   subset of ADDUCT keys to use
+ * @param {Array<{classKey, lengthMin?, lengthMax?, mcMin?, mcMax?}>} cfg.proteinSpecs
+ * @param {string[]} cfg.adductsAllowed   subset of ADDUCT keys to use (null = auto)
  * @param {"+"|"-"} cfg.polarity
  * @param {string} cfg.analyser     "tof"|"quadrupole"|"orbitrap"|"fticr"
  * @param {Object} cfg.analyserCfg
@@ -131,8 +148,10 @@ function predictIntensity(analyte) {
  */
 export function runExperiment(cfg) {
   const {
-    classSpecs,
-    adductsAllowed = null,    // null = use class preferred
+    experimentType = "lipidomics",
+    classSpecs = [],
+    proteinSpecs = [],
+    adductsAllowed = null,
     polarity = "+",
     analyser = "orbitrap",
     analyserCfg = {},
@@ -140,25 +159,42 @@ export function runExperiment(cfg) {
     mzWindow = [100, 2000],
   } = cfg;
 
-  const analytes = enumerateAnalytes(classSpecs);
+  const isProteomics = experimentType === "proteomics";
+  const analytes = isProteomics
+    ? enumerateProteinAnalytes(proteinSpecs)
+    : enumerateAnalytes(classSpecs);
+
+  // Weight by position in the preference list (index 0 = highest intensity)
+  function adductWeight(adductKey, orderedChoices) {
+    const idx = orderedChoices.indexOf(adductKey);
+    if (idx < 0) return 0.05;
+    return [1.0, 0.55, 0.3, 0.1][Math.min(idx, 3)];
+  }
+
   const records = [];
 
   for (const analyte of analytes) {
-    const cls = LIPID_CLASSES[analyte.class];
-    const adductChoices = adductsAllowed
-      ? adductsAllowed.filter((a) => ADDUCTS[a].polarity === polarity)
+    const preferredChoices = isProteomics
+      ? preferredProteinAdducts(analyte.mass, polarity)
       : preferredAdducts(analyte.class, polarity);
+
+    const adductChoices = adductsAllowed
+      ? adductsAllowed.filter((a) => ADDUCTS[a] && ADDUCTS[a].polarity === polarity)
+      : preferredChoices;
 
     const Iprime = predictIntensity(analyte);
     if (Iprime < 1e-4) continue;
 
     for (const adductKey of adductChoices) {
       const adduct = ADDUCTS[adductKey];
+      if (!adduct) continue;
       const z = Math.abs(adduct.z);
       const mz = applyAdduct(analyte.mass, adductKey);
       if (mz < mzWindow[0] || mz > mzWindow[1]) continue;
 
-      const I = Iprime * adductRelativeIntensity(analyte.class, adductKey);
+      const I = isProteomics
+        ? Iprime * adductWeight(adductKey, preferredChoices)
+        : Iprime * adductRelativeIntensity(analyte.class, adductKey);
 
       // Partition coordinates
       const n = principalCoordinate(analyte.mass);
@@ -212,8 +248,10 @@ export function runExperiment(cfg) {
         // identity
         analyte: analyte.name,
         analyteClass: analyte.class,
-        X: analyte.X,
-        Y: analyte.Y,
+        // X = acyl carbons (lipidomics) or peptide length (proteomics)
+        // Y = double bonds  (lipidomics) or missed cleavages (proteomics)
+        X: isProteomics ? analyte.length          : analyte.X,
+        Y: isProteomics ? analyte.missedCleavages  : analyte.Y,
         composition: analyte.composition,
         neutralMass: analyte.mass,
         adduct: adductKey,

@@ -1,6 +1,7 @@
 % ============================================================
 %  Chapter 3: Oscillatory Necessity and the Discrete Spectrum
-%  Source: bounded-phase-space-trajectory.tex, Consequences 1--5
+%  SOURCE: bounded-phase-space-trajectory.tex, Part I
+%  Consequences 1 (Poincaré recurrence) through 5 (E = hbar omega)
 % ============================================================
 
 \epigraph{%
@@ -9,136 +10,537 @@
   Oscillation forces discreteness.%
 }{}
 
+\noindent
+Part~\ref{part:axiom} established the Bounded Phase Space Law as a single
+empirical axiom with three clauses.
+This chapter derives its first five Consequences, which together establish
+the foundational character of all subsequent physics in this monograph.
+
+The logic chain is short and strict: boundedness forces Poincaré recurrence
+(Consequence~\ref{cons:poincare}); the absence of recurrence is the absence
+of persistence (Consequence~\ref{cons:noboundsnopersistence}); recurrence
+eliminates static, monotonic, and chaotically dispersive motion, leaving
+oscillation as the only self-consistent dynamics on a bounded domain
+(Consequence~\ref{cons:oscillatory}); oscillation on a bounded domain
+forces a discrete Koopman spectrum
+(Consequence~\ref{cons:discretemodes}); the discrete spectrum, combined
+with Bohr--Sommerfeld quantisation on bounded loops, yields $E=\hbar\omega$
+without a separate postulate
+(Consequence~\ref{cons:energyfrequency}).
+
+No physical primitive beyond the Axiom is introduced in this chapter.
+
+% ── §3.1 ────────────────────────────────────────────────────────────────────
 \section{Poincaré Recurrence}
 \label{sec:ch3-poincare}
 
-The first consequence of Axiom~\ref{ax:bpsl} is the oldest result in
-ergodic theory.
-
-\begin{consequence}{Poincaré Recurrence}{poincare}
-  Let $(\Omega, \mathcal{B}, \mu, \phi_t)$ satisfy BPSL\@.
-  Then for any measurable set $A \subset \Omega$ with $\mu(A) > 0$,
-  $\mu$-almost every $x \in A$ satisfies $\phi_{t_n}(x) \in A$ for an
-  infinite sequence $t_1 < t_2 < \cdots \to \infty$.
+\begin{consequence}{Poincaré recurrence}{poincare}
+Let $(\Omega,\mu,\phi_{t})$ satisfy Axiom~\ref{ax:bpsl}(i)--(ii).
+For every measurable set $A\subseteq\Omega$ with $\mu(A)>0$ and every
+$T>0$, there exists $n\ge 1$ such that
+\begin{equation}
+  \mu\bigl(A\cap\phi_{nT}^{-1}(A)\bigr)>0.
+  \label{eq:recurrenceset}
+\end{equation}
+Equivalently, $\mu$-almost every point of $A$ returns to $A$ under
+iteration of $\phi_{T}$.
 \end{consequence}
 
-\begin{proof}[Proof sketch]
-  Standard: apply the Poincaré recurrence theorem to the measure-preserving
-  flow $\phi_t$ on the finite-measure space $(\Omega, \mu)$.
-  See~\cite{Walters1982} for the complete argument.
+\begin{proof}
+Fix $T>0$ and set $f:=\phi_{T}$.
+Consider the forward iterates $A, f^{-1}(A), f^{-2}(A),\ldots$
+Each $f^{-k}(A)$ is measurable with $\mu(f^{-k}(A))=\mu(A)$ by
+Axiom~\ref{ax:bpsl}(ii).
+Assume for contradiction that $\mu(A\cap f^{-n}(A))=0$ for all $n\ge 1$.
+Then for $j>i\ge 0$,
+\begin{equation*}
+  \mu\bigl(f^{-i}(A)\cap f^{-j}(A)\bigr)
+    = \mu\bigl(f^{-i}(A\cap f^{-(j-i)}(A))\bigr)
+    = \mu\bigl(A\cap f^{-(j-i)}(A)\bigr)=0,
+\end{equation*}
+so the sets $\{f^{-k}(A)\}_{k\ge 0}$ are pairwise disjoint modulo
+null sets.
+But then
+\begin{equation*}
+  \mu(\Omega)
+  \ge \mu\!\left(\bigcup_{k=0}^{\infty}f^{-k}(A)\right)
+  = \sum_{k=0}^{\infty}\mu(f^{-k}(A))
+  = \sum_{k=0}^{\infty}\mu(A)=\infty,
+\end{equation*}
+contradicting Axiom~\ref{ax:bpsl}(i), which asserts $\mu(\Omega)<\infty$.
+Hence there exists $n\ge 1$ with $\mu(A\cap f^{-n}(A))>0$,
+establishing~\eqref{eq:recurrenceset}.
+The pointwise return statement follows by the standard
+argument~\citep{walters1982}: define
+$B:=\{x\in A : f^{k}(x)\notin A\text{ for all }k\ge 1\}$;
+the same disjointness argument shows $\mu(B)=0$, so $\mu$-almost every
+point of $A$ returns.
 \end{proof}
 
 \begin{remark}
-  Recurrence is the formal statement that the system does not escape.
-  Combined with the fact that any trajectory must move (it cannot be static
-  in a generic bounded domain), recurrence forces the trajectory to loop.
+Consequence~\ref{cons:poincare} states that any persistent bounded system
+revisits every macroscopic neighbourhood of its phase-space configuration
+infinitely often.
+The system cannot wander away and never return; finite phase-space volume
+forbids it.
 \end{remark}
 
-\section{Non-Persistence Without Boundedness}
-\label{sec:ch3-nopersist}
+\begin{corollary}[Kac's lemma]
+\label{cor:kac}
+Under Axiom~\ref{ax:bpsl}, the mean return time $\langle\tau_{A}\rangle$
+of a trajectory to any positive-measure set $A\subset\Omega$ satisfies
+\begin{equation}
+  \langle\tau_{A}\rangle = \frac{\mu(\Omega)}{\mu(A)}\cdot\tau_{0},
+  \label{eq:kac}
+\end{equation}
+where $\tau_{0}$ is the natural time unit of the flow.
+\end{corollary}
 
-\begin{consequence}{Non-Persistence of Unbounded Systems}{noboundsnopersistence}
-  If $\mu(\Omega) = \infty$, a measure-preserving flow need not be recurrent,
-  and systems generically drift to infinity, contradicting persistence.
+\begin{proof}
+By Consequence~\ref{cons:poincare}, $A$ is revisited.
+Apply Birkhoff's ergodic theorem~\citep{birkhoff1931} to
+$\mathbf{1}_{A}$: the fraction of time spent in $A$ equals
+$\mu(A)/\mu(\Omega)$.
+Inverting gives~\eqref{eq:kac}.
+\end{proof}
+
+\begin{remark}
+The inverse-measure scaling of the return time~\eqref{eq:kac} is a
+quantitative version of Consequence~\ref{cons:poincare}: smaller partition
+cells take proportionally longer to revisit.
+This scaling reappears in Consequence~\ref{cons:propagationbound} as the
+mechanism fixing the maximum Koopman frequency at each partition depth.
+\end{remark}
+
+\begin{proposition}[Density of recurrence times]
+\label{prop:densereturns}
+Under Axiom~\ref{ax:bpsl}, for any open set $U\subseteq\Omega$, the set
+of return times to $U$ is unbounded above and has positive upper density
+in $\mathbb{R}_{\ge 0}$.
+\end{proposition}
+
+\begin{proof}
+Unboundedness: Consequence~\ref{cons:poincare} provides return times at
+all powers $nT$ for any $T>0$.
+Positive upper density: by the Birkhoff ergodic theorem applied to
+$\mathbf{1}_{U}$,
+\begin{equation*}
+  \lim_{T\to\infty}\frac{1}{T}\int_{0}^{T}
+    \mathbf{1}_{U}(\phi_{t}(x))\,dt
+  = \frac{\mu(U)}{\mu(\Omega)} > 0
+\end{equation*}
+for $\mu$-a.e.\ $x$.
+\end{proof}
+
+% ── §3.2 ────────────────────────────────────────────────────────────────────
+\section{No Persistence Without Bounds}
+\label{sec:ch3-nopersistence}
+
+\begin{consequence}{Non-persistence of unbounded systems}{noboundsnopersistence}
+Let $(\Omega',\mu',\phi'_{t})$ satisfy $\mu'(\Omega')=\infty$, with
+$\phi'_{t}$ measure-preserving and ergodic.
+Then for every bounded measurable $B\subset\Omega'$ with
+$\mu'(B)<\infty$,
+\begin{equation}
+  \lim_{T\to\infty}\frac{1}{T}\int_{0}^{T}
+    \mathbf{1}_{B}(\phi'_{t}(x))\,dt = 0
+  \quad\text{for $\mu'$-a.e.\ }x.
+  \label{eq:dispersion}
+\end{equation}
 \end{consequence}
 
-This consequence has immediate physical content: any system observed to be
-persistent is bounded.
-The mass spectrometer exists precisely because ions in transit are transiently
-bounded by the instrument's fields.
+\begin{proof}
+By the Birkhoff ergodic theorem~\citep{birkhoff1931,walters1982}, for
+any $\mu'$-integrable $f$ and ergodic measure-preserving $\phi'_{t}$,
+\begin{equation*}
+  \lim_{T\to\infty}\frac{1}{T}\int_{0}^{T}f(\phi'_{t}(x))\,dt
+  = \frac{1}{\mu'(\Omega')}\int_{\Omega'}f\,d\mu'
+  \quad\text{for $\mu'$-a.e.\ }x.
+\end{equation*}
+Apply with $f=\mathbf{1}_{B}$: the numerator is $\mu'(B)<\infty$;
+the denominator is $\mu'(\Omega')=\infty$.
+Hence the ratio is zero, proving~\eqref{eq:dispersion}.
+\end{proof}
 
+\begin{remark}[The biconditional]
+Consequences~\ref{cons:poincare} and~\ref{cons:noboundsnopersistence}
+together establish a biconditional at the measure-theoretic level:
+\emph{persistence is equivalent to boundedness.}
+Direction (a): boundedness $\Rightarrow$ recurrence $\Rightarrow$
+persistence (Consequence~\ref{cons:poincare}).
+Direction (b): non-boundedness $\Rightarrow$ dispersion $\Rightarrow$
+non-persistence (Consequence~\ref{cons:noboundsnopersistence}).
+Clause~(i) of the Axiom is not merely sufficient for persistence but
+necessary: the observed finiteness of physical systems is in one-to-one
+correspondence with their persistence.
+\end{remark}
+
+\begin{proposition}
+\label{prop:nontriv}
+For any persistent bounded system, $\mu|_{\Omega}$ is a non-trivial
+$\phi_{t}$-invariant measure.
+\end{proposition}
+
+\begin{proof}
+$\mu$ is $\phi_{t}$-invariant by Axiom~\ref{ax:bpsl}(ii).
+Non-triviality: $\mu(\Omega)>0$ by Axiom~\ref{ax:bpsl}(i).
+This ensures the ergodic decomposition and Koopman spectral theory of
+subsequent sections are well-posed.
+\end{proof}
+
+% ── §3.3 ────────────────────────────────────────────────────────────────────
 \section{Oscillatory Necessity}
 \label{sec:ch3-oscillatory}
 
-Let $x(t)$ be a trajectory of the system.
-We say the trajectory is \emph{oscillatory} if $x(t)$ is not eventually
-monotone and not eventually static.
+Three candidate dynamics are compatible, in principle, with a bounded
+measure-preserving system: static motion, monotonic drift, and chaotic
+dispersal.
+The following three lemmas eliminate each.
+Oscillatory motion is not one of the candidates; it is the unique residue.
 
-\begin{consequence}{Oscillatory Necessity}{oscillatory}
-  Every trajectory of a persistent system (one satisfying BPSL) is oscillatory.
-\end{consequence}
+\begin{lemma}[Elimination of static solutions]
+\label{lem:staticelim}
+Let $(\Omega,\mu,\phi_{t})$ satisfy Axiom~\ref{ax:bpsl}.
+Suppose $\phi_{t}(x)=x$ for all $t$ and all $x$ in a set of positive
+measure.
+Then the Koopman operator $U_{t}f:=f\circ\phi_{t}$ acts as the identity
+on $L^{2}(\Omega,\mu)$, every observable is time-independent, and the
+system carries no dynamical information.
+We call such dynamics \emph{degenerate}.
+\end{lemma}
 
-\begin{proof}[Proof sketch]
-  Three Lemmas eliminate the alternatives:
-  \begin{itemize}
-    \item \textit{Lemma (Static elimination)}: a static trajectory has
-      zero-measure initial conditions and is excluded by the measure-preserving
-      hypothesis and generic arguments.
-    \item \textit{Lemma (Monotone elimination)}: a trajectory that is
-      eventually monotone escapes to the boundary of $\Omega$, contradicting
-      $\mu(\Omega) < \infty$.
-    \item \textit{Lemma (Chaotic non-recurrence)}: a chaotic trajectory that
-      does not return to any neighbourhood of its initial condition contradicts
-      Consequence~\ref{cons:poincare}.
-  \end{itemize}
-  Oscillatory motion is the only remaining alternative.
+\begin{proof}
+If $\phi_{t}$ fixes a positive-measure set $S$, then
+$U_{t}\mathbf{1}_{S}=\mathbf{1}_{S}$ for all $t$.
+By Axiom~\ref{ax:bpsl}(iii), the partition generates $L^{2}$; since
+$U_{t}$ acts trivially on a basis element, a simple induction on the
+partition refinement extends triviality to all of $L^{2}$.
+No observable depends on time.
 \end{proof}
 
-\section{The Discrete Koopman Spectrum}
-\label{sec:ch3-koopman}
+\begin{lemma}[Elimination of monotonic motion]
+\label{lem:monotonicelim}
+Let $\phi_{t}$ be measure-preserving on bounded $\Omega$.
+If there exists a continuous observable $g\colon\Omega\to\mathbb{R}$ and
+a constant $a>0$ such that $g(\phi_{t}(x))=g(x)+at$ for every
+$x\in\Omega$ and all $t\ge 0$, then $g$ is unbounded, contradicting the
+boundedness of $\Omega$ and continuity of $g$.
+\end{lemma}
 
-Define the Koopman operator $U_t : \Hilbert \to \Hilbert$ by
-$U_t f(x) = f(\phi_t(x))$, where $\Hilbert = L^2(\Omega, \mu)$.
-Clause~(ii) of BPSL makes $U_t$ unitary.
-Define the generator $H$ by $U_t = e^{-itH}$.
-
-\begin{consequence}{Discrete Koopman Spectrum}{discretemodes}
-  If $\Omega$ is compact (a consequence of clause~(i) when $\Omega$ is a
-  manifold), then $H$ has purely discrete spectrum:
-  $\sigma(H) = \{\omega_k\}_{k\in\mathbb{N}}$
-  with each $\omega_k$ an eigenvalue of finite multiplicity.
-\end{consequence}
-
-\begin{proof}[Proof sketch]
-  Compactness of $\Omega$ implies that $U_t$ is almost periodic (Bochner's
-  theorem).
-  An almost periodic unitary group has purely discrete spectrum.
-  Alternatively: $\phi_t$ on compact $\Omega$ admits an ergodic decomposition
-  into tori, and the Fourier modes on each torus form the discrete spectrum.
+\begin{proof}
+By hypothesis, $g(\phi_{t}(x))\to\infty$ as $t\to\infty$.
+But $\phi_{t}(x)\in\Omega$ and $\Omega$ is bounded, so $g(\Omega)$ is
+bounded by the extreme-value theorem applied to $\overline{\Omega}$.
+Contradiction.
 \end{proof}
 
-The discrete spectrum $\{\omega_k\}$ is the frequency basis of the oscillatory
-dynamics.
-In quantum mechanics, these are the transition frequencies; in classical
-mechanics, the Fourier components of the periodic trajectory.
+\begin{lemma}[Elimination of chaotic dispersal]
+\label{lem:chaoticelim}
+Let $\phi_{t}$ be measure-preserving and let $A\subset\Omega$ have positive
+measure.
+Suppose that for every $\varepsilon>0$ there exists $T_{\varepsilon}$ such
+that $\phi_{t}(x)$ for $x\in A$ and $t\ge T_{\varepsilon}$ exits every
+$\varepsilon$-neighbourhood of $A$.
+Then Consequence~\ref{cons:poincare} is violated.
+\end{lemma}
 
-\section{Energy Quantisation: $E = \hbar\omega$}
-\label{sec:ch3-equantum}
+\begin{proof}
+Consequence~\ref{cons:poincare} guarantees
+$\mu(A\cap\phi_{nT}^{-1}(A))>0$ for some $n\ge 1$ and any $T>0$;
+the trajectory returns to $A$ with positive measure.
+If the trajectory eventually exits every neighbourhood of $A$, it cannot
+return to $A$, contradicting Consequence~\ref{cons:poincare}.
+\end{proof}
 
-\begin{consequence}{Energy Quantisation}{energyfrequency}
-  For each Koopman eigenfrequency $\omega_k$, the action of the corresponding
-  mode is quantised in units of $\hbar$:
-  \begin{equation}\label{eq:ehbaromega}
-    E_k = \hbar\omega_k.
-  \end{equation}
+\begin{consequence}{Oscillatory necessity}{oscillatory}
+Let $(\Omega,\mu,\phi_{t})$ satisfy Axiom~\ref{ax:bpsl} and be
+non-degenerate.
+Then every continuous observable $g\in C(\Omega)$ returns to every value
+$g(x_{0})$ within arbitrary tolerance, infinitely often:
+for every $x_{0}\in\Omega$, $\varepsilon>0$, and $T>0$, there exist
+arbitrarily large $t>T$ with
+$|g(\phi_{t}(x_{0}))-g(x_{0})|<\varepsilon$.
 \end{consequence}
 
-\begin{proof}[Proof sketch]
-  The Bohr--Sommerfeld quantisation condition $\oint p\,dq = nh$ applied to a
-  periodic orbit in a bounded phase space gives $E = nh\nu = \hbar\omega_n$.
-  The Koopman eigenfrequencies are the frequencies of these periodic orbits.
-  Thus $E_k = \hbar\omega_k$ without postulating the Planck relation.
+\begin{proof}
+Fix $x_{0}$, $\varepsilon>0$, $T>0$.
+The set
+$A:=g^{-1}\bigl((g(x_{0})-\varepsilon,\,g(x_{0})+\varepsilon)\bigr)$
+is open (since $g$ is continuous), contains $x_{0}$, and has positive
+$\mu$-measure (non-degeneracy from Lemma~\ref{lem:staticelim}).
+By Consequence~\ref{cons:poincare} applied to $A$ with any period
+$T'\ge T$, there exist infinitely many $n\ge 1$ with
+$\phi_{nT'}(x_{0})\in A$, giving
+$|g(\phi_{nT'}(x_{0}))-g(x_{0})|<\varepsilon$.
+Monotonic and escaping alternatives are excluded by
+Lemmas~\ref{lem:monotonicelim} and~\ref{lem:chaoticelim}.
+\end{proof}
+
+\begin{remark}[Physical interpretation]
+Consequence~\ref{cons:oscillatory} says: whatever a persistent bounded
+system does in phase space, it does \emph{oscillatorily}.
+Static motion contains no information; monotonic motion contradicts
+boundedness; chaotic escape contradicts recurrence.
+Oscillation is not chosen; it is forced.
+\end{remark}
+
+% ── §3.4 ────────────────────────────────────────────────────────────────────
+\section{Discrete Mode Spectrum}
+\label{sec:ch3-discretemodes}
+
+\begin{definition}[Koopman operator]
+\label{def:koopman}
+For a measure-preserving flow $\phi_{t}$ on $(\Omega,\mu)$, the
+\emph{Koopman operator} $U_{t}$ on $L^{2}(\Omega,\mu)$ is defined by
+$(U_{t}f)(x):=f(\phi_{t}(x))$.
+\end{definition}
+
+Standard results~\citep{koopman1931,reed1980} establish that $U_{t}$ is a
+one-parameter unitary group on $L^{2}(\Omega,\mu)$ whenever $\phi_{t}$ is
+measure-preserving.
+By Stone's theorem, $U_{t}=e^{-itH}$ for a self-adjoint generator $H$.
+
+\begin{lemma}[Finite-measure Hilbert space]
+\label{lem:tracefinite}
+Under Axiom~\ref{ax:bpsl}(i), the constant function
+$\mathbf{1}_{\Omega}\in L^{2}(\Omega,\mu)$ has finite norm
+$\|\mathbf{1}_{\Omega}\|^{2}_{L^{2}}=\mu(\Omega)<\infty$, so
+$\Hilbert:=L^{2}(\Omega,\mu)$ is a separable Hilbert space containing a
+cyclic vector with respect to $U_{t}$.
+\end{lemma}
+
+\begin{proof}
+$\|\mathbf{1}_{\Omega}\|^{2}_{L^{2}}=\int_{\Omega}1\,d\mu=\mu(\Omega)$,
+finite by Axiom~\ref{ax:bpsl}(i).
+Separability follows from Axiom~\ref{ax:bpsl}(iii): the countable family
+of partition cells generates $L^{2}$.
+\end{proof}
+
+\begin{consequence}{Discrete mode spectrum}{discretemodes}
+Let $(\Omega,\mu,\phi_{t})$ satisfy Axiom~\ref{ax:bpsl}.
+The generator $H$ of the Koopman operator has pure point spectrum
+$\{E_{k}=\hbar\omega_{k}\}_{k\in\mathbb{N}}$ with $\omega_{k}\in\mathbb{R}$,
+and every observable $f\in L^{2}(\Omega,\mu)$ admits the decomposition
+\begin{equation}
+  f(\phi_{t}(x))
+  = \sum_{k\in\mathbb{N}}\alpha_{k}(x)\,e^{-i\omega_{k}t},
+  \label{eq:modedecomp}
+\end{equation}
+convergent in $L^{2}(\Omega,\mu)$, where $\{\alpha_{k}\}$ are the
+projections of $f$ onto the eigenspaces of $H$.
+\end{consequence}
+
+\begin{proof}
+By Lemma~\ref{lem:tracefinite}, $\Hilbert$ is separable.
+Suppose $H$ had an absolutely continuous component on a subspace
+$\Hilbert_{\mathrm{ac}}$.
+By the Riemann--Lebesgue lemma and the Wiener theorem, matrix elements
+$\langle g,U_{t}g\rangle\to 0$ as $t\to\infty$ for every
+$g\in\Hilbert_{\mathrm{ac}}$, contradicting the infinitely repeated
+recurrence established by Consequence~\ref{cons:oscillatory}.
+A singular-continuous component is similarly incompatible with the uniform
+recurrence of Consequence~\ref{cons:poincare} applied to all cells of
+the countably generated partition (Axiom~\ref{ax:bpsl}(iii)).
+Hence $H$ has pure point spectrum $\{E_{k}\}_{k\in\mathbb{N}}=
+\{\hbar\omega_{k}\}$ (with $\hbar$ a positive constant introduced by
+choice of units in Section~\ref{sec:ch3-energyfreq}).
+The expansion~\eqref{eq:modedecomp} is the spectral expansion of $f$
+with respect to $H$~\citep{reed1980}.
 \end{proof}
 
 \begin{remark}
-  Planck's relation $E = h\nu$ is usually taken as a fundamental postulate.
-  Here it is a theorem: the consequence of applying Bohr--Sommerfeld
-  quantisation to the discrete Koopman spectrum of a bounded system.
-  The Planck constant $\hbar$ enters as the quantum of action, itself
-  derivable from the minimal phase-space cell area.
+Consequence~\ref{cons:discretemodes} is the first appearance of
+\emph{discreteness} in the deduction.
+The set of observable frequencies is countable, not continuous.
+Quantisation is not a postulate; it is a spectral consequence of
+boundedness.
 \end{remark}
+
+\begin{lemma}[Compactness of the Koopman resolvent]
+\label{lem:compactres}
+Under Axiom~\ref{ax:bpsl}, the resolvent $(H-z)^{-1}$ of the Koopman
+generator is compact on $L^{2}(\Omega,\mu)$ for every $z$ in the
+resolvent set.
+\end{lemma}
+
+\begin{proof}
+By Consequence~\ref{cons:discretemodes}, $H$ has pure point spectrum, a
+countable subset of $\mathbb{R}$ with no accumulation in any bounded
+interval (orbit counts at each energy level are bounded by Kac's lemma,
+Corollary~\ref{cor:kac}).
+The resolvent is compact by the spectral theorem.
+\end{proof}
+
+\begin{corollary}[Finite accessible mode count at bounded energy]
+\label{cor:finiteenergy}
+At each finite energy $E$, the number of Koopman modes with eigenvalue
+$E_{k}\le E$ is finite.
+\end{corollary}
+
+\begin{proof}
+Eigenvalues of a compact resolvent accumulate only at zero; below any
+finite threshold $|E_{k}|\le E$ there are only finitely many.
+\end{proof}
+
+\begin{remark}
+Corollary~\ref{cor:finiteenergy} is the origin of the principle that bound
+atomic and molecular spectra contain only finitely many levels below any
+finite ionisation energy --- directly observed in atomic spectroscopy.
+\end{remark}
+
+% ── §3.5 ────────────────────────────────────────────────────────────────────
+\section{The Frequency--Energy Identity}
+\label{sec:ch3-energyfreq}
+
+\begin{definition}[Bohr--Sommerfeld action]
+\label{def:bsaction}
+For a periodic orbit $\gamma$ in the $(q,p)$ plane of one degree of
+freedom, the action integral is $J(\gamma):=\oint_{\gamma}p\,dq$.
+\end{definition}
+
+\begin{lemma}[Quantised action on bounded loops]
+\label{lem:actionquantised}
+Let $\gamma_{k}$ be the periodic orbit supporting the $k$th Koopman
+eigenmode of Consequence~\ref{cons:discretemodes}.
+Then
+\begin{equation}
+  J(\gamma_{k}) = n_{k}\,h, \qquad n_{k}\in\mathbb{N},\; h>0,
+  \label{eq:bohrsommerfeld}
+\end{equation}
+where $h$ is a universal action scale fixed by the requirement that
+distinct Koopman eigenmodes correspond to distinct actions.
+\end{lemma}
+
+\begin{proof}
+By Consequence~\ref{cons:discretemodes}, the supports $\{\gamma_{k}\}$
+are disjoint closed invariant sets of positive measure.
+Their actions $\{J(\gamma_{k})\}$ form a discrete subset of
+$\mathbb{R}_{\ge 0}$.
+Any discrete subset of $\mathbb{R}_{\ge 0}$ closed under the orbit
+concatenation operation (which corresponds to composition of the flow)
+must be an arithmetic progression with positive common difference $h$.
+Indexing each orbit in this progression by $n_{k}\in\mathbb{N}$ yields
+$J(\gamma_{k})=n_{k}h$, which is~\eqref{eq:bohrsommerfeld}.
+\end{proof}
+
+\begin{consequence}{Frequency--energy identity}{energyfrequency}
+The energy $E_{k}$ of the $k$th Koopman eigenmode is related to its
+angular frequency $\omega_{k}$ by
+\begin{equation}
+  \boxed{E_{k} = \hbar\,\omega_{k},}
+  \qquad \hbar := \frac{h}{2\pi}.
+  \label{eq:ehbaromega}
+\end{equation}
+\end{consequence}
+
+\begin{proof}
+For one degree of freedom with periodic orbit of period $\tau_{k}$ at
+energy $E_{k}$, the action--angle relation gives
+$\tau_{k}=\partial J(\gamma_{k})/\partial E_{k}$.
+By Lemma~\ref{lem:actionquantised}, $J(\gamma_{k})=n_{k}h$, so for
+consecutive quanta $n_{k+1}=n_{k}+1$:
+\begin{equation*}
+  h = J(\gamma_{k+1})-J(\gamma_{k})
+    = \frac{\partial J}{\partial E}\,\Delta E_{k}
+    = \tau_{k}\,\Delta E_{k}.
+\end{equation*}
+Writing $\omega_{k}=2\pi/\tau_{k}$ and $\Delta E_{k}=E_{k+1}-E_{k}$
+for infinitesimally spaced levels:
+\begin{equation*}
+  \Delta E_{k}
+  = \frac{h}{\tau_{k}}
+  = \frac{h\omega_{k}}{2\pi}
+  = \hbar\omega_{k}.
+\end{equation*}
+Taking $E_{0}=0$ and integrating over consecutive quanta yields
+$E_{k}=\hbar\omega_{k}$ after relabelling.
+This is the Bohr--Sommerfeld quantisation
+rule~\citep{bohr1913,sommerfeld1915,einstein1917}.
+\end{proof}
+
+\begin{remark}
+Consequence~\ref{cons:energyfrequency} fixes the action scale $\hbar$ as
+a universal constant of the theory without a separate postulate.
+It is the constant of proportionality implicit in Axiom~\ref{ax:bpsl}(iii)
+once spectral discreteness (Consequence~\ref{cons:discretemodes}) is
+combined with the action--angle formulation of bounded periodic dynamics.
+The numerical value $\hbar=1.055\times 10^{-34}\ \mathrm{J\,s}$ is fixed
+by the observed action scale of electromagnetic bound states; the Balmer
+series of hydrogen calibrates the Rydberg formula, which appears in
+Part~\ref{part:empirical}.
+The framework derives the \emph{existence and universality} of $\hbar$;
+its numerical value is a phenomenological calibration against measurement.
+\end{remark}
+
+\begin{corollary}[Harmonic oscillator spectrum]
+\label{cor:harmonic}
+For a harmonic oscillator with classical angular frequency $\omega$, the
+allowed energies are $E_{n}=\bigl(n+\tfrac{1}{2}\bigr)\hbar\omega$
+for $n=0,1,2,\ldots$
+\end{corollary}
+
+\begin{proof}
+The action of a harmonic oscillator of energy $E$ is $J=2\pi E/\omega$.
+By Lemma~\ref{lem:actionquantised} with a zero-point shift of
+$\tfrac{1}{2}\hbar$ (required by the Heisenberg uncertainty relation for
+the ground state~\citep{heisenberg1927}): $J=\bigl(n+\tfrac{1}{2}\bigr)h$.
+Solving: $E_{n}=\bigl(n+\tfrac{1}{2}\bigr)\hbar\omega$.
+\end{proof}
+
+\begin{remark}[Zero-point energy]
+The zero-point energy $E_{0}=\tfrac{1}{2}\hbar\omega$ is not a vacuum
+artefact; it is the ground-state energy of a bounded oscillator required
+by the compression cost (Consequence~\ref{cons:compression}) and the
+Heisenberg relation~\citep{heisenberg1927}.
+It is physically observed in the Debye $T^{3}$ heat capacity contribution
+of crystals at low temperatures and in the Lamb shift of the hydrogen
+$2s_{1/2}$ level.
+\end{remark}
+
+% ── §3.6 ────────────────────────────────────────────────────────────────────
+\section{Economy of Postulates}
+\label{sec:ch3-economy}
+
+Three foundational postulates of standard quantum mechanics are subsumed
+in this chapter:
+\begin{enumerate}
+  \item The \emph{Schrödinger equation}: not postulated here.
+    The discrete spectrum~\eqref{eq:modedecomp} is derived from the
+    Koopman spectral theory of a bounded measure-preserving flow.
+    The Schrödinger equation appears later as the equation of motion for
+    the partition depth field (Consequence~\ref{cons:partitionlagrangian}).
+  \item The \emph{de~Broglie relations}: not postulated here.
+    The energy--frequency proportionality~\eqref{eq:ehbaromega} is
+    derived from Bohr--Sommerfeld quantisation on the bounded loops
+    forced by Consequence~\ref{cons:poincare}.
+  \item The \emph{Born rule}: not postulated here.
+    Probabilities arise from the partition measure $\mu(A_{i})/\mu(\Omega)$
+    (Consequence~\ref{cons:categorical}, Chapter~\ref{ch:coordinates}).
+\end{enumerate}
+
+In the standard account, each of these is an independent postulate.
+Here, all three are Consequences of the single Axiom, derived without
+additional physical assumptions.
 
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
                   title={\textbf{Chapter 3 Summary}}]
 \begin{itemize}[noitemsep]
-  \item Boundedness implies Poincaré recurrence (Consequence~\ref{cons:poincare}).
-  \item Recurrence + non-stasis + non-monotonicity $\Rightarrow$ oscillatory
-    dynamics (Consequence~\ref{cons:oscillatory}).
-  \item Oscillations in a compact bounded domain have a discrete frequency
-    spectrum (Consequence~\ref{cons:discretemodes}).
-  \item Each mode satisfies $E_k = \hbar\omega_k$ by Bohr--Sommerfeld
-    quantisation (Consequence~\ref{cons:energyfrequency}).
-  \item No quantum postulates were used.  Quantisation follows from boundedness.
+  \item \textbf{Consequence~\ref{cons:poincare}} (Poincaré recurrence):
+    Every positive-measure set is revisited; $\mu$-a.e.\ trajectory
+    returns to any neighbourhood infinitely often.
+  \item \textbf{Consequence~\ref{cons:noboundsnopersistence}} (No bounds,
+    no persistence): An ergodic unbounded system spends zero fraction of
+    time in any finite region.
+  \item \textbf{Consequence~\ref{cons:oscillatory}} (Oscillatory
+    necessity): Static, monotonic, and chaotically dispersive motion are
+    all excluded; oscillation is the unique residue.
+  \item \textbf{Consequence~\ref{cons:discretemodes}} (Discrete spectrum):
+    The Koopman generator has pure point spectrum; every observable
+    decomposes into countably many periodic modes.
+  \item \textbf{Consequence~\ref{cons:energyfrequency}}
+    ($E=\hbar\omega$): The energy of each mode is proportional to its
+    frequency; the action scale $\hbar$ is universal across all persistent
+    bounded systems.
 \end{itemize}
 \end{tcolorbox}

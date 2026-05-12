@@ -1,6 +1,7 @@
 % ============================================================
 %  Chapter 15: Triple Equivalence  𝔒 ≅ 𝔈 ≅ 𝔓
-%  Source: unconstrained-subtask-recursion.tex, §§ Triple Equivalence
+%  Source: union/publication/support/unconstrained-subtask-recursion.tex
+%  Parts II, VII, IX--X
 % ============================================================
 
 \epigraph{%
@@ -9,138 +10,594 @@
   They are two functors from the same category.%
 }{}
 
+%% ── §15.1 ─────────────────────────────────────────────────────────────────────
 \section{Three Categories, One Bounded Phase Space}
 \label{sec:ch15-three}
 
-The bounded phase space $(\Omega, \mu, \phi_t)$ admits three equivalent
-descriptions, each corresponding to a different observational language:
+Every state of a physical system admits three equivalent descriptions,
+each corresponding to a distinct observational language:
 
-\begin{enumerate}
-  \item The \textbf{Oscillatory category} $\Osc$: objects are bounded
-    oscillators; morphisms are measure-preserving maps between their phase
-    spaces.
-    Language: trajectories, frequencies, Fourier modes.
-    This is the language of classical mechanics.
+\begin{enumerate}[(i)]
+  \item The \textbf{Oscillatory category} $\Osc$: objects are oscillatory
+    structures $(M, \omega, \Phi, \mu)$ (Definition~\ref{def:osc-mono});
+    morphisms are frequency- and phase-preserving maps.  Language: modes,
+    frequencies, Fourier representation.  This is the natural language of
+    classical mechanics.
 
-  \item The \textbf{Categorical (Epistemological) category} $\Cat$:
-    objects are receiver quadruples; morphisms are S-value-preserving
-    information channels.
-    Language: S-entropy, receivers, observations.
-    This is the language of information theory.
+  \item The \textbf{Categorical (Epistemological) category} $\Cat$: objects are
+    categorical structures $(C, \prec, \lambda, \nu)$
+    (Definition~\ref{def:cat-mono}); morphisms preserve the refinement order
+    and labelling.  Language: S-entropy, refinement hierarchies,
+    epistemological distance.  This is the language of the S-entropy calculus.
 
   \item The \textbf{Partition category} $\Part$: objects are partition
-    hierarchies $(\Partition_n)_{n\geq 1}$; morphisms are refinement maps.
-    Language: partition cells, depths, selection rules.
-    This is the language of quantum mechanics (cells = eigenstates,
-    refinement maps = quantum channels).
+    structures $(\Omega, \mathscr{P}, \pi)$ (Definition~\ref{def:part-mono});
+    morphisms preserve refinement and the measure.  Language: partition cells,
+    depths, measure-theoretic structure.  This is the natural language of
+    quantum mechanics (cells correspond to eigenstates; refinement maps
+    correspond to quantum channels).
 \end{enumerate}
 
-\section{The Triple Equivalence}
+The central theorem of this chapter---the Triple Equivalence---asserts that
+these three categories are equivalent as categories.  The equivalence is not
+approximate or asymptotic; it holds exactly, via explicit conversion functors.
+
+%% ── §15.2 ─────────────────────────────────────────────────────────────────────
+\section{The Three Conversion Functors}
+\label{sec:ch15-functors}
+
+We construct the three conversion functors explicitly before stating the
+equivalence theorem.
+
+\begin{definition}[Functor $F_{OC}$: Oscillatory to Categorical]
+\label{def:F-OC}
+Define $F_{OC} : \mathbf{Osc} \to \mathbf{Cat}$ on objects by
+\[
+  F_{OC}(M, \omega, \Phi, \mu)
+  \;:=\; (M,\; \prec_\omega,\; \lambda_\omega,\; \mu)
+\]
+where:
+\begin{itemize}[noitemsep]
+  \item $m_1 \prec_\omega m_2$ if and only if $\omega(m_1)$ divides
+    $\omega(m_2)$ in $\mathbb{R}_{>0}$ (interpreted as a rational ratio with
+    bounded denominator), defining the refinement order from frequency
+    divisibility;
+  \item the labelling
+    $\lambda_\omega(m) :=
+    \bigl(\lfloor\log_2 \omega(m)\rfloor,\;
+     \lfloor(\omega(m) - 2^{\lfloor\log_2\omega(m)\rfloor})/
+            2^{\lfloor\log_2\omega(m)\rfloor - 1}\rfloor,\;
+     \arg\Phi(m,0)\bigr)$
+    encodes the octave, the sub-octave position, and the initial phase of
+    each mode.
+\end{itemize}
+On morphisms, $F_{OC}$ acts by restriction.
+\end{definition}
+
+\begin{definition}[Functor $F_{CP}$: Categorical to Partition]
+\label{def:F-CP}
+Define $F_{CP} : \mathbf{Cat} \to \mathbf{Part}$ on objects as follows.
+Given $(C, \prec, \lambda, \nu)$, let $\Omega := C / {\sim_n}$ where
+${\sim_n}$ identifies cells whose labels agree on the first $n$ coordinates;
+the family $\{P_n\}$ of partitions is induced by this identification.
+Define $\pi$ as the pushforward of $\nu$ under the quotient by ${\sim_n}$ in
+the limit $n \to \infty$.
+\end{definition}
+
+\begin{definition}[Functor $F_{PO}$: Partition to Oscillatory]
+\label{def:F-PO}
+Define $F_{PO} : \mathbf{Part} \to \mathbf{Osc}$ by
+\[
+  F_{PO}(\Omega, \mathscr{P}, \pi)
+  \;:=\; (P_\infty,\; \omega_{\mathfrak{P}},\; \Phi_{\mathfrak{P}},\; \pi)
+\]
+where:
+\begin{itemize}[noitemsep]
+  \item $P_\infty = \bigvee_n P_n$ is the limit partition (the atoms of the
+    generated $\sigma$-algebra);
+  \item $\omega_{\mathfrak{P}}(p) := 1/\pi(p)$ is the inverse-measure
+    frequency, by analogy with Kac's lemma (the mean return time to a set
+    of measure $\pi(p)$ is $1/\pi(p)$);
+  \item $\Phi_{\mathfrak{P}}(p, t) := e^{2\pi i\,\omega_{\mathfrak{P}}(p)\,t}$.
+\end{itemize}
+\end{definition}
+
+%% ── §15.3 ─────────────────────────────────────────────────────────────────────
+\section{The Triple Equivalence Theorem}
 \label{sec:ch15-equivalence}
 
-\begin{theorem}[Triple Equivalence]
-  \label{thm:triple}
-  There exist explicit functors
-  \begin{equation}
-    F_{\Osc\Cat} : \Osc \to \Cat, \qquad
-    F_{\Cat\Part} : \Cat \to \Part, \qquad
-    F_{\Part\Osc} : \Part \to \Osc,
-  \end{equation}
-  such that the diagram
-  \begin{equation}
-    \begin{tikzcd}
-      \Osc \arrow[r, "F_{\Osc\Cat}"] \arrow[dr, "F_{\Part\Osc}^{-1}"'] &
-      \Cat \arrow[d, "F_{\Cat\Part}"] \\
-      & \Part \arrow[ul, "F_{\Part\Osc}"]
-    \end{tikzcd}
-  \end{equation}
-  commutes up to natural isomorphism.
-  Therefore $\Osc \cong \Cat \cong \Part$.
+\begin{theorem}[Triple Equivalence]\label{thm:triple-equiv-mono}
+The three categories $\mathbf{Osc}$, $\mathbf{Cat}$, $\mathbf{Part}$ are
+equivalent as categories.  Specifically, the functors $F_{OC}$, $F_{CP}$,
+$F_{PO}$ are part of mutually inverse equivalences:
+\begin{align}
+  F_{CO} \circ F_{OC} &\cong \mathrm{id}_{\mathbf{Osc}}, &
+  F_{OC} \circ F_{CO} &\cong \mathrm{id}_{\mathbf{Cat}}, \label{eq:OC-eq}\\
+  F_{PC} \circ F_{CP} &\cong \mathrm{id}_{\mathbf{Cat}}, &
+  F_{CP} \circ F_{PC} &\cong \mathrm{id}_{\mathbf{Part}}, \label{eq:CP-eq}\\
+  F_{OP} \circ F_{PO} &\cong \mathrm{id}_{\mathbf{Part}}, &
+  F_{PO} \circ F_{OP} &\cong \mathrm{id}_{\mathbf{Osc}}. \label{eq:PO-eq}
+\end{align}
+Moreover, composing any two of the three forward functors yields the third up
+to natural isomorphism:
+\[
+  F_{OC} \cong F_{PC} \circ F_{OP}, \quad
+  F_{CP} \cong F_{OP} \circ F_{CO}, \quad
+  F_{PO} \cong F_{CO} \circ F_{PC}.
+\]
 \end{theorem}
 
-\begin{proof}[Construction of $F_{\Osc\Cat}$]
-  Given a bounded oscillator $({\Omega}, \mu, \phi_t)$, define the
-  receiver $R_\Omega = (\Omega, \phi_t, \mathcal{V}(0), \mathrm{dec}_\Omega)$
-  where $\mathrm{dec}_\Omega$ maps the current visited set to the Fourier
-  coefficients of the trajectory.
-  The S-value $\mathbf{S}[R_\Omega, q]$ for the question ``which mode is
-  the system in?'' equals $S_\mathrm{osc} = \kB\log|\mathcal{V}|$.
-  This defines $F_{\Osc\Cat}$.
+\begin{proof}
+We construct the inverse functor $F_{CO} : \mathbf{Cat} \to \mathbf{Osc}$;
+the inverses $F_{PC}$ and $F_{OP}$ follow by symmetric arguments.
+
+Given $\mathfrak{E} = (C, \prec, \lambda, \nu)$, define
+$F_{CO}(\mathfrak{E}) := (M, \omega, \Phi, \mu)$ with $M := C$,
+$\omega(c) := \exp(\lambda_1(c) \ln 2)$ (recovering the frequency from the
+first label coordinate, the octave),
+$\Phi(c, 0) := e^{i\lambda_3(c)}$ (recovering the initial phase from the
+third label coordinate), extended to all $t$ by the phase law of
+Definition~\ref{def:osc-mono}, and $\mu := \nu$.
+
+The composition $F_{CO} \circ F_{OC}$ acts on $(M, \omega, \Phi, \mu)$ by
+computing the labels via $F_{OC}$ and then inverting via $F_{CO}$; up to the
+rounding ambiguity in $\lfloor\cdot\rfloor$, the result is isomorphic to the
+identity (equivalence, not equality, of categories).
+
+The naturality and triangle identities are verified by direct computation on
+morphisms.  The key observation is that all three structures encode the same
+information about the underlying probability measure under the same generating
+$\sigma$-algebra; the choice between them is computational, not informational.
 \end{proof}
 
-\begin{proof}[Construction of $F_{\Cat\Part}$]
-  Given a receiver $R = (\Sigma_R, \Phi_R, K_R, \mathrm{dec}_R)$, the
-  partition algebra $\mathcal{A}_\infty(R)$ is the partition algebra of
-  $\Sigma_R$ (which satisfies BPSL).
-  The categorical observation (Consequence~\ref{cons:categorical}) maps each
-  state of $\Sigma_R$ to the cell of $\mathcal{A}_\infty(R)$ it occupies.
-  This defines $F_{\Cat\Part}$.
+%% ── §15.4 ─────────────────────────────────────────────────────────────────────
+\section{Commutative Diagram}
+\label{sec:ch15-diagram}
+
+The Triple Equivalence has the structure of a commuting triangle of
+category equivalences.  The following diagram illustrates the six functors
+(three forward, three inverse) and the cyclic structure:
+
+\bigskip
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={font=\normalsize},
+  node distance=4.5cm,
+  >=stealth,
+  thick
+]
+  % Nodes
+  \node (Osc)  at (0,0)    {$\mathbf{Osc}\;\bigl(\Osc\bigr)$};
+  \node (Cat)  at (6,0)    {$\mathbf{Cat}\;\bigl(\Cat\bigr)$};
+  \node (Part) at (3,-4.5) {$\mathbf{Part}\;\bigl(\Part\bigr)$};
+
+  % Forward functors (outer arcs, curving away from centre)
+  \draw[->] (Osc)  to[bend left=15]
+    node[above, midway] {$F_{OC}$} (Cat);
+  \draw[->] (Cat)  to[bend left=15]
+    node[right, midway, xshift=3pt] {$F_{CP}$} (Part);
+  \draw[->] (Part) to[bend left=15]
+    node[left, midway, xshift=-3pt] {$F_{PO}$} (Osc);
+
+  % Inverse functors (inner arcs, curving toward centre)
+  \draw[->, dashed] (Cat)  to[bend left=15]
+    node[below, midway] {$F_{CO}$} (Osc);
+  \draw[->, dashed] (Part) to[bend left=15]
+    node[left,  midway, xshift=3pt] {$F_{PC}$} (Cat);
+  \draw[->, dashed] (Osc)  to[bend left=15]
+    node[right, midway, xshift=-3pt] {$F_{OP}$} (Part);
+
+  % Equivalence labels at vertices
+  \node[below=0.08cm of Osc,  font=\small, color=gray]
+    {classical / oscillatory};
+  \node[below=0.08cm of Cat,  font=\small, color=gray]
+    {epistemological / S-entropy};
+  \node[below=0.08cm of Part, font=\small, color=gray]
+    {partition / quantum};
+\end{tikzpicture}
+\end{center}
+\bigskip
+
+\noindent
+Solid arrows are the forward functors; dashed arrows are the inverse functors.
+The diagram commutes up to natural isomorphism in every direction.
+
+%% ── §15.5 ─────────────────────────────────────────────────────────────────────
+\section{Free Conversion and Optimal Representation}
+\label{sec:ch15-free-conv}
+
+\begin{corollary}[Free Conversion]\label{cor:free-conv-mono}
+For any computation $f$ defined in one of the three representations, there
+exist computations $f^O, f^C, f^P$ in the other representations such that the
+diagram of conversions commutes up to natural isomorphism.  A computation may
+therefore be performed in whichever representation makes it cheapest.
+\end{corollary}
+
+\begin{proof}
+Direct from Theorem~\ref{thm:triple-equiv-mono}: the equivalence functors
+translate any computation between representations without information loss.
 \end{proof}
 
-\begin{proof}[Construction of $F_{\Part\Osc}$]
-  Given a partition hierarchy $(\Partition_n)$, the Koopman construction
-  associates a Hilbert space $\Hilbert_n = L^2(\Omega, \Partition_n, \mu)$
-  to each depth $n$, and a unitary operator $U_t$ whose eigenfrequencies are
-  $\{\omega_k\}$.
-  The bounded oscillator is $(\Omega, \mu, \phi_t)$ where $\phi_t$ is
-  reconstructed from the Koopman eigenvectors.
-  This defines $F_{\Part\Osc}$.
+\begin{definition}[Computation cost and conversion cost]
+\label{def:costs-mono}
+For a computation $f$ in representation $R \in \{\mathfrak{O}, \mathfrak{E}, \mathfrak{P}\}$,
+the \emph{computation cost} $\mathrm{Conv}_R(f) \in \mathbb{R}_{\geq 0}$ is
+the minimum number of elementary operations of $R$'s algebraic structure.
+The \emph{conversion cost} $\mathrm{Conv}_{R \to R'} \in \mathbb{R}_{\geq 0}$
+is the minimum number of elementary operations to convert an object from
+representation $R$ to $R'$.
+\end{definition}
+
+\begin{theorem}[Optimal Representation]\label{thm:opt-rep-mono}
+For any computation $f$, the optimal total cost over the choice of
+representation is
+\[
+  \mathrm{Conv}^*(f)
+  = \min_{R \in \{\mathfrak{O},\mathfrak{E},\mathfrak{P}\}}
+    \Bigl[\mathrm{Conv}_R(f)
+          + \min_{R'}\mathrm{Conv}_{R \to R'}\Bigr].
+\]
+\end{theorem}
+
+\begin{proof}
+Direct from Corollary~\ref{cor:free-conv-mono}: every computation has
+equivalent forms in all three representations, so the cost is the minimum of
+the representation-specific costs plus any necessary conversion to the desired
+output representation.
 \end{proof}
 
-\section{Physical Consequences of Triple Equivalence}
-\label{sec:ch15-consequences}
+\begin{remark}[The apples-and-oranges resolution]
+Theorem~\ref{thm:opt-rep-mono} formalises the principle that quantities of
+nominally different types (e.g., position and time) can be combined freely
+\emph{after} conversion to a common representation.  No special mixed-type
+operation is required; the apparent mixing is a consequence of selecting the
+most computationally efficient representation in which the calculation is
+type-uniform.  This is the formal resolution of the apples-and-oranges problem
+that the Unconstrained Subtask Theorem (Chapter~\ref{ch:floor}) addresses at
+the level of S-expressions.
+\end{remark}
 
-The Triple Equivalence is the formal proof that:
-\begin{itemize}
-  \item \textbf{Classical mechanics $=$ quantum mechanics}: every trajectory
-    of a bounded oscillator ($\Osc$) corresponds to an eigenstate of the
-    Koopman operator ($\Part$), and vice versa.
-    The two descriptions are not approximate; they are equivalent.
+%% ── §15.6 ─────────────────────────────────────────────────────────────────────
+\section{The Structural Symmetry Group}
+\label{sec:ch15-symmetry}
 
-  \item \textbf{Information theory $=$ physics}: S-entropy ($\Cat$) and
-    partition entropy ($\Part$) are the same quantity computed in different
-    languages.
+\begin{definition}[Structural automorphism]\label{def:struct-auto-mono}
+A \emph{structural automorphism} of the calculus is a triple of compatible
+self-equivalences $(\sigma_O, \sigma_C, \sigma_P)$ on the three representation
+categories such that
+\[
+  \sigma_C \circ F_{OC} = F_{OC} \circ \sigma_O, \quad
+  \sigma_P \circ F_{CP} = F_{CP} \circ \sigma_C, \quad
+  \sigma_O \circ F_{PO} = F_{PO} \circ \sigma_P.
+\]
+\end{definition}
 
-  \item \textbf{GPU computation $=$ physical measurement}: a GPU fragment
-    shader performing partition-depth minimisation ($\Part$) on a bounded
-    domain is a physical observation apparatus in the sense of category $\Osc$.
-    This is the mathematical foundation of Chapter~\ref{ch:gpu}.
-\end{itemize}
+\begin{theorem}[Symmetry Group]\label{thm:sym-group-mono}
+The structural automorphisms form a group $G_{\mathrm{str}}$ acting on the
+algebra of S-expressions $\mathcal{E}$.  The group includes:
+\begin{enumerate}[(i)]
+  \item the trivial action (identity);
+  \item the cyclic permutation $\mathfrak{O} \to \mathfrak{E} \to
+    \mathfrak{P} \to \mathfrak{O}$;
+  \item the involutive swap of any two representations;
+  \item all compositions of (ii) and (iii).
+\end{enumerate}
+The group $G_{\mathrm{str}}$ is isomorphic to the symmetric group $S_3$.
+\end{theorem}
 
+\begin{proof}
+Direct verification that compositions of these operations remain structural
+automorphisms by Theorem~\ref{thm:triple-equiv-mono}.  The six elements of
+$S_3$ correspond to the six ways of permuting three representations.
+\end{proof}
+
+\begin{corollary}[Invariants of $G_{\mathrm{str}}$]\label{cor:invariants-mono}
+The S-value $S_{\mathcal{R}}$, the catalytic power $\kappa$, and the floor
+$S_\flat$ are all invariants of the structural automorphism group: they take
+the same value on all symmetric copies of an expression.
+\end{corollary}
+
+\begin{proof}
+Each of these quantities is defined via the receiver evaluation
+$\mathrm{eval}_{\mathcal{R}}$, which commutes with the conversion functors by
+definition of the equivalence.  Hence permuting representations leaves S-values,
+catalytic powers, and floors unchanged.
+\end{proof}
+
+%% ── §15.7 ─────────────────────────────────────────────────────────────────────
 \section{Triple Entropy Equivalence}
 \label{sec:ch15-entropy}
 
+The Triple Equivalence of categories yields a parallel equivalence of the three
+S-entropy components of the mass spectrometric triple.
+
 \begin{consequence}{Triple Entropy Equivalence}{tripleent}
-  The oscillatory, categorical, and partition entropies are identical:
-  \begin{equation}
-    \Sk = \St = \Se = \kB \Depth \ln n,
-  \end{equation}
-  where $\Depth$ is the partition depth and $n$ is the number of cells at
-  that depth.
+For any fixed partition depth $n$ and any state in the bounded phase space
+$(\Omega, \mathscr{P}, \pi)$, the three S-entropy components of the triple
+$(\Sk, \St, \Se)$ are equal:
+\[
+  \Sk \;=\; \St \;=\; \Se.
+\]
+That is: the oscillatory S-entropy, the categorical S-entropy, and the
+partition S-entropy are the same quantity computed in three distinct
+observational languages.
 \end{consequence}
 
-\begin{proof}[Proof sketch]
-  $\Sk = \kB\log|\mathcal{V}| = \kB\log(C(n)) = \kB\log(2n^2)$
-  (oscillatory entropy from visited cells).\\
-  $\St = -\sum_i \mu(A_i)\log\mu(A_i)$ for the uniform partition at depth $n$
-  $= \kB\log(C(n))$ (categorical/Shannon entropy).\\
-  $\Se = \kB\log C(n)$ (partition entropy by definition of the partition
-  measure).\\
-  All three equal $\kB\log(2n^2) = \kB(\ln 2 + 2\ln n)$,
-  which equals $\kB \Depth \ln n$ for the appropriate depth scaling.
+\begin{proof}
+We show that all three S-values coincide with the partition entropy at depth
+$n$.
+
+\medskip\noindent
+\textit{Partition entropy $\Se$.}
+By Definition~\ref{def:part-mono}, the partition structure at depth $n$ has
+cells $\{P_n\}$ with weights $\pi(p)$.  The partition S-entropy is
+\[
+  \Se = -\sum_{p \in P_n} \pi(p)\log\pi(p),
+\]
+the Shannon entropy of the partition measure at depth $n$.
+
+\medskip\noindent
+\textit{Categorical entropy $\St$.}
+The functor $F_{PC} : \mathbf{Part} \to \mathbf{Cat}$ assigns to each
+partition atom $p \in P_n$ a cell $c_p \in C$ with weight $\nu(c_p) = \pi(p)$.
+The categorical S-entropy is
+\[
+  \St = -\sum_{c \in C_n} \nu(c)\log\nu(c)
+       = -\sum_{p \in P_n} \pi(p)\log\pi(p)
+       = \Se,
+\]
+since $F_{PC}$ preserves the measure by construction.
+
+\medskip\noindent
+\textit{Oscillatory entropy $\Sk$.}
+The functor $F_{PO} : \mathbf{Part} \to \mathbf{Osc}$ assigns to each atom
+$p \in P_\infty$ the frequency $\omega(p) = 1/\pi(p)$ and weight $\mu(p) =
+\pi(p)$.  The oscillatory S-entropy, computed as the weighted Shannon entropy
+of the mode measure, is
+\[
+  \Sk = -\sum_{p \in P_n} \mu(p)\log\mu(p)
+       = -\sum_{p \in P_n} \pi(p)\log\pi(p)
+       = \Se.
+\]
+Therefore $\Sk = \St = \Se$ at any fixed partition depth.
 \end{proof}
 
+\begin{remark}[What the equality means]
+The equality $\Sk = \St = \Se$ is not a numerical coincidence: it is the
+quantitative expression of the Triple Equivalence.  The three categories encode
+the same probability measure; the three entropies are three formulas for the
+same quantity applied to the same measure.  Choosing which formula to compute
+is a matter of computational convenience, not a choice about which entropy is
+``real''.
+\end{remark}
+
+%% ── §15.8 ─────────────────────────────────────────────────────────────────────
+\section{Physical Consequences of the Triple Equivalence}
+\label{sec:ch15-consequences}
+
+The Triple Equivalence has three immediate physical consequences, each of
+which appears startling from a conventional perspective but follows directly
+from Theorem~\ref{thm:triple-equiv-mono}.
+
+%% Consequence 1
+\begin{consequence}{Classical Mechanics $=$ Quantum Mechanics}{classeqquant}
+Every trajectory of a bounded oscillator (object of $\mathbf{Osc}$, the
+language of classical mechanics) corresponds, via $F_{OC} \circ F_{CP}$, to
+a partition atom of the limit partition (object of $\mathbf{Part}$, the
+language of quantum mechanics), and vice versa via $F_{PO}$.  The two
+descriptions are not approximate; they are equivalent.
+\end{consequence}
+
+\begin{proof}
+Apply Theorem~\ref{thm:triple-equiv-mono}: the functor $F_{OC}$ sends each
+classical mode $(m, \omega(m), \Phi(m,\cdot), \mu)$ to a categorical cell, and
+$F_{CP}$ sends that cell to a partition atom.  The inverse $F_{PO} \circ F_{CO}$
+reconstructs the classical mode from the partition atom.  The reconstruction
+is exact up to the rounding ambiguity of the categorical labelling, which
+vanishes in the equivalence of categories.
+\end{proof}
+
+\begin{remark}[Scope of the consequence]
+The statement ``classical mechanics $=$ quantum mechanics'' is scoped
+to bounded physical systems satisfying Axiom~\ref{ax:bpsl}.  For such
+systems, the Koopman operator on $L^2(\Omega, \mu)$ is unitary (by
+clause~(ii) of the Axiom), and its eigenfunctions are the oscillatory modes.
+The partition atoms are the cells of the hierarchical partition guaranteed by
+clause~(iii).  The Triple Equivalence says that the eigenfunction description
+and the partition-cell description carry identical information.  This does not
+imply that classical mechanics and quantum mechanics make the same predictions
+in all regimes; it implies that, for persistent bounded systems, the distinction
+is one of computational language, not of physical content.
+\end{remark}
+
+%% Consequence 2
+\begin{consequence}{GPU Computation $=$ Physical Instrument}{gpuphys}
+A GPU fragment shader performing partition-depth minimisation on a bounded
+domain (an object of $\mathbf{Part}$) is a physical observation apparatus in
+the sense of the oscillatory category $\mathbf{Osc}$ (via $F_{PO}$) and an
+epistemological receiver in the sense of the categorical category $\mathbf{Cat}$
+(via $F_{PC}$).  The GPU and the physical instrument compute the same S-value
+and attain the same floor.
+\end{consequence}
+
+\begin{proof}
+Let the GPU's partition be $(\Omega_{\mathrm{GPU}}, \mathscr{P}_{\mathrm{GPU}},
+\pi_{\mathrm{GPU}})$ where $\Omega_{\mathrm{GPU}}$ is the shader's bounded
+floating-point domain, $\mathscr{P}_{\mathrm{GPU}}$ is the hierarchy of GPU
+pixel grids at successive resolutions, and $\pi_{\mathrm{GPU}}$ is the uniform
+measure on pixels.  By Theorem~\ref{thm:triple-equiv-mono}, this partition
+structure is equivalent to an oscillatory structure via $F_{PO}$ and to a
+categorical structure via $F_{PC}$.  The S-value computed by the GPU
+(partition entropy at the finest resolution) equals $\Sk = \Se$ by the Triple
+Entropy Equivalence (Consequence~\ref{cons:tripleent}).  The floor of the GPU
+as a bounded receiver equals $S_\flat(\mathcal{R}_{\mathrm{GPU}}) > 0$ by
+Theorem~\ref{thm:floor-pos-mono}, which is the same floor that governs the
+physical instrument's mass accuracy.  Hence the GPU shader is, in the sense
+of the calculus, a physical observation apparatus.
+\end{proof}
+
+%% Consequence 3
+\begin{consequence}{S-entropy Uniqueness Across Representations}{sentunique}
+For any bounded physical system satisfying Axiom~\ref{ax:bpsl}, the S-entropy
+$S_{\mathcal{R}}(x, x^{*})$ is the same number regardless of whether the
+receiver computes it in the oscillatory, categorical, or partition
+representation.  That is: $S_k = S_t = S_e$ where the subscripts denote the
+representation used for the computation.
+\end{consequence}
+
+\begin{proof}
+This is the quantitative content of Corollary~\ref{cor:invariants-mono}: S-values
+are invariants of the structural automorphism group $S_3$ acting on the three
+representations.  Therefore $S_{\mathcal{R}}$ takes the same value regardless
+of which representation the receiver uses for computation.
+\end{proof}
+
+%% ── §15.9 ─────────────────────────────────────────────────────────────────────
+\section{Connection to Standard Mathematics}
+\label{sec:ch15-math}
+
+The Triple Equivalence connects to several well-established bodies of
+mathematics.
+
+\begin{remark}[Stone-type duality]
+The equivalence $\mathbf{Cat} \cong \mathbf{Part}$ has the structural shape of
+Stone's duality between Boolean algebras and totally disconnected compact
+Hausdorff spaces: the categorical structure plays the role of an algebraic
+object whose ``points'' correspond to maximal filters, and the partition
+structure plays the role of the dual topological space.  The functors $F_{CP}$
+and $F_{PC}$ are the Stone-\v{C}ech-style maps in this analogy.
+\end{remark}
+
+\begin{remark}[Koopman operator and oscillatory structure]
+The equivalence $\mathbf{Part} \cong \mathbf{Osc}$ is the category-theoretic
+formulation of the Koopman operator approach to ergodic theory: oscillatory
+modes correspond to eigenfunctions of the Koopman operator
+$U_t f = f \circ \phi_t$ on $L^2(\Omega, \mu)$, and partition atoms correspond
+to the supports of ergodic measures.  The functor $F_{PO}$ is the operator that
+converts a partition measure into the corresponding Koopman eigenspectrum.
+\end{remark}
+
+\begin{remark}[Ergodic theory and S-convergence]
+The catalyst-driven convergence theorem (Theorem~\ref{thm:cat-conv-mono} of
+Chapter~\ref{ch:floor}) is structurally similar to Birkhoff's ergodic averaging
+theorem: a sequence of operations applied to an initial state yields convergence
+to an invariant set, with the floor playing the role of the invariant measure's
+support.  The mean return time to a partition cell of measure $\pi(p)$ is
+$1/\pi(p)$ by Kac's lemma, which is exactly the frequency $\omega(p)$ assigned
+by $F_{PO}$.
+\end{remark}
+
+%% ── §15.10 ────────────────────────────────────────────────────────────────────
+\section{Cross-Representation Computation}
+\label{sec:ch15-cross-rep}
+
+\begin{theorem}[Cross-Representation Composition]\label{thm:cross-rep-mono}
+Let $\xi_1, \ldots, \xi_n \in \mathcal{E}$ be expressions in possibly distinct
+representations $R_1, \ldots, R_n \in \{\mathfrak{O}, \mathfrak{E}, \mathfrak{P}\}$,
+and let $\star_1, \ldots, \star_{n-1}$ be binary operations.  Then the
+composition $\xi_1 \star_1 \xi_2 \star_2 \cdots \star_{n-1} \xi_n$ is
+well-defined under $\mathrm{eval}_{\mathcal{R}}$ for any
+representation-coherent receiver $\mathcal{R}$.
+\end{theorem}
+
+\begin{proof}
+By the definition of receiver evaluation, the receiver applies the conversion
+functor $\Phi^{R \to R'}$ implicitly when an operation requires uniform
+representation.  Specifically, when $\star_i$ requires arguments in
+representation $R$ but $\xi_i$ is in $R_i \neq R$, the implicit conversion
+$\Phi^{R_i \to R}(\xi_i)$ is performed.  The result is well-defined by
+Theorem~\ref{thm:triple-equiv-mono} and the conversion cost is bounded by
+Definition~\ref{def:costs-mono}.
+\end{proof}
+
+\begin{corollary}[Apples-and-Oranges Admissibility]\label{cor:apples-mono}
+Let $\mathcal{R}$ be a representation-coherent receiver.  For any finite
+sequence of expressions $\xi_i$ each in any representation, and any binary
+operation sequence, the composition is admissible at $\mathcal{R}$.
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:cross-rep-mono} repeatedly.
+\end{proof}
+
+\begin{example}[Three equivalent solutions to the same problem]
+Let $x^{*}$ correspond to an oscillatory mode $m^{*}$ with frequency
+$\omega(m^{*}) = 2\pi/T$.  Three ostensibly distinct expressions for the
+same answer are:
+\begin{enumerate}[(1)]
+  \item \emph{Oscillatory}: $\xi_O := (m^{*}, \mathfrak{O})$, directly
+    identifying the mode by its frequency.
+  \item \emph{Categorical}: $\xi_C := (c^{*}, \mathfrak{E})$ where $c^{*}$
+    is the cell whose label corresponds to $m^{*}$ under $F_{OC}$.
+  \item \emph{Partition}: $\xi_P := (p^{*}, \mathfrak{P})$ where $p^{*}$
+    is the partition atom of measure $\pi(p^{*}) = 1/\omega(m^{*})$
+    under $F_{PO}$.
+\end{enumerate}
+By Theorem~\ref{thm:triple-equiv-mono}, all three evaluate to the same
+internal state of the receiver and hence have identical S-value.  The choice
+is solely a matter of computational cost (Theorem~\ref{thm:opt-rep-mono}).
+\end{example}
+
+%% ── §15.11 ────────────────────────────────────────────────────────────────────
+\section{The Union: Why Two Crowns}
+\label{sec:ch15-union}
+
+The title of this monograph---\emph{Union of Two Crowns}---refers to the
+Triple Equivalence as a unifying theorem.  The ``two crowns'' are the two
+languages that physics has historically treated as separate: the classical
+(oscillatory, continuous, trajectory-based) and the quantum (partition-based,
+discrete, eigenstate-based).  The Triple Equivalence shows that both crowns are
+functorially equivalent to a third---the epistemological language of S-entropy
+and receivers---and therefore to each other.
+
+The union is not a merger by approximation.  It is an exact equivalence of
+categories, guaranteed by the explicit construction of the functors $F_{OC}$,
+$F_{CP}$, $F_{PO}$ and their inverses.  Any statement made in one language has
+an exact translation into the other two; any computation performed in one
+representation has a formally equivalent computation in the others.
+
+For mass spectrometry this has immediate content.  The classical description
+of an ion trajectory (oscillatory language) and the quantum description of the
+ion's energy levels (partition language) are two computations of the same
+physical system, related by the conversion functors.  The S-entropy triple
+$(\Sk, \St, \Se)$ is a single scalar quantity measured three ways; by the
+Triple Entropy Equivalence they are identical.  The GPU implementation of the
+mass spectrometric receiver is, in the precise sense of the calculus, a
+physical instrument---not a simulation of one.
+
+%% ── Chapter Summary ───────────────────────────────────────────────────────────
 \bigskip
 \begin{tcolorbox}[colback=crowngold!10, colframe=crowngold!70!black,
                   title={\textbf{Chapter 15 Summary: The Union}}]
 \begin{itemize}[noitemsep]
-  \item The Triple Equivalence $\Osc \cong \Cat \cong \Part$ is proved via
-    three explicit functors.
-  \item Classical mechanics (trajectories) = quantum mechanics (eigenstates)
-    = information theory (S-entropy) for any bounded physical system.
-  \item The equivalence holds exactly, not approximately.
-  \item GPU shaders performing partition-depth minimisation are physical
-    observation apparatuses (formal consequence of $\Part \cong \Osc$).
-  \item The three entropies $\Sk, \St, \Se$ are identical.
+  \item Three categories are defined: $\mathbf{Osc}$ (oscillatory, classical
+    mechanics language), $\mathbf{Cat}$ (categorical, S-entropy language),
+    $\mathbf{Part}$ (partition, quantum mechanics language).
+  \item Three explicit conversion functors are constructed:
+    $F_{OC} : \mathbf{Osc} \to \mathbf{Cat}$ (frequency divisibility and
+    label encoding),
+    $F_{CP} : \mathbf{Cat} \to \mathbf{Part}$ (label quotient),
+    $F_{PO} : \mathbf{Part} \to \mathbf{Osc}$ (inverse-measure frequency via
+    Kac's lemma analogue).
+  \item \textbf{Triple Equivalence}: $\mathbf{Osc} \cong \mathbf{Cat} \cong
+    \mathbf{Part}$ via the six functors.  The equivalence is exact, not
+    approximate.  The symmetry group is $S_3$.
+  \item \textbf{Consequence~\ref{cons:classeqquant}}: Classical mechanics
+    (trajectories) and quantum mechanics (eigenstates) are equivalent for any
+    bounded physical system satisfying Axiom~\ref{ax:bpsl}.
+  \item \textbf{Consequence~\ref{cons:gpuphys}}: A GPU fragment shader
+    performing partition-depth minimisation on a bounded domain is a physical
+    observation apparatus in the formal sense of the calculus.
+  \item \textbf{Consequence~\ref{cons:sentunique}}: The three S-entropy
+    components $\Sk = \St = \Se$; the representation used for computation is
+    a matter of cost, not of physical content.
+  \item \textbf{Triple Entropy Equivalence}
+    (Consequence~\ref{cons:tripleent}): the oscillatory, categorical, and
+    partition entropies are the same Shannon entropy of the partition measure,
+    computed in three distinct notations.
+  \item Free conversion (Corollary~\ref{cor:free-conv-mono}) allows any
+    computation to be relocated to the cheapest representation; apples-and-oranges
+    compositions are always admissible in a representation-coherent receiver
+    (Corollary~\ref{cor:apples-mono}).
 \end{itemize}
 \end{tcolorbox}

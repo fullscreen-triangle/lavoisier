@@ -114,12 +114,18 @@ export const useStore = create((set, get) => ({
   // Experiment / virtual-instrument slice
   // ===========================================================
   experimentDesign: {
+    experimentType: "lipidomics",
     classSpecs: [
-      { classKey: "PC", Xmin: 30, Xmax: 40, Ymin: 0, Ymax: 4, enabled: true },
-      { classKey: "PE", Xmin: 30, Xmax: 40, Ymin: 0, Ymax: 4, enabled: true },
-      { classKey: "SM", Xmin: 16, Xmax: 24, Ymin: 0, Ymax: 2, enabled: true },
-      { classKey: "Cer", Xmin: 16, Xmax: 24, Ymin: 0, Ymax: 2, enabled: true },
+      { classKey: "PC",  Xmin: 30, Xmax: 40, Ymin: 0, Ymax: 4, enabled: true  },
+      { classKey: "PE",  Xmin: 30, Xmax: 40, Ymin: 0, Ymax: 4, enabled: true  },
+      { classKey: "SM",  Xmin: 16, Xmax: 24, Ymin: 0, Ymax: 2, enabled: true  },
+      { classKey: "Cer", Xmin: 16, Xmax: 24, Ymin: 0, Ymax: 2, enabled: true  },
       { classKey: "TAG", Xmin: 46, Xmax: 56, Ymin: 0, Ymax: 6, enabled: false },
+    ],
+    proteinSpecs: [
+      { classKey: "HSA",  lengthMin: 7, lengthMax: 20, mcMin: 0, mcMax: 1, enabled: true  },
+      { classKey: "ENO1", lengthMin: 7, lengthMax: 20, mcMin: 0, mcMax: 0, enabled: true  },
+      { classKey: "CYCS", lengthMin: 6, lengthMax: 20, mcMin: 0, mcMax: 1, enabled: false },
     ],
     polarity: "+",
     adductsAllowed: ["[M+H]+", "[M+Na]+", "[M+NH4]+"],
@@ -184,6 +190,58 @@ export const useStore = create((set, get) => ({
     experimentSummary: null,
     experimentLastRunMs: 0,
   }),
+
+  // Switch between lipidomics and proteomics — resets adduct defaults
+  setExperimentType: (type) => set((s) => ({
+    experimentDesign: {
+      ...s.experimentDesign,
+      experimentType: type,
+      polarity: "+",
+      adductsAllowed: type === "proteomics"
+        ? ["[M+2H]2+", "[M+3H]3+", "[M+H]+"]
+        : ["[M+H]+", "[M+Na]+", "[M+NH4]+"],
+    },
+  })),
+
+  // Proteomics protein-spec actions (mirror the lipidomics classSpec actions)
+  setProteinSpec: (classKey, patch) => set((s) => ({
+    experimentDesign: {
+      ...s.experimentDesign,
+      proteinSpecs: (s.experimentDesign.proteinSpecs || []).map((ps) =>
+        ps.classKey === classKey ? { ...ps, ...patch } : ps
+      ),
+    },
+  })),
+  toggleProtein: (classKey) => set((s) => ({
+    experimentDesign: {
+      ...s.experimentDesign,
+      proteinSpecs: (s.experimentDesign.proteinSpecs || []).map((ps) =>
+        ps.classKey === classKey ? { ...ps, enabled: !ps.enabled } : ps
+      ),
+    },
+  })),
+  addProteinSpec: (classKey) => set((s) => {
+    const specs = s.experimentDesign.proteinSpecs || [];
+    if (specs.find((ps) => ps.classKey === classKey)) return {};
+    return {
+      experimentDesign: {
+        ...s.experimentDesign,
+        proteinSpecs: [
+          ...specs,
+          { classKey, lengthMin: 7, lengthMax: 20, mcMin: 0, mcMax: 1, enabled: true },
+        ],
+      },
+    };
+  }),
+  removeProteinSpec: (classKey) => set((s) => ({
+    experimentDesign: {
+      ...s.experimentDesign,
+      proteinSpecs: (s.experimentDesign.proteinSpecs || []).filter(
+        (ps) => ps.classKey !== classKey
+      ),
+    },
+  })),
+
   selectedRecordId: null,
   selectRecord: (id) => set({ selectedRecordId: id }),
 }));

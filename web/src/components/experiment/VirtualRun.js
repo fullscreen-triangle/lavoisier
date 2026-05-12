@@ -24,9 +24,12 @@ export default function VirtualRun() {
     await new Promise((r) => setTimeout(r, 16));
     try {
       const t0 = performance.now();
-      const classSpecs = design.classSpecs.filter((cs) => cs.enabled);
+      const classSpecs   = design.classSpecs.filter((cs) => cs.enabled);
+      const proteinSpecs = (design.proteinSpecs || []).filter((ps) => ps.enabled);
       const records = runExperiment({
+        experimentType: design.experimentType || "lipidomics",
         classSpecs,
+        proteinSpecs,
         adductsAllowed: design.adductsAllowed,
         polarity: design.polarity,
         analyser: design.analyser,

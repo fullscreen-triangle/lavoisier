@@ -9,11 +9,18 @@ export const PALETTE = {
   text: "#cdd5df",
   muted: "#6b7280",
 
-  // class colours (slightly desaturated for the dark bg)
+  // lipid class colours (slightly desaturated for the dark bg)
   PC:  "#5fa8d3", PE: "#e07a7a", PS: "#b388eb",
   PG:  "#e493b3", PI: "#5dc0d8", SM: "#7cc77c",
   Cer: "#e6a456", TAG: "#cdc15c", DAG: "#a07a5e",
   LPC: "#a8b2bd", CE:  "#9cc4d8", FA:  "#e8c598",
+
+  // protein class colours
+  HSA:  "#60a5fa",
+  HBB:  "#f87171",
+  ENO1: "#34d399",
+  CYCS: "#a78bfa",
+  CASE: "#fb923c",
 
   pos: "#5fa8d3", neg: "#e07a7a",
   pass: "#7cc77c", fail: "#e07a7a",
@@ -28,6 +35,11 @@ export const FRAGMENT_TYPE_COLOR = {
   fa_anion:     "#b388eb",
   neutral_loss: "#5dc0d8",
   isotope:      "#a8b2bd",
+  // proteomics fragment types
+  b_ion:        "#60a5fa",
+  y_ion:        "#f87171",
+  a_ion:        "#34d399",
+  immonium:     "#fb923c",
 };
 
 export function classColor(classKey) {

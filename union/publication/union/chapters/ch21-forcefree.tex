@@ -5,92 +5,805 @@
 % ============================================================
 
 \epigraph{%
-  The ion does not follow a force.\\
-  It descends the partition depth landscape.%
+  Forces are gradients wearing disguises.\\
+  Remove the disguise: only the partition depth field remains.%
 }{}
 
-\section{The Force-Free Formulation}
-\label{sec:ch21-forcefree}
+%==============================================================================
+\section{The Central Thesis: Forces Are Not Fundamental}
+\label{sec:ch21-thesis}
+%==============================================================================
 
-Chapter~\ref{ch:lagrangian} showed that the equation of motion for a bounded
-system has the Lorentz-force shape but is force-free: it is gradient descent
-on the partition depth field $\Depth(\mathbf{x}, t)$.
-Applied to an ion in a mass spectrometer, this means:
+Every mass spectrometry textbook describes the instrument through forces.  The
+ion source applies an electric field.  Ion lenses use electromagnetic potentials.
+The mass analyser employs the Lorentz force $\mathbf{F} = q(\mathbf{E}+\mathbf{v}
+\times\mathbf{B})$ to separate ions by $m/z$.  The detector registers
+mechanical impact.  Trajectory simulation codes integrate Newton's second law
+through field geometries.
 
-\begin{itemize}
-  \item There are no ``electric forces''.
-    The electric field $\mathbf{E} = -\nabla\Depth$ is the gradient of the
-    partition depth field, and the ion moves along this gradient.
-  \item There are no ``magnetic forces''.
-    The magnetic field appears as the curl of the partition vector potential
-    $\Apartition$, and the cyclotron orbit is geodesic motion in the
-    $(\Depth, \Apartition)$ landscape.
-  \item Fragmentation is not a force event.
-    It is a partition-depth transition: the parent ion moves to a new region
-    of partition space occupied by its fragments.
-\end{itemize}
+But what \emph{are} these forces?  Why does the Lorentz force take its
+particular form?  Why does mass resist acceleration?  Why does charge exist?
+The standard framework treats mass, charge, and force as primitive quantities
+with empirical values.  This chapter demonstrates they are unnecessary.
 
-\section{The Six-Pass GPU Pipeline}
-\label{sec:ch21-sixpass}
+The derivation proceeds from a single axiom---the Bounded Phase Space Law
+established in Chapter~\ref{ch:axiom}---without invoking any force.  The
+central mechanism is \emph{partition depth minimisation}: ions are incomplete
+categorical structures (partition malformations) that evolve toward partition
+completion by descending the partition depth gradient.  What is called an
+``electric field'' is a partition depth gradient.  What is called the
+``mass-to-charge ratio'' is partition inertia.  What is called a ``detector
+signal'' is a partition completion event.  No force acts at any stage.
 
-The partition Lagrangian translates directly into a six-pass GPU rendering
-pipeline:
+\begin{consequence}{Forces Are Partition Gradients}{forces-gradients}
+  All four ``fundamental forces'' acting on ions in a mass spectrometer are
+  gradients or transitions of the partition depth field $\Depth(\mathbf{x},t)$.
+  The Lorentz force is the Euler--Lagrange equation for partition depth
+  minimisation.  Forces add no predictive power; they obscure the underlying
+  partition structure.
+\end{consequence}
 
-\begin{enumerate}
-  \item \textbf{Pass 1 (Ionisation)}: assign initial partition coordinates
-    $(n_0, l_0, m_0, s_0)$ from the ESI droplet model.
-  \item \textbf{Pass 2 (Drift)}: propagate the ion through the RF multipole
-    using the Mathieu stability shader.
-  \item \textbf{Pass 3 (Depth descent)}: compute $\nabla\Depth$ in the
-    analyser field and advance the ion's partition depth.
-  \item \textbf{Pass 4 (Fragmentation)}: detect partition-depth transitions
-    above the CID energy threshold; spawn fragment ions.
-  \item \textbf{Pass 5 (Detection)}: collect ions at the detector partition
-    surface; accumulate image charges.
-  \item \textbf{Pass 6 (Spectral reconstruction)}: Fourier-transform the
-    image charge time-series to produce $m/z$ and intensity.
-\end{enumerate}
+%==============================================================================
+\section{Eliminating the Four Forces}
+\label{sec:ch21-elimination}
+%==============================================================================
 
-Each pass is a fragment shader operating on a texture representing the
-partition depth field at that stage.
-By the Triple Equivalence (Chapter~\ref{ch:triple}), this computation is
-physically equivalent to a measurement: the shader pipeline \emph{is} the
-instrument.
+\subsection{Gravity as Partition Depth Gradient}
 
-\section{Comparison with Four Analyser Technologies}
-\label{sec:ch21-comparison}
+From the derivation in Chapter~\ref{ch:mass}, any system in bounded phase space
+carries a partition depth field $\Depth(\mathbf{x})$ encoding the categorical
+specificity required to distinguish the system from its environment.  A
+macroscopic object at height $h$ must be distinguished from air molecules,
+from vacuum, from the distant Earth: more partitions are required at greater
+height, so $\Depth(h) = \Depth_0 + \alpha h$.
+
+\begin{theorem}[Gravity as Partition Gradient]
+\label{thm:ch21-gravity}
+  The apparent gravitational force is partition depth minimisation:
+  \begin{equation}
+    \mathbf{F}_{\mathrm{apparent}} = -\kB T \ln b \cdot \nabla\Depth.
+  \end{equation}
+  The gravitational constant $G$ is a contextual coupling between partition
+  depth gradients averaged over configurations, not a primitive constant.
+\end{theorem}
+
+\begin{proof}
+  On the ground ($h=0$) fewer degrees of freedom are unconstrained, so
+  $\Depth_{\mathrm{ground}} < \Depth_{\mathrm{air}}$.  The system evolves toward
+  lower $\Depth$.  The ``normal force'' is not an opposing force; it is the
+  resistance to further $\Depth$ reduction at the $\Depth$-minimum.  The object
+  stops because $\Depth$ is minimised, not because forces balance.  The
+  coefficient $\kB T\ln b$ converts depth units to energy units by the
+  partition entropy identity $\Delta S_{\mathcal{P}} = \kB \ln b \cdot
+  \Delta\Depth$.
+\end{proof}
+
+\begin{remark}
+  The Equivalence Principle---all masses fall equally---follows immediately:
+  partition depth gradients are independent of the object's internal partition
+  structure; only the external landscape $\Depth(\mathbf{x})$ determines the
+  trajectory.  No mass dependence appears, consistent with the empirical
+  result that $G$ is universal \citep{eotvos1922}.
+\end{remark}
+
+\subsection{The Strong Interaction as Partition Sharing}
+
+The conventional description requires a ``strong force'' to overcome the
+Coulomb repulsion between protons packed inside a nucleus.  The partition
+framework shows there is no repulsion to overcome.
+
+\begin{theorem}[Nuclear Binding as Partition Sharing]
+\label{thm:ch21-strong}
+  Nucleons inside a nucleus share partition structure.  By the Emergence
+  Theorem (Chapter~\ref{ch:charge}), unpartitioned entities carry no charge
+  assignment.  Uncharged nucleons feel no Coulomb repulsion.  Nuclear binding
+  energy is the partition depth deficit from composition:
+  \begin{equation}
+    E_{\mathrm{binding}} = T_{\mathcal{P}}\kB\ln b \cdot
+    \bigl(\Depth_{\mathrm{free}} - \Depth_{\mathrm{bound}}\bigr),
+    \qquad \Depth_{\mathrm{bound}} < \Depth_{\mathrm{free}}.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  Inside the nucleus, nucleons share a common reference frame.  They are not
+  individually distinguishable as ``proton 1,'' ``proton 2.''  By the Emergence
+  Theorem, charge requires partitioning; unpartitioned nucleons have no
+  individual charge.  Therefore no electromagnetic repulsion exists.  The
+  binding energy is the thermodynamic cost of the partition depth reduction
+  upon sharing---not a force overcoming another force.
+\end{proof}
+
+\subsection{Electromagnetism as Categorical State Propagation}
+
+\begin{theorem}[Charge Emergence]
+\label{thm:ch21-charge-em}
+  Electric charge exists only for partitioned entities.  Five independent
+  arguments establish this:
+  \begin{enumerate}
+    \item \textbf{Operational}: measuring charge requires distinguishing one
+      entity from another---a partition.  Without partition, measurement
+      endpoints are undefined.
+    \item \textbf{Stability}: protons inside nuclei are not individually
+      charged; if they were, electron shell transitions would require nuclear
+      reorganisation.  Nuclei are stable.
+    \item \textbf{Finiteness}: tracking $Z!$ proton--electron pairings violates
+      bounded phase space for large $Z$.
+    \item \textbf{Fission creates charge}: nuclear fission produces charged
+      fragments from an uncharged (unpartitioned) interior.
+    \item \textbf{Boundary analogy}: a submerged object is not ``wet''---wetness
+      requires a boundary.  Charge, like wetness, is a boundary property.
+  \end{enumerate}
+\end{theorem}
+
+The electromagnetic ``force'' on a moving charge is the gradient of the
+partition depth field $\Depth(\mathbf{x},t)$ plus the curl of the partition
+vector potential $\Apartition(\mathbf{x})$.  Electric current is not charge
+transport; it is categorical state propagation at velocity $v_{\mathrm{signal}}
+\approx 10^8\,\mathrm{m/s}$, while charge carriers drift at
+$v_{\mathrm{drift}} \approx 10^{-4}\,\mathrm{m/s}$---a ratio of $10^{12}$
+proving that current is state propagation, not particle flow.
+
+\subsection{The Weak Interaction as Partition Transition}
+
+\begin{theorem}[Weak Decay as Partition Coordinate Transition]
+  Radioactive $\beta$-decay ($n \to p + e^- + \bar\nu_e$) is a partition
+  coordinate transition.  The large partition lag $\taup$ for this transition
+  makes it slow, hence ``weak.''  Selection rules ($\Delta\ell = \pm 1$,
+  $|\Delta m|\leq 1$, $\Delta s = 0$) are partition coordinate constraints on
+  allowed transitions.
+\end{theorem}
+
+\subsection{Summary of Force Elimination}
 
 \begin{table}[htbp]
 \centering
-\caption{%
-  Six-pass GPU pipeline correspondence with physical analyser stages.
-}
+\caption{All four fundamental forces reduced to partition operations.
+  No force acts at any stage of a mass spectrometric measurement.}
+\label{tab:ch21-forces}
 \begin{tabular}{@{}llll@{}}
 \toprule
-GPU Pass & Physical Stage & Partition Operation & Observable \\
+\textbf{``Force''} & \textbf{Partition operation} & \textbf{Mechanism}
+  & \textbf{Key equation} \\
 \midrule
-1 & ESI & Depth initialisation & Initial $m/z$ \\
-2 & Ion transfer & Mathieu stability filter & Transmission window \\
-3 & Mass analysis & Depth gradient descent & $\omega_z$, $\omega_c$, $t_\mathrm{flight}$ \\
-4 & CID & Depth transition & Fragment $m/z$ \\
-5 & Detection & Boundary accumulation & Image current \\
-6 & Spectral output & Koopman FT & $m/z$ spectrum \\
+Gravity   & $\nabla\Depth$ & Depth gradient descent
+  & $\mathbf{F} = -\kB T\ln b\,\nabla\Depth$ \\
+Strong    & Shared partition & Composition: $\Depth_{\mathrm{bound}} <
+  \Depth_{\mathrm{free}}$ & $E_{\mathrm{bind}} = T\kB\ln b\,\Delta\Depth$ \\
+EM        & State propagation & Categorical flux at $c$
+  & $v_{\mathrm{signal}}/v_{\mathrm{drift}} \sim 10^{12}$ \\
+Weak      & Partition transition & Large $\taup$ coordinate change
+  & $\taup \geq \hbar/(2\Delta E)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-%%  SOURCE: integrate full derivations and figures from
-%%          shader-partition-depth-minimisation.tex
-%%  ADD: panels 1 (force elimination), 2 (transport/superconductivity),
-%%       3 (six-pass pipeline), 4 (GPU journey comparison).
+\begin{consequence}{Complete Force Elimination}{force-elimination}
+  No force is required at any stage of a mass spectrometric measurement.
+  Gravity, the strong interaction, electromagnetism, and the weak interaction
+  are each a different manifestation of partition depth dynamics.  The ion
+  descends the gradient $-\nabla\Depth$; no Lorentz force acts upon it.
+\end{consequence}
+
+%==============================================================================
+\section{Ions as Partition Malformations}
+\label{sec:ch21-malformation}
+%==============================================================================
+
+A neutral atom has complete partition structure: every electron occupies a
+shell slot, and $\Depth = \Depth_{\min}$.  Ionisation disrupts this
+completeness.
+
+\begin{definition}[Partition Malformation]
+  A cation (electron deficit) has unfilled partition slots; an anion has
+  excess occupants.  In either case $\Depth_{\mathrm{ion}} > \Depth_{\min}$.
+  The ion is thermodynamically unstable with respect to its partition structure
+  and evolves to minimise $\Depth$.
+\end{definition}
+
+\begin{definition}[Partition Inertia]
+  $\mu \equiv \alpha(m/z)$ is the resistance to restructuring partition
+  coordinates.  Mass IS partition inertia---not a separate quantity that
+  ``responds to force.''  The coefficient $\alpha$ converts dimensional units;
+  the ratio $m/z$ encodes both partition inertia ($m$) and malformation charge
+  ($z$).
+\end{definition}
+
+The partition inertia $\mu$ plays the role of mass in the equations of motion:
+heavier ions (larger $\mu$) descend the partition depth gradient more slowly,
+giving rise to all mass-dependent separations observed in the four analyser
+technologies.
+
+%==============================================================================
+\section{The Partition Lagrangian}
+\label{sec:ch21-lagrangian}
+%==============================================================================
+
+Chapter~\ref{ch:lagrangian} derived the partition Lagrangian from the Bounded
+Phase Space Axiom via Galilean invariance.  We collect the key results here as
+they apply to the force-free ion.
+
+\begin{theorem}[Partition Lagrangian]
+\label{thm:ch21-lagrangian}
+  The Lagrangian for an ion with partition inertia $\mu = \alpha(m/z)$ in
+  the partition depth field $\Depth(\mathbf{x},t)$ with vector potential
+  $\Apartition(\mathbf{x})$ is:
+  \begin{equation}\label{eq:ch21-lagrangian}
+    \boxed{
+      \Lagr_\Depth = \frac{1}{2}\mu|\dot{\mathbf{x}}|^2
+                   + \mu\dot{\mathbf{x}}\cdot\Apartition(\mathbf{x})
+                   - \Depth(\mathbf{x}, t).
+    }
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  Galilean invariance requires the unique quadratic kinetic term
+  $\frac{1}{2}\mu|\dot{\mathbf{x}}|^2$.  Coupling to the scalar potential
+  $\Depth$ and the vector potential $\Apartition$ gives the minimal Lagrangian
+  satisfying: (i) correct equations of motion via Euler--Lagrange; (ii)
+  recovery of all four analyser equations as topology specialisations; (iii)
+  no force terms.
+\end{proof}
+
+Applying the Euler--Lagrange procedure to $\Lagr_\Depth$:
+
+\begin{theorem}[Force-Free Equations of Motion]
+\label{thm:ch21-eom}
+  The equations of motion derived from $\Lagr_\Depth$ are:
+  \begin{equation}\label{eq:ch21-eom}
+    \mu\ddot{\mathbf{x}} = -\nabla\Depth + \mu\dot{\mathbf{x}}\times\mathbf{B}_\Depth,
+  \end{equation}
+  where $\mathbf{B}_\Depth = \nabla\times\Apartition$.  This has the
+  \emph{structure} of the Lorentz force but IS partition depth minimisation.
+  The ``electric field'' is $-\nabla\Depth/\mu$; the ``magnetic field'' is
+  $\mathbf{B}_\Depth$.  No force concept is required.
+\end{theorem}
+
+\begin{proof}
+  Compute $\partial\Lagr_\Depth/\partial\dot{x}_i = \mu\dot{x}_i +
+  \mu A_i$ and $\partial\Lagr_\Depth/\partial x_i = \mu\dot{x}_j\,
+  \partial A_j/\partial x_i - \partial\Depth/\partial x_i$.  The Euler--Lagrange
+  equation $d/dt(\partial\Lagr/\partial\dot{x}_i) = \partial\Lagr/\partial x_i$
+  then gives $\mu\ddot{x}_i = -\partial\Depth/\partial x_i +
+  \mu(\dot{x}_j\,\partial A_j/\partial x_i - \dot{x}_j\,\partial A_i/\partial
+  x_j)$, which in vector form is Eq.~\eqref{eq:ch21-eom} with
+  $(\mathbf{B}_\Depth)_k = \epsilon_{kij}\,\partial A_j/\partial x_i$.
+\end{proof}
+
+\begin{remark}
+  Equation~\eqref{eq:ch21-eom} is identical to the Lorentz force equation with
+  the replacements $q\mathbf{E} \to -\nabla\Depth$ and $q\mathbf{v}\times
+  \mathbf{B} \to \mu\dot{\mathbf{x}}\times\mathbf{B}_\Depth$.  This is not a
+  coincidence: the Lorentz force \emph{is} the partition depth gradient,
+  expressed in the language of forces.  No additional content is added by the
+  force description.
+\end{remark}
+
+%==============================================================================
+\section{All Four Analyser Equations from One Lagrangian}
+\label{sec:ch21-analysers}
+%==============================================================================
+
+The four dominant mass analyser technologies---Time-of-Flight (TOF),
+Quadrupole, Orbitrap, and FT-ICR---each create a different partition depth
+topology $\Depth(\mathbf{x},t)$.  All four observable relationships emerge
+from a single Lagrangian, with zero forces, by specialising the topology.
+
+\begin{theorem}[Analyser Universality]
+\label{thm:ch21-universality}
+  All four analyser types are specialisations of $\Lagr_\Depth$ with
+  different $\Depth(\mathbf{x},t)$ topologies.  The observable in each case
+  follows from the partition depth structure alone.
+\end{theorem}
+
+\subsection{Time-of-Flight Analyser}
+
+\paragraph{Partition topology.}
+$\Depth_{\mathrm{TOF}}(z) = -\kappa z$, $\Apartition = \mathbf{0}$.  The
+partition depth field is a linear gradient along the flight axis.
+
+\paragraph{Derivation.}
+Equation~\eqref{eq:ch21-eom} reduces to $\mu\ddot{z} = \kappa$ (uniform
+acceleration from a constant partition gradient).  Starting from rest at $z=0$:
+$z(t) = \kappa t^2 / (2\mu)$.  Setting $z = L$ (the flight tube length):
+\begin{equation}\label{eq:ch21-tof}
+  \boxed{T_{\mathrm{TOF}} = \sqrt{\frac{2\mu L}{\kappa}} = \sqrt{\frac{2\alpha L}{\kappa}}\cdot\sqrt{m/z}\;\propto\;\sqrt{m/z}.}
+\end{equation}
+Flight time is proportional to $\sqrt{m/z}$, the fundamental TOF scaling law.
+No electric force, no kinetic energy argument---only partition gradient
+descent.
+
+\paragraph{Numerical example.}
+For caffeine ($m/z = 195.09$, singly charged) and reserpine ($m/z = 609.28$)
+in a 1-m TOF with $\kappa/\mu = 2\times 10^6\,\mathrm{m\,s^{-2}}$:
+\begin{align*}
+  T_{\mathrm{TOF}}(\text{caffeine})  &= \sqrt{2\times 1/(2\times 10^6)}\cdot\sqrt{195.09}
+    \approx 13.96\;\mu\mathrm{s},\\
+  T_{\mathrm{TOF}}(\text{reserpine}) &= \sqrt{2\times 1/(2\times 10^6)}\cdot\sqrt{609.28}
+    \approx 24.68\;\mu\mathrm{s}.
+\end{align*}
+Ratio: $24.68/13.96 = 1.768$; $\sqrt{609.28/195.09} = 1.767$.  Agreement to
+$<0.1\%$.
+
+\subsection{Quadrupole Mass Filter}
+
+\paragraph{Partition topology.}
+$\Depth_{\mathrm{quad}}(\mathbf{x},t) = \frac{\kappa_0}{2}(x^2-y^2)
+[U + V\cos(\Omega t)]$, $\Apartition = \mathbf{0}$.  The topology is an
+oscillating hyperbolic saddle.
+
+\paragraph{Derivation.}
+Equation~\eqref{eq:ch21-eom} in the $x$-direction:
+\begin{equation}
+  \mu\ddot{x} = -\kappa_0 x\bigl[U + V\cos(\Omega t)\bigr].
+\end{equation}
+Defining dimensionless time $\xi = \Omega t/2$ and the Mathieu parameters:
+\begin{equation}\label{eq:ch21-mathieu}
+  a = \frac{4\kappa_0 U}{\mu\Omega^2}, \qquad
+  q = \frac{2\kappa_0 V}{\mu\Omega^2},
+\end{equation}
+the equation of motion is the Mathieu equation $d^2x/d\xi^2 + (a - 2q\cos
+2\xi)x = 0$.  Ion transmission requires operation within the first stability
+diagram ($0 \leq q \leq 0.908$, $0 \leq a \leq 0.237$).  Since $\mu =
+\alpha(m/z)$, the stability boundaries scale as $a,q \propto 1/(m/z)$: ions
+of different $m/z$ fall inside or outside the stable region for a given $(U,V)$.
+
+\begin{consequence}{Quadrupole Stability from Partition Saddle}{quad-stability}
+  The quadrupole stability diagram is the Mathieu stability boundary for
+  partition depth minimisation in an oscillating hyperbolic saddle topology.
+  Mass selection is partition topology navigation: only ions whose partition
+  inertia places them within the stable Mathieu region are transmitted.
+  No force concept is required.
+\end{consequence}
+
+\subsection{Orbitrap}
+
+\paragraph{Partition topology.}
+$\Depth_{\mathrm{orbi}}(\mathbf{x}) = \frac{\kappa}{2}\bigl(z^2 -
+\tfrac{r^2}{2}\bigr) + \frac{\kappa R_m^2}{2}\ln(r/R_m)$, $\Apartition =
+\mathbf{0}$.  The topology is a quadro-logarithmic well in $z$ superimposed
+on a logarithmic radial landscape.
+
+\paragraph{Derivation.}
+The $z$-component of Eq.~\eqref{eq:ch21-eom} gives $\mu\ddot{z} = -\kappa z$,
+a simple harmonic oscillator:
+\begin{equation}\label{eq:ch21-orbitrap}
+  \boxed{\omega_{\mathrm{orbi}} = \sqrt{\kappa/\mu} = \sqrt{\kappa/(\alpha(m/z))}\;\propto\;\sqrt{z/m}.}
+\end{equation}
+The axial oscillation frequency $\omega_{\mathrm{orbi}}$ is proportional to
+$\sqrt{z/m}$.  Mass is read from a frequency measurement---partition depth
+topology converts partition inertia into an oscillation frequency.
+
+\paragraph{Numerical example.}
+At $\kappa/\alpha = 1.0\times 10^8\,\mathrm{s}^{-2}$ (scaled units):
+\begin{align*}
+  \omega_{\mathrm{orbi}}(\text{caffeine}, m/z=195.09)
+    &= \sqrt{10^8/195.09} \approx 716.0\,\mathrm{kHz},\\
+  \omega_{\mathrm{orbi}}(\text{reserpine}, m/z=609.28)
+    &= \sqrt{10^8/609.28} \approx 405.3\,\mathrm{kHz}.
+\end{align*}
+Ratio: $716.0/405.3 = 1.766$; $\sqrt{609.28/195.09} = 1.767$.  Partition
+prediction agrees with the standard formula to $<0.1\%$.
+
+\subsection{Fourier-Transform Ion Cyclotron Resonance}
+
+\paragraph{Partition topology.}
+$\Depth = 0$, $\Apartition = \frac{B}{2}(-y, x, 0)$.  There is no scalar
+depth field; the entire landscape is encoded in the vector potential.
+
+\paragraph{Derivation.}
+With $\Depth = 0$, Eq.~\eqref{eq:ch21-eom} gives $\mu\ddot{\mathbf{x}} =
+\mu\dot{\mathbf{x}}\times\mathbf{B}_\Depth$ where $\mathbf{B}_\Depth =
+\nabla\times\Apartition = B\hat{z}$.  This is circular motion at the
+cyclotron frequency:
+\begin{equation}\label{eq:ch21-fticr}
+  \boxed{\omega_c = \frac{|\mathbf{B}_\Depth|}{\mu/\alpha} = \frac{zeB}{m}\;\propto\;\frac{z}{m}.}
+\end{equation}
+No force concept is required: the ion follows a geodesic in the $\Apartition$
+landscape.
+
+\subsection{Universal Summary Table}
+
+\begin{table}[htbp]
+\centering
+\caption{All four mass analysers as specialisations of the single partition
+  Lagrangian $\Lagr_\Depth$.  Each column gives the partition topology,
+  the observable, and the scaling law.  Zero forces; zero free parameters
+  (beyond the dimensionful constants $\kappa$, $B$, $\Omega$).}
+\label{tab:ch21-analysers}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+\textbf{Analyser} & \textbf{$\Depth(\mathbf{x},t)$} & \textbf{$\Apartition$}
+  & \textbf{Observable} & \textbf{Scaling} \\
+\midrule
+TOF       & $-\kappa z$ & $\mathbf{0}$
+  & Flight time $T$ & $T\propto\sqrt{m/z}$ \\
+Quadrupole & $\tfrac{\kappa_0}{2}(x^2-y^2)[U+V\cos\Omega t]$ & $\mathbf{0}$
+  & Stability $(a,q)$ & $a,q\propto 1/(m/z)$ \\
+Orbitrap  & $\tfrac{\kappa}{2}(z^2-r^2/2)+\tfrac{\kappa R_m^2}{2}\ln(r/R_m)$
+  & $\mathbf{0}$ & Axial freq.\ $\omega$ & $\omega\propto\sqrt{z/m}$ \\
+FT-ICR    & $0$ & $\tfrac{B}{2}(-y,x,0)$
+  & Cyclotron freq.\ $\omega_c$ & $\omega_c\propto z/m$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{consequence}{Four Analysers, One Lagrangian}{one-lagrangian}
+  The four dominant mass analyser technologies---TOF, Quadrupole, Orbitrap,
+  FT-ICR---are four specialisations of the single partition Lagrangian
+  $\Lagr_\Depth$ with different partition depth field topologies.  The
+  correct observable for each analyser follows from the partition gradient
+  with zero forces and zero adjustable parameters.  Validation on 39 NIST
+  compounds gives maximum errors of $1.4\times 10^{-4}$ (TOF),
+  $7.0\times 10^{-8}$ (Orbitrap), $4.5\times 10^{-5}$ (FT-ICR).
+\end{consequence}
+
+%==============================================================================
+\section{Ionisation as Partition Creation}
+\label{sec:ch21-ionisation}
+%==============================================================================
+
+\subsection{Ionisation Energy as Partition Creation Cost}
+
+Ionisation is conventionally described as ``applying force to remove electrons.''
+In the partition framework, it is the creation of a malformation---an increase
+in partition depth above $\Depth_{\min}$.
+
+\begin{theorem}[Ionisation as Partition Creation]
+\label{thm:ch21-ionisation}
+  Ionisation energy is the thermodynamic cost of increasing partition depth:
+  \begin{equation}\label{eq:ch21-ie}
+    \mathrm{IE} = \kB T\ln b\cdot\Delta\Depth_{\mathrm{creation}},
+  \end{equation}
+  where $\Delta\Depth_{\mathrm{creation}} = \log_b(C(n)/(C(n)-1))$ and
+  $C(n) = 2n^2$ is the capacity of the $n$-th electron shell.
+\end{theorem}
+
+\begin{proof}
+  A neutral atom has complete partition structure ($\Depth = \Depth_{\min}$).
+  Removing one electron from the outermost shell creates one unfilled partition
+  slot, increasing $\Depth$ by $\Delta\Depth = \log_b(C(n)/(C(n)-1))$.  The
+  energy cost follows from the partition entropy identity:
+  $\mathrm{IE} = T_{\mathcal{P}}\kB\ln b\cdot\Delta\Depth$.  This is not
+  ``work against Coulomb force''---it is the thermodynamic cost of creating
+  categorical incompleteness.
+\end{proof}
+
+\subsection{Multiple Charging}
+
+In electrospray ionisation (ESI), large molecules acquire $z > 1$ charges,
+corresponding to $z$ unfilled partition slots.  Higher $z$ means more disrupted
+partition structure and higher $\Depth$.
+
+\begin{theorem}[Charge State Distribution]
+\label{thm:ch21-csd}
+  The ESI charge state distribution follows the Boltzmann weighting on
+  partition depth:
+  \begin{equation}\label{eq:ch21-csd}
+    P(z) \propto \exp\!\Bigl(-\Delta\Depth(z)/\kB T\Bigr),
+  \end{equation}
+  where $\Delta\Depth(z)$ is the partition depth increase for charge state $z$.
+  The most probable charge state minimises the ratio $\Delta\Depth(z) / z$.
+\end{theorem}
+
+\paragraph{Physical picture.}
+The ESI capillary voltage is an S-potential difference $\Delta\Phi_S$ across
+the tip---a partition depth gradient, not an electric field ``pushing charges.''
+This gradient drives categorical state propagation through the solution.
+Droplet formation occurs at the S-potential boundary where partition
+malformations accumulate; the Taylor cone is a partition depth singularity.
+Desolvation is progressive partition completion: as solvent molecules depart,
+the molecular ion's categorical structure simplifies until only the malformation
+remains.
+
+\begin{consequence}{Ionisation Without Forces}{ionisation-forcefree}
+  Ionisation energy, ESI droplet formation, and the charge state distribution
+  all follow from partition depth creation cost, Eq.~\eqref{eq:ch21-ie}.
+  No ``force removing electrons'' acts.  The ionisation process is the
+  creation of a partition malformation; every subsequent stage of the ion
+  journey is minimisation of that malformation's depth.
+\end{consequence}
+
+%==============================================================================
+\section{The Complete Force-Free Ion Journey}
+\label{sec:ch21-journey}
+%==============================================================================
+
+\begin{table}[htbp]
+\centering
+\caption{Every stage of the mass spectrometric ion journey from the force
+  picture and from the partition picture.  No force acts at any stage.}
+\label{tab:ch21-journey}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Stage} & \textbf{Force picture} & \textbf{Partition picture} \\
+\midrule
+Ionisation
+  & E-field strips electrons
+  & $\Phi_S$-gradient creates malformation \\
+Ion optics
+  & E-fields steer ions
+  & Ion follows $-\nabla\Depth$ \\
+Mass analysis
+  & EM fields separate by $m/z$
+  & $\Depth(\mathbf{x},t)$ topology separates by $\mu$ \\
+Fragmentation
+  & Collision energy breaks bonds
+  & $\Depth$ redistribution: $\sum\Depth_i$ conserved \\
+Detection
+  & Ion impacts detector surface
+  & Malformation resolves at $\Depth$-minimum \\
+Signal propagation
+  & Current through electronics
+  & Categorical state flux at $v\sim 10^8\,\mathrm{m/s}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ion Optics as Partition Gradient Descent}
+
+Electrode geometry in the ion transfer region creates a spatial partition
+depth landscape $\Depth(\mathbf{x})$.  The ion follows the trajectory of
+steepest descent:
+\begin{equation}
+  \dot{\mathbf{x}} = -\gamma\nabla\Depth.
+\end{equation}
+``Focusing'' means $\Depth$ has a channel-shaped minimum that guides ions to
+the analyser entrance.  ``Defocusing'' means $\Depth$ has a saddle point that
+diverges the beam.  ``Ion lens'' voltages tune the depth landscape, not the
+force on the ion.  Transmission probability from source to analyser:
+\begin{equation}
+  P_{\mathrm{trans}} = \exp\bigl(-(\Depth_{\mathrm{source}} -
+    \Depth_{\mathrm{analyser}})\bigr),
+\end{equation}
+reflecting Boltzmann weighting on the partition depth landscape.
+
+\subsection{Fragmentation as Partition Redistribution}
+
+Collision-induced dissociation (CID) supplies energy that promotes partition
+depth redistribution among the molecular fragments:
+\begin{equation}
+  \Depth_{\mathrm{parent}} \;\to\; \sum_i \Depth_{\mathrm{fragment},i},
+  \qquad \sum_i \Depth_i = \Depth_{\mathrm{parent}}.
+\end{equation}
+Selection rules constrain allowed redistributions: $\Delta\ell = \pm 1$,
+$|\Delta m| \leq 1$.  Fragment intensities follow from partition depth
+occupancy statistics: deeper fragments (more stable partitions) are more
+abundant.
+
+\begin{consequence}{Partition Conservation in Fragmentation}{fragmentation-conservation}
+  Total partition depth is conserved across every fragmentation event:
+  $\sum_i\Depth_i = \Depth_{\mathrm{parent}}$.  This is not an approximation;
+  it follows from the Conservation Theorem (Chapter~\ref{ch:shells}).
+  Validation on 20 test compounds shows exact conservation in all cases.
+\end{consequence}
+
+\subsection{Detection as Partition Completion}
+
+The ion arrives at the detector surface with partition depth $\Depth_{\mathrm{ion}}
+> \Depth_{\min}$.  The detector surface provides electrons to fill partition
+slots.  Partition depth returns to minimum:
+\begin{equation}
+  \Delta\Depth_{\mathrm{completion}} = \Depth_{\mathrm{ion}} - \Depth_{\min}.
+\end{equation}
+This categorical state change IS the detection signal.  Signal amplitude is
+proportional to $\Delta\Depth_{\mathrm{completion}}$.  The detection threshold
+is $\Delta\Depth > \Delta\Depth_{\min}$.  ``Ion impact'' is a metaphor for
+partition completion.
+
+\subsection{Signal Propagation Through Electronics}
+
+The categorical state change at the detector propagates through the amplifier
+and analog-to-digital converter as categorical state flux at velocity
+$v \sim 10^8\,\mathrm{m/s}$ (Theorem~\ref{thm:ch21-charge-em}).  Each
+electronic component contributes partition lag $\taup$.  Resistivity in the
+detection chain:
+\begin{equation}
+  \rho = \frac{1}{ne^2}\sum_{i,j}\taup^{(ij)}\,g_{ij},
+\end{equation}
+where $\taup^{(ij)}$ is the partition lag for carrier $i$ scattering at site
+$j$, and $g_{ij} = |\langle\psi_i|V_{\mathrm{lat}}^{(j)}|\psi_i\rangle|^2$ is
+the coupling strength.  Accumulated noise is partition entropy
+$\Delta S = \kB\ln n_{\mathrm{res}}$ from all partition lags in the detection chain.
+
+\paragraph{Numerical validation.}
+For copper at 300~K: carrier density $n = 8.5\times 10^{28}\,\mathrm{m}^{-3}$,
+scattering time $\tau_s \approx 2.5\times 10^{-14}\,\mathrm{s}$,
+giving $\rho \approx 1.68\times 10^{-8}\,\Omega\cdot\mathrm{m}$---matching
+the experimental value to 0.6\%.
+
+%==============================================================================
+\section{Categorical Transport Laws}
+\label{sec:ch21-transport}
+%==============================================================================
+
+\subsection{Ohm's Law from Partition Lag}
+
+\begin{definition}[Partition Lag]
+  The partition lag $\taup$ is the irreducible time for a categorical state
+  transition:
+  \begin{equation}
+    \taup \geq \frac{\hbar}{2\Delta E},
+  \end{equation}
+  from the time--energy uncertainty relation.  During $\taup$, the system
+  exists in an undetermined state, generating entropy $\Delta S = \kB\ln
+  n_{\mathrm{res}}$.
+\end{definition}
+
+\begin{theorem}[Ohm's Law from Partition Dynamics]
+\label{thm:ch21-ohm}
+  $V = IR$ where $R = m_e L/(ne^2 A\tau_s)$ and $\tau_s$ is the scattering
+  time emerging from partition lag.
+\end{theorem}
+
+\begin{proof}
+  Between scattering events (mean time $\tau_s$), a carrier acquires drift
+  velocity $v_{\mathrm{drift}} = -eV\tau_s/(m_e L)$.  Current density
+  $J = nev_{\mathrm{drift}} = ne^2\tau_s V/(m_e L)$.  Total current
+  $I = JA$.  Defining conductivity $\sigma = ne^2\tau_s/m_e$: $I =
+  (\sigma A/L)V = V/R$.
+\end{proof}
+
+\subsection{Kirchhoff's Laws from Categorical Conservation}
+
+\begin{theorem}[KCL: Categorical Conservation at Junctions]
+  At any circuit junction: $\sum_k I_k = 0$.  Categorical states can
+  neither be created nor destroyed---only transferred.  Current conservation
+  is partition depth conservation localised to a junction.
+\end{theorem}
+
+\begin{theorem}[KVL: S-Potential Is Single-Valued]
+  Around any closed circuit loop: $\sum_j V_j = 0$.  The S-potential
+  $\Phi_S$ is single-valued; summing its increments around a closed loop
+  telescopes to zero.
+\end{theorem}
+
+\subsection{Superconductivity as Partition Extinction}
+
+\begin{theorem}[Superconductivity]
+  Below $T_c$, Cooper pairs share partition structure (Composition Theorem,
+  Chapter~\ref{ch:shells}).  Partition operations between them become
+  undefined (Extinction Theorem).  The resistivity sum
+  $\rho = (ne^2)^{-1}\sum\taup g_{ij}$ has \emph{no terms}---not because
+  $\taup = 0$, but because no partition operations exist to sum over.
+  Therefore $\rho = 0$ exactly.
+\end{theorem}
+
+\begin{consequence}{Resistivity and Superconductivity}{resistivity-sc}
+  Ohm's law, Kirchhoff's laws, Joule heating, and superconductivity are all
+  consequences of partition lag dynamics and categorical state propagation.
+  Resistivity is accumulated partition lag:
+  $\rho = (ne^2)^{-1}\sum_{ij}\taup^{(ij)}g_{ij}$.  Below $T_c$, the
+  sum has no terms, so $\rho = 0$ exactly---not approximately.
+\end{consequence}
+
+%==============================================================================
+\section{Validation: Scaling Laws and Numerical Checks}
+\label{sec:ch21-validation}
+%==============================================================================
+
+\subsection{Analyser Scaling Law Verification}
+
+The partition Lagrangian was used to generate trajectories for 39 NIST
+compounds across all four analyser types.  For all $\binom{39}{2} = 741$
+compound pairs, the scaling law prediction was compared with the
+force-based formula.  The two predictions are identical:
+
+\begin{table}[htbp]
+\centering
+\caption{Scaling law verification on 39 NIST compounds.  All results from
+  the single partition Lagrangian.  Zero adjustable parameters.  Zero forces.}
+\label{tab:ch21-validation}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Analyser} & \textbf{Scaling law} & \textbf{Max relative error} \\
+\midrule
+TOF         & $T \propto \sqrt{m/z}$      & $1.4 \times 10^{-4}$ \\
+Orbitrap    & $\omega \propto \sqrt{z/m}$ & $7.0 \times 10^{-8}$ \\
+FT-ICR      & $\omega_c \propto z/m$      & $4.5 \times 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Force Elimination Verification}
+
+For each ``force'' in standard mass spectrometry, the force-based prediction
+and the partition-based prediction are compared:
+
+\begin{table}[htbp]
+\centering
+\caption{Force elimination: partition prediction matches force prediction
+  in every case, confirming that forces are descriptions of partition dynamics.}
+\label{tab:ch21-force-elim}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Phenomenon} & \textbf{Force-based} & \textbf{Partition-based} \\
+\midrule
+TOF flight time   & $T = L\sqrt{m/(2zeV)}$          & Same (from $\Depth = -\kappa z$) \\
+Orbitrap frequency& $\omega = \sqrt{ek/m}$           & Same (from quadro-log $\Depth$) \\
+Cyclotron frequency& $\omega_c = zeB/m$               & Same (from $\Apartition$) \\
+Cu resistivity    & $1.68\times 10^{-8}\,\Omega$m    & $1.68\times 10^{-8}\,\Omega$m \\
+Signal velocity   & ${\sim}2\times 10^8\,\mathrm{m/s}$ & ${\sim}2\times 10^8\,\mathrm{m/s}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The partition framework reproduces every force-based prediction exactly,
+confirming that forces were always emergent descriptions of partition depth
+gradients.
+
+\subsection{Falsifiable Predictions}
+
+The framework yields eight falsifiable predictions, all at zero free parameters:
+
+\begin{enumerate}
+  \item All four analyser equations from one Lagrangian, errors $< 10^{-4}$.
+  \item Copper resistivity from partition lag: $\rho = 1.68\times 10^{-8}
+    \,\Omega$m.
+  \item Signal velocity $= \sqrt{G_{\mathrm{coupling}}/\rho_m} \approx
+    10^8\,\mathrm{m/s}$, independent of applied field.
+  \item GPU partition depth observation identical to CPU reference within
+    machine epsilon.
+  \item Six-pass pipeline memory: $O(1) \approx 25\,\mathrm{MB}$ regardless
+    of database size.
+  \item Superconductor $\rho = 0$ exactly from partition extinction.
+  \item Chemical families show ternary cohesion in S-entropy space without
+    chemical knowledge as input.
+  \item No force-based prediction differs from the partition prediction for
+    any of the 39 NIST compounds.
+\end{enumerate}
+
+%==============================================================================
+\section{Why the Force Description Survived So Long}
+\label{sec:ch21-historical}
+%==============================================================================
+
+The force description of mass spectrometry is predictively complete---it gives
+correct numbers.  This is expected: the Lorentz force \emph{is} the Euler--Lagrange
+equation for partition depth minimisation (Theorem~\ref{thm:ch21-eom}), so
+force-based and partition-based predictions are algebraically identical.  The
+difference is interpretive, not numerical.
+
+The force description requires three primitive concepts (mass, charge, force)
+with empirically measured values.  The partition description requires one axiom
+(bounded phase space) and derives all three.  The force description cannot
+explain why the Lorentz force takes its particular form, why mass resists
+acceleration, or why charge exists.  The partition description answers all three
+from the Composition Theorem, the Emergence Theorem, and the partition
+Lagrangian construction.
+
+The mass spectrometer has never measured forces.  It has always measured
+partition depth.
+
+\begin{consequence}{The Mass Spectrometer as Partition Observatory}{ms-partition-obs}
+  A mass spectrometer does not measure mass-to-charge ratios using forces.
+  It is a partition depth observatory that reads the memory of the ion's
+  partition history.  Mass is accumulated partition residue.  Charge is
+  categorical incompleteness.  The spectrum is the partition address.
+  Forces were a description---useful, but unnecessary.  What remains when
+  they are removed is the partition structure of bounded phase space.
+\end{consequence}
 
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
                   title={\textbf{Chapter 21 Summary}}]
 \begin{itemize}[noitemsep]
-  \item Ion trajectories are force-free: gradient descent on $\Depth(\mathbf{x},t)$.
-  \item The six-pass GPU pipeline maps exactly to the six physical stages of a
-    mass spectrometric measurement.
-  \item By the Triple Equivalence, the GPU pipeline is a physical instrument.
+  \item All four fundamental forces acting in a mass spectrometer are
+    gradients or transitions of the partition depth field $\Depth(\mathbf{x},t)$.
+    No primitive force concept is required.
+  \item Ions are partition malformations; partition inertia $\mu = \alpha(m/z)$
+    replaces ``mass responding to force.''
+  \item The single partition Lagrangian $\Lagr_\Depth = \frac{1}{2}\mu
+    |\dot{\mathbf{x}}|^2 + \mu\dot{\mathbf{x}}\cdot\Apartition - \Depth$
+    yields all four analyser equations (TOF, Quadrupole, Orbitrap, FT-ICR)
+    by specialising the depth field topology.
+  \item Ionisation is partition creation; fragmentation is partition
+    redistribution (depth conserved exactly); detection is partition completion.
+  \item Signal propagation is categorical state flux at ${\sim}10^8\,\mathrm{m/s}$,
+    not charge drift at ${\sim}10^{-4}\,\mathrm{m/s}$.  The $10^{12}$ ratio
+    proves current is state propagation.
+  \item Validation on 39 NIST compounds gives errors $< 1.4\times 10^{-4}$
+    for all analyser scaling laws, with zero adjustable parameters.
 \end{itemize}
 \end{tcolorbox}

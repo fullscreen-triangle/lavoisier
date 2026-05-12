@@ -12,7 +12,92 @@
  */
 
 import { LIPID_CLASSES } from "./lipidomics";
+import { RESIDUES } from "./proteomics";
+import { ADDUCTS } from "./adducts";
 import { ATOMIC_MASS, GROUP_MASS, PROTON_MASS } from "./constants";
+
+const H2O_FRAG = 18.01056468;
+const CO_MASS  = 27.99491462;
+const NH3_MASS = 17.02654910;
+
+/**
+ * HCD b/y-ion series for a peptide analyte.
+ * Generates b, a (b−CO), y ions plus doubly-charged variants for large
+ * fragments, and selective neutral losses (−H2O, −NH3).
+ */
+function fragmentsPeptide(analyte, adductKey, ctx, CE = 25) {
+  const seq   = analyte.sequence;
+  const n     = seq.length;
+  const precMz = ctx.precursor_mz;
+  const precZ  = Math.abs((ADDUCTS[adductKey] || { z: 1 }).z);
+  const out   = [];
+
+  out.push({
+    mz: precMz,
+    intensity: 0.2 + 0.8 * Math.exp(-CE / 50),
+    label: seq + " " + adductKey,
+    type: "precursor",
+  });
+
+  // Prefix cumulative masses: prefix[k] = sum of first k residue masses
+  const prefix = [0];
+  for (let i = 0; i < n; i++) {
+    prefix.push(prefix[i] + (RESIDUES[seq[i]]?.mass ?? 0));
+  }
+
+  // Suffix cumulative masses: suf[k] = sum of last k residue masses
+  const suf = new Array(n + 1).fill(0);
+  for (let k = 1; k <= n; k++) {
+    suf[k] = suf[k - 1] + (RESIDUES[seq[n - k]]?.mass ?? 0);
+  }
+
+  const ceFactor = 0.4 + 0.6 * CE / 50;
+
+  for (let k = 2; k <= n - 1; k++) {
+    const bMass = prefix[k];
+    const yMass = suf[k];
+
+    // Gaussian intensity envelope centred at the middle of the sequence
+    const pos      = (k - 1) / (n - 2);
+    const envelope = Math.exp(-Math.pow((pos - 0.5) * 2.5, 2));
+
+    const bI = 0.55 * envelope * ceFactor;
+    const yI = 0.80 * envelope * ceFactor;
+
+    if (bI > 0.03) {
+      out.push({ mz: bMass + PROTON_MASS,        intensity: bI,        label: `b${k}`,   type: "b_ion" });
+      out.push({ mz: bMass + PROTON_MASS - CO_MASS, intensity: bI * 0.22, label: `a${k}`,   type: "a_ion" });
+      if (bMass > 700 && precZ >= 2) {
+        out.push({ mz: (bMass + 2 * PROTON_MASS) / 2, intensity: bI * 0.28, label: `b${k}²⁺`, type: "b_ion" });
+      }
+    }
+
+    if (yI > 0.03) {
+      const yMz = yMass + H2O_FRAG + PROTON_MASS;
+      out.push({ mz: yMz, intensity: yI, label: `y${k}`, type: "y_ion" });
+      if (yMass > 700 && precZ >= 2) {
+        out.push({ mz: (yMass + H2O_FRAG + 2 * PROTON_MASS) / 2, intensity: yI * 0.28, label: `y${k}²⁺`, type: "y_ion" });
+      }
+      const nTermRes = seq[n - k];
+      if ("STED".includes(nTermRes)) {
+        out.push({ mz: yMz - H2O_FRAG, intensity: yI * 0.18, label: `y${k}-H2O`, type: "neutral_loss" });
+      }
+      if ("KNQR".includes(nTermRes)) {
+        out.push({ mz: yMz - NH3_MASS, intensity: yI * 0.14, label: `y${k}-NH3`, type: "neutral_loss" });
+      }
+    }
+  }
+
+  // Diagnostic immonium ions for aromatic / charged residues
+  const immonium = { Y: 136.0757, W: 159.0922, F: 120.0808, H: 110.0718, R: 129.1135 };
+  for (const [aa, mz] of Object.entries(immonium)) {
+    if (seq.includes(aa)) {
+      out.push({ mz, intensity: 0.12, label: `Im(${aa})`, type: "immonium" });
+    }
+  }
+
+  return out.filter((f) => f.mz > 50 && Number.isFinite(f.mz) && f.intensity > 0.01);
+}
 
 /**
  * Helper: compute possible single-FA chain compositions for a class with X:Y total.
@@ -73,6 +158,10 @@ function faMass(n, db) {
  * @returns {Array<{mz: number, intensity: number, label: string, type: string}>}
  */
 export function fragmentsFor(analyte, adductKey, ctx, collisionEnergy_eV = 25) {
+  if (analyte.sequence) {
+    return fragmentsPeptide(analyte, adductKey, ctx, collisionEnergy_eV);
+  }
+
   const cls = LIPID_CLASSES[analyte.class];
   const polarity = ctx.polarity;
   const precMz = ctx.precursor_mz;

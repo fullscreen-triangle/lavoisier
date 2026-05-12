@@ -1,33 +1,93 @@
 import React from "react";
 import { useStore } from "@/lib/state/store";
 import { LIPID_CLASSES, LIPID_CLASS_KEYS } from "@/lib/experiment/lipidomics";
+import {
+  PROTEIN_CLASSES,
+  PROTEIN_CLASS_KEYS,
+  countMissedCleavages,
+} from "@/lib/experiment/proteomics";
 import { classColor } from "./charts/palette";
 
-/**
- * Lipid-class & chain-composition designer.
- * Each enabled class gets X/Y range sliders; disabled classes are dimmed.
- */
 export default function AnalyteBuilder() {
-  const design = useStore((s) => s.experimentDesign);
-  const setClassSpec = useStore((s) => s.setClassSpec);
-  const toggleClass = useStore((s) => s.toggleClass);
-  const addClassSpec = useStore((s) => s.addClassSpec);
+  const design           = useStore((s) => s.experimentDesign);
+  const setExperimentType = useStore((s) => s.setExperimentType);
+
+  // lipidomics actions
+  const setClassSpec    = useStore((s) => s.setClassSpec);
+  const toggleClass     = useStore((s) => s.toggleClass);
+  const addClassSpec    = useStore((s) => s.addClassSpec);
   const removeClassSpec = useStore((s) => s.removeClassSpec);
 
-  const inUse = new Set(design.classSpecs.map((cs) => cs.classKey));
+  // proteomics actions
+  const setProteinSpec    = useStore((s) => s.setProteinSpec);
+  const toggleProtein     = useStore((s) => s.toggleProtein);
+  const addProteinSpec    = useStore((s) => s.addProteinSpec);
+  const removeProteinSpec = useStore((s) => s.removeProteinSpec);
+
+  const experimentType = design.experimentType || "lipidomics";
+  const proteinSpecs   = design.proteinSpecs   || [];
+
+  return (
+    <div className="space-y-3">
+      {/* header + experiment type toggle */}
+      <div className="flex items-center gap-2">
+        <div className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60">
+          Analyte design space
+        </div>
+        <div className="flex gap-0.5 ml-auto rounded overflow-hidden border border-dark/15 dark:border-light/15">
+          {["lipidomics", "proteomics"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setExperimentType(t)}
+              className={`text-[9px] uppercase tracking-wider px-2 py-0.5 transition ${
+                experimentType === t
+                  ? "bg-dark text-light dark:bg-light dark:text-dark"
+                  : "text-dark/40 dark:text-light/40 hover:bg-dark/5 dark:hover:bg-light/5"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Lipidomics mode ─────────────────────────────────────── */}
+      {experimentType === "lipidomics" && (
+        <LipidomicsPanel
+          design={design}
+          setClassSpec={setClassSpec}
+          toggleClass={toggleClass}
+          addClassSpec={addClassSpec}
+          removeClassSpec={removeClassSpec}
+        />
+      )}
+
+      {/* ── Proteomics mode ─────────────────────────────────────── */}
+      {experimentType === "proteomics" && (
+        <ProteomicsPanel
+          proteinSpecs={proteinSpecs}
+          setProteinSpec={setProteinSpec}
+          toggleProtein={toggleProtein}
+          addProteinSpec={addProteinSpec}
+          removeProteinSpec={removeProteinSpec}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Lipidomics panel (unchanged logic, extracted to component) ──────────────
+
+function LipidomicsPanel({ design, setClassSpec, toggleClass, addClassSpec, removeClassSpec }) {
+  const inUse         = new Set(design.classSpecs.map((cs) => cs.classKey));
   const additionalKeys = LIPID_CLASS_KEYS.filter((k) => !inUse.has(k));
 
   return (
     <div className="space-y-3">
-      <div className="text-xs uppercase tracking-wider font-bold text-dark/60 dark:text-light/60">
-        Analyte design space
-      </div>
-
       <div className="grid grid-cols-1 gap-3">
         {design.classSpecs.map((cs) => {
           const cls = LIPID_CLASSES[cs.classKey];
           if (!cls) return null;
-          const speciesEstimate = estimateSpecies(cs);
           return (
             <div
               key={cs.classKey}
@@ -36,9 +96,7 @@ export default function AnalyteBuilder() {
                   ? "border-dark/15 dark:border-light/15"
                   : "border-dark/5 dark:border-light/5 opacity-60"
               }`}
-              style={{
-                borderLeft: `4px solid ${classColor(cs.classKey)}`,
-              }}
+              style={{ borderLeft: `4px solid ${classColor(cs.classKey)}` }}
             >
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -47,7 +105,7 @@ export default function AnalyteBuilder() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-dark/60 dark:text-light/60">
-                    ~{speciesEstimate} species
+                    ~{estimateLipidSpecies(cs)} species
                   </span>
                   <button
                     onClick={() => toggleClass(cs.classKey)}
@@ -62,7 +120,6 @@ export default function AnalyteBuilder() {
                   <button
                     onClick={() => removeClassSpec(cs.classKey)}
                     className="text-[10px] text-dark/40 hover:text-red-500"
-                    title="Remove this class"
                   >
                     ✕
                   </button>
@@ -114,6 +171,114 @@ export default function AnalyteBuilder() {
   );
 }
 
+// ─── Proteomics panel ────────────────────────────────────────────────────────
+
+function ProteomicsPanel({
+  proteinSpecs,
+  setProteinSpec,
+  toggleProtein,
+  addProteinSpec,
+  removeProteinSpec,
+}) {
+  const inUse          = new Set(proteinSpecs.map((ps) => ps.classKey));
+  const additionalKeys = PROTEIN_CLASS_KEYS.filter((k) => !inUse.has(k));
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3">
+        {proteinSpecs.map((ps) => {
+          const cls = PROTEIN_CLASSES[ps.classKey];
+          if (!cls) return null;
+          const active = estimateActivePeptides(ps, cls);
+          return (
+            <div
+              key={ps.classKey}
+              className={`rounded-md border p-3 ${
+                ps.enabled
+                  ? "border-dark/15 dark:border-light/15"
+                  : "border-dark/5 dark:border-light/5 opacity-60"
+              }`}
+              style={{ borderLeft: `4px solid ${classColor(ps.classKey)}` }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="font-bold text-sm">{cls.abbr}</span>
+                  <span className="text-xs text-dark/50 dark:text-light/50 ml-2">{cls.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-dark/60 dark:text-light/60">
+                    {active}/{cls.peptides.length} peptides
+                  </span>
+                  <button
+                    onClick={() => toggleProtein(ps.classKey)}
+                    className={`text-[10px] px-2 py-0.5 rounded ${
+                      ps.enabled
+                        ? "bg-dark text-light dark:bg-light dark:text-dark"
+                        : "bg-dark/10 dark:bg-light/10"
+                    }`}
+                  >
+                    {ps.enabled ? "on" : "off"}
+                  </button>
+                  <button
+                    onClick={() => removeProteinSpec(ps.classKey)}
+                    className="text-[10px] text-dark/40 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-[11px]">
+                <RangeRow
+                  label="length (aa)"
+                  min={4}
+                  max={40}
+                  lo={ps.lengthMin}
+                  hi={ps.lengthMax}
+                  onChange={(lo, hi) =>
+                    setProteinSpec(ps.classKey, { lengthMin: lo, lengthMax: hi })
+                  }
+                />
+                <RangeRow
+                  label="missed cleavages"
+                  min={0}
+                  max={3}
+                  lo={ps.mcMin}
+                  hi={ps.mcMax}
+                  onChange={(lo, hi) =>
+                    setProteinSpec(ps.classKey, { mcMin: lo, mcMax: hi })
+                  }
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {additionalKeys.length > 0 && (
+        <div className="border-t border-dark/10 dark:border-light/10 pt-3">
+          <div className="text-[10px] text-dark/50 dark:text-light/50 mb-1.5">Add protein standard</div>
+          <div className="flex flex-wrap gap-1">
+            {additionalKeys.map((k) => (
+              <button
+                key={k}
+                onClick={() => addProteinSpec(k)}
+                className="text-[10px] px-2 py-1 rounded border border-dark/15 dark:border-light/15
+                  hover:bg-dark/5 dark:hover:bg-light/5"
+                style={{ borderColor: classColor(k) }}
+                title={PROTEIN_CLASSES[k]?.name}
+              >
+                + {k}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Shared range-row input ───────────────────────────────────────────────────
+
 function RangeRow({ label, min, max, lo, hi, onChange }) {
   return (
     <div>
@@ -151,9 +316,20 @@ function RangeRow({ label, min, max, lo, hi, onChange }) {
   );
 }
 
-/** Coarse estimate of how many species the design space contains. */
-function estimateSpecies(cs) {
-  const xs = Math.max(0, cs.Xmax - cs.Xmin + 1);
-  const ys = Math.max(0, cs.Ymax - cs.Ymin + 1);
-  return xs * ys;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function estimateLipidSpecies(cs) {
+  return Math.max(0, cs.Xmax - cs.Xmin + 1) * Math.max(0, cs.Ymax - cs.Ymin + 1);
+}
+
+function estimateActivePeptides(ps, cls) {
+  return cls.peptides.filter((seq) => {
+    const mc = countMissedCleavages(seq);
+    return (
+      seq.length >= ps.lengthMin &&
+      seq.length <= ps.lengthMax &&
+      mc >= ps.mcMin &&
+      mc <= ps.mcMax
+    );
+  }).length;
 }

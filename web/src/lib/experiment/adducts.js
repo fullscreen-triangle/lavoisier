@@ -23,13 +23,19 @@ export const ADDUCTS = {
   "[M+CH3COO]-": { delta: 2 * ATOMIC_MASS.C + 3 * ATOMIC_MASS.H + 2 * ATOMIC_MASS.O + ATOMIC_MASS.electron,
                    z: -1, polarity: "-", abbr: "OAc-" },
 
-  // Doubly charged
+  // Multiply charged (important for proteomics)
   "[M+2H]2+": { delta: 2 * PROTON_MASS,                          z: +2, polarity: "+", abbr: "2H+" },
+  "[M+3H]3+": { delta: 3 * PROTON_MASS,                          z: +3, polarity: "+", abbr: "3H+" },
+  "[M+4H]4+": { delta: 4 * PROTON_MASS,                          z: +4, polarity: "+", abbr: "4H+" },
   "[M-2H]2-": { delta: -2 * PROTON_MASS,                         z: -2, polarity: "-", abbr: "-2H" },
 };
 
 export const ADDUCTS_POSITIVE = Object.keys(ADDUCTS).filter((k) => ADDUCTS[k].polarity === "+");
 export const ADDUCTS_NEGATIVE = Object.keys(ADDUCTS).filter((k) => ADDUCTS[k].polarity === "-");
+
+// Adduct subsets for proteomics (multiply-charged ESI)
+export const ADDUCTS_PROTEOMICS_POSITIVE = ["[M+H]+", "[M+2H]2+", "[M+3H]3+", "[M+4H]4+"];
+export const ADDUCTS_PROTEOMICS_NEGATIVE = ["[M-H]-", "[M-2H]2-"];
 
 /**
  * Compute m/z for an analyte M with a given adduct.

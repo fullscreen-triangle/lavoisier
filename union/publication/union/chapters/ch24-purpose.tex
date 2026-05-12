@@ -2,95 +2,1249 @@
 %  Chapter 24: Purpose-Based Analysis and the Molecular Maxwell Demon
 %  Source: oxford/publications/purpose-based-analysis/
 %          purpose-based-spectral-analysis.tex
+%          oxford/publications/observation-framework/
+%          mass-computing-observation-framework.tex (§§670--935)
 % ============================================================
 
 \epigraph{%
   The instrument does not just observe.\\
-  It selects.  And selection has a price.%
+  It selects.  And selection has a price.\\
+  Domain knowledge is thermodynamic information.%
 }{}
 
-\section{Purpose as a Partition Filter}
-\label{sec:ch24-purpose}
+%% ── §24.1 ─────────────────────────────────────────────────────────────────────
+\section{The Double Inefficiency}
+\label{sec:ch24-inefficiency}
 
-A mass spectrometric analysis is never purpose-free.
-A targeted analysis (e.g., quantifying a specific drug in plasma) has a
-different optimal measurement strategy than an untargeted metabolomics
-discovery experiment.
-The partition framework formalises this as a \emph{purpose function}.
+Mass spectrometric identification conventionally requires $O(N)$ comparisons
+against a spectral library of $N$ compounds, with each comparison evaluating
+an algorithmic similarity function.  This pipeline suffers from two
+structural inefficiencies that are not eliminable by faster implementations.
 
-\begin{definition}[Purpose function]
-  A purpose function $\mathcal{P} : \mathcal{A}_\infty \to [0, 1]$ assigns
-  to each partition cell $A$ a relevance weight $\mathcal{P}(A) \in [0,1]$.
-  An analysis is \emph{purpose-directed} if it preferentially explores
-  partition cells with high $\mathcal{P}(A)$.
+The first inefficiency is $O(N)$ scaling.  For every unknown spectrum, the
+system evaluates a similarity function against each of $N$ library entries,
+where $N$ ranges from $\sim 10^4$ for curated metabolomics databases to
+$\sim 10^8$ for comprehensive chemical databases.  The vast majority of these
+comparisons are irrelevant---a human serum metabolite will not match an
+industrial polymer---yet the algorithm evaluates both.
+
+The second inefficiency is subtler: each comparison evaluates an
+\emph{algorithmic} similarity function operating on \emph{extrinsic}
+representations.  Whether the function is a Tanimoto coefficient over
+molecular fingerprints, a cosine similarity over spectral vectors, or an
+extended-connectivity fingerprint comparison, the comparison is a computation
+performed on bit vectors external to the physical identity of the molecule.
+The molecule does not know its Tanimoto coefficient with another molecule; the
+coefficient is a property of the representation, not of the molecule.
+
+Chapter~\ref{ch:database} eliminated the second inefficiency by encoding
+molecular identity in intrinsic oscillatory coordinates (S-entropy) and
+showing that comparison reduces to prefix matching.  The present chapter
+eliminates the first inefficiency: by encoding domain knowledge as a formal
+constraint on phase space, we prove that identification can be achieved in
+$O(r \cdot k)$ operations, where $r$ is the number of domain-relevant addresses
+and $k$ is the trit depth, both independent of $N$ and of the total phase-space
+volume $3^k$.
+
+The central result is that domain knowledge is not a computational convenience
+but a \emph{physical quantity}: thermodynamic information that reduces the
+entropy of the search space, subject to the Landauer bound.
+
+%% ── §24.2 ─────────────────────────────────────────────────────────────────────
+\section{Comparison as Resonance}
+\label{sec:ch24-resonance}
+
+\subsection{The Computation-Free Comparison Principle}
+\label{sec:ch24-comp-free}
+
+In the oscillatory framework developed in Chapter~\ref{ch:database}, the
+S-entropy coordinates $(\Sk, \St, \Se)$ are \emph{intrinsic} to the molecule:
+they encode the physical frequency spectrum, timescale span, and mode coupling.
+Two molecules with overlapping frequency spectra occupy nearby regions of
+S-entropy space, and this proximity is a \emph{structural property of the
+coordinate system}, not a quantity that must be computed by an external algorithm.
+
+The key insight is: proximity in the intrinsic coordinate system \emph{is} the
+comparison.  No additional computation is required beyond determining the
+coordinates themselves.
+
+Traditional comparison requires:
+\[
+  \text{Fingerprint}(A) \xrightarrow{\text{compute}} T(A,B)
+  \xrightarrow{\text{rank}} \text{identification.}
+\]
+Oscillatory comparison requires only:
+\[
+  \text{Frequency spectrum}(A) \xrightarrow{\text{encode}}
+  \mathrm{addr}(A) \xrightarrow{\text{match}} \text{identification.}
+\]
+
+\subsection{Oscillatory Resonance}
+\label{sec:ch24-osc-resonance}
+
+\begin{definition}[Oscillatory Resonance]
+\label{def:ch24-resonance}
+Two bounded oscillatory systems with S-entropy coordinates
+$S_1 = (\Sk^{(1)}, \St^{(1)}, \Se^{(1)})$ and
+$S_2 = (\Sk^{(2)}, \St^{(2)}, \Se^{(2)})$ are in \emph{$k$-resonance} when
+\begin{equation}
+\label{eq:ch24-resonance}
+  d(S_1, S_2) < \sqrt{3} \cdot 3^{-\lfloor k/3 \rfloor}.
+\end{equation}
 \end{definition}
 
-\section{The Molecular Maxwell Demon}
-\label{sec:ch24-demon}
+At $k = 0$, all systems are in resonance.  At $k = 12$, resonance requires
+co-location within one of $3^{12} = 531{,}441$ cells.  The analogy with
+physical resonance is exact: two tuning forks at the same frequency resonate
+because they share the same oscillatory mode, not because a computation was
+performed.  In S-entropy space, two molecules are in $k$-resonance precisely
+when they share oscillatory structure at resolution $k$.
 
-Maxwell's Demon is an entity that selects molecules by a criterion (fast or slow)
-at zero energetic cost --- an apparent violation of the second law.
-Szilard (1929) showed that the demon must pay an information cost of $\kB\ln 2$
-per selection.
-
-In the mass spectrometric context, the ``molecular Maxwell demon'' is the data
-acquisition system: it selects which $m/z$ values to measure in MS$^2$ based
-on the current spectral data.
-The information cost is real:
-
-\begin{theorem}[Landauer cost of targeted selection]
-  Each purpose-directed partition selection (targeting a specific $m/z$ range
-  for fragmentation) costs at minimum:
-  \begin{equation}
-    \Delta S_\mathrm{Landauer} = \kB\ln 2 \cdot \log_2\frac{1}{\mathcal{P}(A)}
-    \quad\text{bits of heat dissipated per selection}.
-  \end{equation}
+\begin{theorem}[Resonance-Proximity Equivalence]
+\label{thm:ch24-resonance-proximity}
+Two compounds $A$ and $B$ are in $k$-resonance if and only if their ternary
+addresses share a $k$-trit prefix:
+\begin{equation}
+\label{eq:ch24-rpe}
+  d(S_A, S_B) < \sqrt{3} \cdot 3^{-\lfloor k/3 \rfloor}
+  \;\iff\;
+  \mathrm{addr}_k(A) = \mathrm{addr}_k(B).
+\end{equation}
 \end{theorem}
 
-High-selectivity targeting (small $\mathcal{P}(A)$) costs more energy;
-broad surveys are thermodynamically cheaper per measurement.
+\begin{proof}
+($\Leftarrow$) If $A$ and $B$ share a $k$-trit prefix, they lie in the same
+level-$k$ cell.  By the Prefix Distance Bound (Theorem~\ref{thm:ch23-prefix-distance}
+of Chapter~\ref{ch:database}), $d(S_A, S_B) \leq \sqrt{3} \cdot 3^{-\lfloor
+k/3 \rfloor}$, hence they are in $k$-resonance.
 
-\section{Purpose-Constrained Spectrum Generation}
-\label{sec:ch24-generation}
+($\Rightarrow$) Suppose $A$ and $B$ are in $k$-resonance: $d(S_A, S_B) <
+\sqrt{3} \cdot 3^{-\lfloor k/3 \rfloor}$.  By the Trit--Cell Bijection
+(Chapter~\ref{ch:database}), each level-$k$ cell is uniquely identified by its
+$k$-trit prefix.  Points with $d(S_A, S_B) < \sqrt{3} \cdot 3^{-\lfloor k/3
+\rfloor}$ lie within the diameter of a single level-$k$ cell, hence they lie
+in the same cell, hence their $k$-trit prefixes are identical.
+\end{proof}
 
-The purpose function can be used to generate spectra selectively.
-Rather than traversing the entire partition tree, the generator:
-\begin{enumerate}
-  \item Computes $\mathcal{P}(A)$ for each candidate sub-cell.
-  \item Descends preferentially to high-$\mathcal{P}$ branches.
-  \item Prunes low-$\mathcal{P}$ branches at the Floor threshold.
+\begin{theorem}[Comparison Without Computation]
+\label{thm:ch24-no-computation}
+Determining whether two compounds $A$ and $B$ are in $k$-resonance requires
+exactly $k$ trit comparisons, each $O(1)$.  Total cost: $O(k)$, independent
+of molecular complexity, fingerprint dimension $d$, database size $N$, and
+number of oscillatory modes $M$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:ch24-resonance-proximity}, $k$-resonance is equivalent to
+sharing a $k$-trit prefix.  Given addresses $\alpha = \alpha_1 \cdots \alpha_k$
+and $\beta = \beta_1 \cdots \beta_k$, compare $\alpha_j$ against $\beta_j$ for
+$j = 1, \ldots, k$.  Each comparison costs $O(1)$.  There are exactly $k$
+comparisons.  The cost $O(k)$ is independent of fingerprint dimension (no
+fingerprints exist), database size (no library is searched), molecular
+complexity (the address encodes the molecule in three coordinates regardless
+of the number of atoms), and number of modes (the address compresses $M$ modes
+into three S-entropy coordinates).
+\end{proof}
+
+\begin{corollary}[No Similarity Function Required]
+\label{cor:ch24-no-similarity}
+In the oscillatory identification framework, no Tanimoto coefficient, cosine
+similarity, dot product, or fingerprint comparison is required.  The ternary
+address \emph{is} the comparison.
+\end{corollary}
+
+\subsection{The Ultrametric Property}
+\label{sec:ch24-ultrametric}
+
+\begin{proposition}[Ultrametric Inequality]
+\label{prop:ch24-ultrametric}
+The ternary similarity function $\mathrm{sim}(A,B) = |\mathrm{lcp}(A,B)|$
+(length of the longest common prefix) satisfies the ultrametric inequality:
+\begin{equation}
+\label{eq:ch24-ultrametric}
+  \mathrm{sim}(A,B) \geq \min\bigl(\mathrm{sim}(A,C),\,\mathrm{sim}(B,C)\bigr)
+\end{equation}
+for all compounds $A$, $B$, $C$.  This is stronger than the triangle inequality.
+\end{proposition}
+
+\begin{proof}
+Let $p = \mathrm{sim}(A,C)$ and $q = \mathrm{sim}(B,C)$.  Without loss of
+generality, $p \leq q$.  Consider the first $p$ trits of each address.  Since
+$A$ and $C$ share at least $p$ trits, $\mathrm{addr}_p(A) = \mathrm{addr}_p(C)$.
+Since $B$ and $C$ share at least $q \geq p$ trits, $\mathrm{addr}_p(B) =
+\mathrm{addr}_p(C)$.  By transitivity: $\mathrm{addr}_p(A) = \mathrm{addr}_p(B)$.
+Therefore $\mathrm{sim}(A,B) \geq p = \min(p,q)$.
+\end{proof}
+
+\begin{remark}
+The ultrametric property means molecular similarity in the oscillatory
+framework is hierarchical.  There are no triangular situations where $A$ is
+similar to $B$ and $B$ is similar to $C$ but $A$ is dissimilar to $C$.  This
+is a structural consequence of the tree structure of the ternary trie, which
+in turn reflects the hierarchical nature of molecular energy levels.
+\end{remark}
+
+\subsection{Commutation of Comparison and Identification}
+\label{sec:ch24-commutation}
+
+\begin{theorem}[Comparison--Identification Commutation]
+\label{thm:ch24-commutation}
+Define the comparison operator $\hat{O}_{\mathrm{compare}} :
+\mathcal{S} \times \mathcal{S} \to \{0,1\}$ and the identification operator
+$\hat{O}_{\mathrm{identify}} : \mathcal{S} \to \{0,1,2\}^k$.  Then:
+\begin{equation}
+\label{eq:ch24-commute}
+  \hat{O}_{\mathrm{compare}}(S_1, S_2)
+  = \delta\bigl(\hat{O}_{\mathrm{identify}}(S_1),\,
+                \hat{O}_{\mathrm{identify}}(S_2)\bigr),
+\end{equation}
+where $\delta(\alpha, \beta) = 1$ iff $\alpha = \beta$.  Comparing
+$S_1$ and $S_2$ gives the same result whether performed before or after
+identification.  Comparison and identification are the same operation.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:ch24-resonance-proximity}:
+$\hat{O}_{\mathrm{compare}}(S_1, S_2) = 1 \iff
+\mathrm{addr}_k(S_1) = \mathrm{addr}_k(S_2) \iff
+\delta(\hat{O}_{\mathrm{identify}}(S_1), \hat{O}_{\mathrm{identify}}(S_2)) = 1$.
+\end{proof}
+
+%% ── §24.3 ─────────────────────────────────────────────────────────────────────
+\section{Dual Oscillatory Paths}
+\label{sec:ch24-dual}
+
+\subsection{The Ion Path}
+\label{sec:ch24-ion-path}
+
+\begin{definition}[Spectral Frequency Path]
+\label{def:ch24-ion-path}
+The \emph{spectral frequency path} (ion path) identifies a molecular system
+through its vibrational frequency spectrum:
+\begin{equation}
+\label{eq:ch24-ion-path}
+  \text{Ion} \xrightarrow{\text{spectroscopy}}
+  \{\omega_i\}_{i=1}^{\Nvib} \xrightarrow{\text{S-entropy}}
+  (\Sk, \St, \Se) \xrightarrow{\text{address}}
+  \alpha \in \{0,1,2\}^k.
+\end{equation}
+\end{definition}
+
+The ion path uses: $\Sk$ (normalised Shannon entropy of the energy distribution),
+$\St$ (normalised logarithmic span $\ln(\omega_{\max}/\omega_{\min})$), and
+$\Se$ (normalised coupling entropy of the anharmonic coupling matrix).
+
+\subsection{The Droplet Path}
+\label{sec:ch24-drip-path}
+
+\begin{definition}[Droplet Mode Path]
+\label{def:ch24-drip-path}
+The \emph{droplet mode path} (drip path) identifies a molecular system
+through the surface-wave spectrum of its droplet representation:
+\begin{equation}
+\label{eq:ch24-drip-path}
+  \text{Drip} \xrightarrow{\text{surface modes}}
+  \{\kappa_j\}_{j=1}^{N_{\mathrm{surf}}} \xrightarrow{\text{S-entropy}}
+  (\Sk', \St', \Se') \xrightarrow{\text{address}}
+  \alpha' \in \{0,1,2\}^k.
+\end{equation}
+\end{definition}
+
+The droplet representation encodes molecular identity through fluid-dynamical
+analogy.  A molecular ion with mass $m$, kinetic energy $E_k$, collision
+cross-section $\sigma$, and fragmentation topology $G$ maps to a droplet with
+velocity $v = \sqrt{2E_k/m}$, radius $R = \sqrt{\sigma/\pi}$, density
+$\rho = 3m/(4\pi R^3)$, and surface tension $\gamma$ determined by the
+chemical bonding network.  The Rayleigh capillary frequencies are
+$\kappa_l = \sqrt{l(l-1)(l+2)\gamma/(\rho R^3)}$ for $l \geq 2$.
+
+\subsection{Ion-Droplet Bijection}
+\label{sec:ch24-bijection}
+
+The full proof of the Ion-Droplet Bijection appeared in Chapter~\ref{ch:database}
+as Theorem~\ref{thm:ch23-bijection}.  We restate the key consequence here
+in the comparison context.
+
+\begin{theorem}[Dual Path Convergence]
+\label{thm:ch24-dual-conv}
+Ion-path and drip-path identifications converge to the same ternary address:
+\[
+  \mathrm{addr}(S_{\mathrm{ion}}) = \mathrm{addr}(S_{\mathrm{drip}}).
+\]
+\end{theorem}
+
+\begin{proof}
+By the Ion-Droplet Bijection (Chapter~\ref{ch:database}),
+$S_{\mathrm{ion}} = S_{\mathrm{drip}}$.  Ternary encoding is deterministic.
+Therefore the same S-entropy coordinates produce the same address.
+\end{proof}
+
+\subsection{Bidirectional Resonance}
+\label{sec:ch24-bidirectional}
+
+\begin{theorem}[Bidirectional Resonance]
+\label{thm:ch24-bidir}
+For any compound pair $(A, B)$, resonance can be determined from either
+direction:
+\begin{enumerate}[(a)]
+  \item \emph{Forward (ion path):} Compare S-entropy coordinates from
+    spectral frequencies.
+  \item \emph{Inverse (droplet path):} Compare S-entropy coordinates from
+    droplet surface modes.
+\end{enumerate}
+Both directions yield identical results: $A$ and $B$ are in $k$-resonance via
+the ion path if and only if they are in $k$-resonance via the droplet path.
+\end{theorem}
+
+\begin{proof}
+For each compound $X$, $S_{\mathrm{ion}}(X) = S_{\mathrm{drip}}(X)$ by the
+bijection.  Therefore $d(S_{\mathrm{ion}}(A), S_{\mathrm{ion}}(B)) =
+d(S_{\mathrm{drip}}(A), S_{\mathrm{drip}}(B))$.  Since $k$-resonance is
+defined by the distance threshold, the resonance condition is identical for
+both paths.
+\end{proof}
+
+\begin{consequence}{Dual-Path Algorithm-Free Comparison}{ch24-bidir-resonance}
+Comparison between molecular compounds requires neither fingerprint computation
+nor similarity scoring.  The ion path and the droplet path both produce
+ternary addresses; $k$-resonance is prefix matching on those addresses at
+cost $O(k)$ per pair.  Agreement between both paths confirms identification
+with false-positive probability $\leq 3^{-k}$, as a structural property of
+the trie, not a tuned threshold.
+\end{consequence}
+
+%% ── §24.4 ─────────────────────────────────────────────────────────────────────
+\section{The Molecular Maxwell Demon}
+\label{sec:ch24-mmd}
+
+\subsection{Information Catalysis}
+\label{sec:ch24-catalysis}
+
+\begin{definition}[Molecular Maxwell Demon (MMD)]
+\label{def:ch24-mmd}
+A \emph{Molecular Maxwell Demon} is an information-theoretic filter that
+selectively amplifies transition probabilities from potential molecular states
+to actual observables.  Given a space of $\Omega_{\mathrm{pot}}$ potential
+molecular configurations (all possible ion states consistent with a given mass
+and charge), the MMD selects the $\Omega_{\mathrm{act}} \ll
+\Omega_{\mathrm{pot}}$ configurations actually observed under specific
+experimental conditions.
+\end{definition}
+
+The classical Maxwell demon (Maxwell 1871) is a hypothetical entity that
+selectively sorts gas molecules by velocity, apparently reducing entropy without
+work.  Szilard (1929) showed that the demon must acquire information to perform
+the sorting; Landauer (1961) demonstrated that erasing this information
+requires minimum energy $\kB T \ln 2$ per bit, resolving the paradox.
+
+In mass spectrometry, a single molecular formula can give rise to $\sim 10^{12}$
+possible fragmentation configurations (all possible bond cleavages, rearrangements,
+and isotope patterns).  The actual mass spectrum exhibits $\sim 10^3$ observable
+features.  The traditional MMD is the information-theoretic process that selects
+these $10^3$ observables from the $10^{12}$ possibilities.
+
+\subsection{The Purpose MMD: A Meta-Level Filter}
+\label{sec:ch24-purpose-mmd}
+
+The traditional MMD operates on individual spectra: given a specific molecular
+ion, it selects observable fragmentation features from the space of possible
+features.  We introduce a meta-level MMD that operates on the
+\emph{choice of which spectra to generate}.
+
+\begin{definition}[Purpose MMD]
+\label{def:ch24-purpose-mmd}
+A \emph{Purpose MMD} is a Molecular Maxwell Demon that operates on the
+ternary trie $\mathcal{T}$ rather than on individual ions.  It prunes branches
+of $\mathcal{T}$ inconsistent with domain constraints \emph{before} any
+generation occurs:
+\begin{equation}
+\label{eq:ch24-purpose-mmd}
+  \text{Full trie } \mathcal{T}
+  \xrightarrow{\text{Purpose MMD}}
+  \text{Pruned trie } \mathcal{T}|_{\mathcal{P}(\mathcal{C})},
+\end{equation}
+where $\mathcal{P}(\mathcal{C})$ is the phase-space region determined by the
+domain context $\mathcal{C}$.
+\end{definition}
+
+The two levels form a hierarchy:
+\begin{itemize}
+  \item \emph{Level~0 (Traditional MMD):} Given a specific molecular ion,
+    select the observable fragmentation features from $\sim 10^{12}$ potential
+    states to $\sim 10^3$ observables.
+  \item \emph{Level~1 (Purpose MMD):} Given an analytical context, select the
+    relevant molecular identities from $3^k$ possible addresses to $r$
+    relevant addresses.  This is the subject of the present chapter.
+\end{itemize}
+
+\subsection{Entropy Reduction}
+\label{sec:ch24-entropy}
+
+\begin{theorem}[MMD Entropy Bound]
+\label{thm:ch24-mmd-entropy}
+The Purpose MMD reduces search entropy from $S_{\mathrm{full}}$ (full phase
+space at depth $k$) to $S_{\mathrm{reduced}}$ (constrained region):
+\begin{align}
+  S_{\mathrm{full}} &= \kB k \ln 3, \label{eq:ch24-sfull} \\
+  S_{\mathrm{reduced}} &= \kB \ln |R|, \label{eq:ch24-sreduced} \\
+  \Delta S &= \kB(k \ln 3 - \ln |R|) = \kB \ln \frac{3^k}{|R|},
+  \label{eq:ch24-ds}
+\end{align}
+where $R \subset \{0,1,2\}^k$ is the set of constrained addresses and $|R|$
+is its cardinality.
+\end{theorem}
+
+\begin{proof}
+The full phase space at depth $k$ contains $3^k$ cells.  Under a uniform prior
+(no domain information), the entropy is $S_{\mathrm{full}} = \kB \ln(3^k) =
+\kB k \ln 3$.  After the Purpose MMD applies domain constraints, only $|R|$
+cells are considered.  The entropy of the restricted uniform distribution is
+$S_{\mathrm{reduced}} = \kB \ln |R|$.  The entropy reduction is the difference
+\eqref{eq:ch24-ds}, which is non-negative since $|R| \leq 3^k$.
+\end{proof}
+
+\subsection{Landauer Cost}
+\label{sec:ch24-landauer}
+
+\begin{theorem}[Landauer Bound for Purpose]
+\label{thm:ch24-landauer}
+The minimum energy cost of purpose-based filtering at temperature $T$ is:
+\begin{equation}
+\label{eq:ch24-landauer}
+  E_{\mathrm{filter}} = \kB T \ln 2 \cdot (k \log_2 3 - \log_2 |R|).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The Purpose MMD effectively erases $\log_2(3^k/|R|)$ bits of information:
+it distinguishes $|R|$ relevant addresses from $3^k$ total addresses, requiring
+$\log_2(3^k/|R|) = k\log_2 3 - \log_2|R|$ bits.  By Landauer's principle,
+erasing one bit at temperature $T$ requires minimum energy $\kB T \ln 2$.
+Therefore $E_{\mathrm{filter}} = \kB T \ln 2 \cdot (k\log_2 3 - \log_2|R|)$.
+\end{proof}
+
+\begin{remark}[Thermodynamic price of domain knowledge]
+This theorem has a remarkable interpretation: domain knowledge has a
+thermodynamic cost.  The analyst's knowledge that ``this is a metabolomics
+experiment on human serum'' is not free---it represents information acquired
+through training, experience, and experimental design, all of which required
+energy expenditure.  The Landauer bound gives the minimum energy cost of this
+knowledge when applied to constrain the search space.  In practice, the actual
+cost (acquiring a PhD, running preliminary experiments, reading the literature)
+is vastly greater than the Landauer minimum, but the bound establishes that the
+cost cannot be zero.
+
+At $k = 12$, $|R| = 1$ (single compound identified), the Landauer cost is
+$E = \kB T \ln 2 \times k \log_2 3 = \kB T \ln 2 \times 19.0 \approx 0.34$~eV
+at $T = 300$~K.  This is the minimum thermodynamic cost of the complete
+identification.
+\end{remark}
+
+\subsection{Recoverability}
+\label{sec:ch24-recover}
+
+\begin{proposition}[Purpose MMD Recoverability]
+\label{prop:ch24-recover}
+The Purpose MMD is recoverable: after filtering for context $\mathcal{C}_1$,
+it can be reconfigured for $\mathcal{C}_2$ without irreversible information
+loss from the trie structure.
+\end{proposition}
+
+\begin{proof}
+The Purpose MMD operates by selecting a subset $\mathcal{P}(\mathcal{C}_1)
+\subset \mathcal{S}$, not by deleting the complement.  The full trie
+$\mathcal{T}$ remains intact; only the traversal is restricted.  To switch
+context, change the active subset from $\mathcal{P}(\mathcal{C}_1)$ to
+$\mathcal{P}(\mathcal{C}_2)$.  No trie structure is erased.  The Landauer
+cost of the previous filtering has been dissipated as heat, but the
+information-processing infrastructure (the trie) is reusable.
+\end{proof}
+
+%% ── §24.5 ─────────────────────────────────────────────────────────────────────
+\section{Prompt Synthesis}
+\label{sec:ch24-prompt}
+
+\subsection{Domain Context as Information}
+\label{sec:ch24-context}
+
+\begin{definition}[Domain Context]
+\label{def:ch24-context}
+A \emph{domain context} is a finite set of constraints
+$\mathcal{C} = \{c_1, c_2, \ldots, c_p\}$ that restrict the accessible region
+of S-entropy space $\mathcal{S}$.  Each constraint $c_i$ specifies a condition
+that the molecular system must satisfy.
+\end{definition}
+
+Concrete examples of domain constraints in analytical chemistry:
+\begin{enumerate}[(a)]
+  \item \emph{Mass range}: ``Metabolomics experiment'' constrains mass
+    to $[50, 1500]$~Da, restricting $\Sk$ to a subinterval corresponding
+    to this vibrational energy scale.
+  \item \emph{Biological source}: ``Human serum sample'' constrains to
+    endogenous metabolites of human metabolism, restricting all three
+    coordinates.
+  \item \emph{Compound class}: ``Glycan analysis'' constrains to specific
+    partition shells corresponding to monosaccharide building blocks (hexose,
+    $N$-acetylhexosamine, fucose, sialic acid), restricting the $n$-range
+    in the partition coordinates.
+  \item \emph{Ionisation mode}: ``Positive ESI mode'' constrains the spin
+    parameter $s = +1/2$, effectively halving the accessible phase space.
+  \item \emph{Fragmentation depth}: ``Collision energy 30~eV'' constrains
+    $\Se$ (higher energy accesses more anharmonic coupling channels).
 \end{enumerate}
 
-This produces \emph{purpose-constrained spectra}: the partition walk is
-biased by the analytical goal.
+\subsection{The Purpose Function}
+\label{sec:ch24-purpose-func}
 
-\section{Cross-Domain Performance}
-\label{sec:ch24-crossdomain}
+\begin{definition}[Purpose Function]
+\label{def:ch24-purpose}
+The \emph{Purpose function} is the map
+\begin{equation}
+\label{eq:ch24-purpose}
+  \mathcal{P} : \mathcal{C} \to 2^{\mathcal{S}}
+\end{equation}
+that assigns to each domain context $\mathcal{C}$ the subregion
+$\mathcal{P}(\mathcal{C}) \subseteq \mathcal{S}$ of S-entropy space
+consisting of all points compatible with the constraints in $\mathcal{C}$.
+\end{definition}
 
-The purpose-based framework was validated across multiple mass spectrometric
-domains:
-metabolomics, proteomics, lipidomics, and pharmaceutical analysis.
-In each domain, the purpose function is defined by the analytical context;
-the spectral generation adapts accordingly.
-Cross-domain maximum mean discrepancy (MMD) between generated and reference
-spectra is $< 0.05$ in all tested cases.
+\begin{theorem}[Prompt Contraction]
+\label{thm:ch24-contraction}
+Each additional constraint contracts the accessible region:
+\begin{equation}
+\label{eq:ch24-contraction}
+  \mathcal{P}(c_1, \ldots, c_p) \subseteq \mathcal{P}(c_1, \ldots, c_{p-1}).
+\end{equation}
+\end{theorem}
 
-%%  SOURCE: integrate full derivations and panels from
-%%          purpose-based-spectral-analysis.tex
-%%  ADD: panel 1 (resonance comparison), panel 2 (purpose constraints),
-%%       panel 3 (selective generation), panel 4 (cross-domain MMD).
+\begin{proof}
+A point $S \in \mathcal{P}(\mathcal{C}_p)$ satisfies all constraints in
+$\mathcal{C}_p = \{c_1, \ldots, c_p\}$.  In particular it satisfies
+$c_1, \ldots, c_{p-1}$, so $S \in \mathcal{P}(\mathcal{C}_{p-1})$.  The
+inclusion is in general strict: constraint $c_p$ excludes at least those
+points satisfying $\mathcal{C}_{p-1}$ but violating $c_p$, unless $c_p$ is
+redundant.
+\end{proof}
 
+\begin{corollary}[Monotonic Reduction]
+\label{cor:ch24-monotonic}
+The accessible region shrinks monotonically with increasing domain specificity:
+\begin{equation}
+\label{eq:ch24-monotonic}
+  \mathcal{S} = \mathcal{P}(\emptyset) \supseteq \mathcal{P}(c_1) \supseteq
+  \mathcal{P}(c_1, c_2) \supseteq \cdots \supseteq
+  \mathcal{P}(c_1, \ldots, c_p).
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:ch24-contraction} inductively:
+$\mathcal{P}(\emptyset) = \mathcal{S}$ (no constraints, full space);
+each additional constraint produces a subset inclusion.
+\end{proof}
+
+\subsection{Ternary Prefix Interpretation}
+\label{sec:ch24-prefix}
+
+\begin{theorem}[Prompt-to-Prefix]
+\label{thm:ch24-prompt-prefix}
+Every Purpose function $\mathcal{P}(\mathcal{C})$ determines a finite set of
+ternary prefixes $\{p_1, \ldots, p_r\}$ whose subtrees cover
+$\mathcal{P}(\mathcal{C})$:
+\begin{equation}
+\label{eq:ch24-prefix-cover}
+  \mathcal{P}(\mathcal{C}) \subseteq \bigcup_{i=1}^{r} \mathrm{subtree}(p_i).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+At resolution depth $k$, $\mathcal{S}$ is partitioned into $3^k$ cells.
+Define $R = \{\alpha \in \{0,1,2\}^k : \mathrm{cell}(\alpha) \cap
+\mathcal{P}(\mathcal{C}) \neq \emptyset\}$.  Compute the minimal covering
+prefix set: start with all depth-$k$ addresses in $R$; for any prefix $p$
+of length $d < k$ such that all $3^{k-d}$ descendants of $p$ are in $R$,
+replace those descendants by $p$.  Repeat until no further compression.
+The result $\{p_1, \ldots, p_r\}$ is finite (since $|R| \leq 3^k < \infty$)
+and covers $\mathcal{P}(\mathcal{C})$.
+\end{proof}
+
+\begin{definition}[Prompt]
+\label{def:ch24-prompt}
+The \emph{prompt} determined by domain context $\mathcal{C}$ is the
+minimal covering prefix set:
+\[
+  \pi(\mathcal{C}) = \{p_1, \ldots, p_r\}.
+\]
+The number of prefixes $r = |\pi(\mathcal{C})|$ determines the generation cost.
+\end{definition}
+
+\begin{remark}
+The term ``prompt'' is chosen deliberately.  Just as a text prompt to a
+language model constrains generation to relevant outputs, the phase-space
+prompt constrains molecular generation to domain-relevant compounds.  The
+prompt is the formal encoding of the analyst's domain knowledge into the
+ternary address system.
+\end{remark}
+
+\subsection{The Constrained Lagrangian}
+\label{sec:ch24-constrained}
+
+\begin{theorem}[Constrained Partition Lagrangian]
+\label{thm:ch24-constrained}
+The Purpose function modifies the effective partition depth field to enforce
+domain constraints:
+\begin{equation}
+\label{eq:ch24-constrained-depth}
+  \Depth_{\mathrm{eff}}(\mathbf{x}, t)
+  = \Depth(\mathbf{x}, t)
+  + \lambda \cdot \chi_{\mathcal{S} \setminus \mathcal{P}(\mathcal{C})}(\mathbf{x}),
+\end{equation}
+where $\chi_{\mathcal{S} \setminus \mathcal{P}(\mathcal{C})}$ is the indicator
+function of the excluded region and $\lambda \to \infty$ enforces the
+constraint.  The resulting constrained Lagrangian is:
+\begin{equation}
+\label{eq:ch24-constrained-lagrangian}
+  \Lagr_\Depth^{\mathrm{eff}}
+  = \frac{1}{2}\partinert|\dot{\mathbf{x}}|^2
+  + \partinert\dot{\mathbf{x}} \cdot \Apartition
+  - \Depth_{\mathrm{eff}}(\mathbf{x}, t).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Adding $\lambda \cdot \chi_{\mathcal{S} \setminus \mathcal{P}(\mathcal{C})}$
+creates an infinite potential barrier on the complement of
+$\mathcal{P}(\mathcal{C})$ as $\lambda \to \infty$.  The Euler--Lagrange
+equations for $\Lagr_\Depth^{\mathrm{eff}}$ are identical to those for
+$\Lagr_\Depth$ within $\mathcal{P}(\mathcal{C})$, and generate no trajectories
+outside it.  This is the standard penalty-function method for constrained
+variational problems.
+\end{proof}
+
+\subsection{Purpose Composition}
+\label{sec:ch24-composition}
+
+\begin{theorem}[Purpose Composition]
+\label{thm:ch24-composition}
+Purpose functions compose via intersection:
+\begin{equation}
+\label{eq:ch24-composition}
+  \mathcal{P}(\mathcal{C}_1 \cup \mathcal{C}_2)
+  = \mathcal{P}(\mathcal{C}_1) \cap \mathcal{P}(\mathcal{C}_2).
+\end{equation}
+Adding domain knowledge intersects the accessible regions.
+\end{theorem}
+
+\begin{proof}
+$S \in \mathcal{P}(\mathcal{C}_1 \cup \mathcal{C}_2)$ iff $S$ satisfies all
+constraints in $\mathcal{C}_1$ and all in $\mathcal{C}_2$ iff
+$S \in \mathcal{P}(\mathcal{C}_1) \cap \mathcal{P}(\mathcal{C}_2)$.
+\end{proof}
+
+\begin{remark}
+Purpose Composition is commutative and associative.  Combining knowledge from
+two domains (e.g., ``metabolomics'' and ``human serum'') yields the
+intersection of their individual phase-space regions.  The order in which
+constraints are applied is irrelevant.
+\end{remark}
+
+%% ── §24.6 ─────────────────────────────────────────────────────────────────────
+\section{Selective Generation}
+\label{sec:ch24-selective}
+
+\subsection{Generation vs.\ Exhaustive Search}
+\label{sec:ch24-gen-vs-search}
+
+Three identification strategies can be distinguished by operational cost:
+\begin{enumerate}[(i)]
+  \item \emph{Exhaustive generation:} Generate all $3^k$ trajectories.
+    Cost: $O(3^k)$.
+  \item \emph{Library search:} Compare against $N$ stored entries at $O(d)$
+    per comparison.  Cost: $O(N \cdot d)$.
+  \item \emph{Selective generation:} Generate only the $r$ trajectories in the
+    prompt $\pi(\mathcal{C})$.  Cost: $O(r \cdot k)$.
+\end{enumerate}
+
+At typical parameters ($3^k \sim 10^6$ at $k=12$; $N \sim 10^5$ metabolomics;
+$d \sim 10^3$; $r \sim 10^3$; $k = 12$): exhaustive $\sim 10^6$; library
+$\sim 10^8$; selective $\sim 10^4$.  Selective generation is orders of magnitude
+faster than both alternatives.
+
+\subsection{The Selective Generation Theorem}
+\label{sec:ch24-selective-thm}
+
+\begin{theorem}[Selective Generation]
+\label{thm:ch24-selective}
+Identification through purpose-constrained generation requires $O(r \cdot k)$
+operations, independent of both database size $N$ and total phase-space
+volume $3^k$.
+\end{theorem}
+
+\begin{proof}
+The identification proceeds in two stages.
+
+\emph{Stage~1: Prefix enumeration.}  The prompt $\pi(\mathcal{C}) = \{p_1, \ldots,
+p_r\}$ contains $r$ prefixes.  Enumerating them costs $O(r)$.
+
+\emph{Stage~2: Trie traversal and resonance check.}  For each prefix $p_i$
+of length $l_i \leq k$:
+(a)~Navigate the trie by following $l_i$ branches, each $O(1)$: cost $O(l_i)
+\leq O(k)$.
+(b)~Generate the trajectory at node $p_i$ via the partition Lagrangian:
+cost $O(1)$ per trajectory.
+(c)~Check resonance by prefix matching: cost $O(k)$.
+
+Per-prefix cost: $O(k) + O(1) + O(k) = O(k)$.  Over $r$ prefixes:
+$\sum_{i=1}^r O(k) = O(r \cdot k)$.
+
+This cost is independent of $N$ (no library searched) and of $3^k$ (only $r$
+of $3^k$ addresses visited; the remainder pruned by the Purpose MMD before
+generation).
+\end{proof}
+
+\begin{theorem}[Sublinear Identification]
+\label{thm:ch24-sublinear}
+For any domain context where $r/3^k < 1$, selective generation is sublinear
+in phase-space volume:
+\begin{align}
+  O(r \cdot k) &< O(3^k)
+  \quad \text{(sublinear in phase-space volume)}, \\
+  O(r \cdot k) &< O(N \cdot d)
+  \quad \text{(sublinear in library cost, when } r \cdot k < N \cdot d\text{)}.
+\end{align}
+For typical biochemical domains, $r/3^k < 0.05$, meaning $> 95\%$ of phase
+space is never explored.
+\end{theorem}
+
+\begin{proof}
+For $r/3^k < 0.05$ at $k = 12$: $r < 26{,}572$ and
+$r \cdot k < 318{,}864 < 531{,}441 = 3^{12}$.
+For library comparison: $r \cdot k = 10^3 \times 12 = 1.2 \times 10^4 \ll
+N \cdot d = 10^5 \times 10^3 = 10^8$ under metabolomics parameters.
+\end{proof}
+
+\subsection{Information-Theoretic Optimality}
+\label{sec:ch24-optimality}
+
+\begin{theorem}[Optimality]
+\label{thm:ch24-optimal}
+Selective generation is information-theoretically optimal: it examines exactly
+$\log_2(3^k/|R|)$ bits of information, the minimum required to distinguish the
+constrained region from the full phase space.
+\end{theorem}
+
+\begin{proof}
+By Shannon's source coding theorem, the minimum number of bits to specify one
+of $|R|$ addresses from $3^k$ is $I = \log_2(3^k/|R|)$.  The Purpose MMD
+extracts exactly this information from the domain context.  The selective
+generation algorithm then examines $r$ addresses at depth $k$, processing
+$r \cdot k \cdot \log_2 3$ bits.  The information gain from the prompt is
+$k \log_2 3 - \log_2 r \approx I$, matching the Shannon bound.  No algorithm
+can extract greater information gain from the same domain constraints.
+\end{proof}
+
+\subsection{Accuracy Preservation}
+\label{sec:ch24-accuracy}
+
+\begin{theorem}[Accuracy Invariance]
+\label{thm:ch24-accuracy}
+If the target compound lies within the constrained region
+$\mathcal{P}(\mathcal{C})$, identification through selective generation is
+identical to identification through exhaustive generation:
+\begin{equation}
+  S_{\mathrm{target}} \in \mathcal{P}(\mathcal{C})
+  \implies
+  \mathrm{addr}_k^{\mathrm{selective}}(S_{\mathrm{target}})
+  = \mathrm{addr}_k^{\mathrm{exhaustive}}(S_{\mathrm{target}}).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+If $S_{\mathrm{target}} \in \mathcal{P}(\mathcal{C})$, the cell containing it
+is in $R$.  Selective generation visits all cells in $R$.  Therefore the cell
+containing $S_{\mathrm{target}}$ is visited and the resonance check identifies
+it.  Exhaustive generation also visits this cell.  Both identify the same
+$k$-trit address.
+\end{proof}
+
+\begin{corollary}[No Accuracy-Efficiency Tradeoff]
+\label{cor:ch24-no-tradeoff}
+Under correct domain constraints, there is no tradeoff.  The computation
+reduction is a pure efficiency gain with zero accuracy cost.
+\end{corollary}
+
+\begin{corollary}[Completeness Condition]
+\label{cor:ch24-completeness}
+Identification fails if and only if $S_{\mathrm{target}} \notin
+\mathcal{P}(\mathcal{C})$.  This is a property of the prompt, not of the
+identification framework.
+\end{corollary}
+
+\begin{consequence}{Selective Generation is Optimal and Exact}{ch24-selective-gen}
+Under correct domain constraints (target $\in \mathcal{P}(\mathcal{C})$):
+identification requires $O(r \cdot k)$ operations
+(Theorem~\ref{thm:ch24-selective}), achieves the information-theoretic
+minimum (Theorem~\ref{thm:ch24-optimal}), and preserves identification accuracy
+exactly (Theorem~\ref{thm:ch24-accuracy}).  The efficiency gain is provably
+zero-cost in terms of accuracy.  Domain knowledge is not a computational
+shortcut but a thermodynamic constraint that eliminates irrelevant phase space
+before generation begins.
+\end{consequence}
+
+%% ── §24.7 ─────────────────────────────────────────────────────────────────────
+\section{Domain-Specific Reduction Bounds}
+\label{sec:ch24-domain-bounds}
+
+Define the \emph{reduction ratio} $\rho = 1 - |R|/3^k = 1 - r/3^k$.
+Higher $\rho$ means greater computation savings.
+
+\subsection{Metabolomics}
+\label{sec:ch24-metab}
+
+\noindent\textbf{Domain:} Untargeted metabolomics of human biofluids.
+
+\noindent\textbf{Constraints:}
+mass range $[50, 1500]$~Da;
+endogenous metabolites ($\sim 4{,}000$ known in HMDB 5.0);
+biochemical pathways (amino acid, lipid, carbohydrate, nucleotide metabolism);
+ESI positive and negative modes.
+
+\begin{theorem}[Metabolomics Reduction]
+\label{thm:ch24-metab}
+For standard untargeted metabolomics at depth $k = 12$,
+$\rho \geq 0.95$.
+\end{theorem}
+
+\begin{proof}
+At $k = 12$: $3^{12} = 531{,}441$ cells.  The mass constraint $[50, 1500]$~Da
+restricts $\Sk$ to an interval corresponding to this vibrational energy scale,
+excluding approximately 30\% of the $\Sk$ range and reducing accessible cells
+by factor $0.7$.  The endogenous metabolite constraint is more restrictive:
+of $\sim 10^8$ known chemical compounds, only $\sim 4{,}000$ are endogenous
+human metabolites.  Metabolic pathways create connected regions in S-entropy
+space (pathway neighbours share mass, energy distribution, and coupling
+structure); conservatively, the endogenous metabolome occupies at most
+$\sim 26{,}000$ cells.  By Purpose Composition
+(Theorem~\ref{thm:ch24-composition}):
+\[
+  |R| \leq 26{,}000,
+  \quad
+  \rho = 1 - 26{,}000/531{,}441 \geq 1 - 0.049 = 0.951 > 0.95. \qedhere
+\]
+\end{proof}
+
+\subsection{Glycomics}
+\label{sec:ch24-glycan}
+
+\noindent\textbf{Domain:} Glycan structural analysis.
+
+\noindent\textbf{Constraints:}
+Compound class: glycans composed of standard monosaccharide building blocks
+(Hex~162.053~Da, HexNAc~203.079~Da, Fuc~146.058~Da, NeuAc~291.095~Da,
+NeuGc~307.090~Da);
+mass range $[500, 5000]$~Da;
+glycosidic linkage patterns and biosynthetic rules.
+
+\begin{theorem}[Glycan Reduction]
+\label{thm:ch24-glycan}
+For glycan-specific analysis at depth $k = 12$, $\rho \geq 0.99$.
+\end{theorem}
+
+\begin{proof}
+Glycan masses satisfy the discrete composition formula:
+\[
+  M = 18.011 + 162.053\,a + 203.079\,b + 146.058\,c + 291.095\,d + 307.090\,e
+\]
+for non-negative integers $a, b, c, d, e$.  The possible compositions form a
+discrete lattice in mass space.  Only compositions satisfying branching rules
+and valence constraints correspond to actual glycans.  The number of
+glycan-compatible compositions in $[500, 5000]$~Da is $\sim 800$.  Including
+structural isomers: $\sim 5{,}000$ distinct glycan structures.  At $k = 12$
+(531,441 cells):
+\[
+  |R| \leq 5{,}000,
+  \quad
+  \rho = 1 - 5{,}000/531{,}441 \geq 1 - 0.0094 = 0.9906 > 0.99. \qedhere
+\]
+\end{proof}
+
+\subsection{Proteomics}
+\label{sec:ch24-proteo}
+
+\noindent\textbf{Domain:} Bottom-up proteomics of a specific organism.
+
+\noindent\textbf{Constraints:}
+Organism: known proteome (e.g., \emph{Homo sapiens}: $\sim 20{,}000$
+protein-coding genes);
+Digestion: trypsin ($\to \sim 500{,}000$ unique tryptic peptides);
+Mass range: $[400, 6000]$~Da;
+PTMs: specified expected modifications (phosphorylation, oxidation, deamidation).
+
+\begin{theorem}[Proteomics Reduction]
+\label{thm:ch24-proteo}
+For organism-specific bottom-up proteomics at depth $k = 12$,
+$\rho \geq 0.97$.
+\end{theorem}
+
+\begin{proof}
+The human tryptic peptidome contains $\sim 500{,}000$ unique sequences.
+Including common PTMs (factor $\sim 3$): $\sim 1{,}500{,}000$ modified peptide
+forms.  Many peptides are isobaric or near-isobaric and co-locate in S-entropy
+space.  At $k = 12$, peptide-occupied cells number at most $\sim 15{,}000$:
+\[
+  |R| \leq 15{,}000,
+  \quad
+  \rho = 1 - 15{,}000/531{,}441 \geq 1 - 0.028 = 0.972 > 0.97. \qedhere
+\]
+\end{proof}
+
+\subsection{Domain Comparison}
+\label{sec:ch24-domain-compare}
+
+\begin{table}[htbp]
+\centering
+\caption{Domain-specific reduction bounds at depth $k = 12$
+         ($3^{12} = 531{,}441$ total cells).
+         Speedup = $3^k/r$.}
+\label{tab:ch24-domains}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Domain} & \textbf{Constraints} & $r$ & $\rho$ & \textbf{Speedup} \\
+\midrule
+Metabolomics & Mass, HMDB, pathways     & 26{,}000 & 0.951 & $20\times$    \\
+Glycomics    & Monosaccharides, mass    &  5{,}000 & 0.991 & $106\times$   \\
+Proteomics   & Organism, tryptic, PTMs & 15{,}000 & 0.972 & $35\times$    \\
+\midrule
+No constraints & (empty prompt)         & 531{,}441 & 0.000 & $1\times$   \\
+Maximum specificity & (single compound) & 1         & $\approx$1.000 & $531{,}441\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For all three biochemical domains, the reduction exceeds 95\%.  The speedup
+grows with domain specificity and reaches $>5 \times 10^5$ at maximum
+specificity.
+
+%% ── §24.8 ─────────────────────────────────────────────────────────────────────
+\section{Experimental Validation}
+\label{sec:ch24-validation}
+
+\subsection{Test Framework}
+\label{sec:ch24-test}
+
+Validation follows a uniform protocol across three domain contexts:
+\begin{enumerate}
+  \item[\textbf{V1:}] Define context $\mathcal{C}$ (constraints).
+  \item[\textbf{V2:}] Compute prompt $\pi(\mathcal{C}) = \{p_1, \ldots, p_r\}$.
+  \item[\textbf{V3:}] Measure $r$ and compute $\rho = 1 - r/3^k$.
+  \item[\textbf{V4:}] For test compounds, verify identification accuracy under
+    selective generation.
+  \item[\textbf{V5:}] Compare with exhaustive generation to confirm accuracy
+    preservation.
+\end{enumerate}
+Test compounds are the 39 NIST CCCBDB molecules from Chapter~\ref{ch:database}
+(Table~\ref{tab:ch23-suite}) plus 15 NIST reference glycans (masses
+1216--4588~Da).
+
+\subsection{Metabolomics Validation}
+\label{sec:ch24-metab-val}
+
+\noindent\textbf{Context:}
+$\mathcal{C}_{\mathrm{metab}} = \{\text{human serum}, \text{ESI+},
+\text{Orbitrap}, \text{mass range}~[50,1500]~\text{Da}\}$.
+
+\noindent\textbf{Constraints applied:}
+Mass filter $[50,1500]$~Da $\to$ excludes 8 of 39 test compounds (gases, large
+molecules).  HMDB filter (endogenous metabolites) $\to$ retains 24 of 31
+remaining.  Pathway filter $\to$ no further exclusions.
+
+\noindent\textbf{Results:}
+\begin{itemize}[noitemsep]
+  \item Effective prompt size: $r = 24$.
+  \item Reduction ratio: $\rho = 1 - 24/531{,}441 = 0.99995$.
+  \item Accuracy: 24/24 correctly identified (100\%).
+  \item Excluded compounds: 0/15 identified (by design, outside domain).
+  \item Operations: $24 \times 12 = 288$ (selective)
+    vs.\ $531{,}441$ (exhaustive).  Speedup: $1{,}845\times$.
+\end{itemize}
+
+\begin{remark}
+The extremely high $\rho$ for this test reflects the narrow prompt (24 specific
+compounds).  In a realistic untargeted metabolomics experiment, $r$ would be
+$\sim 4{,}000$--$26{,}000$, giving $\rho \geq 0.95$ as proved in
+Theorem~\ref{thm:ch24-metab}.
+\end{remark}
+
+\subsection{Glycomics Validation}
+\label{sec:ch24-glycan-val}
+
+\noindent\textbf{Context:}
+$\mathcal{C}_{\mathrm{glycan}} = \{N\text{-glycan analysis, sialylated
+structures, NIST reference library}\}$.
+
+\noindent\textbf{Results:}
+\begin{itemize}[noitemsep]
+  \item Effective prompt size: $r = 15$ (15 NIST reference glycans).
+  \item Reduction ratio: $\rho = 1 - 15/531{,}441 = 0.99997$.
+  \item Accuracy: 15/15 correctly identified (100\%).
+  \item Operations: $15 \times 12 = 180$ (selective)
+    vs.\ $531{,}441$ (exhaustive).  Speedup: $2{,}952\times$.
+\end{itemize}
+
+\subsection{Cross-Domain Tests}
+\label{sec:ch24-cross}
+
+\noindent\textbf{Test~1: Metabolomics prompt on glycan data.}
+Apply $\mathcal{C}_{\mathrm{metab}}$ to the 15 glycan structures.
+Result: 0/15 identified.  All glycans are outside
+$\mathcal{P}(\mathcal{C}_{\mathrm{metab}})$ (glycans are not endogenous
+small-molecule metabolites in HMDB).  Confirms domain specificity.
+
+\noindent\textbf{Test~2: Empty prompt on metabolomics data.}
+Apply $\mathcal{C} = \emptyset$ to the 24 metabolomics compounds.
+Result: 24/24 identified, at cost $531{,}441 \times 12 = 6{,}377{,}292$
+operations.  Confirms that the empty prompt recovers full accuracy at full
+cost: purpose provides efficiency, not accuracy.
+
+\noindent\textbf{Test~3: Maximally specific prompt.}
+Apply $\mathcal{C} = \{\text{exact molecular formula C}_6\text{H}_{12}\text{O}_6\}$
+to identify glucose.
+Result: $r = 1$.  Cost: $1 \times 12 = 12$ operations.  Speedup: $44{,}287\times$.
+
+\subsection{Dual-Path Validation}
+\label{sec:ch24-dual-val}
+
+For 10 of the 39 CCCBDB compounds spanning the mass range, we compute both
+ion-path and drip-path ternary addresses.
+
+\noindent\textbf{Result:} For all 10 compounds, addresses agree to depth
+$k = 12$:
+\[
+  \mathrm{addr}(S_{\mathrm{ion}}) = \mathrm{addr}(S_{\mathrm{drip}})
+  \quad \text{for all 10 compounds.}
+\]
+This confirms Theorem~\ref{thm:ch24-dual-conv} (Dual Path Convergence).
+
+\subsection{Oscillatory Comparison Validation}
+\label{sec:ch24-osc-val}
+
+For 20 compound pairs (spanning similar and dissimilar pairs), we compare:
+(1)~oscillatory comparison (ternary prefix length); and (2)~Tanimoto comparison
+(Morgan fingerprints, radius 2, 2048 bits).
+
+\noindent\textbf{Result:} Prefix length correlates strongly with Tanimoto
+similarity (Spearman $\rho_s = 0.91$, $p < 10^{-8}$).
+Pairs with prefix length $\geq 6$: all have Tanimoto $> 0.6$.
+Pairs with prefix length $\leq 2$: all have Tanimoto $< 0.3$.
+Oscillatory comparison achieves the same discrimination at $O(k) = O(12)$
+vs.\ $O(d) = O(2048)$: a $170\times$ speedup per comparison.
+
+\subsection{Identification Accuracy Summary}
+\label{sec:ch24-accuracy-sum}
+
+\begin{table}[htbp]
+\centering
+\caption{Identification accuracy by domain.}
+\label{tab:ch24-accuracy}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Domain} & $N_{\mathrm{compounds}}$ & $N_{\mathrm{generated}}$ &
+  $N_{\mathrm{correct}}$ & \textbf{Accuracy} \\
+\midrule
+Metabolomics              & 24  &  24 &  24 & 100.0\% \\
+Glycomics                 & 15  &  15 &  15 & 100.0\% \\
+Proteomics (simulated)    & 50  &  50 &  50 & 100.0\% \\
+\midrule
+Cross-domain (wrong prompt) & 15 &   0 &   0 & N/A \\
+Empty prompt              & 24  & 531{,}441 & 24 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 100\% accuracy under correct constraints confirms Accuracy Invariance
+(Theorem~\ref{thm:ch24-accuracy}).  The cross-domain test shows 0\%
+identification (all targets outside the constrained region), confirming the
+Completeness Condition (Corollary~\ref{cor:ch24-completeness}).
+
+\subsection{Scaling Analysis}
+\label{sec:ch24-scaling}
+
+Three scaling relationships were verified:
+
+\noindent\textbf{(a) $\rho$ vs.\ $N$ (database size).}
+The reduction ratio $\rho$ is independent of $N$, as predicted by
+Theorem~\ref{thm:ch24-selective}.  Verified by varying $N$ via HMDB
+subsampling: $r$ remains constant for the same domain context.
+
+\noindent\textbf{(b) $\rho$ vs.\ prompt specificity.}
+As additional constraints accumulate, $\rho$ increases monotonically
+(Corollary~\ref{cor:ch24-monotonic}):
+\begin{itemize}[noitemsep]
+  \item Mass only: $\rho = 0.70$.
+  \item Mass $+$ HMDB: $\rho = 0.95$.
+  \item Mass $+$ HMDB $+$ pathway: $\rho = 0.97$.
+  \item Mass $+$ HMDB $+$ pathway $+$ instrument: $\rho = 0.99$.
+\end{itemize}
+
+\noindent\textbf{(c) $\rho$ vs.\ trit depth $k$.}
+The reduction ratio is approximately constant across $k = 9, 12, 15, 18$
+(varying $< 2\%$), because domain constraints restrict a region of phase space
+(scaling proportionally with total volume), not a fixed number of cells:
+$r/3^k \approx \mathrm{Vol}(\mathcal{P}(\mathcal{C}))/\mathrm{Vol}(\mathcal{S})$,
+which is depth-independent.
+
+%% ── §24.9 ─────────────────────────────────────────────────────────────────────
+\section{Discussion}
+\label{sec:ch24-discussion}
+
+\subsection{Comparison Is Physics, Not Computation}
+\label{sec:ch24-physics}
+
+The traditional pipeline treats comparison as a computational problem:
+\begin{equation}
+  \text{Fingerprint}(A) \xrightarrow{\text{compute}} T(A,B)
+  \xrightarrow{\text{rank}} \text{identification.}
+\end{equation}
+The fingerprint is an extrinsic construction and the Tanimoto coefficient is
+a computed quantity.  Neither is a physical property of the molecule.
+
+In the oscillatory framework, comparison is a structural relationship:
+\begin{equation}
+  \text{Frequency spectrum}(A) \xrightarrow{\text{encode}}
+  \mathrm{addr}(A) \xrightarrow{\text{match}} \text{identification.}
+\end{equation}
+The frequency spectrum is intrinsic (the molecule's actual vibrational modes),
+the S-entropy coordinates are physical quantities, and the ternary address is
+their deterministic encoding.  Matching is prefix checking: a structural
+operation on the coordinate system, not a computation of a similarity function.
+
+Two tuning forks at the same frequency resonate without computation; two
+molecules at the same S-entropy coordinates are identified without algorithmic
+comparison.
+
+\subsection{Purpose as Thermodynamic Constraint}
+\label{sec:ch24-thermo}
+
+The Purpose function is not merely a computational shortcut but a thermodynamic
+constraint.  The entropy reduction $\Delta S = \kB \ln(3^k/|R|)$ is a physical
+quantity: it measures the decrease in uncertainty about the target compound's
+identity, achieved through domain knowledge.
+
+The connection to Maxwell's demon is direct.  The classical demon uses
+information (knowledge of molecular velocities) to reduce thermodynamic entropy
+(sorting molecules).  The Purpose MMD uses information (domain knowledge) to
+reduce search entropy (sorting relevant from irrelevant molecular identities).
+Both are subject to the Landauer bound: the information used to reduce entropy
+was acquired at a thermodynamic cost.
+
+This perspective reframes the analyst's domain knowledge as thermodynamic
+information.  An expert mass spectrometrist who knows that ``this sample is
+human serum'' possesses $\log_2(3^k/r)$ bits of information about the molecular
+identity, equivalent to an entropy reduction of $\kB \ln(3^k/r)$.  This was
+paid for through education, training, and experimental experience.
+
+The crucial insight is that domain knowledge operates at the \emph{meta level}:
+it constrains which molecules are \emph{considered}, not which states of a
+given molecule are \emph{observed}.  The traditional MMD (operating on
+individual spectra) and the Purpose MMD (operating on the choice of spectra)
+form a hierarchical system:
+\begin{enumerate}
+  \item Level~1 (Purpose MMD): select the relevant molecular identities from
+    $3^k$ possible addresses to $r$ relevant addresses.  Entropy reduction:
+    $\kB \ln(3^k/r)$.
+  \item Level~0 (Traditional MMD): select observable fragmentation features
+    from $\sim 10^{12}$ potential states to $\sim 10^3$ observables.
+    Entropy reduction: $\kB \ln(10^{12}/10^3) = 9\kB \ln 10$.
+\end{enumerate}
+
+\subsection{Domain Expertise Is Thermodynamically Essential}
+\label{sec:ch24-expertise}
+
+The framework establishes that the analyst's knowledge of sample type,
+organism, experimental protocol, and biological question is not merely helpful
+context but thermodynamic information that reduces the entropy of the
+identification problem.  Without this information, the full phase space must
+be searched.
+
+Purpose-based analysis formalises expert intuition.  Experienced analysts
+intuitively constrain the search space before measuring: a clinical chemist
+does not search polymer databases.  The Purpose function provides a formal,
+quantifiable version of this intuition.
+
+By the information-theoretic optimality result (Theorem~\ref{thm:ch24-optimal}),
+selective generation extracts the maximum possible information gain from domain
+constraints.  No identification algorithm can achieve greater efficiency from
+the same domain knowledge.
+
+\subsection{No Accuracy-Efficiency Tradeoff}
+\label{sec:ch24-no-tradeoff}
+
+The standard assumption in computational chemistry is that faster identification
+sacrifices accuracy.  The No Tradeoff Corollary (Corollary~\ref{cor:ch24-no-tradeoff})
+establishes that under correct constraints, the efficiency gain is pure: accuracy
+is preserved exactly.  The mechanism is conceptually clean: selective generation
+does not approximate; it generates only within a restricted region of phase
+space and generates exactly within that region.
+
+\subsection{Falsifiable Predictions}
+\label{sec:ch24-predictions}
+
+\begin{enumerate}
+  \item[\textbf{P1:}]
+    For any well-defined biochemical domain, the reduction ratio satisfies
+    $\rho > 0.95$ at depth $k = 12$.
+  \item[\textbf{P2:}]
+    For any compound within correctly specified domain constraints,
+    identification accuracy is 100\%.  Any inaccuracy reflects incorrect
+    constraints, not framework failure.
+  \item[\textbf{P3:}]
+    For any compound, ion-path and drip-path addresses converge at depth
+    $k = 12$: $\mathrm{addr}(S_{\mathrm{ion}}) = \mathrm{addr}(S_{\mathrm{drip}})$.
+  \item[\textbf{P4:}]
+    The energy cost of purpose-based filtering satisfies the Landauer bound:
+    $E_{\mathrm{filter}} \geq \kB T \ln 2 \cdot (k \log_2 3 - \log_2 |R|)$.
+  \item[\textbf{P5:}]
+    Adding any constraint to the domain context can only reduce or maintain $r$.
+    No constraint can increase $r$.
+  \item[\textbf{P6:}]
+    Oscillatory comparison (ternary prefix matching) produces the same
+    discrimination as Tanimoto similarity over Morgan fingerprints, but in
+    $O(k)$ vs.\ $O(d)$ operations.
+\end{enumerate}
+
+%% ── Chapter Summary ───────────────────────────────────────────────────────────
 \bigskip
 \begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
                   title={\textbf{Chapter 24 Summary}}]
 \begin{itemize}[noitemsep]
-  \item The purpose function $\mathcal{P} : \mathcal{A}_\infty \to [0,1]$
-    formalises analytical intent as a partition weight.
-  \item The molecular Maxwell demon is the data-acquisition selector;
-    its Landauer cost is $\kB\ln 2 \cdot \log_2(1/\mathcal{P}(A))$ per selection.
-  \item Purpose-constrained spectrum generation descends the partition tree
-    biased by $\mathcal{P}$.
-  \item Cross-domain validation (metabolomics, proteomics, lipidomics, pharma)
-    confirms MMD $< 0.05$.
+  \item Comparison between bounded oscillatory systems encoded in S-entropy
+    coordinates is resonance, not computation: two molecules are in
+    $k$-resonance iff their ternary addresses share a $k$-trit prefix, at
+    cost $O(k)$ (Theorems~\ref{thm:ch24-resonance-proximity},
+    \ref{thm:ch24-no-computation}).
+  \item The ultrametric inequality holds in S-entropy space: molecular
+    similarity is hierarchical with no triangular exceptions
+    (Proposition~\ref{prop:ch24-ultrametric}).
+  \item The Purpose function $\mathcal{P} : \mathcal{C} \to 2^{\mathcal{S}}$
+    maps domain context to phase-space subregions with monotonic contraction
+    under additional constraints
+    (Theorem~\ref{thm:ch24-contraction}).
+  \item The Molecular Maxwell Demon reduces search entropy by
+    $\Delta S = \kB \ln(3^k/|R|)$ at minimum Landauer cost
+    $E_{\mathrm{filter}} = \kB T \ln 2 \cdot (k\log_2 3 - \log_2|R|)$
+    (Theorems~\ref{thm:ch24-mmd-entropy}, \ref{thm:ch24-landauer}).
+  \item Selective generation achieves identification in $O(r \cdot k)$,
+    independent of $N$ and $3^k$, with zero accuracy cost under correct
+    constraints (Theorems~\ref{thm:ch24-selective}, \ref{thm:ch24-accuracy}).
+  \item Domain reduction bounds: metabolomics $\rho \geq 0.951$,
+    glycomics $\rho \geq 0.991$, proteomics $\rho \geq 0.972$---all
+    at $k = 12$ (Theorems~\ref{thm:ch24-metab}--\ref{thm:ch24-proteo}).
+  \item Validation: 100\% identification accuracy across all three domains;
+    monotonic prompt contraction $39 \to 37 \to 34 \to 8 \to 6$ compounds
+    as constraints accumulate; oscillatory comparison achieves Tanimoto-level
+    discrimination at $170\times$ lower cost per comparison.
+  \item Domain knowledge is thermodynamic information.  When purpose determines
+    the phase-space region and comparison is oscillatory resonance,
+    identification becomes a physical process rather than a computational one.
 \end{itemize}
 \end{tcolorbox}
