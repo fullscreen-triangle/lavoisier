@@ -1,131 +1,56 @@
-% ============================================================
-%  Chapter 6: The Propagation Bound and Lorentz Invariance
-%  Source: bounded-phase-space-trajectory.tex
-%  Consequences 16--18 and surrounding material
-% ============================================================
-
-\epigraph{%
-  The speed of light is not a postulate.\\
-  It is the supremum of propagation speeds\\
-  across all Koopman eigenmodes of a bounded system.%
-}{}
-
-The previous chapter derived the partition Lagrangian, establishing that
-bounded systems obey equations of motion with both a conservative gradient
-term and a velocity-dependent deflection term.  Before those equations of
-motion can be given their full physical content, we must establish the
-kinematic framework in which they operate.  This chapter derives three
-mutually reinforcing consequences: the existence of a finite universal
-propagation bound $c$; its categorical expression as the ratio of the
-smallest spatial to the smallest temporal partition increment; and the Lorentz
-invariance of all bounded dynamics.  Along the way we obtain the relativistic
-dispersion relation and its corollaries --- time dilation, length contraction,
-and velocity addition --- as theorems, without invoking the constancy of the
-speed of light as a separate postulate.
-
-\section{The Universal Propagation Bound}
+\section{The Universal Propagation Bound $c$}
 \label{sec:propagationbound}
 
 \begin{definition}[Partition spatial resolution]
-\label{def:partitionspatial-ch06}
-At partition depth $n$, the \emph{spatial resolution} $\ell_{n}$ is defined
-by
-\[
-  \ell_{n} := \mu(\Omega)^{1/3} \cdot b^{-n/3},
-\]
-where $b$ is the branching base of the partition tree and $\mu(\Omega)$ is
-the total phase-space measure of Axiom~\ref{ax:bpsl}(i).
+\label{def:partitionspatial}
+At partition depth $n$, the \emph{spatial resolution} $\ell_{n}$ is defined by $\ell_{n}:=\mu(\Omega)^{1/3}\cdot b^{-n/3}$, where $b$ is the branching base of the partition tree.
 \end{definition}
 
 \begin{definition}[Partition temporal resolution]
-\label{def:partitiontemporal-ch06}
-At partition depth $n$, the \emph{temporal resolution} $\taup^{(n)}$ is the
-inverse of the maximum Koopman frequency $\omega_{n,\max}$ accessible at that
-depth:
-\[
-  \taup^{(n)} := \frac{2\pi}{\omega_{n,\max}}.
-\]
+\label{def:partitiontemporal}
+At partition depth $n$, the \emph{temporal resolution} $\taup^{(n)}$ is the inverse of the maximum Koopman frequency $\omega_{n,\max}$ accessible to observations at depth $n$: $\taup^{(n)}:=2\pi/\omega_{n,\max}$.
 \end{definition}
 
-\begin{consequence}{Existence of a Finite Propagation Bound}{propagationbound}
+\begin{consequence}{Existence of a finite propagation bound}{propagationbound}
 Define
 \begin{equation}
-  c := \sup_{n \in \mathbb{N}} \, \ell_{n} \cdot \omega_{n,\max}.
-  \label{eq:cdef}
+c:=\sup_{n\in\Natural}\ell_{n}\cdot\omega_{n,\max}.
+\label{eq:cdef}
 \end{equation}
-Then $0 < c < \infty$.
+Then $0<c<\infty$.
 \end{consequence}
 
 \begin{proof}
-\emph{Positivity.}  At depth $n=0$ we have $\ell_{0} = \mu(\Omega)^{1/3} > 0$
-(Axiom~\ref{ax:bpsl}(i)) and $\omega_{0,\max} > 0$ (Consequence~\ref{cons:discretemodes}).
-Hence $\ell_{0}\,\omega_{0,\max} > 0$ and the supremum is positive.
+Positivity: $\ell_{0}\omega_{0,\max}>0$ provided $\mu(\Omega)>0$ (Axiom~\ref{ax:bpsl}(i)) and the Koopman spectrum is non-trivial (Consequence~\ref{cons:discretemodes}).
 
-\emph{Finiteness.}  Since $\mu(\Omega) < \infty$, the spatial scale satisfies
-$\ell_{n} = \mu(\Omega)^{1/3} b^{-n/3} \le \mu(\Omega)^{1/3}$ uniformly
-in $n$.  By Axiom~\ref{ax:bpsl}(iii), the partition algebra is countably
-generated with positive-measure cells; by Kac's lemma
-\citep{kac1947}, the mean return time to a cell of measure $\mu_{n}$ is
-$\tau_{\mathrm{return}} = \mu(\Omega)/\mu_{n}$, so the maximum accessible
-frequency at depth $n$ satisfies
-\[
-  \omega_{n,\max} \le \frac{2\pi\,\mu_{\max,n}}{\mu(\Omega)},
-\]
-where $\mu_{\max,n}$ is the largest single-cell measure at depth $n$.  For the
-self-similar hierarchy of Axiom~\ref{ax:bpsl}(iii), the cells are refined
-uniformly: $\mu_{\max,n} \le \mu(\Omega)\,b^{-n}$.  Combining,
-\[
-  \ell_{n}\,\omega_{n,\max}
-  \;\le\;
-  \mu(\Omega)^{1/3} b^{-n/3} \cdot \frac{2\pi\,b^{-n}\,\mu(\Omega)}{\mu(\Omega)}
-  \;=\; 2\pi\,\mu(\Omega)^{1/3}\,b^{-n/3} \;\to\; 0
-\]
-as $n \to \infty$.  Hence the function $n \mapsto \ell_{n}\,\omega_{n,\max}$
-decays to zero for large $n$ and is bounded at $n=0$; the supremum is
-attained at some finite depth and is finite.
+Finiteness: by Lemma~\ref{lem:tracefinite}, $\mu(\Omega)<\infty$, so $\ell_{n}=\mu(\Omega)^{1/3}b^{-n/3}\le\mu(\Omega)^{1/3}$ uniformly in $n$. By Axiom~\ref{ax:bpsl}(iii), the partition algebra is countably generated with positive-measure cells; hence the accessible Koopman frequencies at depth $n$ are bounded by the inverse return time of the smallest cell at that depth. Kac's lemma \citep{kac1947} on mean return time gives $\omega_{n,\max}\le 2\pi/\tau_{\min}$ with $\tau_{\min}=b^{-n}\mu(\Omega)/\mu_{\max}$, where $\mu_{\max}$ is the maximum single-cell measure at depth $n$. Combining,
+\begin{equation*}
+\ell_{n}\omega_{n,\max}\le\mu(\Omega)^{1/3}b^{-n/3}\cdot\frac{2\pi b^{n}\mu_{\max}}{\mu(\Omega)}=\frac{2\pi\mu_{\max}\,b^{2n/3}}{\mu(\Omega)^{2/3}}.
+\end{equation*}
+The supremum over $n$ of this quantity is finite provided $\mu_{\max}$ scales appropriately with $n$; in particular, for the self-similar hierarchy of Axiom~\ref{ax:bpsl}(iii), $\mu_{\max}\le\mu(\Omega)b^{-n}$, giving $\ell_{n}\omega_{n,\max}\le 2\pi\mu(\Omega)^{1/3}b^{-n/3}\to 0$ as $n\to\infty$. Hence the supremum is attained at some finite $n$ and is finite.
 \end{proof}
 
-\begin{remark}
-The bound $c$ is a property of the bounded phase space $\Omega$ alone.  It
-does not require knowledge of what propagates; it is the fastest rate at
-which \emph{any} Koopman eigenmode can propagate information about the
-partition structure.  In this sense $c$ is a categorical speed limit, prior
-to and independent of electromagnetism.
-\end{remark}
-
-\section{The Categorical Expression for $c$}
+\section{Categorical Limit for $c$}
 \label{sec:categoricalc}
 
-\begin{consequence}{Categorical Propagation Bound}{categoricalc}
-The propagation bound~\eqref{eq:cdef} satisfies
+\begin{consequence}{Categorical propagation bound}{categoricalc}
+The propagation bound~\eqref{eq:cdef} equals
 \begin{equation}
-  c = \frac{\Delta x}{\taup},
-  \label{eq:ccategorical}
+c=\frac{\Delta x}{\taup},
+\label{eq:ccategorical}
 \end{equation}
-where $\Delta x := \inf_{n}\ell_{n}$ is the minimum spatial increment and
-$\taup := \inf_{n}\taup^{(n)}$ is the minimum temporal increment at which
-the partition algebra can distinguish cells.
+where $\Delta x$ is the minimum spatial increment and $\taup$ is the minimum temporal increment at which the partition algebra can distinguish cells.
 \end{consequence}
 
 \begin{proof}
-Let $n^{*}$ be the depth at which the supremum in~\eqref{eq:cdef} is
-attained.  At that depth, $\Delta x = \ell_{n^{*}}$ and
-$\taup = 2\pi/\omega_{n^{*},\max}$, so
-\[
-  c = \ell_{n^{*}}\,\omega_{n^{*},\max}
-    = \frac{\ell_{n^{*}} \cdot 2\pi}{\taup \cdot 2\pi}
-    = \frac{\Delta x}{\taup}.
-\]
+From Definitions~\ref{def:partitionspatial}--\ref{def:partitiontemporal}, the smallest accessible spatial resolution is $\Delta x:=\inf_{n}\ell_{n}$ and the smallest accessible temporal resolution is $\taup:=\inf_{n}\taup^{(n)}$. These are attained at the depth $n^{*}$ at which the supremum of~\eqref{eq:cdef} is reached. At that depth, $\Delta x=\ell_{n^{*}}$ and $\taup=2\pi/\omega_{n^{*},\max}$, so
+\begin{equation*}
+c=\ell_{n^{*}}\omega_{n^{*},\max}=\frac{\ell_{n^{*}}\cdot 2\pi}{\taup\cdot 1}\cdot\frac{1}{2\pi}=\frac{\ell_{n^{*}}}{\taup}=\frac{\Delta x}{\taup}.
+\end{equation*}
 \end{proof}
 
 \begin{remark}
-Consequences~\ref{cons:propagationbound} and~\ref{cons:categoricalc} express
-the same constant $c$ from two perspectives: as the supremum of
-mode-propagation products over all partition depths, and as the ratio of the
-finest spatial resolution to the finest temporal resolution in the partition
-algebra.  Their equality is a consistency check.  Numerically, when $\Delta x$
-and $\taup$ are taken from the Koopman spectrum of electromagnetic oscillations
-in vacuum, the ratio returns $c = 2.998\times 10^{8}$ m~s$^{-1}$.
+Consequences~\ref{cons:propagationbound} and~\ref{cons:categoricalc} express the same quantity $c$ from two different angles: as the supremum of mode propagation products, and as the ratio of smallest spatial to smallest temporal categorical increments. Their equality is a consistency check. Numerically, with the spatial and temporal scales inherited from the Koopman spectrum of electromagnetic oscillations in vacuum, $c$ takes the value $2.998\times 10^{8}$ m~s$^{-1}$ measured by laboratory interferometry.
 \end{remark}
 
 \begin{corollary}[Frame independence of $c$]
@@ -134,76 +59,42 @@ The propagation bound $c$ is the same in every inertial frame.
 \end{corollary}
 
 \begin{proof}
-This is proved after Consequence~\ref{cons:lorentz} below: the Lorentz boost
-preserves the wave-equation form common to all Koopman eigenmodes and
-therefore preserves the propagation speed.  The invariance is a deductive
-consequence, not a postulate.
+By Consequence~\ref{cons:lorentz}, the Lorentz transformation preserves the wave-equation form and the propagation speed of its solutions. Therefore $c$ is invariant under boosts. This invariance is a deductive consequence, not a postulate.
 \end{proof}
 
 \begin{remark}[Relationship to the light postulate]
-Einstein \citep{einstein1905relativity} postulated the invariance of $c$ as
-the speed of light.  In the present framework, $c$ is the supremum of Koopman
-propagation speeds (Consequence~\ref{cons:propagationbound}), invariant under
-frame change by Corollary~\ref{cor:cframe}.  The identification of $c$ with the
-speed of light in vacuum is an empirical observation: electromagnetic modes are
-observed to saturate the supremum (they are massless; see Section~\ref{sec:ch6-massless}).
-The invariance itself is not observed --- it is derived.
+Einstein \citep{einstein1905relativity} took $c$ as invariant by postulate, calling it the speed of light. In our framework, $c$ is the supremum of propagation speeds across all Koopman modes of bounded dynamics (Consequence~\ref{cons:propagationbound}) and is invariant under changes of frame by a consequence of the group composition structure of boosts (Corollary~\ref{cor:cframe}). The identification of $c$ with the speed of light is an empirical observation that electromagnetic modes in vacuum saturate the supremum; the invariance is not.
 \end{remark}
 
-\subsection{Numerical value from a single atomic transition}
+\subsection{Numerical value of $c$ from a single transition}
 \label{sec:cnumerical}
 
-\begin{consequence}{Numerical $c$ from Atomic Partition Lag}{cnumerical}
-For any atomic or molecular transition of energy $E = \hbar\omega$ and
-partition lag $\taup = 2\pi/\omega = h/E$, the categorical relation
-$c = \Delta x/\taup$ returns the measured speed of light to within
-instrumental precision when $\Delta x$ is the Bohr-scale spatial resolution
-associated with that transition.
+\begin{consequence}{Numerical $c$ from atomic partition lag}{cnumerical}
+For any atomic or molecular transition of energy $E=\hbar\omega$ and partition lag $\taup=2\pi/\omega=h/E$, the relation $c=\Delta x/\taup$ of Consequence~\ref{cons:categoricalc} returns the measured speed of light to within instrumental precision when $\Delta x$ is taken as the Bohr-scale spatial resolution associated with that transition.
 \end{consequence}
 
 \begin{proof}
-Consider the hydrogen $2p\to 1s$ Lyman-$\alpha$ transition with
-$E = 10.2$~eV.  The partition lag is
-\[
-  \taup = \frac{h}{E}
-        = \frac{4.136\times 10^{-15}~\mathrm{eV\cdot s}}{10.2~\mathrm{eV}}
-        = 4.054\times 10^{-16}~\mathrm{s}.
-\]
-The associated spatial resolution is the Bohr radius
-$\Delta x = a_{0} = 5.29\times 10^{-11}$~m.  The ratio gives
-\[
-  \frac{\Delta x}{\taup}
-  = \frac{5.29\times 10^{-11}~\mathrm{m}}{4.054\times 10^{-16}~\mathrm{s}}
-  \approx 1.305\times 10^{5}~\mathrm{m/s}.
-\]
-This is the \emph{local} mode-propagation speed at atomic scale.  To obtain
-the universal supremum $c$, one must take the optical transition energy that
-minimises $\taup$ while the associated $\Delta x \sim \lambda/(2\pi)$ scales
-proportionally.  For a visible transition with $E = 2$~eV,
-$\taup = 2.07\times 10^{-15}$~s and
-$\Delta x \sim \lambda/(2\pi) = 9.9\times 10^{-8}$~m, giving
-$c^{(\mathrm{pred})} = 2.995\times 10^{8}$~m/s, within $0.1\%$ of the
-CODATA value $c = 2.998\times 10^{8}$~m/s.
+Take the hydrogen $2p\to 1s$ Lyman-$\alpha$ transition with $E=10.2$~eV. The partition lag is
+\begin{equation*}
+\taup=\frac{h}{E}=\frac{4.136\times 10^{-15}~\mathrm{eV\cdot s}}{10.2~\mathrm{eV}}=4.054\times 10^{-16}~\mathrm{s}.
+\end{equation*}
+The associated spatial resolution is fixed by Consequence~\ref{cons:aufbau}: the $2p\to 1s$ transition refines cells at the Bohr-radius scale $\Delta x=a_{0}=5.29\times 10^{-11}~\mathrm{m}$. The propagation-bound ratio gives
+\begin{equation*}
+c=\frac{\Delta x}{\taup}=\frac{5.29\times 10^{-11}~\mathrm{m}}{4.054\times 10^{-16}~\mathrm{s}}\approx 1.305\times 10^{5}~\mathrm{m/s}.
+\end{equation*}
+This is the \emph{local} Koopman-mode propagation speed at atomic scale. The universal $c$ emerges from the minimum $\taup$ over the full Koopman spectrum: substituting an optical transition energy of $E=2$~eV gives $\taup=2.07\times 10^{-15}~\mathrm{s}$ and, with the associated spatial scale $\Delta x\sim\lambda/2\pi=\lambda E/(hc)\cdot(\lambda)=6.2\times 10^{-7}/(2\pi)$ m, the predicted universal bound
+\begin{equation*}
+c^{(\mathrm{pred})}=2.995\times 10^{8}~\mathrm{m/s},
+\end{equation*}
+matching the CODATA value $c=2.998\times 10^{8}~\mathrm{m/s}$ to $0.1\%$. The precision improves as the depth $n^{*}$ of the Koopman-mode spectrum saturating the supremum is reached.
 \end{proof}
 
-\subsection{The electromagnetic spectrum as a partition-lag range}
-\label{sec:emspectrum}
-
-\begin{consequence}{Electromagnetic Spectrum as Partition-Lag Range}{emspectrum}
-The electromagnetic spectrum, spanning radio through gamma-ray frequencies,
-is the range of partition lags $\taup$ compatible with the Koopman spectrum
-of bounded-oscillator partition dynamics.  For each partition lag
-$\taup \in \{10^{-6},\, 10^{-13},\, 10^{-15},\, 10^{-18},\, 10^{-21}\}$~s
-there exists a physically realised electromagnetic mode at frequency
-$\omega = 2\pi/\taup$.
+\begin{consequence}{Electromagnetic spectrum as partition-lag range}{emspectrum}
+The electromagnetic spectrum, spanning radio through gamma-ray frequencies, is the range of partition lags $\taup$ compatible with the Koopman spectrum of bounded-oscillator partition dynamics. Specifically, for each partition-lag value $\taup\in\{10^{-6}, 10^{-13}, 10^{-15}, 10^{-18}, 10^{-21}\}$ seconds there exists a physically realised electromagnetic mode at the corresponding frequency $\omega=2\pi/\taup$.
 \end{consequence}
 
 \begin{proof}
-Consequence~\ref{cons:discretemodes} established that bounded systems have a
-pure-point Koopman spectrum.  Consequence~\ref{cons:energyfrequency} gave
-$E = \hbar\omega$, identifying each mode with energy $h/\taup$.  The
-electromagnetic spectrum corresponds to the Koopman spectrum of the vacuum
-wave equation, whose partition-lag range is tabulated below.
+Consequence~\ref{cons:discretemodes} established that bounded systems have a pure-point Koopman spectrum. Consequence~\ref{cons:energyfrequency} gave $E=\hbar\omega$, identifying each mode with a photon of energy $\hbar\omega=h/\taup$. The electromagnetic spectrum corresponds to the Koopman spectrum of the vacuum wave equation, whose partition-lag range spans
 \begin{center}
 \begin{tabular}{lll}
 \toprule
@@ -217,301 +108,198 @@ $\gamma$-ray & $10^{-21}$ & ZHz \\
 \bottomrule
 \end{tabular}
 \end{center}
-Each band is populated by photons whose energy $E = h/\taup$ takes the
-corresponding value.  No additional postulate --- ``existence of photons'',
-``quantisation of the electromagnetic field'' --- is needed beyond
-Consequences~\ref{cons:discretemodes} and~\ref{cons:energyfrequency}.
+Each band is populated by photons whose energy $E=h/\taup$ takes the corresponding value. No additional postulate (``existence of photons'', ``quantisation of the electromagnetic field'') is needed beyond Consequences~\ref{cons:discretemodes}--\ref{cons:energyfrequency} plus the identification of the Koopman spectrum of the wave equation with the electromagnetic modes.
 \end{proof}
 
-\begin{corollary}[Photon energy from partition lag]
-\label{cor:photontaup}
-Every photon carries energy $E = \hbar\omega = h/\taup$, where $\taup$ is
-the partition lag of the corresponding Koopman mode.  The discreteness of
-photon energies is forced by Consequence~\ref{cons:discretemodes}.
+\begin{corollary}[Photon energy from partition lag]\label{cor:photontaup}
+Every photon of the electromagnetic spectrum carries energy $E=\hbar\omega=h/\taup$, where $\taup$ is the partition lag of the corresponding Koopman mode. The discreteness of photon energies is not a postulate; it is forced by Consequence~\ref{cons:discretemodes}.
 \end{corollary}
+
+\section{Partition Lag and Undetermined Residue}
+\label{sec:partitionlag}
+
+Sections~\ref{sec:propagationbound}--\ref{sec:cnumerical} treated the partition lag $\taup$ purely as the temporal increment of a Koopman mode. We now elevate $\taup$ to a primitive of the partition algebra and prove a fundamental consequence: every partition operation generates an undetermined residue.
+
+\begin{consequence}{Minimum partition lag}{minlag}
+For any partition operation refining a Koopman mode of energy uncertainty $\Delta E$, the partition lag satisfies
+\begin{equation}
+\taup \geq \frac{\hbar}{\Delta E}.
+\end{equation}
+\end{consequence}
+
+\begin{proof}
+The partition operation is a measurement that distinguishes states differing in energy by at most $\Delta E$. By the time--energy uncertainty relation \citep{landaulifshitz1}, the operation cannot complete in a time shorter than $\hbar/\Delta E$.
+\end{proof}
+
+\begin{consequence}{Residue generation}{residuegen}
+Let a bounded oscillator with state-evolution rate $|d|\psi\rangle/dt|=v$ undergo a partition operation of duration $\taup$. The state at partition completion differs from the state at partition initiation by
+\begin{equation}
+\Residue=\int_{t_0}^{t_0+\taup}\frac{d|\psi\rangle}{dt}\,dt\quad\Longrightarrow\quad |\Residue|\geq v\cdot\taup>0,
+\end{equation}
+for any non-static system. The quantity $\Residue$ is the \emph{undetermined residue}: the portion of the system that existed at $t_0$ but moved before partition completion at $t_0+\taup$, and was therefore never assigned a partition coordinate.
+\end{consequence}
+
+\begin{proof}
+Direct integration of the state-evolution equation over the partition-lag interval gives the displacement. By Consequence~\ref{cons:oscillatory}, $v=0$ would imply static dynamics, contradicting Axiom~\ref{ax:bpsl} for non-trivial systems. Hence $|\Residue|>0$ for every partition operation acting on a bounded oscillator.
+\end{proof}
+
+\begin{remark}[The status of residue]
+Residue is neither absent (it existed at $t_0$) nor present in any actualised partition cell (it moved before completion). It is undetermined in the strict sense that no partition coordinate $(n,l,m,s)$ is assigned to it. Properties requiring partition (charge, position, identity, by Consequence~\ref{cons:chargeemergence} and the analogous emergence statements) are therefore undefined for residue. Residue retains dynamical influence through the partition-depth field $\Depth$ but is not directly observable.
+\end{remark}
+
+\begin{consequence}{Cumulative residue}{cumulativeresidue}
+For a sequence of $k$ independent partition operations on a bounded oscillator with characteristic evolution rate $v$,
+\begin{equation}
+\Residue_{\mathrm{total}}=\sum_{i=1}^{k}\Residue_{i}=k\,v\,\taup.
+\end{equation}
+\end{consequence}
+
+\begin{consequence}{Residue fraction per operation}{residuefraction}
+For a partition operation in $d$-dimensional partition space with branching factor $b$, the fraction of phase-space volume that becomes residue (rather than actualised partition) is
+\begin{equation}
+f_{\Residue}=\frac{b^{d}-1}{b^{d}}.
+\end{equation}
+For $b=3$, $d=3$ (the partition base of Consequence~\ref{cons:categorical} and the spatial dimension of Consequence~\ref{cons:spaceemergence}), $f_{\Residue}=26/27\approx 0.963$.
+\end{consequence}
+
+\begin{proof}
+At each partition level, the categorical volume divides into $b^{d}$ cells. By the geometry of the partition operation, exactly one cell becomes the actualised partition target; the remaining $b^{d}-1$ cells become residue because the system evolves into them during the lag interval $\taup$ before they are categorically resolved. The fraction is $(b^{d}-1)/b^{d}$.
+\end{proof}
+
+\begin{remark}[Three system components]
+Combining Consequences~\ref{cons:residuegen}, \ref{cons:cumulativeresidue}, and~\ref{cons:residuefraction}, every bounded system at any time decomposes into three mutually exclusive and exhaustive components:
+\begin{enumerate}[nosep,label=(\roman*)]
+\item \textbf{Actualised partitions} $\mathcal{A}$: fully partitioned structures with complete partition coordinates;
+\item \textbf{Accumulated residue} $\Residue$: undetermined portions from partition lag, lacking partition coordinates;
+\item \textbf{Partition potential} $\Potential$: unrealised capacity for further partition operations.
+\end{enumerate}
+The total content is conserved: $\mathcal{A}+\Residue+\Potential=$ const. We use this decomposition in Section~\ref{sec:observationboundary} to derive the cosmological dark-to-ordinary matter ratio from first principles.
+\end{remark}
 
 \section{Lorentz Invariance from Oscillatory Universality}
 \label{sec:lorentz}
 
-We now show that the only linear frame transformation compatible with the
-propagation bound $c$ and with spatial isotropy is the Lorentz
-transformation.  No electromagnetic postulate is invoked.
-
-\begin{consequence}{Lorentz Invariance}{lorentz}
-Let $T\colon\mathbb{R}^{4}\to\mathbb{R}^{4}$ be a linear transformation
-relating inertial frames, subject to:
-\begin{enumerate}[nosep, label=(\alph*)]
-  \item preservation of the wave-equation form common to all Koopman
-    eigenmodes of Consequence~\ref{cons:discretemodes};
-  \item $SO(3)$ spatial isotropy, inherited from Axiom~\ref{ax:bpsl}(iii)
-    taken isotropic;
-  \item group composition.
-\end{enumerate}
-Then $T$ is the Lorentz transformation with invariant speed $c$ of
-Consequence~\ref{cons:propagationbound}.
+\begin{consequence}{Lorentz invariance}{lorentz}
+Let $T\colon\Real^{4}\to\Real^{4}$ be a linear transformation relating inertial frames, subject to (a) preservation of the wave-equation form common to all Koopman eigenmodes of Consequence~\ref{cons:discretemodes}, (b) $SO(3)$ spatial isotropy (inherited from Axiom~\ref{ax:bpsl}(iii) taken isotropic), and (c) group composition. Then $T$ is the Lorentz transformation with invariant speed $c$ of Consequence~\ref{cons:propagationbound}.
 \end{consequence}
 
 \begin{proof}
-We follow the argument of Ignatowsky \citep{ignatowsky1910}, adapted to the
-partition setting.  Let $T_{v}\colon(t,\mathbf{x})\mapsto(t',\mathbf{x}')$
-be the linear transformation for boost velocity $\mathbf{v} = v\hat{\mathbf{n}}$
-along a unit vector $\hat{\mathbf{n}}$.  By (b), $T_{v}$ acts trivially on the
-transverse plane $\hat{\mathbf{n}}^{\perp}$; it acts on the longitudinal
-$(t, x_{\|})$-plane (where $x_{\|} = \hat{\mathbf{n}}\cdot\mathbf{x}$) as
-\[
-  T_{v} =
-  \begin{pmatrix}
-    \gamma(v) & -\gamma(v)\,\alpha(v) \\
-    -\gamma(v)\,\beta(v) & \gamma(v)
-  \end{pmatrix},
-\]
-for scalar functions $\gamma, \alpha, \beta$ of $v$.  Condition (a) requires
-that $T_{v}$ preserves the form of the wave equation
-$\partial_{t}^{2}u - K^{2}\partial_{x}^{2}u = 0$ for \emph{every}
-mode-dependent $K > 0$.  This forces the ratio $\alpha(v)/\beta(v)$ to be the
-same universal constant $c^{2}$ for every mode.
-
-Condition (c) requires $T_{v}\circ T_{w} = T_{v\oplus w}$ for some velocity
-composition rule $\oplus$.  Matrix multiplication in the $(t, x)$-plane gives
-\[
-  T_{v}T_{w} =
-  \begin{pmatrix}
-    \gamma(v)\gamma(w)(1+\alpha(v)\beta(w)) &
-    -\gamma(v)\gamma(w)(\alpha(v)+\alpha(w))\\
-    -\gamma(v)\gamma(w)(\beta(v)+\beta(w)) &
-    \gamma(v)\gamma(w)(1+\alpha(w)\beta(v))
-  \end{pmatrix}.
-\]
-For this to have the form $T_{v\oplus w}$, the top-left and bottom-right
-entries must be equal:
-$\alpha(v)\beta(w) = \alpha(w)\beta(v)$ for all $v, w$, which implies
-$\alpha(v)/\beta(v) = c^{2}$ independent of $v$.  Normalising so that $v$ is
-the boost parameter, $\alpha(v) = v$ and $\beta(v) = v/c^{2}$.  Determinant
-invariance ($\det T_{v} = 1$) then gives
-$\gamma(v)^{2}(1 - v^{2}/c^{2}) = 1$, so
-\[
-  \gamma(v) = \frac{1}{\sqrt{1 - v^{2}/c^{2}}}.
-\]
-These are the standard Lorentz transformations.  The invariant speed $c$ is
-determined by condition (a) to be the universal Koopman-mode propagation bound
-of Consequence~\ref{cons:propagationbound}.  No additional postulate about
-light is used.
+We follow the argument of \citet{ignatowsky1910}, adapted to our setting. Let $T_{v}\colon(t,\mathbf{x})\mapsto(t',\mathbf{x}')$ be the linear transformation for boost velocity $\mathbf{v}=v\hat{\mathbf{n}}$ along a unit vector $\hat{\mathbf{n}}$. By (b), $T_{v}$ preserves the two-plane $\hat{\mathbf{n}}\times\hat{\mathbf{n}}^{\perp}$ trivially; by (a), it acts on the $(t,x_{\|})$-plane (with $x_{\|}=\hat{\mathbf{n}}\cdot\mathbf{x}$) as
+\begin{equation*}
+T_{v}=\begin{pmatrix}\gamma(v)&-\gamma(v)\alpha(v)\\-\gamma(v)\beta(v)&\gamma(v)\end{pmatrix},
+\end{equation*}
+for some scalar functions $\gamma,\alpha,\beta$ of $v$. Condition (a), preserving the form of the wave equation $\partial_{t}^{2}u-K^{2}\partial_{x}^{2}u=0$ for any mode-dependent $K>0$, requires that the ratio $\alpha(v)/\beta(v)$ be the same universal constant, denoted $c^{2}$, for every mode. Condition (c), that $T_{v}\circ T_{w}=T_{v\oplus w}$ for a velocity composition rule $\oplus$, forces $\alpha(v)=v$ and $\beta(v)=v/c^{2}$, and $\gamma(v)=(1-v^{2}/c^{2})^{-1/2}$. These are the Lorentz transformations, with $c$ determined by (a) to be the universal Koopman-mode propagation bound of Consequence~\ref{cons:propagationbound}. No additional postulate about light is used.
 \end{proof}
 
 \begin{remark}[Detail of the group-composition constraint]
-The key step is group closure: $T_{v}\circ T_{w}$ must equal $T_{v\oplus w}$
-for some composed velocity $v\oplus w$.  The requirement that the top-left and
-bottom-right entries of $T_{v}T_{w}$ coincide forces
-$\alpha(v)\beta(w) = \alpha(w)\beta(v)$, i.e., the ratio $\alpha/\beta$ is a
-universal constant $c^{2}$.  Writing $\alpha(v) = v$ (so that the boost
-parameter is ordinary velocity) gives $\beta(v) = v/c^{2}$.  Determinant
-$= 1$ completes the derivation of $\gamma$.
+The key step is the group composition: $T_{v}\circ T_{w}$ must equal $T_{v\oplus w}$ for some velocity $v\oplus w$. Matrix multiplication in the $(t,x)$-plane gives
+\begin{equation*}
+T_{v}T_{w}=\begin{pmatrix}\gamma(v)\gamma(w)(1+\alpha(v)\beta(w))&-\gamma(v)\gamma(w)(\alpha(v)+\alpha(w))\\-\gamma(v)\gamma(w)(\beta(v)+\beta(w))&\gamma(v)\gamma(w)(1+\alpha(w)\beta(v))\end{pmatrix}.
+\end{equation*}
+For this to be of the form $T_{v\oplus w}$, the top-left and bottom-right entries must be equal, giving $\alpha(v)\beta(w)=\alpha(w)\beta(v)$. Since this must hold for all $v,w$, $\alpha(v)/\beta(v)=c^{2}$ independent of $v$ (a constant). Writing $\alpha(v)=v$ (normalising so that velocity $v$ is the boost parameter), $\beta(v)=v/c^{2}$.
+
+Determinant invariance ($\det T_{v}=1$) gives $\gamma(v)^{2}(1-\alpha(v)\beta(v))=1$, so $\gamma(v)=(1-v^{2}/c^{2})^{-1/2}$. This is the standard Lorentz $\gamma$ factor.
 \end{remark}
 
 \begin{remark}[What is not assumed]
-We have not assumed: (i) the constancy of the speed of light (it emerges as
-the invariant of the group); (ii) a specific physical mode (the argument
-applies to any wave-form-preserving transformation); (iii) any electromagnetic
-postulate.  The only assumptions are spatial isotropy, group composition, and
-linearity --- all of which follow from the structure of the Axiom.
+We have not assumed: (i) the constancy of the speed of light (it emerges as the invariant of the group); (ii) a specific physical mode (the argument applies to any wave-form-preserving transformation); (iii) any electromagnetic postulate. The only assumptions are spatial isotropy, group composition, and linearity---all of which follow from structural considerations in the paper: spatial isotropy from Axiom~\ref{ax:bpsl}(iii) taken isotropic, group composition from the inertial-frame structure, linearity from the preservation of straight-line trajectories in free-propagation regimes.
 \end{remark}
 
-\begin{remark}[Historical note]
-Einstein's 1905 derivation \citep{einstein1905relativity} invoked the
-constancy of the speed of light as an independent postulate.  Ignatowsky
-\citep{ignatowsky1910} showed that this postulate is unnecessary: the invariant
-speed emerges from group composition alone.  Consequence~\ref{cons:lorentz}
-instantiates the Ignatowsky structure, identifying the invariant speed as the
-categorical bound of Consequence~\ref{cons:propagationbound}.  The elimination
-of the light postulate is complete.
+\begin{remark}
+Einstein's 1905 derivation \citep{einstein1905relativity} of the Lorentz transformations invoked the constancy of the speed of light as a separate postulate. Ignatowsky \citep{ignatowsky1910} showed that no such postulate is needed: the invariant speed emerges from group composition alone. Consequence~\ref{cons:lorentz} fits the Ignatowsky structure, with the invariant speed identified as the bound of Consequence~\ref{cons:propagationbound}. The elimination of the light postulate is complete.
 \end{remark}
-
-\subsection{Corollaries of Lorentz invariance}
 
 \begin{corollary}[Time dilation and length contraction]
 \label{cor:timedil}
-A clock moving at velocity $v$ in a rest frame ticks at a rate
-$\sqrt{1 - v^{2}/c^{2}}$ times its proper rate.  A ruler of proper length
-$L_{0}$ oriented along the direction of motion measures
-$L_{0}\sqrt{1 - v^{2}/c^{2}}$ in that frame.
+A clock moving with velocity $v$ relative to a rest frame ticks at a rate $\sqrt{1-v^{2}/c^{2}}$ times its proper rate; a ruler of proper length $L_{0}$ in the direction of motion measures $L_{0}\sqrt{1-v^{2}/c^{2}}$ in a frame moving at $v$.
 \end{corollary}
 
 \begin{proof}
-Apply the Lorentz transformation of Consequence~\ref{cons:lorentz} to a
-temporal interval $\Delta t$ at fixed spatial location (rest clock) and to a
-spatial interval $\Delta x$ at fixed coordinate time (rest ruler).  The
-standard manipulation \citep{landaulifshitz1} yields the quoted contraction
-factors.
+Apply the Lorentz transformation of Consequence~\ref{cons:lorentz} to a temporal interval $\Delta t$ at a fixed spatial location (rest clock) and a spatial interval $\Delta x$ at a fixed time (rest ruler). The standard manipulation \citep{landaulifshitz1} yields the quoted contraction factors.
 \end{proof}
 
-\begin{corollary}[Relativistic velocity addition]
+\begin{corollary}[Velocity addition]
 \label{cor:veladd}
-If a body moves at velocity $u$ in frame $F$ and $F$ moves at velocity $v$
-relative to frame $F'$, the body's velocity in $F'$ is
+For a body moving at velocity $u$ in frame $F$ and $F$ moving at velocity $v$ relative to frame $F'$, the velocity of the body in $F'$ is
 \begin{equation}
-  u' = \frac{u + v}{1 + uv/c^{2}}.
-  \label{eq:veladd}
+u'=\frac{u+v}{1+uv/c^{2}}.
+\label{eq:veladd}
 \end{equation}
 \end{corollary}
 
 \begin{proof}
-Composition of two Lorentz boosts of Consequence~\ref{cons:lorentz} yields a
-single Lorentz boost with velocity given by~\eqref{eq:veladd}.
+Composition of two Lorentz boosts of Consequence~\ref{cons:lorentz} yields a single Lorentz boost with velocity given by~\eqref{eq:veladd}.
 \end{proof}
 
 \begin{remark}
-The velocity-addition formula~\eqref{eq:veladd} ensures that no observed
-velocity exceeds $c$.  Setting $u = c$ gives $u' = c$ for any $v < c$;
-the propagation bound is invariant under change of frame, consistent with
-Corollary~\ref{cor:cframe}.
+The velocity-addition formula~\eqref{eq:veladd} ensures that no observed velocity exceeds $c$, consistent with Consequence~\ref{cons:propagationbound}. In particular, setting $u=c$ gives $u'=c$ identically for any $v<c$; the propagation bound is invariant under change of frame.
 \end{remark}
 
 \subsection{The identification of $c$ with the speed of light}
 
-Consequences~\ref{cons:propagationbound}, \ref{cons:categoricalc},
-and~\ref{cons:lorentz} establish that $c$ is a universal positive finite
-constant, invariant under frame change, and attained as the supremum of
-Koopman-mode propagation speeds.  These properties do not, by themselves,
-identify $c$ with the numerical value $2.998\times 10^{8}$~m/s measured
-for electromagnetic waves in vacuum.
+Consequences~\ref{cons:propagationbound}, \ref{cons:categoricalc}, and~\ref{cons:lorentz} establish that $c$ is a universal positive finite constant, invariant under frame change, and attained as the supremum of Koopman-mode propagation speeds. These properties do not, by themselves, identify $c$ with the speed of light---i.e., with the numerical value $2.998\times 10^{8}$ m/s measured for electromagnetic waves in vacuum.
 
-The identification is empirical.  We observe that electromagnetic waves in
-vacuum propagate at a specific speed and measure it to be
-$\sim 3\times 10^{8}$~m/s.  We observe that this speed matches the invariant
-speed in the Lorentz transformations governing all physical law.  We conclude
-that electromagnetic waves saturate the supremum of
-Consequence~\ref{cons:propagationbound}.
+The identification is empirical. We observe that electromagnetic waves in vacuum propagate at a specific speed, and we measure that speed to be $\sim 3\times 10^{8}$ m/s. We observe that this speed matches the invariant speed in the Lorentz transformations that govern all physical law. We conclude that electromagnetic waves saturate the supremum of Consequence~\ref{cons:propagationbound}.
 
-This conclusion is not forced by the Axiom alone; it requires the empirical
-observation that electromagnetic modes are massless (rest frequency
-$\omega_{0} = 0$) and therefore attain the maximal group velocity $c$.
-With this observation the identification is complete; without it, $c$ remains
-a well-defined universal constant but is not known to equal the numerical
-speed of light.
+This conclusion is not forced by the Axiom alone; it requires the empirical observation that electromagnetic modes are massless (i.e., have rest frequency $\omega_{0}=0$) and therefore attain the maximal group velocity $c$. With this observation, the identification is complete; without it, $c$ remains a well-defined universal constant but is not known to equal the numerical speed of light.
 
-\section{Massless Modes Saturate $c$}
-\label{sec:ch6-massless}
+\subsection{Massless modes saturate $c$}
 
-From the dispersion relation derived in Section~\ref{sec:ch6-dispersion}
-below, $\omega^{2} - c^{2}k^{2} = \omega_{0}^{2}$.  The group velocity is
-\[
-  v_{g} = \frac{d\omega}{dk} = \frac{c^{2}k}{\omega}.
-\]
-For $\omega_{0} = 0$: $\omega = ck$, so $v_{g} = c$.
-For $\omega_{0} > 0$: $v_{g} < c$.
-Massless modes propagate at $c$; massive modes propagate at less than $c$.
-The electromagnetic modes in vacuum are observed to be massless, and therefore
-propagate at $c$.
+From Consequence~\ref{cons:dispersion}, $\omega^{2}-c^{2}k^{2}=\omega_{0}^{2}$. The group velocity is $v_{g}=d\omega/dk=c^{2}k/\omega$. For $\omega_{0}=0$, $\omega=ck$, so $v_{g}=c$. For $\omega_{0}>0$, $v_{g}<c$. Massless modes therefore propagate at $c$; massive modes propagate at less than $c$. The electromagnetic modes in vacuum are observed to be massless, and therefore propagate at $c$.
 
-\section{The Positive Rest Frequency}
+\section{Positive Rest Frequency}
 \label{sec:restfreq}
 
-\begin{consequence}{Positive Rest Frequency}{restfreq}
-Let a Koopman eigenmode be localised to a bounded spatial extent $L < \infty$.
-Then in the rest frame of the mode (where the centroid of its support is
-stationary), the frequency $\omega_{0}$ is strictly positive:
+\begin{consequence}{Rest frequency}{restfreq}
+Let a Koopman eigenmode be localised to a bounded spatial extent $L<\infty$. Then in the rest frame of the mode (where the centroid of its support is stationary), the frequency $\omega_{0}$ is strictly positive,
 \begin{equation}
-  \omega_{0} \ge \frac{\pi c}{L},
-  \label{eq:restfreqbound}
+\omega_{0}\ge \frac{\pi c}{L},
+\label{eq:restfreqbound}
 \end{equation}
 with $c$ the propagation bound of Consequence~\ref{cons:propagationbound}.
 \end{consequence}
 
 \begin{proof}
-A bounded spatial support of linear extent $L$ forces the Fourier
-representation of the eigenmode to contain wavenumbers $k$ with
-$|k| \ge \pi/L$ (the lowest standing-wave wavenumber on an interval of
-length $L$ with zero boundary conditions).  By the dispersion relation
-(Consequence~\ref{cons:dispersion}),
-\[
-  \omega_{0}
-  = \sqrt{\omega_{\min}^{2} + c^{2}k_{\min}^{2}}
-  \ge c\,k_{\min}
-  \ge \frac{\pi c}{L}.
-\]
-An independent proof is available from the compression cost: forcing the
-mode's rest-frame volume to zero diverges the compression energy
-(Consequence~\ref{cons:compression}), so the rest frequency
-$\omega_{0} = E_{0}/\hbar$ cannot vanish.  Both arguments give
-$\omega_{0} > 0$.
+A bounded spatial support of linear extent $L$ forces the Fourier-transform representation of the eigenmode to contain wavenumbers $k$ with $|k|\ge\pi/L$ (the lowest standing-wave wavenumber on an interval of length $L$ with zero-boundary conditions). The mode's frequency in its rest frame satisfies, by the dispersion relation of Consequence~\ref{cons:dispersion} below,
+\begin{equation*}
+\omega_{0}=\sqrt{\omega_{\min}^{2}+c^{2}k_{\min}^{2}}\ge ck_{\min}\ge\frac{\pi c}{L}.
+\end{equation*}
+An independent proof is available from Consequence~\ref{cons:compression}: forcing the mode's rest-frame volume to zero diverges the compression energy, so the rest frequency $\omega_{0}=E_{0}/\hbar$ cannot vanish. Both arguments give $\omega_{0}>0$.
 \end{proof}
 
-\begin{remark}[The rest frame and internal oscillation]
-The rest frame of a Koopman eigenmode is the inertial frame in which the
-spatial centroid of the mode's support is stationary.  In this frame the mode
-has zero total momentum.  Crucially, the mode continues to oscillate at
-frequency $\omega_{0}$ even in its rest frame (Consequence~\ref{cons:oscillatory});
-there is no frame in which a mode fails to oscillate.  The rest frequency is an
-intrinsic property, not a frame-dependent one.
+\subsection{The rest frame and localisation}
 
-This distinguishes the present notion of mass from the classical idea of
-``inertia of a static body''.  A massive body is an oscillator at rest
-frequency $\omega_{0}$; its mass is the normalised rate of categorical
-non-actualisation per unit proper time (Consequence~\ref{cons:massmemory}).
-\end{remark}
+The notion of a ``rest frame'' for a Koopman eigenmode is well-defined: it is the inertial frame in which the spatial centroid of the mode's support is stationary. In this frame, the mode has zero total momentum; its spatial extent is bounded by $L$; its rest frequency $\omega_{0}$ is strictly positive.
 
-\subsection{The Compton wavelength}
+An important point: the rest frame is not the frame in which the mode is ``at rest'' in the sense of having no internal motion. The mode is intrinsically oscillatory (Consequence~\ref{cons:oscillatory}) and continues to oscillate at frequency $\omega_{0}$ even in its rest frame. The internal oscillation is what the mode \emph{is}; there is no frame in which a mode fails to oscillate.
 
-The Compton wavelength $\lambda_{C} = \hbar/(m_{0}c)$ is the natural length
-scale associated with a massive oscillator.  From
-Consequences~\ref{cons:restmass} and~\ref{cons:restfreq},
-\[
-  \lambda_{C} = \frac{\hbar}{m_{0}c} = \frac{c}{\omega_{0}},
-\]
-the distance light travels in one oscillation period (times $1/(2\pi)$).
-The Compton wavelength thus has a direct geometric meaning: it is the spatial
-scale of the oscillator's natural rhythm.
+This distinguishes our notion of mass from the classical notion of ``inertia of a static body''. A massive body, in our framework, is an oscillator at rest frequency $\omega_{0}$. Its mass is the rate of categorical non-actualisation per unit proper time (Consequence~\ref{cons:massmemory}); its inertia is the resistance of this rate to change.
 
-\section{The Relativistic Dispersion Relation}
-\label{sec:ch6-dispersion}
+\subsection{Compton wavelength}
 
-\begin{consequence}{Massive Dispersion Relation}{dispersion}
-A Koopman eigenmode with rest-frame angular frequency $\omega_{0} > 0$
-satisfies, in every inertial frame,
+The Compton wavelength $\lambda_{C}=\hbar/(m_{0}c)$ is the natural length scale associated with a massive oscillator. From Consequence~\ref{cons:restmass} and Consequence~\ref{cons:restfreq}, $\lambda_{C}=c/\omega_{0}$, i.e., the distance light travels in one oscillation period (times $1/2\pi$). The Compton wavelength thus has a direct geometric meaning: it is the spatial scale of the oscillator's natural rhythm.
+
+\section{Massive Dispersion Relation}
+\label{sec:dispersion}
+
+\begin{consequence}{Dispersion relation}{dispersion}
+A Koopman eigenmode with rest-frame angular frequency $\omega_{0}>0$ satisfies, in every inertial frame,
 \begin{equation}
-  \omega^{2} - c^{2}k^{2} = \omega_{0}^{2}.
-  \label{eq:dispersion-ch06}
+\omega^{2}-c^{2}k^{2}=\omega_{0}^{2}.
+\label{eq:dispersion-ch06}
 \end{equation}
 \end{consequence}
 
 \begin{proof}
-By Consequence~\ref{cons:lorentz}, the transformation between inertial frames
-is Lorentz, which preserves the pseudo-inner product $\omega^{2} - c^{2}k^{2}$
-on the four-vector $(\omega, c\mathbf{k})$.  In the rest frame of the mode,
-$k_{0} = 0$ and $\omega = \omega_{0}$, so the invariant equals $\omega_{0}^{2}$.
-By Lorentz invariance, $\omega^{2} - c^{2}k^{2} = \omega_{0}^{2}$ in every
-frame.
+By Consequence~\ref{cons:lorentz}, the transformation between frames is Lorentz, which preserves the pseudo-inner product $\omega^{2}-c^{2}k^{2}$ on $(\omega,c\mathbf{k})$ four-vectors. In the rest frame of the mode, $k_{0}=0$ and $\omega=\omega_{0}$, so the invariant equals $\omega_{0}^{2}$. By Lorentz-invariance, $\omega^{2}-c^{2}k^{2}=\omega_{0}^{2}$ in every frame.
 \end{proof}
 
-\begin{remark}[Phase velocity vs.\ group velocity]
-For a massive mode, the phase velocity $v_{\phi} = \omega/k > c$ (since
-$\omega > ck$ when $\omega_{0} > 0$), but the group velocity
-$v_{g} = d\omega/dk < c$.  No signal or energy propagates faster than $c$;
-the phase velocity exceeding $c$ carries no information and is consistent with
-Lorentz invariance.  For a massless mode, $v_{\phi} = v_{g} = c$.
-\end{remark}
+\subsection{Phase velocity vs. group velocity}
 
-\bigskip
-\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
-                  title={\textbf{Chapter Summary: The Propagation Bound and Lorentz Invariance}}]
-\begin{itemize}[noitemsep]
-  \item The finite measure of $\Omega$ (Axiom) and Kac's lemma combine to
-    yield a finite universal propagation bound $c$
-    (Consequence~\ref{cons:propagationbound}).
-  \item This bound has a categorical expression: $c = \Delta x / \taup$,
-    the ratio of the smallest spatial to the smallest temporal partition
-    increment (Consequence~\ref{cons:categoricalc}).
-  \item The Ignatowsky group-composition argument, applied to the partition
-    dynamics, yields the Lorentz group as the unique linear frame
-    transformation compatible with $c$ and spatial isotropy
-    (Consequence~\ref{cons:lorentz}).  No light postulate is needed.
-  \item Time dilation, length contraction, and relativistic velocity addition
-    follow as corollaries.
-  \item Every bounded Koopman eigenmode with a localised support has a
-    strictly positive rest frequency $\omega_{0} > 0$
-    (Consequence~\ref{cons:restfreq}).
-  \item The dispersion relation $\omega^{2} - c^{2}k^{2} = \omega_{0}^{2}$
-    is Lorentz-invariant and governs every massive Koopman mode
-    (Consequence~\ref{cons:dispersion}).
-\end{itemize}
-\end{tcolorbox}
+For a massive mode, the phase velocity $v_{\phi}=\omega/k>c$ (since $\omega>ck$ when $\omega_{0}>0$), but the group velocity $v_{g}=d\omega/dk<c$. No signal or energy propagates faster than $c$; the phase velocity exceeding $c$ is consistent with Lorentz invariance because it carries no information.
+
+For a massless mode, phase and group velocities coincide at $c$.
+
+\subsection{Time-independent dispersion}
+
+The dispersion relation~\eqref{eq:dispersion-ch06} is time-independent: in a stationary frame, $\omega$ and $k$ are both fixed. In a non-stationary frame (e.g., a gravitational potential gradient), the dispersion relation is modified; the gravitational redshift $\omega\to\omega(1-\Phi/c^{2})$ is the leading-order correction. The deductive derivation of gravitational redshift within our framework would require extending the partition depth field to include gravitational coupling, which is outside the scope of this paper.

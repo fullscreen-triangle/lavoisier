@@ -1,560 +1,131 @@
 % ============================================================
 %  Chapter 2: The Bounded Phase Space Law
-%  Source: union/publication/support/bounded-phase-space-trajectory.tex
-%          Part 0 (lines 126–258): single claim, protocol, empirical grounding,
-%          formal axiom, attack surface.
+%  Source: support/bounded-phase-space-trajectory.tex, Part 0 (lines 126-258)
 % ============================================================
 
-\epigraph{%
-  Physical systems are bounded.\\
-  Everything else follows.%
-}{}
+\section{Introduction}
+\label{sec:intro}
 
-%% ── §2.1 ─────────────────────────────────────────────────────────────────────
-\section{A Single Claim}
-\label{sec:ch2-claim}
+The method of this paper is narrow and strict. One empirical observation is promoted to the status of an axiom; every subsequent statement is either a definition, a formal consequence of the axiom (proved in full), or the citation of a measurement compared against such a consequence. No statement of physical substance appears without one of these three justifications.
 
-The method of this monograph is narrow and strict.
-One empirical observation is promoted to the status of an axiom; every
-subsequent statement is either a definition, a formal consequence of the axiom
-proved in full, or the citation of a measurement compared against such a
-consequence.
-No statement of physical substance appears without one of these three
-justifications.
+The single observation is this: every persistent physical system that has ever been observed occupies a bounded region of its phase space and admits a hierarchical partition into distinguishable sub-regions. We state this formally in Section~\ref{sec:axiom} as the \emph{Bounded Phase Space Law}. The Law is empirical. Its status in this paper is identical to the status that, for example, the equivalence principle enjoys in general relativity, or that the homogeneity of space enjoys in the derivation of the Galilei group: an empirical summary to which the rest of the development is logically subordinate.
 
-The single observation is this: every persistent physical system that has ever
-been observed occupies a bounded region of its phase space and admits a
-hierarchical partition into distinguishable sub-regions.
-We formalise this in \cref{sec:ch2-axiom} as the \emph{Bounded Phase Space Law}
-(BPSL).
-The Law is empirical.
-Its status here is identical to the status that, for example, the equivalence
-principle enjoys in general relativity, or that the homogeneity of space
-enjoys in the derivation of the Galilei group: an empirical summary to which
-the rest of the development is logically subordinate.
+What follows the Law is deduction. We state and prove, in sequence, that any dynamical system obeying the Law must exhibit oscillatory motion (Section~\ref{sec:oscillatory}); that its Koopman spectrum is pure point with countable support (Section~\ref{sec:discretemodes}); that each mode carries an energy proportional to its frequency (Section~\ref{sec:energyfrequency}); that the system's state space is naturally labelled by a quadruple $(n,l,m,s)$ with specific range constraints (Section~\ref{sec:quantumnumbers}); that the total number of distinguishable states at depth $n$ is $2n^{2}$ (Section~\ref{sec:shellcapacity}); that transitions between states obey the selection rules familiar from atomic spectroscopy (Section~\ref{sec:selectionrules}); that no two co-located constituents can occupy identical labels (Section~\ref{sec:pauli}); that the natural equation of motion is Lorentz-force-shaped but force-free, arising as gradient descent on a scalar partition-depth field (Section~\ref{sec:partitionlagrangian}); that a universal propagation bound $c$ emerges (Sections~\ref{sec:propagationbound}--\ref{sec:categoricalc}); that the linear transformations preserving all of the above together with group composition are the Lorentz transformations with invariant speed $c$ (Section~\ref{sec:lorentz}); that a localised oscillator has a positive rest frequency $\omega_{0}$ (Section~\ref{sec:restfreq}); that its dispersion relation is $\omega^{2}=\omega_{0}^{2}+c^{2}k^{2}$ (Section~\ref{sec:dispersion}); that its rest mass is $m_{0}=\hbar\omega_{0}/c^{2}$ and its rest energy is $E_{0}=m_{0}c^{2}$ (Sections~\ref{sec:restmass}--\ref{sec:emc2}); that inertial and gravitational mass are identical by construction (Section~\ref{sec:equivmass}); that entropy increase is a logical rather than statistical necessity (Section~\ref{sec:loschmidt}); that electric charge is a boundary attribute and takes integer values (Sections~\ref{sec:chargeemergence}--\ref{sec:chargequant}); that the ideal gas law holds exactly for all $N\ge 1$ (Section~\ref{sec:idealgasN}); that the Maxwell--Boltzmann distribution terminates at $v=c$ (Section~\ref{sec:MBbounded}); that a single dimensionally-reduced formula governs resistivity, viscosity, and diffusion (Section~\ref{sec:transport}); that all three vanish identically when partitions coalesce (Section~\ref{sec:partitionextinction}); that the Wiedemann--Franz law emerges as a pure ratio (Section~\ref{sec:wiedemann}); that the nucleon's measured exponential charge profile is the Fourier image of the partition boundary thickness (Section~\ref{sec:expprofile}); that the nuclear radius scales as $R=r_{0}A^{1/3}$ (Section~\ref{sec:nuclearradius}); that nuclear magic numbers are $2,8,20,28,50,82,126$ (Section~\ref{sec:magicnumbers}); that Coulomb's law is the $SO(3)$-symmetric envelope of the nuclear partition gradient (Section~\ref{sec:coulombenvelope}); and that the periodic table follows the Aufbau order $n+\alpha l$ with shells of capacity $2n^{2}$ (Section~\ref{sec:aufbau}).
 
-What follows the Law is deduction.
-The preceding chapter showed one ion --- $m/z = 299.0555$ --- described
-classically and quantum-mechanically on four different instruments, agreeing to
-within two parts per million each time.
-The rest of this monograph answers why that agreement is necessary, and what
-else must be true alongside it.
+Each of these statements appears below as a Consequence, with a proof that uses only the Axiom, previously established Consequences explicitly cited by number, and standard mathematics. No hidden postulates are introduced. Where a proof is long, we decompose it into Lemmas. Where a step invokes an external standard result, we cite a textbook.
 
-%% ── §2.2 ─────────────────────────────────────────────────────────────────────
-\section{The Deductive Protocol}
-\label{sec:ch2-protocol}
+We emphasise the rhetorical structure: this paper does not advance a rival theory. It states one thing that is already observed and catalogues what must follow if that observation is correct. The distinction matters for the logic of criticism. A reader who rejects a claim in Section~10, say, must either exhibit an error in the proof of Consequence~\ref{cons:quantumnumbers} or reject the Axiom itself. There is no third option. Rejecting the Axiom is possible only by producing a persistent physical system that violates its content. No such system has ever been observed.
 
-Before stating the axiom, we state the method by which it is used.
-This matters because the logical form of the argument is unusual: a single
-empirical axiom is the source of every quantitative result, with no additional
-physical input.
+Part V (Sections~\ref{sec:dimensionalreduction}--\ref{sec:Grelation}) closes the deductive loop: it proves that every SI base unit reduces to a dimensionless count, derives Newton's gravitational constant $G$ via three independent routes that converge at rate $(d+1)^{-n}$, establishes framework closure (no dimensional physical quantity remains exterior), and produces the MOND acceleration scale, dark-energy equation-of-state parameter, and secular drift of $G$ as Consequences. Part VI (Sections~\ref{sec:rutherford}--\ref{sec:atomicspectra}) collects the historical measurements against which the Consequences are tested. The measurements are those of twentieth-century physics; the Consequences are those of this paper. They match numerically in every case presented.
 
-\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
-                  title={\textbf{Deductive Protocol}}]
-\begin{enumerate}[label=(\arabic*)]
-  \item State the Axiom formally (\cref{sec:ch2-axiom}).
-  \item For each subsequent claim $C_i$, prove $C_i$ as a Consequence using
-    only:
-    \begin{enumerate}[label=(\alph*)]
-      \item the Axiom;
-      \item prior Consequences explicitly cited by label;
-      \item standard mathematical results from cited references.
-    \end{enumerate}
-  \item Conclude each proof with $\square$.
-  \item Sequester physical interpretation in Remark paragraphs that do not
-    enter the proofs.
-  \item For each Consequence involving a quantitative prediction, compare the
-    prediction to a measurement in \cref{ch:predictions}.
+\section{Preliminary: The Method Stated as Protocol}
+\label{sec:protocol}
+
+\begin{protocol}[Deductive Protocol of the Paper]
+\label{proto:main}
+\begin{enumerate}
+\item State the Axiom formally (Section~\ref{sec:axiom}).
+\item For each subsequent claim $C_{i}$ about physical systems, prove $C_{i}$ as a Consequence using only:
+  \begin{enumerate}
+  \item the Axiom;
+  \item prior Consequences explicitly cited by number;
+  \item standard mathematical results from cited references.
+  \end{enumerate}
+\item Conclude each proof with $\qed$ or $\text{\textsquare}$.
+\item Sequester physical interpretation in separate Remark or Interpretation paragraphs that do not enter the proofs.
+\item For each Consequence involving a quantitative prediction, compare the prediction to a measurement (Part VI).
 \end{enumerate}
-\end{tcolorbox}
+\end{protocol}
 
-We adhere to this protocol throughout.
-Any Remark can be excised without affecting the logical integrity of the
-derivation.
-Any numerical comparison in \cref{ch:predictions} is independent of every
-other comparison.
+We adhere to this protocol throughout. Any Remark paragraph can be excised without affecting the logical integrity of the paper; any Consequence's numerical comparison in Part VI is independent of every other comparison.
 
-The practical implication: a reader who rejects a Consequence in,
-say, \cref{ch:mass} must either exhibit an error in the proof of that
-Consequence or reject the Axiom itself.
-There is no third option.
-Rejecting the Axiom is possible only by producing a persistent physical system
-that violates its content.
-No such system has ever been observed.
-
-%% ── §2.3 ─────────────────────────────────────────────────────────────────────
 \section{Empirical Grounding of the Axiom}
-\label{sec:ch2-empirical}
+\label{sec:empiricalground}
 
-The Axiom is defended by measurement, not by argument.
-We list representative observations drawn from distinct regimes of physics
-and scales of length.
-Each observation is a statement that a persistent physical system occupies a
-bounded region of its phase space; the list covers twenty-five orders of
-magnitude in spatial scale and fifteen orders of magnitude in temporal scale.
+The Axiom is defended by measurement, not by argument. We list representative observations drawn from distinct regimes of physics and scales of length. Each observation is a statement that a persistent physical system occupies a bounded region of its phase space; the list covers twenty-five orders of magnitude in spatial scale and fifteen orders of magnitude in temporal scale.
 
-\paragraph{Electrons in atoms.}
-Ionisation energies of hydrogen-like species lie between $13.6$\,eV (neutral
-hydrogen) and many keV for inner-shell electrons of heavy elements.
-The existence of a positive ionisation threshold \emph{is} the statement that
-the electronic region of phase space is bounded; an electron with energy less
-than the threshold cannot escape.
-Hydrogen atoms in a discharge lamp radiate for arbitrarily many cycles without
-loss of boundedness of the orbit.
+\paragraph{Electrons in atoms.} Ionisation energies of hydrogen-like species lie between $13.6$ eV (neutral hydrogen) and many keV for inner-shell electrons of heavy elements \citep{nistasd,herzberg1944,griffiths2018}. The existence of a positive ionisation threshold \emph{is} the statement that the electronic region of phase space is bounded; an electron with energy less than the threshold cannot escape. Hydrogen atoms in a discharge lamp have been observed to radiate for arbitrarily many cycles without loss of boundedness of the orbit.
 
-\paragraph{Atoms in molecules.}
-Molecular dissociation energies range from $\sim 0.1$\,eV (van der Waals
-dimers) to $\sim 11$\,eV (the triple-bonded CO molecule).
-The existence of a finite dissociation energy is the statement that the
-vibrational-rotational phase space of the molecule is bounded.
+\paragraph{Atoms in molecules.} Molecular dissociation energies range from $\sim 0.1$ eV (van der Waals dimers) to $\sim 11$ eV (the triple-bonded CO molecule) \citep{wilsondeciuscross1955}. The existence of a finite dissociation energy is the statement that the vibrational-rotational phase space of the molecule is bounded.
 
-\paragraph{Atoms and molecules in condensed matter.}
-Cohesive energies of solids lie between $\sim 0.01$\,eV (van der Waals solids)
-and $\sim 10$\,eV (covalent and ionic crystals).
-Every condensed-matter structural measurement presupposes that the atoms'
-positions are confined to a bounded region of configuration space.
+\paragraph{Atoms and molecules in condensed matter.} Cohesive energies of solids lie between $\sim 0.01$ eV (van der Waals solids) and $\sim 10$ eV (covalent and ionic crystals) \citep{ashcroftmermin1976}. Every condensed-matter structural measurement presupposes that the atoms' positions are confined to a bounded region of configuration space.
 
-\paragraph{Photons in optical cavities.}
-Finesse values exceeding $10^{6}$ in high-$Q$ Fabry--Pérot cavities correspond
-to photon confinement lifetimes of milliseconds to seconds, during which a
-single photon executes $10^{6}$ or more round-trip reflections without escape.
-The photon's phase space in the cavity is bounded.
+\paragraph{Photons in optical cavities.} Finesse values exceeding $10^{6}$ in high-$Q$ Fabry--P\'erot cavities correspond to photon confinement lifetimes of milliseconds to seconds, during which a single photon executes $10^{6}$ or more round-trip reflections without escape. The photon's phase space in the cavity is bounded.
 
-\paragraph{Gases in containers.}
-That gas molecules remain inside any container whose walls are impermeable is
-an observation of such ubiquity that it is rarely listed as an observation at
-all; it is nevertheless the statement that the configurational phase space of
-each gas molecule is bounded by the container walls.
+\paragraph{Gases in containers.} That gas molecules remain inside any container whose walls are impermeable is an observation of such ubiquity that it is rarely listed as an observation at all; it is nevertheless the statement that the configurational phase space of each gas molecule is bounded by the container walls.
 
-\paragraph{Nucleons in nuclei.}
-Nuclear binding energies of $\sim 8$\,MeV per nucleon across the periodic
-table are the statement that the nucleon's phase space inside a nucleus is
-bounded by a potential well of depth comparable to $8$\,MeV per particle.
+\paragraph{Nucleons in nuclei.} Nuclear binding energies of $\sim 8$ MeV per nucleon across the periodic table \citep{audi2017,krane1988} are the statement that the nucleon's phase space inside a nucleus is bounded by a potential well of depth comparable to $8$ MeV per particle.
 
-\paragraph{Stars in galaxies and galaxies in clusters.}
-Stars are observed to orbit the centres of galaxies with typical speeds of
-$10^{2}$\,km\,s$^{-1}$ over timescales of $10^{9}$ years without escape.
-Galaxies orbit cluster potentials over similar fractional timescales.
-Each such observation is the statement that the gravitational phase space is
-bounded.
+\paragraph{Stars in galaxies and galaxies in clusters.} Stars are observed to orbit the centres of galaxies with typical speeds of $10^{2}$ km~s$^{-1}$ over timescales of $10^{9}$ years without escape. Galaxies are observed to orbit cluster potentials over similar fractional timescales. Each such observation is the statement that the gravitational phase space is bounded.
 
-\paragraph{Particles in storage rings.}
-At accelerator facilities, charged particles are circulated in storage rings
-for hours, completing $10^{10}$ to $10^{12}$ revolutions in a bounded
-transverse phase space.
-Beam loss is measured, quantified, and minimised; a persistent beam is by
-definition one whose phase space remains bounded.
+\paragraph{Particles in storage rings.} At accelerator facilities, charged particles are circulated in storage rings for hours, completing $10^{10}$ to $10^{12}$ revolutions in a bounded transverse phase space. Beam loss is measured, quantified, and minimised; a persistent beam is by definition one whose phase space remains bounded.
 
-\medskip\noindent
-In each regime, the observation of persistence \emph{is} the observation of
-phase-space boundedness.
-We are not aware of any persistent physical system whose phase space has been
-observed or measured to be unbounded.
-The physical notion of a \emph{dispersing} system --- a system whose phase-space
-region grows without bound --- is precisely the complement of persistence.
+\paragraph{Summary.} In each regime, the observation of persistence is the observation of phase-space boundedness. We are not aware of any persistent physical system whose phase space has been observed or measured to be unbounded. The physical notion of a \emph{dispersing} system---a system whose phase-space region grows without bound---is precisely the complement of persistence.
 
-The partitionability clause of the Axiom is also empirical.
-All measurement apparatuses distinguish finitely (or countably) many outcomes;
-that fact is what makes measurement itself a coherent operation.
-The existence of spectroscopic lines, of atomic and nuclear energy levels, of
-diffraction orders, of discrete charge states, and of identifiable molecular
-isomers, is the observational statement that the relevant phase spaces admit
-partitions into distinguishable sub-regions.
-A continuous (unpartitioned) state space admits no finite-resolution measurement
-and no reproducible classification.
+The partitionability clause of the Axiom is also empirical. All measurement apparatuses distinguish finitely (or countably) many outcomes; that fact is what makes measurement itself a coherent operation. The existence of spectroscopic lines, of atomic and nuclear energy levels, of diffraction orders, of discrete charge states, and of identifiable molecular isomers, is the observational statement that the relevant phase spaces admit partitions into distinguishable sub-regions. A continuous (unpartitioned) state space admits no finite-resolution measurement and no reproducible classification.
 
-We therefore treat the Axiom not as a proposal to be defended but as a datum.
-Its defence is the whole of observational physics to date.
+We therefore treat the Axiom not as a proposal to be defended but as a datum. Its defence is the whole of observational physics to date.
 
-\begin{remark}[What counts as a counter-observation]
-  A counter-observation to the Axiom would be: a persistent physical system
-  whose measured phase-space region has infinite Liouville measure.
-  ``Measured'' is the crucial qualifier.
-  A conjectured system (e.g., an isolated particle in an unbounded universe)
-  is not a counter-observation unless the unboundedness is measured.
-  ``Persistent'' means: observed to maintain its identity over a macroscopic
-  fraction of its natural timescale.
-  A particle observed for one transit time through a detector is not persistent
-  in this sense; an atom observed for $10^{8}$ oscillation periods is.
-  No such counter-observation has been reported in any empirical physics journal
-  of the last 150 years, to our knowledge.
-\end{remark}
+\paragraph{What would count as a counter-observation?} A counter-observation to the Axiom would be: a persistent physical system whose measured phase-space region has infinite Liouville measure. ``Measured'' here is the crucial qualifier. A conjectured system (e.g., an isolated particle in an unbounded universe) is not a counter-observation unless the unboundedness is measured. ``Persistent'' means: observed to maintain its identity over a macroscopic fraction of its natural timescale. A particle observed for one transit time through a detector is not persistent in this sense; an atom observed for $10^{8}$ oscillation periods is.
 
-\begin{remark}[Why the Liouville measure]
-  The choice of Liouville measure $\mu = \prod_i dq_i\,dp_i$ in clause~(i)
-  is forced by the requirement of measure preservation under a Hamiltonian flow
-  (Liouville's theorem); any other measure would be modified by the flow.
-  Boundedness under the Liouville measure is the precise formalisation of
-  ``bounded accessible phase-space region''.
-\end{remark}
+No such counter-observation has been reported in any empirical physics journal of the last 150 years, to our knowledge. Every measurement of a persistent physical system has found a bounded phase-space region.
 
-\begin{remark}[Why hierarchical partitioning]
-  The hierarchical partitioning of clause~(iii) is the requirement that
-  measurements produce distinguishable outcomes at multiple resolutions.
-  A measurement apparatus of finite resolution distinguishes cells of some
-  partition $\Partition_n$; a more precise apparatus distinguishes cells of a
-  refined partition $\Partition_{n+1}$.
-  The hierarchy extends this to a sequence of refinements, with the total
-  $\sigma$-algebra generated being the Borel algebra, so every measurable
-  observable is expressible as a limit of partition cells.
-  This structure is not a postulate about the universe; it is a statement about
-  the category of observations.
-  If measurements produced continuous rather than categorical outcomes, no
-  finite-precision experiment could ever be reproducible --- a conclusion
-  contradicted by daily experimental practice.
-\end{remark}
+\paragraph{Why the Liouville measure?} The choice of Liouville measure $\mu=\prod_{i}dq_{i}\,dp_{i}$ in Axiom~\ref{ax:bpsl}(i) is forced by the requirement of measure preservation under a Hamiltonian flow (Liouville's theorem); any other measure would be modified by the flow. Boundedness under the Liouville measure is the precise formalisation of ``bounded accessible phase-space region''.
 
-%% ── §2.4 ─────────────────────────────────────────────────────────────────────
+\paragraph{Why hierarchical partitioning?} The hierarchical partitioning of Axiom~\ref{ax:bpsl}(iii) is the requirement that measurements produce distinguishable outcomes at multiple resolutions. A measurement apparatus of finite resolution distinguishes cells of some partition $\Partition_{n}$; a more precise apparatus distinguishes cells of a refined partition $\Partition_{n+1}$. The hierarchy extends this to a sequence of refinements, with the total $\sigma$-algebra generated being the Borel algebra (so every measurable observable is expressible as a limit of partition cells).
+
+This structure is not a postulate about the universe; it is a statement about the category of observations. If measurements produce continuous rather than categorical outcomes, then no finite-precision experiment could ever be reproducible---a conclusion contradicted by daily experimental practice. The partition hierarchy is the minimal formal structure compatible with how measurements are actually performed.
+
 \section{Formal Statement of the Axiom}
-\label{sec:ch2-axiom}
+\label{sec:axiom}
 
-Let $(\Omega, \mathcal{B}, \mu)$ be a measure space where $\Omega\subset\mathbb{R}^{2d}$
-is an open bounded subset of phase space (with conjugate coordinate pairs
-$(q_i, p_i)$, $i = 1,\ldots,d$), $\mathcal{B}$ is the Borel $\sigma$-algebra
-of $\Omega$, and $\mu$ is the Liouville measure $\mu = \prod_i dq_i\,dp_i$.
-Let $\phi_t : \Omega \to \Omega$ denote a one-parameter family of measurable
-maps indexed by $t \in \mathbb{R}$, interpreted as the flow of a dynamical
-system.
+We adopt the following notation. Let $(\Omega,\mathcal{B},\mu)$ be a measure space, where $\Omega\subset\Real^{2d}$ is an open subset of phase space (with conjugate coordinate pairs $(q_{i},p_{i})$, $i=1,\ldots,d$), $\mathcal{B}$ is the Borel $\sigma$-algebra of $\Omega$, and $\mu$ is the Liouville measure $\mu=\prod_{i}dq_{i}\,dp_{i}$. Let $\phi_{t}\colon\Omega\to\Omega$ denote a one-parameter family of measurable maps indexed by $t\in\Real$, which we interpret as the flow of a dynamical system.
 
-\begin{axiom}{Bounded Phase Space Law (BPSL)}{bpsl}
-Every \emph{persistent} dynamical system $(\Omega, \mu, \phi_t)$ satisfies:
-\begin{enumerate}[(i)]
-  \item \textbf{Boundedness.}
-    $0 < \mu(\Omega) < \infty$.
-    The phase space has finite positive Liouville measure.
-  \item \textbf{Measure preservation.}
-    $\phi_t$ is measure-preserving: for every $t \in \mathbb{R}$ and every
-    $A \in \mathcal{B}$, $\mu(\phi_t^{-1}(A)) = \mu(A)$.
-  \item \textbf{Hierarchical partitionability.}
-    There exists a sequence of finite measurable partitions
-    $\Partition_0 \preceq \Partition_1 \preceq \Partition_2 \preceq \cdots$
-    of $\Omega$, with each $\Partition_{n+1}$ a refinement of $\Partition_n$
-    such that each cell of $\Partition_n$ has positive measure and the
-    generated $\sigma$-algebra $\bigvee_n \mathcal{A}(\Partition_n)$ equals
-    $\mathcal{B}$ modulo $\mu$-null sets.
+\begin{axiom}{Bounded Phase Space Law}{bpsl}
+Every \emph{persistent} dynamical system $(\Omega,\mu,\phi_{t})$ satisfies the following three conditions.
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Boundedness.} $\Omega$ is a bounded subset of $\Real^{2d}$ with $0<\mu(\Omega)<\infty$.
+  \item \textbf{Measure preservation.} For every $t\in\Real$ and every Borel set $A\in\mathcal{B}$, $\mu(\phi_{t}^{-1}(A))=\mu(A)$.
+  \item \textbf{Hierarchical partitionability.} There exists a sequence of finite measurable partitions $\Partition_{0}\preceq\Partition_{1}\preceq\Partition_{2}\preceq\cdots$ of $\Omega$, with each $\Partition_{n}$ a refinement of $\Partition_{n-1}$, such that each cell of $\Partition_{n}$ has positive measure and the generated $\sigma$-algebra $\bigvee_{n}\Partition_{n}$ equals $\mathcal{B}$ modulo $\mu$-null sets.
 \end{enumerate}
 \end{axiom}
 
-The word \emph{persistent} means: observed to exist over a macroscopic range
-of times relative to the natural dynamical timescale.
-An atom is persistent over its radiative lifetime; a nucleon over its
-confinement timescale; a galaxy over its dynamical time.
+The word \emph{persistent} means: observed to exist over a macroscopic range of times relative to the natural dynamical timescale of the system. An atom is persistent in this sense over its radiative lifetime; a nucleon is persistent over its confinement timescale; a galaxy is persistent over its dynamical time.
 
-\paragraph{Clause~(i): Boundedness.}
-This is the source of Poincaré recurrence.
-A system with infinite phase-space volume is not guaranteed to return;
-a system with finite positive volume must (\cref{ch:oscillation}).
-Without clause~(i), persistence cannot be defined.
+We add two standard remarks on the Axiom's structure. First, (ii) is the statement that $\phi_{t}$ is a member of the measure-preserving group of $\mu$; this is the modern formulation of Liouville's theorem. Second, (iii) encodes the empirical observation that measurements always partition outcomes into finitely many distinguishable cells; standard results in descriptive measure theory \citep{halmos1950,rudin1987} show that such a partition hierarchy exists whenever $(\Omega,\mathcal{B},\mu)$ is a Lebesgue space.
 
-\paragraph{Clause~(ii): Measure preservation.}
-This is Liouville's theorem: the Hamiltonian flow preserves phase-space volume.
-It is the source of the unitary structure of quantum mechanics: the Koopman
-operator $U_t f = f \circ \phi_t$ on $\Hilbert = L^2(\Omega, \mu)$ is
-unitary whenever $\phi_t$ is measure-preserving.
-Without clause~(ii), the spectral theory that generates the quantum numbers
-would not be well-posed.
+\subsection{Remarks on the formal statement}
 
-\paragraph{Clause~(iii): Hierarchical partitionability.}
-This is the structural claim that the phase space can be observed at
-increasingly fine resolution.
-It is the source of the quantum numbers, the shell capacity, the selection
-rules, and the charge quantisation (Chapters~\ref{ch:coordinates}
-and~\ref{ch:shells}).
-Without clause~(iii), measurement would have no structure.
+A few remarks on the notation and assumptions of Axiom~\ref{ax:bpsl}:
 
-\bigskip
-Taken together, the three clauses extract the minimal structure of
-``a persistent physical system that can be observed''.
-Remove any one clause, and either persistence, observability, or structure
-fails.
+\paragraph{Dimensionality.} We have written $\Omega\subset\Real^{2d}$ where $d$ is the number of spatial dimensions. For most physical applications $d=3$, so $\Omega\subset\Real^{6}$. The clauses of the Axiom are agnostic about $d$; they hold for any finite $d$.
 
-\subsection{Remarks on the Formal Statement}
+\paragraph{Smoothness of the flow.} The flow $\phi_{t}$ is assumed measurable. Typically in physical applications it is smooth (i.e., a solution of a Hamiltonian system with smooth Hamiltonian), but the Axiom does not require smoothness; only measurability and measure preservation are required. Smoothness is used in subsequent Consequences where we invoke the Euler--Lagrange formalism; at those points the smoothness is an additional assumption implicit in the Lagrangian approach.
 
-\paragraph{Dimensionality.}
-We write $\Omega \subset \mathbb{R}^{2d}$ where $d$ is the number of spatial
-dimensions.
-For most physical applications $d = 3$.
-The clauses of the Axiom are agnostic about $d$; they hold for any finite $d$.
-The emergence of three spatial dimensions as a Consequence of the Axiom --- not
-an input to it --- is proved in \cref{ch:coordinates}.
+\paragraph{Continuous vs. discrete time.} The flow $\phi_{t}$ is parametrised by $t\in\Real$, i.e., continuous time. For discrete-time dynamical systems (where $t\in\Integer$), the Axiom and Consequences carry over with appropriate modifications; in particular, the Koopman operator becomes a unitary power rather than a unitary group, but the spectral theory is unchanged.
 
-\paragraph{Smoothness of the flow.}
-The flow $\phi_t$ is assumed measurable.
-Typically in physical applications it is smooth (a Hamiltonian solution), but
-the Axiom does not require smoothness; only measurability and measure
-preservation.
-Smoothness is assumed additionally in Consequences that invoke the
-Euler--Lagrange formalism (\cref{ch:lagrangian}).
+\paragraph{Quantum vs. classical formulations.} We have written the Axiom in classical language (phase space, Liouville measure, flow). The axiom has an equivalent quantum formulation: replace $\Omega$ by the Hilbert space of states, $\mu$ by the trace class of positive operators of unit trace, and $\phi_{t}$ by the Schr\"odinger flow. The quantum and classical formulations are equivalent up to the Koopman embedding; our development starting from the classical side is a choice of presentation, not a commitment to classical over quantum mechanics.
 
-\paragraph{Continuous vs.\ discrete time.}
-The flow $\phi_t$ is parametrised by $t \in \mathbb{R}$.
-For discrete-time systems ($t \in \mathbb{Z}$), the Axiom and Consequences
-carry over with appropriate modifications; the Koopman operator becomes a
-unitary power rather than a unitary group, but the spectral theory is unchanged.
+\paragraph{Relation to stochastic processes.} If $\phi_{t}$ is a stochastic (rather than deterministic) evolution, the Axiom can be generalised to require that the transition kernel $P_{t}(x,\cdot)$ preserves the measure $\mu$. The Consequences below mostly carry over; detailed modifications are outside the scope of this paper.
 
-\paragraph{Classical vs.\ quantum formulations.}
-We state the Axiom in classical language.
-Its equivalent quantum formulation: replace $\Omega$ by the Hilbert space of
-states, $\mu$ by the trace class of positive unit-trace operators, and
-$\phi_t$ by the Schrödinger flow.
-The two formulations are equivalent up to the Koopman embedding.
-Our development from the classical side is a choice of presentation, not a
-commitment to classical over quantum mechanics.
-
-\paragraph{Relation to stochastic processes.}
-If $\phi_t$ is stochastic, the Axiom generalises to require that the
-transition kernel $P_t(x, \cdot)$ preserves $\mu$.
-The Consequences below mostly carry over; modifications are outside the scope
-of this monograph.
-
-%% ── §2.5 ─────────────────────────────────────────────────────────────────────
 \section{The Attack Surface}
-\label{sec:ch2-attack}
+\label{sec:attack}
 
-Because the monograph asserts exactly one substantive claim, the set of
-legitimate criticisms is narrow.
-We enumerate it explicitly.
+Because the paper asserts exactly one substantive claim, the set of legitimate criticisms is narrow. We enumerate it.
 
 \begin{enumerate}[label=(A\arabic*)]
-  \item \textbf{Exhibit a persistent unbounded system.}
-    \label{at:unbounded}
-    A reader who observes a persistent physical system with $\mu(\Omega) = \infty$
-    falsifies clause~(i).
-    No such observation is known.
-
-  \item \textbf{Exhibit a persistent non-measure-preserving system.}
-    \label{at:nonliouville}
-    A reader who observes a persistent microscopic dynamics that is not
-    measure-preserving falsifies clause~(ii).
-    No such observation is known.
-
-  \item \textbf{Exhibit a persistent non-partitionable system.}
-    \label{at:nonpartition}
-    A reader who observes a persistent physical system whose state space admits
-    no nested measurable partition (a continuous state space without any
-    finite-resolution distinguishable classification) falsifies clause~(iii).
-    No such observation is known; all measurements produce countable outcomes.
-
-  \item \textbf{Identify a logical error in a proof.}
-    \label{at:proof}
-    A reader who finds a specific step in one of the proofs below that does
-    not follow from the cited prior results and standard mathematics falsifies
-    the deduction at that step.
+  \item\label{at:unbounded} \textbf{Exhibit a persistent unbounded system.} A reader who observes a persistent physical system $(\Omega,\mu,\phi_{t})$ with $\mu(\Omega)=\infty$ falsifies Axiom~\ref{ax:bpsl}(i). No such observation is known.
+  \item\label{at:nonliouville} \textbf{Exhibit a persistent non-measure-preserving system.} A reader who observes a persistent microscopic dynamics that is not measure-preserving (i.e., not Hamiltonian modulo change of variables) falsifies Axiom~\ref{ax:bpsl}(ii). No such observation is known.
+  \item\label{at:nonpartition} \textbf{Exhibit a persistent non-partitionable system.} A reader who observes a persistent physical system whose state space admits no nested measurable partition (equivalently, a continuous state space without any finite-resolution distinguishable classification) falsifies Axiom~\ref{ax:bpsl}(iii). No such observation is known; all measurements produce countable outcomes.
+  \item\label{at:proof} \textbf{Identify a logical error in a proof.} A reader who finds a specific step in one of the proofs below that does not follow from the cited prior results and standard mathematics falsifies the deduction at that step.
 \end{enumerate}
 
-Any criticism of this monograph that is not of type (A1)--(A4) is not a
-logical criticism of the framework; it is a dispute about interpretation, and
-interpretation is sequestered to Remark paragraphs that do not enter the proofs.
+Any criticism of this paper that is not of type (A1)--(A4) is not a logical criticism of this paper; it is a dispute about interpretation, and interpretation is sequestered to separate Remark paragraphs that do not enter the proofs.
 
-\begin{remark}[Implicit assumptions]
-  The proofs below also rely on standard results of real analysis, measure
-  theory, functional analysis, ergodic theory, representation theory, and
-  algebraic topology.
-  These are not axioms of this monograph; they are shared mathematical
-  infrastructure, cited where invoked.
-  A reader who rejects Birkhoff's ergodic theorem or Stone's theorem for
-  one-parameter unitary groups is not criticising this framework but disputing
-  a century of mathematical results.
-\end{remark}
+\paragraph{Implicit assumptions.} The proofs below also rely on standard results of real analysis, measure theory, functional analysis, ergodic theory, representation theory, and algebraic topology. These are not axioms of this paper; they are shared mathematical infrastructure. Cited where invoked. A reader who rejects the Birkhoff ergodic theorem or the Stone theorem for one-parameter unitary groups is not criticising this paper but disputing a century of mathematical results.
 
-\begin{remark}[Physical language in formal proofs]
-  Several sections use physical language for exposition (``oscillation'',
-  ``mass'', ``charge'', ``atom'').
-  In each case the corresponding mathematical object is defined formally before
-  the language is invoked, and the physical interpretation is sequestered to
-  Remark or Interpretation paragraphs.
-  The reader who wishes to verify the logic without physical background can
-  ignore the Remarks and read only the formal environments (Definition, Lemma,
-  Proposition, Corollary, Consequence, Axiom).
-\end{remark}
+\paragraph{The role of physical intuition.} Several sections use physical language for exposition (``oscillation'', ``mass'', ``charge'', ``atom''). In each case the corresponding mathematical object is defined formally before the language is invoked, and the physical interpretation is sequestered to Remark or Interpretation paragraphs. The reader who wishes to verify the logic of the paper without physical background can ignore the Remarks and read only the formal environments (Definition, Lemma, Proposition, Corollary, Consequence, Axiom).
 
-\begin{remark}[Notation collision]
-  We use $\mu$ for the Liouville measure and also for the inertial mass
-  parameter in the partition Lagrangian (\cref{ch:lagrangian}).
-  The context disambiguates: $\mu(A)$ with an argument is always the measure;
-  $\mu$ in the Lagrangian is always the mass parameter.
-  Similarly, $n$ is the principal depth coordinate and also the number of modes
-  in various counting arguments; the context disambiguates.
-\end{remark}
+\paragraph{Notation.} We use $\mu$ for the Liouville measure and $\mu$ also for the inertial mass parameter in the partition Lagrangian (Definition~\ref{def:depthfield}, Consequence~\ref{cons:partitionlagrangian}). The context disambiguates: $\mu(A)$ with an argument is always the measure; $\mu$ in the Lagrangian is always the mass parameter. Similarly, $n$ is the principal depth coordinate in Consequence~\ref{cons:quantumnumbers} and also the number of modes in various counting arguments; the context disambiguates.
 
-%% ── §2.6 ─────────────────────────────────────────────────────────────────────
-\section{Mathematical Prerequisites}
-\label{sec:ch2-math}
-
-The derivations that follow use standard results from five areas of mathematics.
-We state the key tools here without proof; these are invoked by citation in
-subsequent Consequences.
-
-\paragraph{Ergodic theory.}
-\textit{Birkhoff's ergodic theorem}: for any $f \in L^1(\Omega, \mu)$, the
-time average $\lim_{T\to\infty} \frac{1}{T}\int_0^T f(\phi_t(x))\,dt$
-converges $\mu$-almost everywhere to a $\phi_t$-invariant function.
-\textit{Poincaré's recurrence theorem}: for any measurable set $A$ with
-$\mu(A) > 0$, $\mu$-almost every point of $A$ returns to $A$ infinitely often
-under a measure-preserving flow on a finite-measure space.
-
-\paragraph{Spectral theory.}
-The Koopman operator $U_t$ on $\Hilbert = L^2(\Omega,\mu)$ defined by
-$(U_t f)(x) = f(\phi_t(x))$ is unitary when $\phi_t$ is measure-preserving.
-By Stone's theorem, $U_t = e^{-\iu t H}$ for a self-adjoint generator $H$.
-If $\Omega$ is compact, the resolvent of $H$ is compact and the spectrum is
-pure point: $\mathrm{spec}(H) = \{\omega_k\}_{k \in \mathbb{N}}$ discrete.
-
-\paragraph{Representation theory.}
-The rotation group $SO(3)$ has irreducible representations labelled by
-$l \in \mathbb{N}_0$, of dimension $2l+1$.
-Its double cover $SU(2)$ has additional half-integer representations
-($s = \half$).
-The fundamental group $\pi_1(SO(3)) \cong \mathbb{Z}/2\mathbb{Z}$ supplies the
-spin quantum number.
-
-\paragraph{Fourier analysis on bounded domains.}
-A function on a bounded domain has a discrete Fourier series, not a continuous
-Fourier integral.
-The orthonormal eigenbasis of $H$ on a bounded domain is countable; the
-spectrum is discrete.
-
-\paragraph{Measure theory.}
-The partition algebra generated by a nested sequence of measurable partitions
-is separating (clause~iii) if and only if the sequence generates the Borel
-$\sigma$-algebra.
-The Shannon entropy of a partition $\Partition = \{A_i\}$ is
-$H(\Partition) = -\sum_i \mu(A_i)\log\mu(A_i)$.
-Standard results in descriptive measure theory show that a partition hierarchy
-generating $\mathcal{B}$ exists whenever $(\Omega, \mathcal{B}, \mu)$ is a
-Lebesgue space.
-
-%% ── §2.7 ─────────────────────────────────────────────────────────────────────
-\section{The Axiom as Generator of Observability}
-\label{sec:ch2-observability}
-
-There is an immediate consequence of Axiom~\ref{ax:bpsl} that is important for
-the mass spectrometric application of this monograph: observability is a
-theorem, not an assumption.
-
-In traditional formulations of quantum mechanics, the measurement process is
-added as a separate postulate (the collapse postulate).
-In the present framework, measurement emerges from clause~(iii): a
-\emph{categorical observation} is the identification of the partition cell
-$A \in \Partition_n$ occupied by the system at partition depth $n$.
-The observer's finite information capacity limits how deep in the partition
-hierarchy they can resolve.
-But the structure of what can be resolved --- the cell lattice, the refinement
-order, the entropy of the partition --- is given by the Axiom.
-
-For mass spectrometry: an ion analyser is a partition-depth resolver.
-The Orbitrap, FT-ICR, TOF, and quadrupole each resolve the ion's partition
-depth to different precision; higher-resolution instruments resolve deeper into
-the partition hierarchy.
-The mass measurement \emph{is} a partition-depth measurement.
-This identification is made precise in Chapters~\ref{ch:forcefree}
-and~\ref{ch:gpu}.
-
-\begin{consequence}{Observability from the Axiom}{observability}
-Let $(\Omega, \mu, \phi_t)$ satisfy Axiom~\ref{ax:bpsl}.
-Then for every $n \geq 1$, the partition $\Partition_n$ from clause~(iii)
-defines a measurable categorical observation: the map
-$\mathrm{obs}_n : \Omega \to \Partition_n$ assigning to each $x \in \Omega$ the
-unique cell of $\Partition_n$ containing $x$ is measurable, takes countably
-many values, and the algebra $\mathcal{A}(\Partition_n)$ it generates is a
-sub-$\sigma$-algebra of $\mathcal{B}$.
-As $n \to \infty$, the observations $\mathrm{obs}_n$ separate points of $\Omega$
-modulo $\mu$-null sets.
-\end{consequence}
-
-\begin{proof}
-Each cell $A_{n,j} \in \Partition_n$ is measurable by clause~(iii).
-The map $\mathrm{obs}_n(x) = j$ iff $x \in A_{n,j}$ is measurable since each
-preimage $\mathrm{obs}_n^{-1}(\{j\}) = A_{n,j} \in \mathcal{B}$.
-The algebra generated is $\mathcal{A}(\Partition_n) \subset \mathcal{B}$.
-Separation: for $x \neq y$ with $\mu(\{x\}) = 0$, there exists $n$ large
-enough that $x$ and $y$ lie in different cells of $\Partition_n$, because
-$\bigvee_n \mathcal{A}(\Partition_n) = \mathcal{B}$ modulo null sets.
-\end{proof}
-
-%% ── §2.8 ─────────────────────────────────────────────────────────────────────
-\section{The Axiom Does Not Assume}
-\label{sec:ch2-doesnot}
-
-Before listing what the Axiom generates, it is useful to list what it does
-not assume.
-
-\begin{remark}[What the Axiom does not assume]
-  The Axiom does not assume:
-  \begin{itemize}[noitemsep]
-    \item The existence of a Hilbert space, a wavefunction, or the Born rule.
-    \item Newton's equations of motion or the Euler--Lagrange equations.
-    \item The Lorentz group, the light postulate, or the equivalence principle.
-    \item Maxwell's equations or the gauge principle.
-    \item The standard model symmetry group $SU(3)\times SU(2)\times U(1)$.
-    \item The ideal gas law $PV = NkT$.
-    \item The three laws of thermodynamics.
-    \item The Pauli exclusion principle.
-    \item The shell structure of atoms.
-    \item Newton's gravitational constant $G$.
-  \end{itemize}
-  All of these are derived as Consequences in the chapters that follow.
-\end{remark}
-
-%% ── §2.9 ─────────────────────────────────────────────────────────────────────
-\section{Organisation of the Consequences}
-\label{sec:ch2-organisation}
-
-The remainder of Parts~II through~VIII derives the physical content of the
-Axiom systematically.
-Each result is labelled a ``Consequence'' rather than a ``Theorem'': the
-results are not discoveries but the logical content of the Axiom made
-explicit.
-
-The deductive structure is shown in full in \cref{app:flowchart}.
-Every Consequence is at distance at most five from the Axiom: the longest
-chain of logical dependencies is five steps.
-The derivation never introduces an additional postulate.
-
-The structure of the derivation:
-\begin{itemize}[noitemsep]
-  \item \textbf{Part~II} (\cref{ch:oscillation,ch:coordinates}):
-    Oscillatory necessity, discrete spectrum, $E = \hbar\omega$, partition
-    coordinates $(n,l,m,s)$, shell capacity $C(n) = 2n^2$, selection rules,
-    Pauli exclusion, compression cost, three-dimensional space.
-  \item \textbf{Part~III} (\cref{ch:lagrangian,ch:lorentz,ch:mass,ch:charge}):
-    Partition Lagrangian, propagation bound $c$, Lorentz invariance, rest mass
-    $m_0 = \hbar\omega_0/c^2$, $E = mc^2$, charge emergence.
-  \item \textbf{Part~IV} (\cref{ch:shells,ch:atomic,ch:nuclear,ch:subnucleon}):
-    Coulomb envelope, Rydberg formula, Aufbau principle, shielding, magic
-    numbers, nucleon structure, sub-nucleon confinement.
-  \item \textbf{Part~V} (\cref{ch:sentropy,ch:floor,ch:triple}):
-    S-entropy triple $(\Sk, \St, \Se)$, Floor Theorem, Triple Equivalence
-    $\Osc \cong \Cat \cong \Part$.
-  \item \textbf{Part~VI} (\cref{ch:idealgas,ch:transport,ch:electrical}):
-    Ideal gas law, Maxwell--Boltzmann, universal transport, partition
-    extinction, superconductivity, Wiedemann--Franz.
-  \item \textbf{Part~VII} (\cref{ch:inflation,ch:gravity}):
-    Composition inflation $T(n,d) = d(d+1)^{n-1}$, three independent routes
-    to Newton's constant $G$, MOND, dark energy, dark matter ratio.
-  \item \textbf{Part~VIII} (\cref{ch:forcefree,ch:gpu,ch:database,ch:purpose}):
-    Force-free ion, GPU as physical instrument, generative spectral database
-    $O(k)$, purpose-based analysis, molecular Maxwell Demon.
-\end{itemize}
-
-\bigskip
-\begin{tcolorbox}[colback=crownblue!5, colframe=crownblue!60!black,
-                  title={\textbf{Chapter 2 Summary}}]
-\begin{itemize}[noitemsep]
-  \item The Bounded Phase Space Law has three clauses: (i)~boundedness,
-    $\mu(\Omega) < \infty$; (ii)~measure preservation; (iii)~hierarchical
-    partitionability.
-  \item Each clause is an empirical observation covering 25 orders of magnitude
-    in scale.  Together they are the minimal structure of a persistent,
-    observable system.
-  \item The Axiom does not assume any element of classical or quantum
-    mechanics; both are derived as Consequences.
-  \item The attack surface is narrow: falsification requires (A1) an
-    unbounded persistent system, (A2) a non-measure-preserving persistent
-    system, (A3) a non-partitionable persistent system, or (A4) a logical
-    error in a proof.  None of (A1)--(A3) has ever been observed.
-  \item Observability is a theorem (\cref{cons:observability}): categorical
-    measurement follows from clause~(iii) and the separating property of the
-    partition hierarchy.
-\end{itemize}
-\end{tcolorbox}
+\clearpage
