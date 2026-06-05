@@ -40,9 +40,9 @@ export default function ResultsDashboard() {
           virtual instrument idle
         </div>
         <div className="max-w-md text-sm">
-          configure the experiment on the left and click <b>Run virtual experiment</b>
-          {" "}to synthesise predictions. nothing is uploaded; everything is computed
-          on this device.
+          write a Shapeshifter script on the left and press <b>▶ Run</b> (or Ctrl+Enter)
+          to synthesise predictions from the partition Lagrangian.
+          nothing is uploaded; everything is computed on this device.
         </div>
       </div>
     );

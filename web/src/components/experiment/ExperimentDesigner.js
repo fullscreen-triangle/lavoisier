@@ -1,10 +1,6 @@
 import React from "react";
-import AnalyteBuilder from "./AnalyteBuilder";
-import IonizationConfig from "./IonizationConfig";
-import AcquisitionConfig from "./AcquisitionConfig";
-import VirtualRun from "./VirtualRun";
+import ExperimentEditor from "./ExperimentEditor";
 import ResultsImport from "./ResultsImport";
-import LibraryExport from "./LibraryExport";
 import ResultsDashboard from "./ResultsDashboard";
 import { PALETTE } from "./cf/chartUtils";
 
@@ -86,33 +82,27 @@ export default function ExperimentDesigner() {
       className="flex flex-col w-full min-h-[calc(100vh-160px)]"
       style={{ background: "#070809", color: PALETTE.text }}
     >
-      <div className="grid grid-cols-[320px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
+      <div className="grid grid-cols-[400px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
         <aside
-          className="border-r p-4 overflow-y-auto space-y-5
-            lg:border-r-0 lg:border-b"
+          className="border-r p-4 overflow-y-auto space-y-5 lg:border-r-0 lg:border-b"
           style={{ borderColor: PALETTE.grid, background: PALETTE.bg }}
         >
-          {/* ── Virtual instrument ───────────────────────────────────── */}
+          {/* ── Virtual instrument ─────────────────────────────────────── */}
           <div>
             <h2 className="text-sm font-normal mb-1 tracking-wide"
               style={{ color: PALETTE.text }}>
               Virtual instrument
             </h2>
-            <p className="text-[10px] leading-relaxed"
-              style={{ color: PALETTE.muted }}>
-              Design a lipidomics experiment. The forward simulation runs
-              on this device and produces a predicted library — take it to
-              your lab as a reference before acquisition.
+            <p className="text-[10px] leading-relaxed" style={{ color: PALETTE.muted }}>
+              Write a Shapeshifter script to define your experiment. The forward
+              simulation runs on this device from the partition Lagrangian and
+              produces a predicted library. Take it to your lab before acquisition.
             </p>
           </div>
 
-          <AnalyteBuilder />
-          <IonizationConfig />
-          <AcquisitionConfig />
-          <VirtualRun />
-          <LibraryExport />
+          <ExperimentEditor />
 
-          {/* ── Real data ────────────────────────────────────────────── */}
+          {/* ── Real data ──────────────────────────────────────────────── */}
           <Divider label="real data" />
 
           <div>
