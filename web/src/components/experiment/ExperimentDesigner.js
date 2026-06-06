@@ -1,6 +1,11 @@
-import React from "react";
-import ExperimentEditor from "./ExperimentEditor";
+import React, { useState } from "react";
+import AnalyteBuilder from "./AnalyteBuilder";
+import IonizationConfig from "./IonizationConfig";
+import AcquisitionConfig from "./AcquisitionConfig";
+import VirtualRun from "./VirtualRun";
 import ResultsImport from "./ResultsImport";
+import LibraryExport from "./LibraryExport";
+import ExperimentEditor from "./ExperimentEditor";
 import ResultsDashboard from "./ResultsDashboard";
 import { PALETTE } from "./cf/chartUtils";
 
@@ -76,33 +81,98 @@ function DownloadTool() {
   );
 }
 
+/** Toggle between the visual GUI and the Shapeshifter code editor. */
+function ModeToggle({ mode, onChange }) {
+  return (
+    <div className="flex rounded overflow-hidden"
+      style={{ border: `1px solid ${PALETTE.grid}` }}>
+      {[
+        { key: "gui",  label: "Visual" },
+        { key: "code", label: "Shapeshifter" },
+      ].map(({ key, label }) => (
+        <button
+          key={key}
+          onClick={() => onChange(key)}
+          className="flex-1 py-1 text-[10px] tracking-wide transition-colors"
+          style={{
+            background: mode === key ? "#0e639c" : "transparent",
+            color:      mode === key ? "#ffffff" : PALETTE.muted,
+            borderRight: key === "gui" ? `1px solid ${PALETTE.grid}` : "none",
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Original visual controls — unchanged from before. */
+function GuiControls() {
+  return (
+    <div className="space-y-5">
+      <AnalyteBuilder />
+      <IonizationConfig />
+      <AcquisitionConfig />
+      <VirtualRun />
+      <LibraryExport />
+    </div>
+  );
+}
+
 export default function ExperimentDesigner() {
+  const [mode, setMode] = useState("gui");   // "gui" | "code"
+
   return (
     <div
       className="flex flex-col w-full min-h-[calc(100vh-160px)]"
       style={{ background: "#070809", color: PALETTE.text }}
     >
-      <div className="grid grid-cols-[400px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
+      <div className="grid grid-cols-[360px_1fr] gap-0 flex-1 lg:grid-cols-1 min-h-0">
         <aside
-          className="border-r p-4 overflow-y-auto space-y-5 lg:border-r-0 lg:border-b"
+          className="border-r p-4 overflow-y-auto space-y-5
+            lg:border-r-0 lg:border-b"
           style={{ borderColor: PALETTE.grid, background: PALETTE.bg }}
         >
-          {/* ── Virtual instrument ─────────────────────────────────────── */}
+          {/* ── Virtual instrument header ───────────────────────────── */}
           <div>
             <h2 className="text-sm font-normal mb-1 tracking-wide"
               style={{ color: PALETTE.text }}>
               Virtual instrument
             </h2>
-            <p className="text-[10px] leading-relaxed" style={{ color: PALETTE.muted }}>
-              Write a Shapeshifter script to define your experiment. The forward
-              simulation runs on this device from the partition Lagrangian and
-              produces a predicted library. Take it to your lab before acquisition.
+            <p className="text-[10px] leading-relaxed"
+              style={{ color: PALETTE.muted }}>
+              Design a mass spectrometry experiment. The forward simulation
+              runs on this device and produces a predicted library — take it
+              to your lab as a reference before acquisition.
             </p>
           </div>
 
-          <ExperimentEditor />
+          {/* ── Mode toggle ─────────────────────────────────────────── */}
+          <ModeToggle mode={mode} onChange={setMode} />
 
-          {/* ── Real data ──────────────────────────────────────────────── */}
+          {mode === "gui" && (
+            <p className="text-[9px] leading-relaxed"
+              style={{ color: PALETTE.muted }}>
+              Configure analytes, ionisation, and acquisition settings using
+              the controls below, then click <b>Run virtual experiment</b>.
+            </p>
+          )}
+
+          {mode === "code" && (
+            <p className="text-[9px] leading-relaxed"
+              style={{ color: PALETTE.muted }}>
+              Write a <b>Shapeshifter</b> (.ss) script to define your
+              experiment. Press <b>▶ Run</b> or Ctrl+Enter to execute.
+              Switch to Visual mode at any time.
+            </p>
+          )}
+
+          {/* ── Main controls ────────────────────────────────────────── */}
+          {mode === "gui"  && <GuiControls />}
+          {mode === "code" && <ExperimentEditor />}
+
+          {/* ── Real data section (always visible) ───────────────────── */}
           <Divider label="real data" />
 
           <div>
