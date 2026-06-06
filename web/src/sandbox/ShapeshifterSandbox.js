@@ -197,14 +197,180 @@ phase PhaseB:
 - **τ_min = ℏ/δM_i**: exact resolution–speed tradeoff from Partition Uncertainty
 `;
 
+const SS_SENTROPY_OBS = `\
+// S-entropy observation — compute partition addresses from vibrational frequencies.
+// Implements the Context-Based Spectral Database (Paper 3) generative approach.
+// The address IS the spectrum: no dynamics required (Partition Determinism Theorem).
+
+import lavoisier.observe
+import lavoisier.purpose
+
+objective SEntropyObservation:
+    target: "compute S-entropy coordinates and ternary addresses from vibrational modes"
+
+phase ComputeSentropy:
+    // H2O vibrational modes in cm⁻¹ (NIST CCCBDB)
+    water_freqs = [1595.0, 3657.0, 3756.0]
+    water_se    = lavoisier.observe.sentropy(frequencies: water_freqs)
+
+    // Compute ternary address at depth 12
+    water_addr  = lavoisier.observe.ternary_address(sentropy: water_se, depth: 12)
+
+    // Ion-droplet bijection: dual-path validation
+    validation  = lavoisier.observe.dual_path_validate(
+        sentropy: water_se,
+        ion: { mass: 18.01, kinetic_energy: 1.0 },
+        depth: 10
+    )
+
+phase DomainContext:
+    // Purpose function: restrict to metabolomics subspace
+    domain_context = lavoisier.purpose.domain(domain: "metabolomics", depth: 4)
+
+    // Find matching domains for the S-entropy point
+    matches = lavoisier.purpose.match(sentropy: water_se)
+`;
+
+const SS_FORCE_FREE = `\
+// Force-free mass spectrometry (Paper 1 — Shader Depth Minimisation).
+// Demonstrates that all four analyser equations emerge from one partition Lagrangian.
+// No force acts at any stage — ions follow −∇M through the partition landscape.
+
+import lavoisier.instrument
+
+objective ForceFreeMS:
+    target: "demonstrate analyser universality from the partition Lagrangian"
+
+// Four analysers — same Lagrangian, different M(x,t) topologies:
+//   TOF:       M = -κz          (linear gradient)
+//   Quadrupole: M = κ₀/2·(x²-y²)[U + V cos Ωt]  (saddle)
+//   Orbitrap:  M = κ/2·(z²-r²/2) + κRm²/2·ln(r/Rm)  (well)
+//   FT-ICR:    M = 0, A = B/2(-y,x,0)            (circular)
+
+phase TOFExperiment:
+    records_tof = lavoisier.instrument.run_experiment(
+        classes: ["PC", "PE", "SM"],
+        polarity: "+",
+        analyser: "tof",
+        collision_energy: 25
+    )
+
+phase OrbitrapExperiment:
+    records_orbi = lavoisier.instrument.run_experiment(
+        classes: ["PC", "PE", "SM"],
+        polarity: "+",
+        analyser: "orbitrap",
+        collision_energy: 25
+    )
+
+phase FticExperiment:
+    records_fticr = lavoisier.instrument.run_experiment(
+        classes: ["PC", "PE"],
+        polarity: "+",
+        analyser: "fticr",
+        collision_energy: 25
+    )
+`;
+
+const SS_GENERATIVE_DB = `\
+// Generative database demonstration (Paper 3).
+// The database stores nothing — it IS the phase space structure.
+// Entries materialise on demand and dissolve after use.
+// Cost: O(k) per query, independent of database size N. Memory: O(1).
+
+import lavoisier.observe
+import lavoisier.purpose
+
+objective GenerativeDatabase:
+    target: "demonstrate O(1) generative database lookup from ternary prefix"
+
+phase GenerateFromPrefix:
+    // Given a ternary prefix, reconstruct the S-entropy coordinates
+    // without any stored spectrum (Partition Determinism Theorem).
+    entry_202  = lavoisier.db.generate(prefix: "202", depth: 12)
+    entry_120  = lavoisier.db.generate(prefix: "120", depth: 12)
+    entry_001  = lavoisier.db.generate(prefix: "001", depth: 12)
+
+phase PurposeFiltering:
+    // Proteomics domain: 98%+ search space reduction
+    proteomics_ctx = lavoisier.purpose.domain(domain: "proteomics", depth: 4)
+
+    // Lipidomics domain
+    lipidomics_ctx = lavoisier.purpose.domain(domain: "lipidomics", depth: 4)
+
+    // Intersect: proteomics ∩ lipidomics (Prompt Contraction Theorem)
+    combined = lavoisier.purpose.combine(
+        domains: ["proteomics", "lipidomics"],
+        depth: 4
+    )
+`;
+
+const README_CONTENT = `\
+# Shapeshifter Sandbox
+
+A live compiler for the Shapeshifter mass spectrometry DSL.
+Select an example from the explorer and hit **Run**.
+
+## Language structure
+
+\`\`\`
+import lavoisier.instrument
+
+objective Name:
+    target: "what you want to achieve"
+
+instrument Name:
+    analyzer: "orbitrap"   // tof | orbitrap | fticr | quadrupole
+    polarity: "+"
+
+phase Design:
+    variable = value
+
+phase Execute:
+    result = lavoisier.module.function(key: value, ...)
+\`\`\`
+
+## Available functions
+
+### Virtual instrument
+| Function | Output |
+|---|---|
+| \`lavoisier.instrument.run_experiment(...)\` | Lipidomics PredictedRecord[] |
+| \`lavoisier.instrument.run_proteomics(...)\` | Proteomics PredictedRecord[] |
+
+### Partition / observation (Papers 1–3)
+| Function | Output |
+|---|---|
+| \`lavoisier.partition.compute_addresses(lipids)\` | Partition states (n,ℓ,m,s) |
+| \`lavoisier.cells.compile(target_list)\` | ΔP timing cell registry |
+| \`lavoisier.observe.sentropy(frequencies)\` | S-entropy (Sk,St,Se) |
+| \`lavoisier.observe.ternary_address(sentropy, depth)\` | Ternary address string |
+| \`lavoisier.observe.dual_path_validate(sentropy, ion)\` | Bijection validation |
+| \`lavoisier.db.generate(prefix, depth)\` | Coords from prefix (generative DB) |
+| \`lavoisier.purpose.domain(domain, depth)\` | Purpose prefixes + reduction ratio |
+| \`lavoisier.purpose.match(sentropy)\` | Matching domain contexts |
+| \`lavoisier.purpose.combine(domains, depth)\` | Prompt contraction |
+
+## Key papers
+
+- **Partition Lagrangian**: all four analyser equations from one Lagrangian (Papers 1–3)
+- **ΔP timing cells**: MS is a timing instrument, not an m/z instrument (Paper 1)
+- **Triple Equivalence**: oscillation ≡ counting ≡ partition (Paper 2)
+- **Generative database**: O(1) memory, O(k) query, stores nothing (Paper 3)
+- **Dual-path validation**: ion-droplet bijection, no ground truth needed (Papers 2–3)
+`;
+
 const initialFiles = {
   examples: {
     type: "folder",
     children: {
-      "hello_lipid.ss":         { type: "file", lang: "ss", content: SS_HELLO_LIPID },
+      "hello_lipid.ss":           { type: "file", lang: "ss", content: SS_HELLO_LIPID },
       "proteomics_experiment.ss": { type: "file", lang: "ss", content: SS_PROTEOMICS },
-      "temporal_acquisition.ss": { type: "file", lang: "ss", content: SS_TEMPORAL },
-      "partition_addresses.ss":  { type: "file", lang: "ss", content: SS_PARTITION },
+      "temporal_acquisition.ss":  { type: "file", lang: "ss", content: SS_TEMPORAL },
+      "partition_addresses.ss":   { type: "file", lang: "ss", content: SS_PARTITION },
+      "sentropy_observation.ss":  { type: "file", lang: "ss", content: SS_SENTROPY_OBS },
+      "force_free_ms.ss":         { type: "file", lang: "ss", content: SS_FORCE_FREE },
+      "generative_database.ss":   { type: "file", lang: "ss", content: SS_GENERATIVE_DB },
     },
   },
   "README.md": { type: "file", lang: "md", content: README_CONTENT },

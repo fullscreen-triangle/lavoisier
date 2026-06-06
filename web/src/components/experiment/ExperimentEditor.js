@@ -130,6 +130,54 @@ phase VirtualRun:
     )
 `,
   },
+
+  sentropy_obs: {
+    label: "S-entropy observation",
+    code: `\
+// S-entropy observation — generative database (Paper 3).
+// The address IS the spectrum. No dynamics required.
+
+import lavoisier.observe
+import lavoisier.purpose
+
+objective SEntropyObs:
+    target: "compute S-entropy and validate via ion-droplet bijection"
+
+phase Compute:
+    water_se   = lavoisier.observe.sentropy(frequencies: [1595.0, 3657.0, 3756.0])
+    water_addr = lavoisier.observe.ternary_address(sentropy: water_se, depth: 12)
+
+    validation = lavoisier.observe.dual_path_validate(
+        sentropy: water_se,
+        ion: { mass: 18.01 },
+        depth: 10
+    )
+
+phase Domain:
+    domain_context = lavoisier.purpose.domain(domain: "metabolomics", depth: 4)
+`,
+  },
+
+  force_free_multi: {
+    label: "Force-free multi-analyser",
+    code: `\
+// All four analyser equations from one partition Lagrangian (Paper 1).
+// No force acts at any stage. Ions follow −∇M.
+
+import lavoisier.instrument
+
+objective ForceFreeMS:
+    target: "demonstrate analyser universality from partition Lagrangian"
+
+phase TOF:
+    records = lavoisier.instrument.run_experiment(
+        classes: ["PC", "PE"],
+        polarity: "+",
+        analyser: "tof",
+        collision_energy: 25
+    )
+`,
+  },
 };
 
 const TEMPLATE_KEYS = Object.keys(TEMPLATES);

@@ -12,6 +12,7 @@ import Row7Statistics from "./cf/Row7Statistics";
 import { Row8Droplets, Row9HeatmapAndPeak } from "./cf/Row8Special";
 import RecordDetail from "./RecordDetail";
 import LibraryExport from "./LibraryExport";
+import GpuObservationPanel from "./GpuObservationPanel";
 import { PALETTE } from "./cf/chartUtils";
 
 /**
@@ -101,6 +102,10 @@ function DashboardBody({ summary, design, lastRunMs }) {
       </RowSection>
 
       <RecordDetail />
+
+      <RowSection title="10 · GPU observation apparatus (partition depth field)">
+        <GpuObservationPanel />
+      </RowSection>
 
       <div className="grid grid-cols-[1fr_300px] gap-4 lg:grid-cols-1">
         <div />

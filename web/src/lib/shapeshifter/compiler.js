@@ -15,6 +15,9 @@
 import { runExperiment, summariseRecords } from "@/lib/experiment/virtualinstrument";
 import { LIPID_CLASSES } from "@/lib/experiment/lipidomics";
 import { PROTEIN_CLASSES } from "@/lib/experiment/proteomics";
+import { computeSEntropyFromFrequencies, dualPathValidate, ternaryAddress } from "@/lib/partition/ionDroplet";
+import { GenerativeDb, addressToSentropy, commonPrefixScore } from "@/lib/partition/GenerativeDb";
+import { DOMAINS, getPurposePrefixes, matchingDomains, combineDomains } from "@/lib/shapeshifter/purpose";
 
 /* ── Parser helpers ──────────────────────────────────────────────────────── */
 
@@ -292,6 +295,104 @@ function executeCall(fn, args, env, ast, log) {
     });
   }
 
+  /* ── MassScript vocabulary (Paper 2, §8.2) ────────────────────────────── */
+
+  // lavoisier.observe.partition_field(records)
+  // Computes wave-field parameters for each record — used by GpuObserver Pass 1
+  if (fn === "lavoisier.observe.partition_field") {
+    const records = a.records ?? env[a.records] ?? [];
+    if (!Array.isArray(records)) { log("  ⚠ observe.partition_field: records must be an array", "warn"); return null; }
+    log(`  Mapping ${records.length} records to partition wave-field ions`);
+    return records.map(r => ({
+      center:     [r.sentropyVec?.sk ?? 0.5, r.sentropyVec?.st ?? 0.5],
+      amplitude:  Math.max(0, Math.min(1, r.intensity ?? 0.5)),
+      wavelength: Math.max(0.01, 1 / ((r.n ?? 1) + 1)),
+      decay:      Math.max(0.01, r.sentropyVec?.se ?? 0.3),
+      angle:      ((r.l ?? 0) / Math.max(1, (r.n ?? 1))) * Math.PI,
+      phase:      ((r.m ?? 0) / Math.max(1, (r.l ?? 1) + 1)) * Math.PI,
+      sk: r.sentropyVec?.sk ?? 0,
+      st: r.sentropyVec?.st ?? 0,
+      se: r.sentropyVec?.se ?? 0,
+    }));
+  }
+
+  // lavoisier.observe.sentropy(frequencies)
+  // Compute S-entropy coordinates from a list of vibrational frequencies
+  if (fn === "lavoisier.observe.sentropy") {
+    const freqs = a.frequencies ?? a.freqs ?? [];
+    if (!Array.isArray(freqs)) { log("  ⚠ observe.sentropy: frequencies must be an array", "warn"); return null; }
+    const result = computeSEntropyFromFrequencies(freqs);
+    log(`  Sk=${result.sk.toFixed(3)} St=${result.st.toFixed(3)} Se=${result.se.toFixed(3)}`);
+    return result;
+  }
+
+  // lavoisier.observe.ternary_address(sentropy, depth)
+  // Compute the ternary address for S-entropy coordinates
+  if (fn === "lavoisier.observe.ternary_address") {
+    const se = a.sentropy ?? {};
+    const depth = a.depth ?? 12;
+    const addr = ternaryAddress(se.sk ?? 0, se.st ?? 0, se.se ?? 0, depth);
+    log(`  Ternary address (depth ${depth}): ${addr}`);
+    return addr;
+  }
+
+  // lavoisier.observe.dual_path_validate(sentropy, ion_params)
+  // Ion-droplet bijection validation: dual oscillatory path cross-check
+  if (fn === "lavoisier.observe.dual_path_validate") {
+    const ionSE     = a.sentropy  ?? {};
+    const ionParams = a.ion       ?? {};
+    const depth     = a.depth     ?? 12;
+    const result    = dualPathValidate(ionSE, ionParams, depth);
+    log(`  Common prefix: ${result.commonPrefixLen} / ${depth}`);
+    log(`  Convergence score: ${result.convergenceScore.toFixed(4)}`);
+    log(`  False-positive prob: ${result.falsePosProb.toExponential(3)}`);
+    return result;
+  }
+
+  // lavoisier.db.generate(prefix, depth)
+  // Generate S-entropy coordinates from a ternary prefix (Partition Determinism)
+  if (fn === "lavoisier.db.generate") {
+    const prefix = String(a.prefix ?? "");
+    const depth  = a.depth ?? 12;
+    const coords = addressToSentropy(prefix.padEnd(depth, "1"));
+    log(`  Generated coords from prefix "${prefix}": Sk=${coords.sk.toFixed(3)} St=${coords.st.toFixed(3)} Se=${coords.se.toFixed(3)}`);
+    return { prefix, coords, depth };
+  }
+
+  // lavoisier.purpose.domain(name)
+  // Get S-entropy region and ternary prefixes for a domain context
+  if (fn === "lavoisier.purpose.domain") {
+    const name  = a.domain ?? a.name ?? "all";
+    const depth = a.depth  ?? 4;
+    const def   = DOMAINS[name] ?? DOMAINS.all;
+    const prefs = getPurposePrefixes(name, depth);
+    const total = Math.pow(3, depth);
+    const rho   = (1 - prefs.length / total) * 100;
+    log(`  Domain: ${def.label}`);
+    log(`  Prefixes: ${prefs.length} / ${total} (${rho.toFixed(1)}% reduction)`);
+    log(`  S-entropy bounds: Sk ${def.bounds.sk} St ${def.bounds.st} Se ${def.bounds.se}`);
+    return { name, label: def.label, bounds: def.bounds, prefixes: prefs, reductionPct: rho };
+  }
+
+  // lavoisier.purpose.match(sentropy)
+  // Find all matching domains for given S-entropy coordinates
+  if (fn === "lavoisier.purpose.match") {
+    const se = a.sentropy ?? {};
+    const matches = matchingDomains(se);
+    log(`  Matching domains: ${matches.map(m => m.label).join(", ") || "none"}`);
+    return matches;
+  }
+
+  // lavoisier.purpose.combine(domains)
+  // Intersect multiple domain constraints (Prompt Contraction Theorem)
+  if (fn === "lavoisier.purpose.combine") {
+    const domains = a.domains ?? [];
+    const depth   = a.depth ?? 4;
+    const result  = combineDomains(domains, depth);
+    log(`  Combined ${domains.join(" ∩ ")}: ${result.prefixes.length} prefixes, ${(result.reductionRatio*100).toFixed(1)}% reduction`);
+    return result;
+  }
+
   log(`  ⚠ Unknown function: ${fn}`, "warn");
   return null;
 }
@@ -342,6 +443,16 @@ export function executeShapeshifter(ast) {
   }
   if (env.addresses && Array.isArray(env.addresses)) {
     return { result: { type: "addresses", data: env.addresses }, logs };
+  }
+  // MassScript observation results
+  if (env.observation && typeof env.observation === "object" && env.observation.type === "observation") {
+    return { result: env.observation, logs };
+  }
+  if (env.domain_context && typeof env.domain_context === "object") {
+    return { result: { type: "domain", data: env.domain_context }, logs };
+  }
+  if (env.validation && typeof env.validation === "object") {
+    return { result: { type: "validation", data: env.validation }, logs };
   }
   return { result: { type: "empty", data: null }, logs };
 }
