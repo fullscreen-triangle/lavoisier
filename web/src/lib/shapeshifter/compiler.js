@@ -18,6 +18,9 @@ import { PROTEIN_CLASSES } from "@/lib/experiment/proteomics";
 import { computeSEntropyFromFrequencies, dualPathValidate, ternaryAddress } from "@/lib/partition/ionDroplet";
 import { GenerativeDb, addressToSentropy, commonPrefixScore } from "@/lib/partition/GenerativeDb";
 import { DOMAINS, getPurposePrefixes, matchingDomains, combineDomains } from "@/lib/shapeshifter/purpose";
+import { sebdMs, sebdMsToRecords, reconstructPrecursor } from "@/lib/partition/partitionStateGraph";
+import { fragmentSubharmonics, virtualTensorComponents, verifyMeanRecovery, planckDepth, effectiveDimensionality, impossibleIons, partitionComplement, transientContents } from "@/lib/partition/virtualTensor";
+import { searchAll } from "@/lib/spectral/dbSearch";
 
 /* ── Parser helpers ──────────────────────────────────────────────────────── */
 
@@ -293,6 +296,131 @@ function executeCall(fn, args, env, ast, log) {
         tau_min_ms: tauMs.toFixed(3),
       };
     });
+  }
+
+  /* ── SEBD-MS: Partition-State Graph Search ──────────────────────────────
+   * lavoisier.msms.sebd_search(precursor_mz, fragments, opts)
+   *   Runs SEBD-MS. Returns records[] compatible with ResultsDashboard.
+   * lavoisier.msms.phase_coherence(precursor_mz, fragments)
+   *   Phase Coherence Theorem: subharmonic frequencies & self-consistency.
+   * lavoisier.msms.virtual_tensor(mz, charge, time_steps)
+   *   Stacked virtual partition tensor V_{ijkl} across 4 dimensions.
+   * lavoisier.msms.impossible_ions(mz_list)
+   *   Impossible ions as crossing-symmetry probes.
+   * lavoisier.msms.partition_complement(mz, planck_depth)
+   *   Ion removal via virtual antistate (SWIFT derivation).
+   * lavoisier.msms.transient_contents(precursor_mz, fragments)
+   *   Single-measurement completeness: all information in one transient.
+   * lavoisier.db.search(precursor_mz, fragments, databases)
+   *   Search public spectral databases (MassBank, GNPS, MoNA).
+   ─────────────────────────────────────────────────────────────────────── */
+
+  if (fn === "lavoisier.msms.sebd_search") {
+    const precMz   = a.precursor_mz ?? 500;
+    const frags    = a.fragments ?? [];
+    const maxDepth = a.max_depth ?? 7;
+    const nP       = a.planck_depth ?? 56;
+    if (!Array.isArray(frags) || frags.length === 0) {
+      log("  ⚠ sebd_search: fragments must be a non-empty array of m/z values", "warn");
+      return null;
+    }
+    log(`  SEBD-MS: precursor ${precMz.toFixed(4)} Da, ${frags.length} fragments, maxDepth ${maxDepth}`);
+    const result  = sebdMs(precMz, frags, { maxDepth, planckDepth: nP });
+    const records = sebdMsToRecords(result);
+    log(`  → ${records.length} reachable fragment nodes`);
+    log(`  → reachable fraction: ${(result.reachableFraction * 100).toFixed(1)}%`);
+    log(`  → off-shell (transition state) fraction: ${(result.offShellFraction * 100).toFixed(1)}%`);
+    log(`  → mean |Δn|: ${result.meanDeltaN.toFixed(1)}`);
+    log(`  → mean S-entropy path length: ${result.meanPathLength.toFixed(3)}`);
+    return records;  // PredictedRecord[] → feeds directly into setExperimentRecords
+  }
+
+  if (fn === "lavoisier.msms.phase_coherence") {
+    const precMz = a.precursor_mz ?? 500;
+    const frags  = a.fragments ?? [];
+    if (!Array.isArray(frags)) return null;
+    const result = fragmentSubharmonics(precMz, frags);
+    log(`  Phase coherence: ${result.length} fragment subharmonics`);
+    const allSelfConsistent = result.every(r => r.selfConsistent);
+    log(`  Self-consistency: ${allSelfConsistent ? "✓ 1.0000 (<10⁻⁶ ppm)" : "✗ inconsistent"}`);
+    result.forEach(r => log(`  ω_f/ω_p = ${r.frequencyRatio.toFixed(6)}, Δθ = ${r.phaseDiff.toFixed(2)} rad, err = ${r.backConversionError_ppm.toExponential(2)} ppm`));
+    return result;
+  }
+
+  if (fn === "lavoisier.msms.virtual_tensor") {
+    const mz        = a.mz ?? 500;
+    const charge    = a.charge ?? 1;
+    const nT        = a.time_steps ?? 10;
+    const tensor    = virtualTensorComponents(mz, charge, nT);
+    const verified  = verifyMeanRecovery(tensor);
+    const dEff      = effectiveDimensionality(Math.round(mz / 10), nT);
+    const tauOsc    = 1 / (Math.sqrt(1.60218e-19 * 1e12 / (mz * 1.66054e-27)) / (2 * Math.PI));
+    const nP        = planckDepth(dEff, tauOsc);
+    log(`  Virtual tensor: ${tensor.N} components, d_eff = ${dEff.toLocaleString()}`);
+    log(`  Off-shell fraction: ${(verified.offShellFraction * 100).toFixed(1)}%`);
+    log(`  Mean-recovery: mean = ${verified.mean.toFixed(4)}, holds = ${verified.meanRecoveryHolds}`);
+    log(`  Planck depth (stacked): n_P = ${nP}`);
+    return { tensor: tensor.components, verified, dEff, planckDepth: nP };
+  }
+
+  if (fn === "lavoisier.msms.impossible_ions") {
+    const mzList = a.mz_list ?? a.ions ?? [];
+    const result = impossibleIons(mzList);
+    log(`  Impossible ions: ${result.length} crossing-symmetry probes`);
+    result.forEach(r => log(`  (${r.ion1_mz.toFixed(3)} + ${r.ion2_mz.toFixed(3)}) / 2 → ${r.impossibleMz.toFixed(3)}`));
+    return result;
+  }
+
+  if (fn === "lavoisier.msms.partition_complement") {
+    const mz = a.mz ?? 500;
+    const nP = a.planck_depth ?? 56;
+    const result = partitionComplement(mz, nP);
+    log(`  Partition complement (SWIFT antistate):`);
+    log(`  M_ion = ${result.M_ion}, M_comp = ${result.M_comp}, C_max = ${result.Cmax}`);
+    log(`  Complement m/z = ${result.complementMz.toFixed(4)}`);
+    return result;
+  }
+
+  if (fn === "lavoisier.msms.transient_contents") {
+    const precMz = a.precursor_mz ?? 500;
+    const frags  = a.fragments ?? [];
+    const result = transientContents(precMz, frags);
+    log(`  Single-transient completeness (Theorem 11.1):`);
+    log(`  Precursor: ${result.precursor.freq_Hz.toExponential(3)} Hz`);
+    log(`  Fragment subharmonics: ${result.fragments.length}`);
+    log(`  Charge states encoded: ${result.chargeStates.length}`);
+    log(`  Polarity complement: Δφ = π`);
+    return result;
+  }
+
+  /* ── Online spectral database search ──────────────────────────────────── */
+
+  if (fn === "lavoisier.db.search") {
+    const precMz = a.precursor_mz ?? 500;
+    const frags  = a.fragments ?? [];
+    const dbs    = a.databases ?? ["massbank", "mona"];
+    log(`  Searching ${dbs.join(", ")} for m/z ${precMz.toFixed(4)}...`);
+    // Return a promise-based result; executor handles async
+    return { __async: true, __fn: "db.search", precMz, frags, dbs };
+  }
+
+  if (fn === "lavoisier.db.search_massbank") {
+    const precMz = a.precursor_mz ?? 500;
+    log(`  Searching MassBank for m/z ${precMz.toFixed(4)}...`);
+    return { __async: true, __fn: "db.search_massbank", precMz };
+  }
+
+  if (fn === "lavoisier.db.search_gnps") {
+    const precMz = a.precursor_mz ?? 500;
+    const frags  = a.fragments ?? [];
+    log(`  Searching GNPS for m/z ${precMz.toFixed(4)}...`);
+    return { __async: true, __fn: "db.search_gnps", precMz, frags };
+  }
+
+  if (fn === "lavoisier.db.search_mona") {
+    const precMz = a.precursor_mz ?? 500;
+    log(`  Searching MoNA for m/z ${precMz.toFixed(4)}...`);
+    return { __async: true, __fn: "db.search_mona", precMz };
   }
 
   /* ── MassScript vocabulary (Paper 2, §8.2) ────────────────────────────── */

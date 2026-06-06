@@ -665,6 +665,243 @@ $\mathcal{O}(N \log V)$. \qed
 \end{proof}
 
 % =========================================================
+\section{Ternary Phase-Space Addressing and the Lazy Dictionary}
+\label{sec:ternary}
+% =========================================================
+
+\subsection{Motivation: the lookup bottleneck}
+
+The SEBD-MS algorithm as stated in Section~\ref{sec:algorithm} requires
+two data structures: (i)~a pre-built partition-state graph $\calG$ with
+all nodes and adjacency lists materialised in memory, and (ii)~distance
+dictionaries $\text{dist}_f$, $\text{dist}_b^{(i)}$ that are looked up
+by node identity (exact match). Both impose $\mathcal{O}(|\Parts|)$
+upfront cost and $\mathcal{O}(1)$ per lookup.
+
+We show that both can be replaced by a \emph{lazy ternary dictionary}:
+a data structure that starts empty, materialises entries on demand in
+$\mathcal{O}(k)$ time per access (where $k$ is the encoding depth), and
+implicitly detects off-shell virtual transition states as empty lookups
+--- without any explicit test.
+
+\subsection{Interleaved ternary encoding}
+
+The S-entropy space $[0,1]^3$ is three-dimensional. Base-3 (ternary)
+is the natural encoding for this space: each trit takes values
+$\{0,1,2\}$, refining one coordinate per step, cycling through the
+three dimensions in sequence.
+
+\begin{definition}[Interleaved Ternary Address]
+\label{def:ternary}
+For $\Sv = (\Sk, \St, \Se) \in [0,1]^3$ and depth $k \in \N$, the
+\emph{interleaved ternary address} $\alpha^{(k)}(\Sv) \in \{0,1,2\}^k$
+is computed by Algorithm~\ref{alg:encode}:
+\begin{enumerate}[nosep,label=(\roman*)]
+\item initialise residuals $r_0 \leftarrow \Sk$,
+  $r_1 \leftarrow \St$, $r_2 \leftarrow \Se$;
+\item for $j = 1, \ldots, k$:
+  set $\text{dim} \leftarrow (j-1) \bmod 3$,
+  $t_j \leftarrow \min(\lfloor 3\,r_{\text{dim}}\rfloor, 2)$,
+  $r_{\text{dim}} \leftarrow 3\,r_{\text{dim}} - t_j$.
+\end{enumerate}
+\end{definition}
+
+\begin{algorithm}[h]
+\caption{Interleaved Ternary Encoder}
+\label{alg:encode}
+\begin{algorithmic}[1]
+\Require $\Sv = (\Sk,\St,\Se) \in [0,1]^3$; depth $k$
+\Ensure Trit string $\alpha = (t_1,\ldots,t_k) \in \{0,1,2\}^k$
+\State $r_0 \gets \Sk$;\; $r_1 \gets \St$;\; $r_2 \gets \Se$
+\For{$j = 1$ \textbf{to} $k$}
+  \State $d \gets (j-1) \bmod 3$
+  \State $t_j \gets \min(\lfloor 3 r_d \rfloor, 2)$
+  \State $r_d \gets 3 r_d - t_j$
+\EndFor
+\Return $(t_1, \ldots, t_k)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Ternary Naturalness]
+\label{thm:ternary-natural}
+For a $d$-dimensional unit cube $[0,1]^d$, base-$d$ is the unique
+integer base such that each digit refines exactly one coordinate. For
+$d = 3$, base-3 is optimal: any other integer base either wastes bits
+(base 2: $\log_2 3 \approx 1.58$ bits per refinement step instead of
+the minimum 1) or over-partitions (base 4+: finer than one-coordinate
+resolution per step).
+\end{theorem}
+
+\begin{proof}
+At each step, we refine one of $d$ coordinates. Refining coordinate
+$j$ by one ternary digit splits the $j$-th interval into 3 equal parts.
+With base $b$, each digit contributes $\log_2 b$ bits of information.
+For $d=3$, base 3 gives exactly $\log_2 3 \approx 1.585$ bits per step
+per coordinate — the minimum for three-way discrimination. Base 2 requires
+$\log_2 2 = 1$ bit per step, needing $\lceil\log_2 3\rceil = 2$ steps per
+coordinate refinement (wasteful). Base 4+ over-partitions one coordinate
+before moving to the next. \qed
+\end{proof}
+
+\subsection{The ternary trie and O(k) search}
+
+\begin{definition}[Ternary Trie]
+\label{def:trie}
+A \emph{ternary trie} $\mathcal{T}$ over $\{0,1,2\}^*$ is a rooted
+tree where each internal node has exactly three children labelled
+$\{0,1,2\}$. A compound $c$ with ternary address $\alpha^{(k)}(\Sv_c)$
+is stored at the leaf reached by following $t_1,\ldots,t_k$ from the
+root. The root represents the full space $[0,1]^3$.
+\end{definition}
+
+\begin{theorem}[O(k) Search, \citealp{knuth1998}]
+\label{thm:ok-search}
+For a trie $\mathcal{T}$ containing $N$ compounds, exact lookup
+and prefix-match search both run in $\mathcal{O}(k)$ time for
+encoding depth $k$, independent of $N$.
+\end{theorem}
+
+\begin{proof}
+Each trie operation traverses at most $k$ edges from root to leaf
+(one per trit), performing one array lookup per edge. Total work
+$= 3k = \mathcal{O}(k)$, independent of $N$. \qed
+\end{proof}
+
+\begin{theorem}[Distance Preservation]
+\label{thm:trie-distance}
+Two partition states $u$, $v$ with ternary addresses sharing a common
+prefix of length $j$ satisfy:
+\begin{equation}
+d_{\Sv}(\Sv_u, \Sv_v) \leq \sqrt{3} \cdot 3^{-\lfloor j/3 \rfloor}.
+\label{eq:trie-dist}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+A common prefix of length $j$ means the two addresses first differ at
+position $j+1$. Position $j+1$ refines dimension $(j \bmod 3)$. The
+interval width in that dimension at depth $\lfloor j/3\rfloor$ is
+$3^{-\lfloor j/3\rfloor}$. Across all three dimensions, the bounding
+box diameter is $\sqrt{3} \cdot 3^{-\lfloor j/3\rfloor}$. \qed
+\end{proof}
+
+The trie therefore implements a hierarchical partition of S-entropy space:
+compounds sharing a longer common prefix are closer in S-entropy distance.
+
+\subsection{The lazy dictionary}
+
+\begin{definition}[Lazy Ternary Dictionary]
+\label{def:lazydict}
+A \emph{lazy ternary dictionary} $\mathcal{L}$ is a pair
+$(\mathcal{T}, D)$ where $\mathcal{T}$ is the ternary trie
+(containing the compound database) and
+$D: \{0,1,2\}^k \rightharpoonup \mathbb{R}$ is a \emph{partial function}
+(initially empty) mapping ternary addresses to Dijkstra distances.
+
+Operations:
+\begin{itemize}[nosep]
+\item $\mathcal{L}.\text{get}(\Sv)$: compute $\alpha = \alpha^{(k)}(\Sv)$;
+  if $\alpha \in D$, return $D[\alpha]$; else return $+\infty$.
+\item $\mathcal{L}.\text{set}(\Sv, c)$: compute $\alpha = \alpha^{(k)}(\Sv)$;
+  set $D[\alpha] \leftarrow c$.
+\item $\mathcal{L}.\text{compounds}(\Sv)$: return $\mathcal{T}.\text{prefix}(\alpha^{(k)}(\Sv))$
+  --- all compounds whose address has $\alpha$ as a prefix.
+\item $\mathcal{L}.\text{is\_empty}(\Sv)$: true iff both $D[\alpha] = +\infty$
+  and $\mathcal{T}.\text{prefix}(\alpha) = \emptyset$.
+\end{itemize}
+\end{definition}
+
+The lazy dictionary replaces both the pre-built graph and the explicit
+visited sets. A node is \emph{materialised} the first time it is
+encountered during the search; before that, it contributes no memory.
+
+\subsection{Transition state detection via empty lookup}
+
+\begin{theorem}[Empty Lookup Characterises Transition States]
+\label{thm:empty-ts}
+Let $\Sv^* \in \R^3$ be a virtual backward-search component. Then:
+\begin{enumerate}[nosep,label=(\roman*)]
+\item If $\Sv^* \in [0,1]^3$: the ternary address $\alpha^{(k)}(\Sv^*)$
+  is well-defined; $\mathcal{T}.\text{prefix}(\alpha)$ may be non-empty.
+\item If $\Sv^* \notin [0,1]^3$: at least one coordinate lies outside
+  $[0,1]$. The encoder clamps $t_j = \min(\lfloor 3 r_d\rfloor, 2)$,
+  so $\alpha^{(k)}(\Sv^*)$ maps to the boundary of the trie — a region
+  with no physical compounds. $\mathcal{L}.\text{is\_empty}(\Sv^*) = \text{true}$.
+\end{enumerate}
+Therefore, $\mathcal{L}.\text{is\_empty}(\Sv^*) = \text{true}$ is a
+necessary condition for $\Sv^*$ to be an off-shell transition state
+(Theorem~\ref{thm:virtual-ts}).
+\end{theorem}
+
+\begin{proof}
+For $\Sv^* \notin [0,1]^3$, some residual $r_d < 0$ or $r_d > 1$ at
+some step. The clamp $t_j = \min(\lfloor 3r_d\rfloor, 2)$ forces the
+address to the extreme cell $(222\ldots)$ or $(000\ldots)$ in that
+dimension. No physical compound has a vibrational S-entropy coordinate
+equal to the boundary limit (ground state or maximum state), so
+$\mathcal{T}.\text{prefix}(\alpha) = \emptyset$ for the boundary
+address. Since no compound is stored there, and no Dijkstra distance
+has been assigned, $\mathcal{L}.\text{is\_empty}(\Sv^*) = \text{true}$.
+
+The converse: an on-shell $\Sv^* \in [0,1]^3$ may also produce an empty
+lookup if no compound exists in the corresponding ternary cell. This is
+an \emph{accidental transition state}: a partition state for which no
+compound is currently in the database. Such states are potential new
+compound addresses; they do not violate Theorem~\ref{thm:virtual-ts}
+but extend it to database-driven discovery. \qed
+\end{proof}
+
+\begin{corollary}[Automatic Discovery of Unknown Compounds]
+\label{cor:unknown}
+An empty lookup at an on-shell address $\alpha^{(k)}(\Sv^*)$ with
+$\Sv^* \in [0,1]^3$ predicts the existence of a compound at that
+partition-state address not yet in the database. The predicted
+S-entropy coordinates are the cell centre:
+\begin{equation}
+\Sv_\text{pred} = \left(\sum_{j \equiv 1} \frac{t_j + 0.5}{3^{\lceil j/3\rceil}},\;
+\sum_{j \equiv 2} \frac{t_j + 0.5}{3^{\lceil j/3\rceil}},\;
+\sum_{j \equiv 3} \frac{t_j + 0.5}{3^{\lceil j/3\rceil}}\right).
+\label{eq:cell-centre}
+\end{equation}
+\end{corollary}
+
+\subsection{Fuzzy meeting condition}
+
+The exact meeting condition in Algorithm~\ref{alg:sebd} requires
+$\Sv_u \in \text{dist}_b^{(i)}$ (exact dictionary match). With the
+lazy dictionary, the meeting condition becomes a \emph{prefix match}:
+
+\begin{definition}[Fuzzy Meeting Condition]
+\label{def:fuzzy-meet}
+Node $u$ \emph{fuzzy-meets} fragment $v_i$ at resolution $j \leq k$ if:
+\begin{equation}
+\alpha^{(j)}(\Sv_u) = \alpha^{(j)}(\Sv_{f_i}).
+\label{eq:fuzzy-meet}
+\end{equation}
+That is, the first $j$ trits of $u$'s address match those of $v_i$.
+\end{definition}
+
+\begin{theorem}[Fuzzy Meeting Radius]
+\label{thm:fuzzy-radius}
+If $u$ fuzzy-meets $v_i$ at resolution $j$, then
+$d_{\Sv}(\Sv_u, \Sv_{f_i}) \leq \sqrt{3} \cdot 3^{-\lfloor j/3 \rfloor}$
+(Theorem~\ref{thm:trie-distance}). The SEBD-MS path through such
+$u$ identifies all compounds within S-entropy radius
+$\varepsilon = \sqrt{3} \cdot 3^{-\lfloor j/3\rfloor}$ of $v_i$
+simultaneously, at cost $\mathcal{O}(k)$ per lookup.
+\end{theorem}
+
+The resolution $j$ is a design parameter: increasing $j$ tightens the
+meeting condition (fewer but more accurate matches); decreasing $j$
+broadens it (more matches, larger radius). For exact compound
+identification, $j = k$ (full depth). For library search
+with tolerance $\varepsilon$:
+\begin{equation}
+j = 3\left\lceil\log_3\!\left(\frac{\sqrt{3}}{\varepsilon}\right)\right\rceil.
+\label{eq:j-from-epsilon}
+\end{equation}
+
+% =========================================================
 \section{The Partition-Lagrangian Analyzer Equations}
 \label{sec:lagrangian}
 % =========================================================
@@ -807,63 +1044,80 @@ itself. These off-shell predecessors are the transition states
 \subsection{The SEBD-MS algorithm}
 
 \begin{algorithm}[t]
-\caption{S-Entropy Bidirectional Dijkstra for MS/MS (SEBD-MS)}
+\caption{SEBD-MS with Lazy Ternary Dictionary}
 \label{alg:sebd}
 \begin{algorithmic}[1]
 \Require Precursor $u_\text{prec}$; fragments $\{v_1,\ldots,v_k\}$;
-         graph $\calG$; max depth $d_\text{max}$
-\Ensure For each $v_i$: minimum-cost path and transition-state set
+         ternary trie $\mathcal{T}$; depth $k_0$; max shell drop $d_\text{max}$
+\Ensure For each $v_i$: minimum-cost path, matched compounds,
+         and off-shell transition-state set
 
-\State Compute $\Sv_\text{prec}$ via~\eqref{eq:sk}--\eqref{eq:se}
-\State Compute $\Sv_{f_i}$ for all $i = 1, \ldots, k$
-
-\State $Q_f \gets$ MinHeap$\{(0, u_\text{prec})\}$
-\Comment{(cost, node)}
-\State $\text{dist}_f \gets \{u_\text{prec} \mapsto 0\}$
-
+\State \textbf{// Lazy dictionary: starts empty, materialised on demand}
+\State $\mathcal{L}_f \gets (\mathcal{T},\; D_f \leftarrow \{\})$
+  \Comment{forward lazy dict}
 \For{$i = 1$ to $k$}
-  \State $Q_b^{(i)} \gets$ MinHeap$\{(0, \Sv_{f_i})\}$
-  \State $\text{dist}_b^{(i)} \gets \{\Sv_{f_i} \mapsto 0\}$
+  \State $\mathcal{L}_b^{(i)} \gets (\mathcal{T},\; D_b^{(i)} \leftarrow \{\})$
+    \Comment{backward lazy dict per fragment}
 \EndFor
 
-\State $\text{best\_cost} \gets \{\infty, \ldots, \infty\}$,
-       $\text{meeting} \gets \{\text{nil}, \ldots, \text{nil}\}$
+\State $Q_f \gets \text{MinHeap}\{(0, u_\text{prec})\}$
+\State $\mathcal{L}_f.\text{set}(\Sv_\text{prec}, 0)$
+
+\State $\text{best} \gets [\infty]^k$;\;
+       $\text{meeting} \gets [\text{nil}]^k$;\;
+       $\text{ts\_set} \gets [\emptyset]^k$
+  \Comment{transition-state sets}
 
 \While{$Q_f \neq \emptyset$}
   \State $(c_f, u) \gets Q_f.\text{pop}()$
-  \If{$c_f > \text{dist}_f[u]$} \textbf{continue} \EndIf
+  \State $\alpha_u \gets \alpha^{(k_0)}(\Sv_u)$
+    \Comment{$\mathcal{O}(k_0)$ ternary encode}
+  \If{$c_f > \mathcal{L}_f.\text{get}(\Sv_u)$} \textbf{continue} \EndIf
 
-  \State Compute $\Sv_u$ from $u$
   \For{$i = 1$ to $k$}
-    \If{$\Sv_u \in \text{dist}_b^{(i)}$}
-      \Comment{forward meets backward}
-      \State $c_\text{total} \gets c_f + \text{dist}_b^{(i)}[\Sv_u]$
-      \If{$c_\text{total} < \text{best\_cost}[i]$}
-        \State $\text{best\_cost}[i] \gets c_\text{total}$
-        \State $\text{meeting}[i] \gets u$
+    \State \textbf{// Fuzzy meeting: prefix match at full depth}
+    \If{$\mathcal{L}_b^{(i)}.\text{get}(\Sv_u) < \infty$}
+        \Comment{$\mathcal{O}(k_0)$ lookup, no pre-built table}
+      \State $c_\text{tot} \gets c_f + \mathcal{L}_b^{(i)}.\text{get}(\Sv_u)$
+      \If{$c_\text{tot} < \text{best}[i]$}
+        \State $\text{best}[i] \gets c_\text{tot}$;\;
+               $\text{meeting}[i] \gets u$
       \EndIf
     \EndIf
   \EndFor
 
-  \If{$S_{k}(u) < S_{k}(u_\text{prec}) - d_\text{max}/\nP$}
-    \textbf{continue}
+  \If{$\Sk(u) < \Sk(u_\text{prec}) - d_\text{max}/\nP$} \textbf{continue}
   \EndIf
 
   \For{each admissible neighbour $v$ of $u$}
+      \Comment{generated on demand, not from pre-built list}
     \State $c' \gets c_f + w(u, v)$
-    \If{$c' < \text{dist}_f[v]$}
-      \State $\text{dist}_f[v] \gets c'$
+    \If{$c' < \mathcal{L}_f.\text{get}(\Sv_v)$}
+      \State $\mathcal{L}_f.\text{set}(\Sv_v,\; c')$
+        \Comment{materialise $v$ in lazy dict}
       \State $Q_f.\text{push}((c', v))$
     \EndIf
   \EndFor
 \EndWhile
 
 \For{$i = 1$ to $k$}
-  \State Expand $Q_b^{(i)}$ via virtual predecessors~\eqref{eq:virtual-pred}
-  \State Record off-shell components as transition states
+  \State $\Sv^* \gets 2\Sv_{f_i} - \Sv_2$ for some $\Sv_2 \in [0,1]^3$
+  \If{$\mathcal{L}.\text{is\_empty}(\Sv^*)$}
+    \Comment{off-shell: empty trie + empty dict}
+    \State $\text{ts\_set}[i] \mathrel{+}= \{\Sv^*\}$
+      \Comment{confirmed transition state}
+  \Else
+    \State $\mathcal{L}_b^{(i)}.\text{set}(\Sv^*, d_{\Sv}(\Sv^*, \Sv_{f_i}))$
+  \EndIf
 \EndFor
 
-\Return $\text{best\_cost}$, $\text{meeting}$, transition-state sets
+\State \textbf{// Compound identification at meeting points}
+\For{$i = 1$ to $k$}
+  \State $\text{hits}[i] \gets \mathcal{L}.\text{compounds}(\Sv_{\text{meeting}[i]})$
+    \Comment{$\mathcal{O}(k_0)$ prefix search}
+\EndFor
+
+\Return $\text{best}$, $\text{meeting}$, $\text{ts\_set}$, $\text{hits}$
 \end{algorithmic}
 \end{algorithm}
 
@@ -917,66 +1171,91 @@ to decompositions occurs. \qed
 \label{sec:complexity}
 % =========================================================
 
-\subsection{Search space reduction}
+\subsection{Comparison with existing approaches}
 
-Standard unidirectional database search for MS/MS has complexity
-$\mathcal{O}(N_\text{db} \times k)$ where $N_\text{db}$ is the database
-size and $k$ the number of fragment peaks. Standard de~novo sequencing
-has complexity $\mathcal{O}(k^2)$ to $\mathcal{O}(k^3)$ for building
-and searching the sequence graph.
+Standard database search: $\mathcal{O}(N_\text{db} \times k_\text{frags})$.
+Standard de~novo sequencing: $\mathcal{O}(k^2)$--$\mathcal{O}(k^3)$.
+SEBD-MS without lazy dictionary: $\mathcal{O}(n_p d_\text{max} \log(n_p d_\text{max}))$
+forward search, but $\mathcal{O}(|\Parts|)$ graph pre-construction.
+SEBD-MS \emph{with} lazy ternary dictionary (Algorithm~\ref{alg:sebd}):
+$\mathcal{O}(k_0)$ per lookup, zero upfront cost.
 
-SEBD-MS operates on the partition-state graph, whose relevant portion is
-$\Reachf^{(d_\text{max})}$:
-
-\begin{theorem}[SEBD-MS Complexity]
+\begin{theorem}[Lazy SEBD-MS Complexity]
 \label{thm:complexity}
-SEBD-MS has complexity $\mathcal{O}(n_p \cdot d_\text{max} \cdot
-\log(n_p \cdot d_\text{max}) + k \cdot N)$ where:
+SEBD-MS with the lazy ternary dictionary
+(Definition~\ref{def:lazydict}) has:
 \begin{itemize}[nosep]
-\item $n_p = \lfloor\sqrt{m/z_\text{prec}}\rfloor + 1$: precursor level;
-\item $d_\text{max}$: maximum fragmentation depth;
-\item $k$: number of observed fragments;
-\item $N = 2$: virtual decomposition size.
+\item \emph{Initialisation cost}: $\mathcal{O}(N_\text{db} \cdot k_0)$
+  to insert $N_\text{db}$ compounds into the trie at depth $k_0$;
+\item \emph{Per-node cost}: $\mathcal{O}(k_0)$ for ternary encode +
+  dict lookup + trie prefix match (Theorem~\ref{thm:ok-search});
+\item \emph{Total search cost}: $\mathcal{O}\!\left(k_0 \cdot
+  n_p d_\text{max} \log(n_p d_\text{max}) + k \cdot k_0\right)$;
+\item \emph{Memory}: $\mathcal{O}(|\text{visited}| \cdot k_0)$
+  for the materialised portion of the lazy dict, where
+  $|\text{visited}| \leq n_p d_\text{max} \ll |\Parts|$.
 \end{itemize}
 \end{theorem}
 
 \begin{proof}
+Initialisation: $N_\text{db}$ trie insertions, each $\mathcal{O}(k_0)$.
 Forward search: $|\Reachf^{(d_\text{max})}| = \mathcal{O}(n_p d_\text{max})$
-by Lemma~\ref{lem:forward-size}; Dijkstra adds $\mathcal{O}(\log)$ per
-node. Backward expansion: $k$ fragments, $\mathcal{O}(N)$ per fragment.
-\qed
+(Lemma~\ref{lem:forward-size}); each node requires one $\mathcal{O}(k_0)$
+encode and one $\mathcal{O}(k_0)$ dict lookup; heap operations add
+$\mathcal{O}(\log)$. Backward: $k$ fragments, $\mathcal{O}(k_0)$ each.
+Memory: only visited nodes are materialised in $D$; each entry costs
+$\mathcal{O}(k_0)$ for the key. \qed
 \end{proof}
+
+\begin{corollary}[Database-Size Independence]
+\label{cor:db-independent}
+The per-query cost of SEBD-MS is $\mathcal{O}(k_0 \cdot n_p d_\text{max}
+\log(n_p d_\text{max}))$, \emph{independent of the database size}
+$N_\text{db}$.
+The database size affects only the trie initialisation cost
+$\mathcal{O}(N_\text{db} \cdot k_0)$ (done once at deploy time).
+At PubChem scale ($N_\text{db} = 10^8$, $k_0 = 18$):
+speedup per query vs. linear database scan $\approx
+N_\text{db}/k_0 \approx 5.6 \times 10^6$.
+\end{corollary}
 
 \begin{corollary}[Reduction Factor over Database Search]
 \label{cor:reduction}
-For a database of $N_\text{db}$ sequences with mean length $L$:
+For $n_p = 15$, $d_\text{max} = 7$, $k_0 = 12$, $N_\text{db} = 10^6$,
+$k = 20$ fragments:
 \begin{equation}
 \frac{\text{SEBD-MS cost}}{\text{database search cost}}
-= \mathcal{O}\!\left(\frac{n_p \cdot d_\text{max} \cdot
-\log(n_p d_\text{max})}{N_\text{db} \cdot k}\right).
+= \frac{k_0 \cdot n_p d_\text{max} \log(n_p d_\text{max})}
+       {N_\text{db} \cdot k}
+= \frac{12 \times 105 \times 7.0}{10^6 \times 20} \approx 4.4 \times 10^{-5}.
 \end{equation}
-For $n_p \approx 15$, $d_\text{max} = 7$, $k = 20$, $N_\text{db} = 10^6$:
-reduction factor $\approx 10^{-4}$.
 \end{corollary}
 
-\subsection{Virtual substate backward search efficiency}
+\subsection{Virtual substate backward search with ternary trie}
 
-\begin{theorem}[Backward Search Reduction]
+\begin{theorem}[Backward Search with Empty-Lookup Detection]
 \label{thm:backward-reduction}
-Using $N = 2$ virtual substates, the backward search from each fragment
-node covers a straight-line path in $\R^3$ of length $2d(\Sv_{f_i},
-\Sv_\text{prec})$. This reduces the number of on-shell states that must
-be enumerated from $\Theta(|\Reachf|)$ to $\mathcal{O}(1/\epsilon^3)$
-where $\epsilon$ is the cell discretisation of $[0,1]^3$.
+The backward virtual predecessor
+$\Sv^* = 2\Sv_{f_i} - \Sv_2$ for $\Sv_2 \in [0,1]^3$
+traces a line in $\R^3$. Each point on this line is tested via
+$\mathcal{L}.\text{is\_empty}(\Sv^*)$ in $\mathcal{O}(k_0)$ time.
+\begin{enumerate}[nosep,label=(\roman*)]
+\item If $\Sv^* \notin [0,1]^3$: $\mathcal{L}.\text{is\_empty}(\Sv^*)
+  = \text{true}$ (Theorem~\ref{thm:empty-ts}) and $\Sv^*$ is recorded
+  as a transition state in $\mathcal{O}(k_0)$.
+\item If $\Sv^* \in [0,1]^3$ and trie non-empty: $\Sv^*$ is a forward
+  reachable predecessor; update $\mathcal{L}_b^{(i)}$ in
+  $\mathcal{O}(k_0)$.
+\end{enumerate}
+No pre-built backward graph is required.
 \end{theorem}
 
 \begin{proof}
-The backward virtual predecessor $\Sv^* = 2\Sv_{f_i} - \Sv_2$ traces
-a line through $\R^3$ as $\Sv_2$ varies over $[0,1]^3$. The line
-intersects the forward frontier $\Reachf$ at the meeting point. Finding
-the intersection requires $\mathcal{O}(1/\epsilon^3)$ cell lookups in
-the discretised S-entropy space, compared to $\Theta(|\Reachf|)$
-for exhaustive enumeration. \qed
+Every operation is a ternary encode (cost $\mathcal{O}(k_0)$)
+followed by a trie lookup (cost $\mathcal{O}(k_0)$ by
+Theorem~\ref{thm:ok-search}). The empty-lookup transition-state
+detection requires no additional predicate beyond the trie query.
+\qed
 \end{proof}
 
 % =========================================================

@@ -178,6 +178,51 @@ phase TOF:
     )
 `,
   },
+
+  sebd_ms: {
+    label: "MS/MS graph search (SEBD-MS)",
+    code: `\
+// Partition-State Graph Search for MS/MS identification.
+// Each fragment maps to a node (n, ℓ, m, s) in the partition graph.
+// SEBD-MS finds minimum-cost paths — same chart output as virtual instrument.
+
+import lavoisier.msms
+
+objective MSMSSearch:
+    target: "identify fragmentation pathways in an HCD spectrum"
+
+phase FragmentSearch:
+    precursor_mz = 147.1128
+    fragments = [84.081, 101.107, 102.091, 130.087]
+
+    records = lavoisier.msms.sebd_search(
+        precursor_mz: precursor_mz,
+        fragments: fragments,
+        max_depth: 7,
+        planck_depth: 56
+    )
+`,
+  },
+
+  virtual_tensor: {
+    label: "Virtual partition tensor",
+    code: `\
+// Stacked Virtual Substates — V_{ijkl} tensor decomposition.
+// Off-shell fraction ~8.3% — virtual transition states (Theorem 5.2).
+
+import lavoisier.msms
+
+objective VirtualSubstates:
+    target: "decompose ion state across instrument × charge × polarity × time"
+
+phase Decompose:
+    tensor = lavoisier.msms.virtual_tensor(
+        mz: 162.1125,
+        charge: 1,
+        time_steps: 10
+    )
+`,
+  },
 };
 
 const TEMPLATE_KEYS = Object.keys(TEMPLATES);

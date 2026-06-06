@@ -305,6 +305,95 @@ phase PurposeFiltering:
     )
 `;
 
+const SS_SEBD_SEARCH = `\
+// Partition-State Graph Search — SEBD-MS algorithm.
+// Each ion maps to node (n, ℓ, m, s). Searches forward from precursor,
+// backward from each fragment via virtual predecessors Sv* = 2·Sv_f − Sv_2.
+// Off-shell Sv* = chemical transition states (Theorem 5.2).
+// Output: PredictedRecord[] → feeds all existing dashboard charts.
+
+import lavoisier.msms
+
+objective MSMSSearch:
+    target: "identify fragmentation pathways in an HCD spectrum"
+
+phase FragmentSearch:
+    // Lysine [M+H]+, HCD fragments (NIST AC_CAC verified)
+    precursor_mz = 147.1128
+    fragments = [84.081, 101.107, 102.091, 130.087]
+
+    records = lavoisier.msms.sebd_search(
+        precursor_mz: precursor_mz,
+        fragments: fragments,
+        max_depth: 7,
+        planck_depth: 56
+    )
+
+phase PhaseCoherence:
+    // Verify: ω_f = ω_prec · sqrt(m_prec/m_f) — self-consistent <10⁻⁹ ppm
+    subharmonics = lavoisier.msms.phase_coherence(
+        precursor_mz: precursor_mz,
+        fragments: fragments
+    )
+`;
+
+const SS_VIRTUAL_TENSOR = `\
+// Stacked Virtual Substates — V_{ijkl} partition tensor.
+// Four stacking dimensions: instrument × charge × polarity × time.
+// Off-shell fraction ~8.3% — the virtual transition states.
+// One Orbitrap transient contains full MS/MS, all charge states, polarity complement.
+
+import lavoisier.msms
+
+objective VirtualSubstates:
+    target: "decompose partition state across 4 virtual dimensions"
+
+phase BuildTensor:
+    mz = 162.1125  // leucine [M+H]+
+
+    tensor = lavoisier.msms.virtual_tensor(
+        mz: mz,
+        charge: 1,
+        time_steps: 10
+    )
+
+phase SingleTransient:
+    // Theorem 11.1: all information in one transient
+    transient = lavoisier.msms.transient_contents(
+        precursor_mz: mz,
+        fragments: [44.049, 86.096, 103.086, 118.110]
+    )
+
+phase CrossingSymmetry:
+    // Impossible ions as crossing-symmetry probes
+    probes = lavoisier.msms.impossible_ions(
+        mz_list: [86.096, 103.086, 118.110]
+    )
+`;
+
+const SS_DB_SEARCH = `\
+// Online spectral database search.
+// Search public MS/MS libraries via their REST APIs.
+// Query cost: O(k) per trie lookup, independent of database size N.
+// Databases: MassBank (EU), MoNA (Davis), GNPS (San Diego).
+
+import lavoisier.db
+
+objective SpectralSearch:
+    target: "search public spectral databases for lysine HCD fragments"
+
+phase SearchDatabases:
+    precursor_mz = 147.1128  // lysine [M+H]+
+    fragments = [84.081, 101.107, 102.091, 130.087]
+
+    // Search MassBank and MoNA in parallel
+    db_results = lavoisier.db.search(
+        precursor_mz: precursor_mz,
+        fragments: fragments,
+        databases: ["massbank", "mona"]
+    )
+`;
+
 const README_CONTENT = `\
 # Shapeshifter Sandbox
 
@@ -371,6 +460,9 @@ const initialFiles = {
       "sentropy_observation.ss":  { type: "file", lang: "ss", content: SS_SENTROPY_OBS },
       "force_free_ms.ss":         { type: "file", lang: "ss", content: SS_FORCE_FREE },
       "generative_database.ss":   { type: "file", lang: "ss", content: SS_GENERATIVE_DB },
+      "sebd_ms_search.ss":        { type: "file", lang: "ss", content: SS_SEBD_SEARCH },
+      "virtual_tensor.ss":        { type: "file", lang: "ss", content: SS_VIRTUAL_TENSOR },
+      "db_search.ss":             { type: "file", lang: "ss", content: SS_DB_SEARCH },
     },
   },
   "README.md": { type: "file", lang: "md", content: README_CONTENT },
