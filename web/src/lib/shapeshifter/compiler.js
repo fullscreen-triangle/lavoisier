@@ -525,9 +525,41 @@ function executeCall(fn, args, env, ast, log) {
   return null;
 }
 
-/** Execute a parsed AST. Returns { result, logs }. */
+/**
+ * Classify a (functionName, value) pair into a visualisation kind so the
+ * sandbox can pick the right panel. Returns a string tag.
+ */
+function classifyValue(fn, value) {
+  if (Array.isArray(value)) {
+    if (value.length && value[0] && typeof value[0] === "object") {
+      if ("precursorMz" in value[0] && "sentropyVec" in value[0]) return "records";
+      if ("dp_lo" in value[0] || "tau_min_ms" in value[0])         return "cells";
+      if ("n" in value[0] && "l" in value[0] && "m" in value[0])   return "addresses";
+      if ("frequencyRatio" in value[0])                            return "subharmonics";
+      if ("impossibleMz" in value[0])                              return "impossible";
+      if ("instrument" in value[0] && "value" in value[0])         return "tensor";
+    }
+    return "array";
+  }
+  if (value && typeof value === "object") {
+    if (value.__async)                    return "pending";
+    if (fn && fn.includes("dual_path"))   return "validation";
+    if (fn && fn.includes("domain"))      return "domain";
+    if (fn && fn.includes("combine"))     return "domain";
+    if ("sk" in value && "st" in value && "se" in value) return "sentropy";
+    if ("tensor" in value && "verified" in value) return "tensorReport";
+    if ("complementMz" in value)          return "complement";
+    if ("precursor" in value && "fragments" in value) return "transient";
+    return "object";
+  }
+  if (typeof value === "string") return "string";
+  if (typeof value === "number") return "number";
+  return "scalar";
+}
+
+/** Execute a parsed AST. Returns { result, logs, workspace }. */
 export function executeShapeshifter(ast) {
-  const env = {}, logs = [];
+  const env = {}, kinds = {}, order = [], logs = [];
   const log = (msg, level = "info") => logs.push({ level, message: msg });
 
   if (ast.objective) {
@@ -552,37 +584,49 @@ export function executeShapeshifter(ast) {
     log(`⚡ Phase: ${phaseName}`);
     for (const stmt of stmts) {
       if (stmt.type === "assign") {
+        let fn = null;
         if (stmt.value.type === "call") {
+          fn = stmt.value.fn;
           env[stmt.target] = executeCall(stmt.value.fn, stmt.value.args, env, ast, log);
           log(`  ${stmt.target} ← ${describeVal(env[stmt.target])}`);
         } else {
           env[stmt.target] = stmt.value.value;
         }
+        if (!order.includes(stmt.target)) order.push(stmt.target);
+        kinds[stmt.target] = classifyValue(fn, env[stmt.target]);
       }
     }
   }
 
-  if (env.records && Array.isArray(env.records)) {
-    const summary = summariseRecords(env.records);
-    return { result: { type: "records", data: env.records, summary }, logs };
+  // Build the workspace: every assigned variable, in declaration order,
+  // tagged with a visualisation kind. The sandbox renders ALL of them.
+  const workspace = order
+    .filter(name => env[name] !== undefined && env[name] !== null)
+    .map(name => ({ name, kind: kinds[name], value: env[name] }));
+
+  // Primary result (kept for back-compat + store integration).
+  let result;
+  if (env.records && Array.isArray(env.records) && env.records.length) {
+    result = { type: "records", data: env.records, summary: summariseRecords(env.records) };
+  } else if (env.registry && Array.isArray(env.registry)) {
+    result = { type: "cells", data: env.registry };
+  } else if (env.addresses && Array.isArray(env.addresses)) {
+    result = { type: "addresses", data: env.addresses };
+  } else {
+    // Pick the most "chart-worthy" workspace entry as the primary.
+    const pref = ["records", "cells", "addresses", "subharmonics", "tensor", "impossible"];
+    const chosen = workspace.find(w => pref.includes(w.kind)) || workspace[workspace.length - 1];
+    if (chosen) {
+      if (chosen.kind === "records") result = { type: "records", data: chosen.value, summary: summariseRecords(chosen.value) };
+      else if (chosen.kind === "cells") result = { type: "cells", data: chosen.value };
+      else if (chosen.kind === "addresses") result = { type: "addresses", data: chosen.value };
+      else result = { type: "workspace", data: chosen.value };
+    } else {
+      result = { type: "empty", data: null };
+    }
   }
-  if (env.registry && Array.isArray(env.registry)) {
-    return { result: { type: "cells", data: env.registry }, logs };
-  }
-  if (env.addresses && Array.isArray(env.addresses)) {
-    return { result: { type: "addresses", data: env.addresses }, logs };
-  }
-  // MassScript observation results
-  if (env.observation && typeof env.observation === "object" && env.observation.type === "observation") {
-    return { result: env.observation, logs };
-  }
-  if (env.domain_context && typeof env.domain_context === "object") {
-    return { result: { type: "domain", data: env.domain_context }, logs };
-  }
-  if (env.validation && typeof env.validation === "object") {
-    return { result: { type: "validation", data: env.validation }, logs };
-  }
-  return { result: { type: "empty", data: null }, logs };
+
+  return { result, logs, workspace };
 }
 
 /** Full pipeline: source → { result, ir, logs }. */
@@ -673,14 +717,15 @@ export function executeStage(ast) {
   const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
   term.push({ stream: "stage", text: "shapeshifter run" });
 
-  let result, logs;
+  let result, logs, workspace;
   try {
-    ({ result, logs } = executeShapeshifter(ast));
+    ({ result, logs, workspace } = executeShapeshifter(ast));
   } catch (e) {
     term.push({ stream: "stderr", text: `error: runtime — ${e.message}` });
     return {
       result: { type: "empty", data: null },
       logs: [{ level: "error", message: e.message }],
+      workspace: [],
       term,
     };
   }
@@ -704,13 +749,16 @@ export function executeStage(ast) {
       summary = `→ ${result.data.length} partition address(es)`;
       break;
     case "empty":
-      summary = "→ no output value (assign to `records` to populate charts)";
+      summary = "→ no output value";
       break;
     default:
       summary = `→ produced a "${result.type}" result`;
   }
   term.push({ stream: "stdout", text: summary });
+  if (workspace && workspace.length) {
+    term.push({ stream: "stdout", text: `workspace: ${workspace.map(w => `${w.name}:${w.kind}`).join(", ")}` });
+  }
   term.push({ stream: "stdout", text: `✓ finished in ${dt.toFixed(1)} ms` });
 
-  return { result, logs, term };
+  return { result, logs, workspace: workspace || [], term };
 }

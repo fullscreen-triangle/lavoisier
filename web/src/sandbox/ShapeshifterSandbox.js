@@ -7,6 +7,27 @@ import {
   Trash2, RefreshCw, Cpu, Zap, Hammer, Square,
 } from "lucide-react";
 import { compileStage, executeStage } from "@/lib/shapeshifter/compiler";
+import { summariseRecords } from "@/lib/experiment/virtualinstrument";
+import { searchAll, searchMassBank, searchGNPS, searchMoNA } from "@/lib/spectral/dbSearch";
+import { useStore } from "@/lib/state/store";
+import ResultsDashboard from "@/components/experiment/ResultsDashboard";
+
+const summariseForStore = (recs) => summariseRecords(recs);
+
+/** Resolve a pending __async DB-search placeholder into real results. */
+async function resolvePending(p) {
+  try {
+    switch (p.__fn) {
+      case "db.search":          return await searchAll(p.precMz, p.frags || [], p.dbs || ["massbank", "mona"]);
+      case "db.search_massbank": return await searchMassBank(p.precMz);
+      case "db.search_gnps":     return await searchGNPS(p.precMz, p.frags || []);
+      case "db.search_mona":     return await searchMoNA(p.precMz);
+      default:                   return { hits: [], error: `unknown ${p.__fn}` };
+    }
+  } catch (e) {
+    return { hits: [], error: e.message };
+  }
+}
 
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
 const T = {
@@ -611,8 +632,292 @@ function AddressesPanel({ addresses }) {
   );
 }
 
-function ResultsPanel({ result }) {
-  if (!result || result.type === "empty") {
+/* ─── Generic value visualisations for the workspace ─────────────────────── */
+
+function Card({ label, value, color = T.editorFg }) {
+  return (
+    <div className="rounded p-2"
+      style={{ background: "#2a2d2e", border: `1px solid ${T.border}` }}>
+      <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "#666" }}>{label}</div>
+      <div className="font-mono text-[12px] break-words" style={{ color }}>{value}</div>
+    </div>
+  );
+}
+
+/** Horizontal mini-bar chart from {label, value} rows in [0,1] or normalised. */
+function MiniBars({ rows, max }) {
+  const m = max ?? Math.max(...rows.map(r => Math.abs(r.value)), 1e-9);
+  return (
+    <div className="space-y-1">
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-center gap-2 text-[10px]">
+          <span className="w-24 shrink-0 truncate font-mono" style={{ color: T.sidebarFg }}>{r.label}</span>
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#2a2d2e" }}>
+            <div className="h-full rounded-full"
+              style={{ width: `${Math.min(100, (Math.abs(r.value) / m) * 100)}%`, background: r.color || "#5fa8d3" }} />
+          </div>
+          <span className="w-16 text-right font-mono" style={{ color: "#888" }}>
+            {typeof r.value === "number" ? r.value.toFixed(3) : r.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[9px] uppercase tracking-[0.15em]" style={{ color: "#666" }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
+/** S-entropy coordinate as a triangular ternary plot + cards. */
+function SentropyView({ value }) {
+  const { sk = 0, st = 0, se = 0 } = value;
+  return (
+    <Section title="S-entropy coordinates (Sₖ, Sₜ, Sₑ)">
+      <div className="grid grid-cols-3 gap-2">
+        <Card label="Sₖ knowledge" value={sk.toFixed(4)} color="#22d3ee" />
+        <Card label="Sₜ temporal"  value={st.toFixed(4)} color="#fbbf24" />
+        <Card label="Sₑ evolution" value={se.toFixed(4)} color="#a78bfa" />
+      </div>
+      <MiniBars max={1} rows={[
+        { label: "Sₖ", value: sk, color: "#22d3ee" },
+        { label: "Sₜ", value: st, color: "#fbbf24" },
+        { label: "Sₑ", value: se, color: "#a78bfa" },
+      ]} />
+    </Section>
+  );
+}
+
+/** Dual-path validation: convergence + false-positive probability. */
+function ValidationView({ value }) {
+  const cp = value.commonPrefixLen ?? 0;
+  const conv = value.convergenceScore ?? 0;
+  return (
+    <Section title="Ion-droplet dual-path validation">
+      <div className="grid grid-cols-3 gap-2">
+        <Card label="Common prefix" value={`${cp} trits`} color="#9cdcfe" />
+        <Card label="Convergence" value={`${(conv * 100).toFixed(1)}%`}
+          color={conv > 0.7 ? "#34d399" : conv > 0.4 ? "#dcdcaa" : "#f48771"} />
+        <Card label="False-pos ≤" value={(value.falsePosProb ?? 1).toExponential(2)} color="#fb923c" />
+      </div>
+      {value.ionAddress && (
+        <div className="font-mono text-[9px]" style={{ color: "#666" }}>
+          ion:&nbsp;&nbsp;&nbsp;<span style={{ color: "#5fa8d3" }}>{value.ionAddress}</span><br />
+          drip:&nbsp;&nbsp;<span style={{ color: "#e07a7a" }}>{value.dropletAddress}</span>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+/** Purpose domain: reduction ratio + prefix count. */
+function DomainView({ value }) {
+  const rho = value.reductionPct ?? (value.reductionRatio != null ? value.reductionRatio * 100 : null);
+  const prefixes = value.prefixes?.length ?? 0;
+  return (
+    <Section title={`Purpose domain — ${value.label || value.name || "context"}`}>
+      <div className="grid grid-cols-2 gap-2">
+        <Card label="Prefixes" value={prefixes} color="#9cdcfe" />
+        {rho != null && <Card label="Reduction" value={`${rho.toFixed(1)}%`} color="#34d399" />}
+      </div>
+      {value.bounds && (
+        <MiniBars max={1} rows={[
+          { label: "Sₖ range", value: value.bounds.sk[1] - value.bounds.sk[0], color: "#22d3ee" },
+          { label: "Sₜ range", value: value.bounds.st[1] - value.bounds.st[0], color: "#fbbf24" },
+          { label: "Sₑ range", value: value.bounds.se[1] - value.bounds.se[0], color: "#a78bfa" },
+        ]} />
+      )}
+    </Section>
+  );
+}
+
+/** Subharmonic frequency ratios as a bar chart. */
+function SubharmonicsView({ value }) {
+  const rows = value.slice(0, 16).map(s => ({
+    label: `${s.fragmentMz?.toFixed(1)}`,
+    value: s.frequencyRatio ?? 0,
+    color: s.selfConsistent ? "#34d399" : "#f48771",
+  }));
+  return (
+    <Section title={`Fragment subharmonics — ω_f / ω_prec (${value.length})`}>
+      <MiniBars rows={rows} />
+      <div className="text-[9px]" style={{ color: "#666" }}>
+        Self-consistent: {value.filter(s => s.selfConsistent).length}/{value.length} (&lt;10⁻⁶ ppm)
+      </div>
+    </Section>
+  );
+}
+
+/** Virtual tensor report: off-shell fraction + mean recovery. */
+function TensorReportView({ value }) {
+  const v = value.verified || {};
+  return (
+    <Section title="Virtual partition tensor V_{ijkl}">
+      <div className="grid grid-cols-3 gap-2">
+        <Card label="Components" value={(value.tensor?.length ?? 0).toLocaleString()} color="#9cdcfe" />
+        <Card label="Off-shell" value={`${((v.offShellFraction ?? 0) * 100).toFixed(1)}%`} color="#fb923c" />
+        <Card label="Planck depth" value={value.planckDepth ?? "—"} color="#a78bfa" />
+      </div>
+      <MiniBars max={1} rows={[
+        { label: "mean (recov.)", value: v.mean ?? 0, color: "#34d399" },
+        { label: "v_phys", value: v.vPhys ?? 0, color: "#5fa8d3" },
+      ]} />
+      <div className="text-[9px]" style={{ color: v.meanRecoveryHolds ? "#6a9955" : "#f48771" }}>
+        mean-recovery {v.meanRecoveryHolds ? "✓ holds" : "✗ violated"} · d_eff = {(value.dEff ?? 0).toLocaleString()}
+      </div>
+    </Section>
+  );
+}
+
+function ImpossibleView({ value }) {
+  return (
+    <Section title={`Impossible ions — crossing-symmetry probes (${value.length})`}>
+      <table className="w-full font-mono text-[10px]" style={{ borderCollapse: "collapse" }}>
+        <thead><tr style={{ color: "#666", borderBottom: `1px solid ${T.border}` }}>
+          {["ion 1", "ion 2", "impossible m/z"].map(h => <th key={h} className="py-1 pr-3 text-left font-normal">{h}</th>)}
+        </tr></thead>
+        <tbody>
+          {value.slice(0, 12).map((p, i) => (
+            <tr key={i} style={{ borderBottom: "1px solid #2a2a2a", color: T.editorFg }}>
+              <td className="pr-3">{p.ion1_mz?.toFixed(3)}</td>
+              <td className="pr-3">{p.ion2_mz?.toFixed(3)}</td>
+              <td className="pr-3" style={{ color: "#fb923c" }}>{p.impossibleMz?.toFixed(3)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Section>
+  );
+}
+
+function TransientView({ value }) {
+  return (
+    <Section title="Single-transient contents (Theorem 11.1)">
+      <div className="grid grid-cols-2 gap-2">
+        <Card label="Precursor freq" value={`${value.precursor?.freq_Hz?.toExponential(2)} Hz`} color="#5fa8d3" />
+        <Card label="Fragment subharmonics" value={value.fragments?.length ?? 0} color="#7cc77c" />
+        <Card label="Charge states" value={value.chargeStates?.length ?? 0} color="#a78bfa" />
+        <Card label="Polarity Δφ" value="π" color="#e07a7a" />
+      </div>
+    </Section>
+  );
+}
+
+function ComplementView({ value }) {
+  return (
+    <Section title="Partition complement (SWIFT antistate)">
+      <div className="grid grid-cols-2 gap-2">
+        <Card label="Original m/z" value={value.originalMz?.toFixed(3)} color="#5fa8d3" />
+        <Card label="Complement m/z" value={value.complementMz?.toFixed(3)} color="#e07a7a" />
+        <Card label="M_ion" value={value.M_ion} />
+        <Card label="C_max" value={value.Cmax} />
+      </div>
+    </Section>
+  );
+}
+
+function ScalarView({ name, value }) {
+  return (
+    <Section title={name}>
+      <Card label="value"
+        value={typeof value === "string" ? value : JSON.stringify(value)} />
+    </Section>
+  );
+}
+
+/** Online DB search results (resolved asynchronously by the sandbox). */
+function DbSearchView({ value }) {
+  if (value.__async && !value.resolved) {
+    return (
+      <Section title={`Database search — ${value.__fn}`}>
+        <div className="flex items-center gap-2 text-[11px]" style={{ color: "#dcdcaa" }}>
+          <RefreshCw size={13} className="animate-spin" />
+          querying {(value.dbs || ["massbank"]).join(", ")} for m/z {value.precMz?.toFixed(4)}…
+        </div>
+      </Section>
+    );
+  }
+  const hits = value.hits || [];
+  return (
+    <Section title={`Database search — ${hits.length} hit(s)`}>
+      {value.summary && (
+        <div className="flex flex-wrap gap-1.5 mb-1">
+          {Object.entries(value.summary).map(([db, s]) => (
+            <span key={db} className="rounded px-1.5 py-0.5 text-[9px]"
+              style={{ background: "#2a2d2e", border: `1px solid ${T.border}`,
+                       color: s.error ? "#f48771" : "#9cdcfe" }}>
+              {db}: {s.error ? "error" : `${s.count} hit(s)`}
+            </span>
+          ))}
+        </div>
+      )}
+      {hits.length === 0
+        ? <div className="text-[10px]" style={{ color: "#666" }}>
+            No hits (public APIs may be unavailable from the browser due to CORS).
+          </div>
+        : (
+          <table className="w-full font-mono text-[10px]" style={{ borderCollapse: "collapse" }}>
+            <thead><tr style={{ color: "#666", borderBottom: `1px solid ${T.border}` }}>
+              {["Compound", "m/z", "Formula", "Score", "DB"].map(h =>
+                <th key={h} className="py-1 pr-3 text-left font-normal">{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {hits.slice(0, 20).map((h, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #2a2a2a", color: T.editorFg }}>
+                  <td className="py-0.5 pr-3 truncate" style={{ maxWidth: 160, color: "#9cdcfe" }}>{h.name}</td>
+                  <td className="pr-3">{Number(h.precursorMz)?.toFixed?.(3) ?? h.precursorMz}</td>
+                  <td className="pr-3" style={{ color: "#dcdcaa" }}>{h.formula}</td>
+                  <td className="pr-3" style={{ color: "#34d399" }}>{Number(h.score)?.toFixed?.(2) ?? h.score}</td>
+                  <td className="pr-3" style={{ color: "#666" }}>{h.database}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+    </Section>
+  );
+}
+
+/** Render a single workspace variable by its classified kind. */
+function WorkspaceValue({ entry }) {
+  const { name, kind, value } = entry;
+  switch (kind) {
+    case "cells":        return <CellsPanel cells={value} />;
+    case "addresses":    return <AddressesPanel addresses={value} />;
+    case "sentropy":     return <SentropyView value={value} />;
+    case "validation":   return <ValidationView value={value} />;
+    case "domain":       return <DomainView value={value} />;
+    case "subharmonics": return <SubharmonicsView value={value} />;
+    case "tensorReport": return <TensorReportView value={value} />;
+    case "impossible":   return <ImpossibleView value={value} />;
+    case "transient":    return <TransientView value={value} />;
+    case "complement":   return <ComplementView value={value} />;
+    case "pending":      return <DbSearchView value={value} />;
+    case "string":
+    case "number":
+    case "scalar":       return <ScalarView name={name} value={value} />;
+    default:
+      return (
+        <Section title={`${name} (${kind})`}>
+          <pre className="overflow-auto rounded p-2 font-mono text-[10px]"
+            style={{ background: "#1a1c1e", color: T.editorFg, maxHeight: 220 }}>
+            {JSON.stringify(value, null, 2)}
+          </pre>
+        </Section>
+      );
+  }
+}
+
+/* ─── Results panel: dashboard for records, workspace grid otherwise ──────── */
+function ResultsPanel({ result, workspace }) {
+  const hasRecords = (workspace || []).some(w => w.kind === "records");
+
+  if ((!result || result.type === "empty") && (!workspace || workspace.length === 0)) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-[12px]"
         style={{ color: "#444" }}>
@@ -621,13 +926,35 @@ function ResultsPanel({ result }) {
       </div>
     );
   }
-  if (result.type === "records")  return <RecordsPanel records={result.data} summary={result.summary} />;
-  if (result.type === "cells")    return <CellsPanel cells={result.data} />;
-  if (result.type === "addresses") return <AddressesPanel addresses={result.data} />;
+
+  // Records → the FULL crossfilter dashboard (same as Experiment page),
+  // populated from the store. Any non-record workspace vars render below it.
+  if (hasRecords) {
+    const extras = (workspace || []).filter(w => w.kind !== "records");
+    return (
+      <div className="h-full overflow-y-auto" style={{ background: "#070809", padding: 12 }}>
+        <ResultsDashboard />
+        {extras.length > 0 && (
+          <div className="mt-4 space-y-4">
+            {extras.map((w, i) => <WorkspaceValue key={i} entry={w} />)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // No records: render every workspace variable as its own comprehensible panel.
   return (
-    <pre className="overflow-auto p-3 font-mono text-[11px]" style={{ color: T.editorFg }}>
-      {JSON.stringify(result.data, null, 2)}
-    </pre>
+    <div className="h-full overflow-y-auto space-y-5" style={{ padding: 14 }}>
+      {(workspace || []).map((w, i) => (
+        <WorkspaceValue key={i} entry={w} />
+      ))}
+      {(!workspace || workspace.length === 0) && result?.data != null && (
+        <pre className="overflow-auto p-3 font-mono text-[11px]" style={{ color: T.editorFg }}>
+          {JSON.stringify(result.data, null, 2)}
+        </pre>
+      )}
+    </div>
   );
 }
 
@@ -671,7 +998,7 @@ function TerminalView({ term }) {
 }
 
 /* ─── Output column ──────────────────────────────────────────────────────── */
-function OutputColumn({ result, ir, logs, term, running, onCompile, onRun, onClear }) {
+function OutputColumn({ result, workspace, ir, logs, term, running, onCompile, onRun, onClear }) {
   const [tab, setTab] = useState("results");
   const tabs = [
     { id: "results",  label: "Results",  Icon: Cpu },
@@ -727,7 +1054,7 @@ function OutputColumn({ result, ir, logs, term, running, onCompile, onRun, onCle
       </div>
 
       <div className="min-h-0 flex-1">
-        {tab === "results" && <ResultsPanel result={result} />}
+        {tab === "results" && <ResultsPanel result={result} workspace={workspace} />}
         {tab === "terminal" && <TerminalView term={term || []} />}
         {tab === "console" && (
           <div className="h-full overflow-y-auto p-2 font-mono text-[12px] leading-relaxed">
@@ -855,6 +1182,7 @@ export default function ShapeshifterSandbox() {
   const [cursor, setCursor]     = useState({ ln: 1, col: 1 });
 
   const [result, setResult] = useState({ type: "empty", data: null });
+  const [workspace, setWorkspace] = useState([]);    // [{ name, kind, value }]
   const [ir, setIr]         = useState("");
   const [logs, setLogs]     = useState([]);
   const [term, setTerm]     = useState([]);          // terminal stream lines
@@ -884,6 +1212,8 @@ export default function ShapeshifterSandbox() {
   }, [files, activePathArr]);
 
   /* Stage 2 — Run: compile (fresh), then execute phases. */
+  const setExperimentRecords = useStore(s => s.setExperimentRecords);
+
   const run = useCallback(async () => {
     setRunning(true);
     // Always compile fresh so edits are picked up
@@ -893,12 +1223,39 @@ export default function ShapeshifterSandbox() {
     // Yield a frame so the "compile" terminal output paints before executing
     await new Promise(r => setTimeout(r, 16));
 
-    const { result: r, logs: l, term: execTerm } = executeStage(compiled.ast);
+    const t0 = performance.now();
+    const { result: r, logs: l, term: execTerm, workspace: ws } = executeStage(compiled.ast);
+    const dt = performance.now() - t0;
     setResult(r);
     setLogs(l);
+    setWorkspace(ws || []);
     setTerm(prev => [...prev, ...execTerm]);
+
+    // If the workspace contains records, push them into the shared store so the
+    // full ResultsDashboard (the 10-row crossfilter dashboard from the
+    // Experiment page) renders. Otherwise clear any stale dashboard records.
+    const recEntry = (ws || []).find(w => w.kind === "records");
+    if (recEntry) {
+      const recs = recEntry.value;
+      setExperimentRecords(recs, summariseForStore(recs), dt);
+      setEditorWidth(w => Math.min(w, 32));   // give the dashboard room
+    }
+
+    // Resolve any pending async DB searches and patch them into the workspace.
+    const pending = (ws || []).filter(w => w.kind === "pending");
+    if (pending.length > 0) {
+      setTerm(prev => [...prev, { stream: "stdout", text: `resolving ${pending.length} database query(ies)…` }]);
+      await Promise.all(pending.map(async (w) => {
+        const resolved = await resolvePending(w.value);
+        setWorkspace(cur => cur.map(e =>
+          e.name === w.name ? { ...e, value: { ...resolved, resolved: true } } : e
+        ));
+      }));
+      setTerm(prev => [...prev, { stream: "stdout", text: "✓ database queries complete" }]);
+    }
+
     setRunning(false);
-  }, [compile]);
+  }, [compile, setExperimentRecords]);
 
   // Auto-compile (parse + type-check only) shortly after edits, for live
   // diagnostics. Execution is never automatic — it requires an explicit Run.
@@ -964,7 +1321,7 @@ export default function ShapeshifterSandbox() {
   ];
 
   return (
-    <div className="flex h-[680px] w-full flex-col overflow-hidden rounded-lg text-sm shadow-2xl"
+    <div className="flex h-[85vh] min-h-[680px] w-full flex-col overflow-hidden rounded-lg text-sm shadow-2xl"
       style={{ background: T.editor, color: T.editorFg, border: `1px solid ${T.border}` }}>
 
       {/* Title bar */}
@@ -1140,7 +1497,7 @@ export default function ShapeshifterSandbox() {
 
           {/* Output column */}
           <OutputColumn
-            result={result} ir={ir} logs={logs} term={term} running={running}
+            result={result} workspace={workspace} ir={ir} logs={logs} term={term} running={running}
             onCompile={compile} onRun={run}
             onClear={() => { setLogs([]); setTerm([]); }}
           />
