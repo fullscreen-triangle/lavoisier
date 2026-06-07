@@ -599,3 +599,118 @@ export function compileShapeshifter(source) {
     };
   }
 }
+
+/* ── Staged compile + execute (for the Sandbox terminal) ─────────────────── */
+
+/**
+ * Summarise an AST into a one-line-per-block structure list.
+ */
+function astSummary(ast) {
+  const lines = [];
+  if (ast.objective) lines.push(`objective ${ast.objective.name}`);
+  for (const k of Object.keys(ast.instruments))  lines.push(`instrument ${k}`);
+  for (const k of Object.keys(ast.targetLists))  lines.push(`target_list ${k}`);
+  for (const k of Object.keys(ast.validates))    lines.push(`validate ${k}`);
+  for (const k of Object.keys(ast.phases))        lines.push(`phase ${k}`);
+  return lines;
+}
+
+/**
+ * Stage 1 — COMPILE.
+ * Parses, type-checks block structure, and produces the IR + terminal output.
+ * Does NOT execute any phase.
+ *
+ * @returns {{ ok, ast, ir, term: TermLine[], diagnostics: Diag[] }}
+ *   TermLine = { stream: "stdout"|"stderr"|"stage", text: string }
+ *   Diag     = { severity: "error"|"warning", message: string }
+ */
+export function compileStage(source) {
+  const term = [];
+  const diagnostics = [];
+  const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
+
+  term.push({ stream: "stage", text: "shapeshifter compile" });
+
+  let ast;
+  try {
+    ast = parseShapeshifter(source);
+  } catch (e) {
+    term.push({ stream: "stderr", text: `error: parse failed — ${e.message}` });
+    diagnostics.push({ severity: "error", message: `Parse error: ${e.message}` });
+    return { ok: false, ast: null, ir: "", term, diagnostics };
+  }
+
+  // Basic structural checks (the "type checker")
+  const blocks = astSummary(ast);
+  term.push({ stream: "stdout", text: `parsed ${ast.imports.length} import(s), ${blocks.length} block(s)` });
+  blocks.forEach(b => term.push({ stream: "stdout", text: `  · ${b}` }));
+
+  if (!ast.objective) {
+    diagnostics.push({ severity: "warning", message: "no objective block declared" });
+    term.push({ stream: "stderr", text: "warning: no objective block declared" });
+  }
+  const phaseCount = Object.keys(ast.phases).length;
+  if (phaseCount === 0) {
+    diagnostics.push({ severity: "warning", message: "no phase block — nothing will execute" });
+    term.push({ stream: "stderr", text: "warning: no phase block — nothing will execute" });
+  }
+
+  const dt = ((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0);
+  term.push({ stream: "stdout", text: `✓ compiled in ${dt.toFixed(1)} ms` });
+
+  return { ok: true, ast, ir: JSON.stringify(ast, null, 2), term, diagnostics };
+}
+
+/**
+ * Stage 2 — EXECUTE.
+ * Runs phases on a previously-compiled AST and produces results + terminal output.
+ *
+ * @param {object} ast  from compileStage
+ * @returns {{ result, term: TermLine[], logs }}
+ */
+export function executeStage(ast) {
+  const term = [];
+  const t0 = (typeof performance !== "undefined" ? performance.now() : Date.now());
+  term.push({ stream: "stage", text: "shapeshifter run" });
+
+  let result, logs;
+  try {
+    ({ result, logs } = executeShapeshifter(ast));
+  } catch (e) {
+    term.push({ stream: "stderr", text: `error: runtime — ${e.message}` });
+    return {
+      result: { type: "empty", data: null },
+      logs: [{ level: "error", message: e.message }],
+      term,
+    };
+  }
+
+  // Mirror execution logs into the terminal stream
+  for (const l of logs) {
+    term.push({ stream: l.level === "error" ? "stderr" : "stdout", text: l.message });
+  }
+
+  // Result summary line
+  const dt = ((typeof performance !== "undefined" ? performance.now() : Date.now()) - t0);
+  let summary = "";
+  switch (result.type) {
+    case "records":
+      summary = `→ ${result.data.length} record(s) produced`;
+      break;
+    case "cells":
+      summary = `→ ${result.data.length} ΔP timing cell(s)`;
+      break;
+    case "addresses":
+      summary = `→ ${result.data.length} partition address(es)`;
+      break;
+    case "empty":
+      summary = "→ no output value (assign to `records` to populate charts)";
+      break;
+    default:
+      summary = `→ produced a "${result.type}" result`;
+  }
+  term.push({ stream: "stdout", text: summary });
+  term.push({ stream: "stdout", text: `✓ finished in ${dt.toFixed(1)} ms` });
+
+  return { result, logs, term };
+}

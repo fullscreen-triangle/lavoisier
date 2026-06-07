@@ -4,9 +4,9 @@ import {
   ChevronRight, ChevronDown, X, Circle, FileCode2, FileJson,
   FileText, Folder, FolderOpen, Terminal as TerminalIcon,
   AlertCircle, Bell, PanelBottomClose, Check, Code2,
-  Trash2, RefreshCw, Cpu, Zap,
+  Trash2, RefreshCw, Cpu, Zap, Hammer, Square,
 } from "lucide-react";
-import { compileShapeshifter } from "@/lib/shapeshifter/compiler";
+import { compileStage, executeStage } from "@/lib/shapeshifter/compiler";
 
 /* ─── Theme ──────────────────────────────────────────────────────────────── */
 const T = {
@@ -151,50 +151,6 @@ phase Compute:
     ]
 
     addresses = lavoisier.partition.compute_addresses(lipids)
-`;
-
-const README_CONTENT = `\
-# Shapeshifter Sandbox
-
-A live compiler for the Shapeshifter mass spectrometry DSL.
-Select an example from the explorer and hit **Run**.
-
-## Language structure
-
-\`\`\`
-import lavoisier.instrument
-
-objective Name:
-    target: "what you want to achieve"
-    success_criteria: "records > 100"
-
-instrument Name:
-    analyzer: "orbitrap"   // tof | orbitrap | fticr | quadrupole
-    polarity: "+"
-    collision_energy: 25
-
-phase PhaseA:
-    variable = value
-
-phase PhaseB:
-    result = lavoisier.module.function(key: value, ...)
-\`\`\`
-
-## Available functions
-
-| Function | Output |
-|---|---|
-| \`lavoisier.instrument.run_experiment(...)\` | Lipidomics PredictedRecord[] |
-| \`lavoisier.instrument.run_proteomics(...)\` | Proteomics PredictedRecord[] |
-| \`lavoisier.partition.compute_addresses(lipids)\` | Partition states (n,ℓ,m,s) |
-| \`lavoisier.cells.compile(target_list)\` | ΔP timing cell registry |
-
-## Key concepts
-
-- **Partition Lagrangian**: all four analyzer equations from one Lagrangian
-- **ΔP timing cells**: the natural MS acquisition variable is timing deviation
-- **Partition states (n,ℓ,m,s)**: ion masses map to quantum-number coordinates
-- **τ_min = ℏ/δM_i**: exact resolution–speed tradeoff from Partition Uncertainty
 `;
 
 const SS_SENTROPY_OBS = `\
@@ -468,15 +424,17 @@ const initialFiles = {
   "README.md": { type: "file", lang: "md", content: README_CONTENT },
 };
 
-/* ─── Sandbox compile wrapper (delegates to shared compiler) ─────────────── */
+/* ─── Sandbox staged-run helper (compile → execute) ──────────────────────── */
 
-function runSandboxCompile(files, activePathArr) {
-  const activeNode = activePathArr ? getNode(files, activePathArr) : null;
-  if (!activeNode?.content) return { result: { type: "empty", data: null }, ir: "", logs: [] };
+/**
+ * Read the active .ss source. Returns null if no runnable file is open.
+ */
+function activeSource(files, activePathArr) {
+  const node = activePathArr ? getNode(files, activePathArr) : null;
+  if (!node?.content) return null;
   const name = activePathArr[activePathArr.length - 1];
-  if (!name.endsWith(".ss"))
-    return { result: { type: "empty", data: null }, ir: "Select a .ss file", logs: [] };
-  return compileShapeshifter(activeNode.content);
+  if (!name.endsWith(".ss")) return null;
+  return node.content;
 }
 
 /* ─── Visualization ──────────────────────────────────────────────────────── */
@@ -673,15 +631,57 @@ function ResultsPanel({ result }) {
   );
 }
 
+/* ─── Terminal stream renderer ───────────────────────────────────────────── */
+function TerminalView({ term }) {
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [term]);
+
+  const streamStyle = (stream) => {
+    if (stream === "stderr") return { color: "#f48771" };
+    if (stream === "stage")  return { color: "#4ec9b0", fontWeight: 600 };
+    return { color: "#d4d4d4" };
+  };
+
+  return (
+    <div className="h-full overflow-y-auto p-2 font-mono text-[12px] leading-[1.55]">
+      {term.length === 0 ? (
+        <div className="px-1 pt-1" style={{ color: "#5a5a5a" }}>
+          Press <b>Compile</b> then <b>Run</b> (or ▶ Run) to execute the active script.
+        </div>
+      ) : (
+        term.map((l, i) => {
+          if (l.stream === "stage") {
+            return (
+              <div key={i} className="mt-1 flex items-center gap-2">
+                <span style={{ color: "#ce9178" }}>$</span>
+                <span style={streamStyle("stage")}>{l.text}</span>
+              </div>
+            );
+          }
+          return (
+            <div key={i} className="px-1 whitespace-pre-wrap break-words" style={streamStyle(l.stream)}>
+              {l.text}
+            </div>
+          );
+        })
+      )}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
 /* ─── Output column ──────────────────────────────────────────────────────── */
-function OutputColumn({ result, ir, logs, onRun, onClear }) {
+function OutputColumn({ result, ir, logs, term, running, onCompile, onRun, onClear }) {
   const [tab, setTab] = useState("results");
   const tabs = [
     { id: "results",  label: "Results",  Icon: Cpu },
+    { id: "terminal", label: "Terminal", Icon: TerminalIcon },
     { id: "console",  label: "Console",  Icon: TerminalIcon },
     { id: "ir",       label: "IR",       Icon: Code2 },
   ];
   const levelColor = { log: "#d4d4d4", info: "#9cdcfe", warn: "#dcdcaa", error: "#f48771" };
+  const errCount = (term || []).filter(l => l.stream === "stderr").length;
+
   return (
     <div className="flex min-w-0 flex-1 flex-col"
       style={{ background: T.editor, borderLeft: `1px solid ${T.border}` }}>
@@ -690,14 +690,16 @@ function OutputColumn({ result, ir, logs, onRun, onClear }) {
         <div className="flex h-full">
           {tabs.map(({ id, label, Icon }) => {
             const active = tab === id;
+            const badge = id === "console" ? logs.length
+                        : id === "terminal" ? errCount : 0;
             return (
               <button key={id} onClick={() => setTab(id)}
                 className="relative flex items-center gap-1.5 px-3 text-[12px] transition-colors"
                 style={{ color: active ? T.tabFgActive : T.tabFg, background: active ? T.tabActive : "transparent" }}>
                 <Icon size={13} />{label}
-                {id === "console" && logs.length > 0 && (
+                {badge > 0 && (
                   <span className="rounded-full px-1.5 text-[10px]"
-                    style={{ background: T.accent, color: "#fff" }}>{logs.length}</span>
+                    style={{ background: id === "terminal" ? "#a82d2d" : T.accent, color: "#fff" }}>{badge}</span>
                 )}
                 {active && <span className="absolute left-0 top-0 h-0.5 w-full"
                   style={{ background: T.accentBright }} />}
@@ -706,20 +708,27 @@ function OutputColumn({ result, ir, logs, onRun, onClear }) {
           })}
         </div>
         <div className="flex items-center gap-1">
-          {tab === "console" && (
+          {(tab === "console" || tab === "terminal") && (
             <button onClick={onClear} title="Clear" className="flex h-6 w-6 items-center justify-center rounded"
               style={{ color: T.tabFg }}><Trash2 size={14} /></button>
           )}
-          <button onClick={onRun}
-            className="flex h-6 items-center gap-1 rounded px-2 text-[12px]"
-            style={{ background: T.accent, color: "#fff" }}>
-            <RefreshCw size={12} />Run
+          <button onClick={onCompile} disabled={running} title="Parse + type-check only"
+            className="flex h-6 items-center gap-1 rounded px-2 text-[12px] disabled:opacity-40"
+            style={{ background: "transparent", color: T.tabFgActive, border: `1px solid ${T.border}` }}>
+            <Hammer size={12} />Compile
+          </button>
+          <button onClick={onRun} disabled={running}
+            className="flex h-6 items-center gap-1 rounded px-2 text-[12px] disabled:opacity-40"
+            style={{ background: running ? "#555" : T.accent, color: "#fff" }}>
+            {running ? <Square size={11} /> : <Play size={12} />}
+            {running ? "Running…" : "Run"}
           </button>
         </div>
       </div>
 
       <div className="min-h-0 flex-1">
         {tab === "results" && <ResultsPanel result={result} />}
+        {tab === "terminal" && <TerminalView term={term || []} />}
         {tab === "console" && (
           <div className="h-full overflow-y-auto p-2 font-mono text-[12px] leading-relaxed">
             {logs.length === 0
@@ -734,7 +743,7 @@ function OutputColumn({ result, ir, logs, onRun, onClear }) {
         )}
         {tab === "ir" && (
           <pre className="h-full overflow-auto p-3 font-mono text-[11px] leading-[1.5]"
-            style={{ color: T.editorFg }}>{ir || "No IR — run a .ss file"}</pre>
+            style={{ color: T.editorFg }}>{ir || "No IR — Compile a .ss file first"}</pre>
         )}
       </div>
     </div>
@@ -848,7 +857,9 @@ export default function ShapeshifterSandbox() {
   const [result, setResult] = useState({ type: "empty", data: null });
   const [ir, setIr]         = useState("");
   const [logs, setLogs]     = useState([]);
-  const [runKey, setRunKey] = useState(0);
+  const [term, setTerm]     = useState([]);          // terminal stream lines
+  const [running, setRunning] = useState(false);
+  const [compiledAst, setCompiledAst] = useState(null);  // last successful compile
 
   const [editorWidth, setEditorWidth] = useState(55);
   const splitRef  = useRef(null);
@@ -857,15 +868,54 @@ export default function ShapeshifterSandbox() {
   const activePathArr = openTabs.find(t => t.join("/") === activeTab) || null;
   const activeNode    = activePathArr ? getNode(files, activePathArr) : null;
 
-  const run = useCallback(() => {
-    const { result: r, ir: i, logs: l } = runSandboxCompile(files, activePathArr);
-    setResult(r);
+  /* Stage 1 — Compile only (parse + type-check + IR). No execution. */
+  const compile = useCallback(() => {
+    const src = activeSource(files, activePathArr);
+    if (src == null) {
+      setTerm([{ stream: "stderr", text: "error: open a .ss file to compile" }]);
+      setCompiledAst(null);
+      return null;
+    }
+    const { ok, ast, ir: i, term: t, diagnostics } = compileStage(src);
     setIr(i);
-    setLogs(l);
-    setRunKey(k => k + 1);
+    setTerm(t);
+    setCompiledAst(ok ? ast : null);
+    return ok ? { ast, diagnostics } : null;
   }, [files, activePathArr]);
 
-  useEffect(() => { const t = setTimeout(run, 400); return () => clearTimeout(t); }, [files, activePathArr, run]);
+  /* Stage 2 — Run: compile (fresh), then execute phases. */
+  const run = useCallback(async () => {
+    setRunning(true);
+    // Always compile fresh so edits are picked up
+    const compiled = compile();
+    if (!compiled) { setRunning(false); return; }
+
+    // Yield a frame so the "compile" terminal output paints before executing
+    await new Promise(r => setTimeout(r, 16));
+
+    const { result: r, logs: l, term: execTerm } = executeStage(compiled.ast);
+    setResult(r);
+    setLogs(l);
+    setTerm(prev => [...prev, ...execTerm]);
+    setRunning(false);
+  }, [compile]);
+
+  // Auto-compile (parse + type-check only) shortly after edits, for live
+  // diagnostics. Execution is never automatic — it requires an explicit Run.
+  useEffect(() => {
+    const t = setTimeout(() => { compile(); }, 500);
+    return () => clearTimeout(t);
+  }, [files, activePathArr, compile]);
+
+  // Keyboard: Ctrl/Cmd+Enter to Run, Ctrl/Cmd+B to Compile
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key === "b" || e.key === "B")) { e.preventDefault(); compile(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [run, compile]);
 
   useEffect(() => {
     const move = e => {
@@ -1050,21 +1100,33 @@ export default function ShapeshifterSandbox() {
                     <PanelBottomClose size={16} />
                   </button>
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 font-mono text-[13px] leading-relaxed">
+                <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
                   {panelTab === "terminal"
-                    ? <div style={{ color: T.editorFg }}>
-                        <div><span style={{ color: "#4ec9b0" }}>shapeshifter</span>
-                          <span style={{ color: "#ce9178" }}> $</span> shapeshifter run experiment.ss</div>
-                        <div className="mt-1" style={{ color: "#6a9955" }}>✓ Parsed successfully</div>
-                        <div style={{ color: "#9cdcfe" }}>→ {result?.data?.length ?? 0} records produced</div>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span style={{ color: "#ce9178" }}>$</span>
-                          <span className="inline-block h-4 w-2 animate-pulse" style={{ background: "#d4d4d4" }} />
-                        </div>
-                      </div>
-                    : <div className="flex items-center gap-2 pt-1" style={{ color: "#6a9955" }}>
-                        <Check size={14} /> No problems detected.
-                      </div>
+                    ? <TerminalView term={term} />
+                    : (() => {
+                        const problems = term.filter(l => l.stream === "stderr");
+                        if (problems.length === 0) {
+                          return (
+                            <div className="flex items-center gap-2 pt-2 px-2 font-mono text-[13px]"
+                              style={{ color: "#6a9955" }}>
+                              <Check size={14} /> No problems detected.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="pt-1 font-mono text-[12px] leading-relaxed">
+                            {problems.map((p, i) => (
+                              <div key={i} className="flex items-start gap-2 px-2 py-0.5"
+                                style={{ color: "#f48771" }}>
+                                <AlertCircle size={13} className="mt-0.5 shrink-0" />
+                                <span className="whitespace-pre-wrap break-words">
+                                  {p.text.replace(/^(error|warning):\s*/, "")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()
                   }
                 </div>
               </div>
@@ -1078,23 +1140,29 @@ export default function ShapeshifterSandbox() {
 
           {/* Output column */}
           <OutputColumn
-            result={result} ir={ir} logs={logs} runKey={runKey}
-            onRun={run} onClear={() => setLogs([])}
+            result={result} ir={ir} logs={logs} term={term} running={running}
+            onCompile={compile} onRun={run}
+            onClear={() => { setLogs([]); setTerm([]); }}
           />
         </div>
       </div>
 
       {/* Status bar */}
       <div className="flex h-6 shrink-0 items-center justify-between px-3 text-[12px]"
-        style={{ background: T.statusBar, color: T.statusFg }}>
+        style={{ background: running ? "#a05a00" : T.statusBar, color: T.statusFg }}>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1" onClick={() => setPanel(p => !p)}>
-            <GitBranch size={13} /> main
+          <button className="flex items-center gap-1" onClick={() => { setPanel(true); setPanelTab("problems"); }}>
+            <AlertCircle size={13} />
+            {term.filter(l => l.stream === "stderr").length} problem(s)
           </button>
-          <span className="flex items-center gap-2">
-            <span className="flex items-center gap-1"><X size={13} />0</span>
-            <span className="flex items-center gap-1"><AlertCircle size={13} />0</span>
-          </span>
+          {running && (
+            <span className="flex items-center gap-1">
+              <RefreshCw size={12} className="animate-spin" /> running
+            </span>
+          )}
+          {!running && result?.type === "records" && (
+            <span>{result.data.length} records</span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <span>Ln {cursor.ln}, Col {cursor.col}</span>
