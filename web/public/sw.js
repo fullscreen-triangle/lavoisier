@@ -11,7 +11,7 @@
  * deploy. Old caches are pruned on activation.
  */
 
-const CACHE_VERSION = "v1.0.0";
+const CACHE_VERSION = "v1.1.0";
 const SHELL_CACHE = `lavoisier-shell-${CACHE_VERSION}`;
 const SHADER_CACHE = `lavoisier-shaders-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `lavoisier-runtime-${CACHE_VERSION}`;
@@ -19,6 +19,8 @@ const RUNTIME_CACHE = `lavoisier-runtime-${CACHE_VERSION}`;
 const SHELL_ASSETS = [
   "/",
   "/tool",
+  "/experiment",
+  "/sandbox",
   "/framework",
   "/papers",
   "/about",
@@ -93,11 +95,17 @@ self.addEventListener("fetch", (event) => {
     } else if (
       url.pathname === "/" ||
       url.pathname === "/tool" ||
+      url.pathname === "/experiment" ||
+      url.pathname === "/sandbox" ||
       url.pathname === "/about" ||
       url.pathname === "/framework" ||
-      url.pathname === "/papers" ||
-      url.pathname.startsWith("/_next/")
+      url.pathname === "/papers"
     ) {
+      // HTML routes: network-first so a deploy is picked up immediately,
+      // falling back to cache offline.
+      event.respondWith(networkFirst(request));
+    } else if (url.pathname.startsWith("/_next/")) {
+      // Hashed build assets are immutable per-deploy — safe to cache-first.
       event.respondWith(cacheFirst(request, SHELL_CACHE));
     } else {
       event.respondWith(networkFirst(request));
