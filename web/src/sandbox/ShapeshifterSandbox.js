@@ -11,6 +11,7 @@ import { summariseRecords } from "@/lib/experiment/virtualinstrument";
 import { searchAll, searchMassBank, searchGNPS, searchMoNA } from "@/lib/spectral/dbSearch";
 import { useStore } from "@/lib/state/store";
 import ResultsDashboard from "@/components/experiment/ResultsDashboard";
+import SandboxCharts from "@/sandbox/SandboxCharts";
 
 const summariseForStore = (recs) => summariseRecords(recs);
 
@@ -1046,8 +1047,13 @@ function TerminalView({ term }) {
 
 /* ─── Output column ──────────────────────────────────────────────────────── */
 function OutputColumn({ result, workspace, ir, logs, term, running, onCompile, onRun, onClear }) {
-  const [tab, setTab] = useState("results");
+  const [tab, setTab] = useState("charts");
+  // Records from the workspace drive the Charts tab directly.
+  const recordEntry = (workspace || []).find(w => w.kind === "records");
+  const records = recordEntry ? recordEntry.value : [];
+
   const tabs = [
+    { id: "charts",   label: "Charts",   Icon: Cpu },
     { id: "results",  label: "Results",  Icon: Cpu },
     { id: "terminal", label: "Terminal", Icon: TerminalIcon },
     { id: "console",  label: "Console",  Icon: TerminalIcon },
@@ -1101,6 +1107,7 @@ function OutputColumn({ result, workspace, ir, logs, term, running, onCompile, o
       </div>
 
       <div className="min-h-0 flex-1">
+        {tab === "charts" && <SandboxCharts records={records} />}
         {tab === "results" && <ResultsPanel result={result} workspace={workspace} />}
         {tab === "terminal" && <TerminalView term={term || []} />}
         {tab === "console" && (
