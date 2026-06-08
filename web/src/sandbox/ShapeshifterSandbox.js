@@ -78,6 +78,52 @@ phase VirtualRun:
     )
 `;
 
+const SS_TARGETED_LIPID = `\
+// Targeted lipidomics with per-class ranges and acquisition rules.
+// This is the experiment designer expressed as code — instead of clicking
+// through analyte / ionisation / acquisition tabs, every range and rule is
+// declared explicitly. Far more precise than UI sliders.
+
+import lavoisier.instrument
+
+objective TargetedPlasmaLipids:
+    target: "PC and PE in a defined RT window, plus long-chain triacylglycerols"
+
+instrument OrbitrapFusion:
+    analyzer: "orbitrap"
+    polarity: "+"
+    collision_energy: 27
+    mz_window: [400, 1000]
+
+phase Design:
+    // Each class carries its OWN acyl-carbon and double-bond ranges.
+    panel = [
+        { class: "PC",  carbons: [30, 40], db: [0, 4] },
+        { class: "PE",  carbons: [32, 38], db: [0, 3] },
+        { class: "SM",  carbons: [16, 24], db: [0, 2] },
+        { class: "TAG", carbons: [48, 56], db: [1, 6] }
+    ]
+
+phase VirtualRun:
+    records = lavoisier.instrument.run_experiment(
+        classes: panel,
+        polarity: "+",
+        adducts: ["[M+H]+", "[M+Na]+", "[M+NH4]+"],
+        analyser: "orbitrap",
+        collision_energy: 27,
+        gradient_min: 30,
+        // Post-generation rules: keep only PC/PE eluting mid-gradient (8–18 min),
+        // m/z 600–900, with at least one double bond. TAGs pass the m/z/rt net.
+        filters: {
+            classes: ["PC", "PE"],
+            rt: [8.0, 18.0],
+            mz: [600, 900],
+            db: [1, 4],
+            min_intensity: 0.02
+        }
+    )
+`;
+
 const SS_PROTEOMICS = `\
 // Proteomics virtual experiment.
 // Predicts tryptic peptide library from common plasma protein standards.
@@ -431,6 +477,7 @@ const initialFiles = {
     type: "folder",
     children: {
       "hello_lipid.ss":           { type: "file", lang: "ss", content: SS_HELLO_LIPID },
+      "targeted_lipidomics.ss":   { type: "file", lang: "ss", content: SS_TARGETED_LIPID },
       "proteomics_experiment.ss": { type: "file", lang: "ss", content: SS_PROTEOMICS },
       "temporal_acquisition.ss":  { type: "file", lang: "ss", content: SS_TEMPORAL },
       "partition_addresses.ss":   { type: "file", lang: "ss", content: SS_PARTITION },

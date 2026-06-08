@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import AnalyteBuilder from "./AnalyteBuilder";
 import IonizationConfig from "./IonizationConfig";
 import AcquisitionConfig from "./AcquisitionConfig";
 import VirtualRun from "./VirtualRun";
 import ResultsImport from "./ResultsImport";
 import LibraryExport from "./LibraryExport";
-import ExperimentEditor from "./ExperimentEditor";
 import ResultsDashboard from "./ResultsDashboard";
 import { PALETTE } from "./cf/chartUtils";
 
@@ -77,52 +76,18 @@ function DownloadTool() {
                  background: "rgba(255,255,255,0.015)" }}>
         lavoisier-export sample.mzML
       </div>
-    </div>
-  );
-}
 
-/** Toggle between the visual GUI and the Shapeshifter code editor. */
-function ModeToggle({ mode, onChange }) {
-  return (
-    <div className="flex rounded overflow-hidden"
-      style={{ border: `1px solid ${PALETTE.grid}` }}>
-      {[
-        { key: "gui",  label: "Visual" },
-        { key: "code", label: "Shapeshifter" },
-      ].map(({ key, label }) => (
-        <button
-          key={key}
-          onClick={() => onChange(key)}
-          className="flex-1 py-1 text-[10px] tracking-wide transition-colors"
-          style={{
-            background: mode === key ? "#0e639c" : "transparent",
-            color:      mode === key ? "#ffffff" : PALETTE.muted,
-            borderRight: key === "gui" ? `1px solid ${PALETTE.grid}` : "none",
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/** Original visual controls — unchanged from before. */
-function GuiControls() {
-  return (
-    <div className="space-y-5">
-      <AnalyteBuilder />
-      <IonizationConfig />
-      <AcquisitionConfig />
-      <VirtualRun />
-      <LibraryExport />
+      <p className="text-[9px] leading-relaxed" style={{ color: PALETTE.muted }}>
+        Prefer code? Define experiments programmatically in the{" "}
+        <a href="/sandbox" className="underline" style={{ color: PALETTE.text }}>
+          Shapeshifter sandbox
+        </a>.
+      </p>
     </div>
   );
 }
 
 export default function ExperimentDesigner() {
-  const [mode, setMode] = useState("gui");   // "gui" | "code"
-
   return (
     <div
       className="flex flex-col w-full min-h-[calc(100vh-160px)]"
@@ -148,31 +113,14 @@ export default function ExperimentDesigner() {
             </p>
           </div>
 
-          {/* ── Mode toggle ─────────────────────────────────────────── */}
-          <ModeToggle mode={mode} onChange={setMode} />
+          {/* ── Visual design controls ───────────────────────────────── */}
+          <AnalyteBuilder />
+          <IonizationConfig />
+          <AcquisitionConfig />
+          <VirtualRun />
+          <LibraryExport />
 
-          {mode === "gui" && (
-            <p className="text-[9px] leading-relaxed"
-              style={{ color: PALETTE.muted }}>
-              Configure analytes, ionisation, and acquisition settings using
-              the controls below, then click <b>Run virtual experiment</b>.
-            </p>
-          )}
-
-          {mode === "code" && (
-            <p className="text-[9px] leading-relaxed"
-              style={{ color: PALETTE.muted }}>
-              Write a <b>Shapeshifter</b> (.ss) script to define your
-              experiment. Press <b>▶ Run</b> or Ctrl+Enter to execute.
-              Switch to Visual mode at any time.
-            </p>
-          )}
-
-          {/* ── Main controls ────────────────────────────────────────── */}
-          {mode === "gui"  && <GuiControls />}
-          {mode === "code" && <ExperimentEditor />}
-
-          {/* ── Real data section (always visible) ───────────────────── */}
+          {/* ── Real data section ────────────────────────────────────── */}
           <Divider label="real data" />
 
           <div>

@@ -57,6 +57,17 @@ function parseObjectArray(raw) {
   return objects;
 }
 
+/** Parse a single `{ key: value, ... }` object literal into an object. */
+function parseObjectLiteral(raw) {
+  const obj = {};
+  const inner = raw.trim().replace(/^\{/, "").replace(/\}$/, "");
+  splitCommas(inner).forEach(pair => {
+    const ci = pair.indexOf(":");
+    if (ci >= 0) obj[pair.slice(0, ci).trim()] = parseValue(pair.slice(ci + 1).trim());
+  });
+  return obj;
+}
+
 export function parseValue(raw) {
   if (!raw) return null;
   const s = raw.trim();
@@ -69,6 +80,9 @@ export function parseValue(raw) {
     if (!inner) return [];
     return inner.startsWith("{") ? parseObjectArray(inner)
       : splitCommas(inner).map(v => parseValue(v.trim()));
+  }
+  if (s.startsWith("{") && s.endsWith("}")) {
+    return parseObjectLiteral(s);
   }
   const n = Number(s);
   if (!isNaN(n) && s !== "") return n;
@@ -134,19 +148,21 @@ export function parseShapeshifter(source) {
     trimmed: raw.replace(/\/\/.*$/, "").trim(),
   })).filter(l => l.trimmed.length > 0);
 
-  // Join continuation lines (unclosed brackets span multiple source lines)
+  // Join continuation lines: any unclosed bracket — [, ( or { — extends the
+  // statement onto following lines until the balance closes. This lets a
+  // multi-line classes: [ {...}, {...} ] or filters: { ... } span lines.
+  const opens  = (s) => ((s.match(/[\[({]/g) || []).length);
+  const closes = (s) => ((s.match(/[\])}]/g) || []).length);
   const joined = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    const open  = (line.trimmed.match(/\[/g) || []).length;
-    const close = (line.trimmed.match(/\]/g) || []).length;
-    if (open > close) {
-      let combined = line.trimmed, balance = open - close, j = i + 1;
+    let balance = opens(line.trimmed) - closes(line.trimmed);
+    if (balance > 0) {
+      let combined = line.trimmed, j = i + 1;
       while (j < lines.length && balance > 0) {
         combined += " " + lines[j].trimmed;
-        balance += (lines[j].trimmed.match(/\[/g) || []).length;
-        balance -= (lines[j].trimmed.match(/\]/g) || []).length;
+        balance += opens(lines[j].trimmed) - closes(lines[j].trimmed);
         j++;
       }
       joined.push({ ...line, trimmed: combined });
@@ -204,6 +220,49 @@ function describeVal(v) {
   return String(v).slice(0, 50);
 }
 
+/**
+ * Predict reverse-phase (C18) retention time for a lipid record.
+ * Hydrophobicity ≈ total acyl carbons; each double bond reduces retention.
+ * Returns minutes within a [0.5, gradient] window.
+ */
+function predictRtRPLC(record, gradientMin = 30) {
+  const X = record.X ?? 16;             // acyl carbons (or peptide length)
+  const Y = record.Y ?? 0;              // double bonds (or missed cleavages)
+  // Carbon span maps ~roughly 8..70 → 0..1; double bonds pull retention earlier.
+  const hydro = (X - 8) / 62 - Y * 0.035;
+  const frac  = Math.max(0, Math.min(1, hydro));
+  const rt    = 0.5 + frac * (gradientMin - 1.0);
+  return Math.round(rt * 100) / 100;
+}
+
+/**
+ * Apply post-generation filter rules to the record set.
+ * Supported filter keys (all optional):
+ *   mz:       [lo, hi]   precursor m/z window
+ *   rt:       [lo, hi]   retention-time window (min)
+ *   classes:  ["PC"]     keep only these analyte classes
+ *   db:       [lo, hi]   double-bond range (Y)
+ *   carbons:  [lo, hi]   acyl-carbon range (X)
+ *   adducts:  ["[M+H]+"] keep only these adducts
+ *   min_intensity: 0.05  drop low-intensity ions
+ */
+function applyExperimentFilters(records, filters, log) {
+  if (!filters || typeof filters !== "object") return records;
+  const inRange = (v, r) => !r || (v >= r[0] && v <= r[1]);
+  return records.filter(rec => {
+    if (filters.mz       && !inRange(rec.precursorMz, filters.mz))    return false;
+    if (filters.rt       && !inRange(rec.retentionTime, filters.rt))  return false;
+    if (filters.db       && !inRange(rec.Y, filters.db))              return false;
+    if (filters.carbons  && !inRange(rec.X, filters.carbons))         return false;
+    if (filters.min_intensity != null && rec.intensity < filters.min_intensity) return false;
+    if (filters.classes  && Array.isArray(filters.classes) &&
+        !filters.classes.includes(rec.analyteClass))                 return false;
+    if (filters.adducts  && Array.isArray(filters.adducts) &&
+        !filters.adducts.includes(rec.adduct))                       return false;
+    return true;
+  });
+}
+
 function executeCall(fn, args, env, ast, log) {
   const a = Object.fromEntries(
     Object.entries(args).map(([k, v]) =>
@@ -212,24 +271,47 @@ function executeCall(fn, args, env, ast, log) {
   );
 
   if (fn === "lavoisier.instrument.run_experiment") {
-    const classKeys = (a.classes || ["PC", "PE"]).filter(k => LIPID_CLASSES[k]);
-    if (!classKeys.length) throw new Error("No valid lipid classes. Use keys like PC, PE, SM, TAG, Cer.");
-    const classSpecs = classKeys.map(key => {
+    // `classes` may be either:
+    //   ["PC", "PE"]                                  — defaults per class, or
+    //   [{ class:"PC", carbons:[30,40], db:[0,4] }]   — explicit per-class ranges
+    const rawClasses = a.classes || ["PC", "PE"];
+    const classSpecs = [];
+    for (const entry of rawClasses) {
+      const key = typeof entry === "string" ? entry : entry.class;
       const cls = LIPID_CLASSES[key];
-      const Xmin = cls.defaults.Xrange[0];
-      // Cap range for browser performance (full range can be resumed in the Rust binary)
-      const Xmax = Math.min(cls.defaults.Xrange[1], Xmin + 8);
-      return { classKey: key, Xmin, Xmax, Ymin: 0, Ymax: 4, enabled: true };
-    });
-    log(`  Computing ${classKeys.join(", ")} — ${classSpecs.length} class(es)`);
-    const records = runExperiment({
+      if (!cls) { log(`  ⚠ unknown lipid class "${key}" — skipped`, "warn"); continue; }
+      // Range resolution: explicit object > script default > class default (capped)
+      const carbons = (typeof entry === "object" && entry.carbons) || null;
+      const db      = (typeof entry === "object" && entry.db)      || null;
+      const Xmin = carbons ? carbons[0] : cls.defaults.Xrange[0];
+      const Xmax = carbons ? carbons[1] : Math.min(cls.defaults.Xrange[1], cls.defaults.Xrange[0] + 8);
+      const Ymin = db ? db[0] : 0;
+      const Ymax = db ? db[1] : 4;
+      classSpecs.push({ classKey: key, Xmin, Xmax, Ymin, Ymax, enabled: true });
+    }
+    if (!classSpecs.length) throw new Error("No valid lipid classes. Use keys like PC, PE, SM, TAG, Cer.");
+
+    log(`  Computing ${classSpecs.map(c => `${c.classKey}(${c.Xmin}-${c.Xmax}:${c.Ymin}-${c.Ymax})`).join(", ")}`);
+    let records = runExperiment({
       experimentType: "lipidomics", classSpecs, proteinSpecs: [],
       polarity:     a.polarity     || "+",
+      adductsAllowed: a.adducts    || null,
       analyser:     a.analyser     || "orbitrap",
       analyserCfg:  { kField: 1e12, Rm: 1e-2 },
       collisionEnergy_eV: a.collision_energy || 25,
       mzWindow: a.mz_window || [200, 1500],
     });
+
+    // Predicted retention time (RPLC C18 model): RT grows with hydrophobicity,
+    // ≈ carbon number, decreasing with each double bond. Needed for rt filters.
+    const gradient = a.gradient_min || 30;  // total gradient length (min)
+    records = records.map(r => ({ ...r, retentionTime: predictRtRPLC(r, gradient) }));
+
+    // Post-generation filter rules (the "specific classes in an RT window" case)
+    const before = records.length;
+    records = applyExperimentFilters(records, a.filters, log);
+    if (a.filters) log(`  Filters: ${before} → ${records.length} records`);
+
     log(`  → ${records.length} predicted ions`);
     return records;
   }
