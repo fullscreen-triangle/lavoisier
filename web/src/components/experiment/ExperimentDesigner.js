@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import AnalyteBuilder from "./AnalyteBuilder";
 import IonizationConfig from "./IonizationConfig";
 import AcquisitionConfig from "./AcquisitionConfig";
@@ -79,9 +80,9 @@ function DownloadTool() {
 
       <p className="text-[9px] leading-relaxed" style={{ color: PALETTE.muted }}>
         Prefer code? Define experiments programmatically in the{" "}
-        <a href="/sandbox" className="underline" style={{ color: PALETTE.text }}>
+        <Link href="/sandbox" className="underline" style={{ color: PALETTE.text }}>
           Shapeshifter sandbox
-        </a>.
+        </Link>.
       </p>
     </div>
   );

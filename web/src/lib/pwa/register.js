@@ -18,18 +18,28 @@ export function registerServiceWorker() {
     try {
       const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
 
-      // When a new service worker takes control, prompt a reload
+      // Always check for a newer SW on load.
+      reg.update().catch(() => {});
+
+      // When a new service worker finishes installing while an old one is
+      // controlling the page, tell it to activate immediately, then reload
+      // once it takes control so the user always sees the latest deploy.
       reg.addEventListener("updatefound", () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
         newWorker.addEventListener("statechange", () => {
-          if (
-            newWorker.state === "installed" &&
-            navigator.serviceWorker.controller
-          ) {
-            console.info("[lavoisier] new version available — reload to apply.");
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            newWorker.postMessage({ type: "SKIP_WAITING" });
           }
         });
+      });
+
+      // Reload exactly once when the new SW takes control.
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
       });
     } catch (err) {
       console.warn("[lavoisier] service worker registration failed:", err);

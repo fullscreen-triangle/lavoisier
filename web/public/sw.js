@@ -11,7 +11,7 @@
  * deploy. Old caches are pruned on activation.
  */
 
-const CACHE_VERSION = "v1.1.0";
+const CACHE_VERSION = "v1.2.0";
 const SHELL_CACHE = `lavoisier-shell-${CACHE_VERSION}`;
 const SHADER_CACHE = `lavoisier-shaders-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `lavoisier-runtime-${CACHE_VERSION}`;
@@ -104,9 +104,13 @@ self.addEventListener("fetch", (event) => {
       // HTML routes: network-first so a deploy is picked up immediately,
       // falling back to cache offline.
       event.respondWith(networkFirst(request));
-    } else if (url.pathname.startsWith("/_next/")) {
-      // Hashed build assets are immutable per-deploy — safe to cache-first.
+    } else if (url.pathname.startsWith("/_next/static/")) {
+      // Content-hashed static assets are immutable — safe to cache-first.
       event.respondWith(cacheFirst(request, SHELL_CACHE));
+    } else if (url.pathname.startsWith("/_next/")) {
+      // Non-hashed Next internals (data, RSC payloads) — always go to network
+      // first so a new deploy is reflected immediately.
+      event.respondWith(networkFirst(request));
     } else {
       event.respondWith(networkFirst(request));
     }
