@@ -1051,6 +1051,72 @@ that survives intact through the entire history. It is the only thing that
 cannot be reshuffled away. It is the floor.
 \end{remark}
 
+\begin{proposition}[The Mass Edge and the Analytical Edge Are Distinct]
+\label{prop:mass_vs_analytical}
+Let $v$ be an ion species node with medium $\med$ in a mass spectrometric
+graph $G$. The graph $G$ contains two types of edges incident to $v$:
+\begin{enumerate}[label=(\roman*)]
+  \item The \emph{mass edge} $(\med, v)$ of weight $w(\med, v) = \bmin^*(v)$:
+  the medium-to-$v$ contact, representing the ion's intrinsic mass.
+  \item \emph{Analytical edges} $(v, u_k)$ for nodes $u_k$ representing
+  fragmentation products, adducts, or co-eluting species: these encode the
+  ion's behaviour under the current instrument configuration.
+\end{enumerate}
+The mass edge is invariant: $w(\med, v)$ is the same in every graph expansion
+$G_0 \subset G_1 \subset \cdots$, because the medium is unchanged under
+reshuffling (Definition~\ref{def:reshuffling}) and nuclear structure does not
+change with instrument generation. The analytical edges are not invariant:
+each instrument generation is a reshuffling that replaces or reweights the
+$(v, u_k)$ edges without touching $(\med, v)$.
+
+Therefore the identity of $v$ is carried by the mass edge alone. The minimum
+edge incident to $v$ (the node floor) is not necessarily the mass edge --- it
+is the lightest edge incident to $v$, which may be an analytical edge lighter
+than the mass edge. Tracking the node floor conflates the invariant with the
+changeable. The invariant quantity is $w(\med, v)$ specifically.
+\end{proposition}
+
+\begin{proof}
+By Definition~\ref{def:reshuffling}, a reshuffling preserves medium adjacency:
+the medium $\med$ remains adjacent to all nodes. The graph-expansion model of
+instrument generations (Theorem~\ref{thm:instrument_generation}) adds new
+nodes and edges without removing the existing medium edge $(\med, v)$, so
+$w(\med, v) = \bmin^*(v)$ is preserved across all $G_k$. By contrast, each
+new generation adds new analytical neighbours $u_k'$ to $v$ with new edge
+weights $w(v, u_k')$, which may be lighter than the mass edge. The mass edge
+persists; the analytical edge set changes.
+
+The minimum incident edge $\min\{w(e) : e \ni v\}$ therefore potentially
+tracks an analytical edge (if $w(v, u_k) < w(\med, v)$ for some $k$) rather
+than the mass. The intrinsic floor $\bmin^*(v) = w(\med, v)$ is distinct from
+the node minimum, and only the former is the identity of $v$. \qed
+\end{proof}
+
+\begin{remark}[The NOT-Sequence Has a Common Lower Bound]
+\label{rem:not_floor}
+Proposition~\ref{prop:not_sequence} establishes that the NOT-sequence of
+$v$ --- the growing set of cuts $C^*_{G_k}(v)$ --- has all cut weights
+bounded below by $\bmin(G_0) > 0$. This means the NOT-sequence does not
+converge to zero even as the universe grows: at every finite stage of the
+negation process, the minimum cut has positive weight. The sequence of
+NOT-relations is monotone in size (new NOT-relations are added but never
+removed) and bounded below in weight. The floor $\bmin^*(v) > 0$ is the
+common lower bound of the entire NOT-sequence, not merely a limit.
+\end{remark}
+
+\begin{remark}[Count Interval Holds Throughout Transition, Not Only at Endpoints]
+\label{rem:count_interior}
+Theorem~\ref{thm:count_interval} states that the count lies in $[n, n+1)$
+during any transition. The validation for this paper confirmed a stronger
+form: the count is in $(n, n+1)$ --- strictly between the integers --- for
+every instant interior to the transition. The integer values $n$ and $n+1$
+are achieved only at the completed states (before and after the transition,
+respectively), not during it. The interior of the transition is a strictly
+open interval, not a half-open one. The finest honest partition of the count
+during a transition is therefore $\{n, n+1\}$: the two bounding integers,
+neither of which is the count at any interior instant.
+\end{remark}
+
 \subsection{The Epistemology of Classification}
 
 \begin{example}[Classification as Graph Partition]
