@@ -1,0 +1,1425 @@
+% =====================================================================
+%  Buhera OS Module Integration:
+%  A Contract, Reference, and Construction Manual for New Modules
+%  in the Buhera Federation
+%
+%  Self-contained blueprint. Any collaborator (human or AI) reading this
+%  document alone should be able to produce a working Buhera module that
+%  slots into the federation, without reading the surrounding codebase.
+%  Every path, every trait, every wiring step, and every failure mode is
+%  named here.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+            citecolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage{cleveref}
+
+% ---- Listings style ----
+\definecolor{lstkw}{RGB}{30,64,175}
+\definecolor{lstcomment}{RGB}{22,101,52}
+\definecolor{lststring}{RGB}{159,18,57}
+\definecolor{lstnum}{RGB}{180,83,9}
+\definecolor{lstbg}{RGB}{250,250,250}
+
+\lstdefinestyle{jscode}{
+  language=JavaScript,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{lstkw}\bfseries,
+  commentstyle=\color{lstcomment}\itshape,
+  stringstyle=\color{lststring},
+  numberstyle=\color{lstnum},
+  backgroundcolor=\color{lstbg},
+  frame=single,framesep=4pt,xleftmargin=6pt,xrightmargin=4pt,
+  breaklines=true,showstringspaces=false,columns=fullflexible,tabsize=2,
+  morekeywords={async,await,export,import,from,const,let,return,typeof,
+    Promise,Array,Set,Map,Number,String,Boolean,Object,JSON,fetch}
+}
+\lstdefinestyle{shell}{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{lstbg},
+  frame=single,framesep=4pt,xleftmargin=6pt,xrightmargin=4pt,
+  breaklines=true,columns=fullflexible,tabsize=2
+}
+\lstset{style=jscode}
+
+% ---- Theorem-like environments repurposed as design blocks ----
+\newtheoremstyle{contract}{\topsep}{\topsep}{}{}{\bfseries}{.}{.5em}{}
+\theoremstyle{contract}
+\newtheorem{contract}{Contract}[section]
+\newtheorem{invariant}[contract]{Invariant}
+\newtheorem{recipe}[contract]{Recipe}
+\newtheorem{caution}[contract]{Caution}
+
+\title{\textbf{Buhera OS Module Integration:\\
+A Contract, Reference, and Construction Manual\\
+for New Modules in the Buhera Federation}}
+
+\author{%
+Kundai Farai Sachikonye\\
+\small Technical University of Munich\\
+\small AIMe Registry for Artificial Intelligence\\
+\small \texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Buhera OS is a small operating system for finite reasoning agents. It
+runs entirely in the browser as a Next.js application (single-page,
+client-side after mount), presents a terminal, and dispatches
+instructions to a federation of registered modules. Each module owns
+one domain (memory, mass spectrometry, natural-language interception,
+individuation-theoretic search, tandem context carry, LLM synthesis,
+and so on). The federation grows by addition, never by modification of
+existing modules. This document specifies exactly what a new module
+must implement, what it may assume, and how it is wired into the running
+system. It is a contract document, not a survey: every section states
+what MUST hold, and where a design choice is genuinely open it says so
+explicitly. A collaborator reading this document alone (with no prior
+exposure to the Buhera codebase) should be able to produce a compiling,
+registerable, dispatchable module that appears in \texttt{:modules},
+returns valid \texttt{ActResult}s, and interoperates with the existing
+federation without altering a single line of the shipped modules.
+\end{abstract}
+
+\noindent\textbf{Scope.} New scientific/domain modules for the Buhera OS
+frontend at \texttt{long-grass/}. The scheduler, the substrate, the
+kernel, the audit log, and the LLM cascade are already implemented and
+are not part of this document except at the interface where new modules
+touch them.
+
+\tableofcontents
+
+\vspace{6pt}\hrule\vspace{6pt}
+
+% =====================================================================
+\part{The System a Module Is Joining}
+% =====================================================================
+
+% =====================================================================
+\section{Architectural Overview}
+\label{sec:overview}
+% =====================================================================
+
+Before writing a line of module code, a collaborator must know four
+things about the system the module joins.
+
+\subsection{The runtime}
+
+Buhera OS is a Next.js 13 application (Pages Router) served from
+\texttt{long-grass/}. The terminal is a single React component,
+\texttt{src/components/BuheraTerminal.js}, mounted at the root route.
+After hydration the entire federation runs client-side; the browser is
+the operating system. Server-side API routes exist only to hold
+credentials (LLM keys) that must not appear in the client bundle.
+
+The deployment target is Vercel. The build is \texttt{next build}; the
+dev loop is \texttt{next dev}. There is no separate installation step
+for a user: opening the deployed URL is running the OS.
+
+\subsection{The three roles a module can occupy}
+
+Every existing Buhera module falls into one of three functional roles,
+and every new module MUST declare which role(s) it occupies:
+
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item \textbf{Solver.} Given an instruction, do the work and return an
+answer. Examples: \texttt{lavoisier} (forward-simulate mass spectra),
+\texttt{vahera} (execute a memory DSL script), \texttt{graffiti}
+(execute a \texttt{.grf} search program).
+\item \textbf{Router / Interceptor.} Given natural-language input,
+translate to a routable instruction. Example: \texttt{zangalewa} (MSI --
+utterance to S-coord + rendered card).
+\item \textbf{Meta / Context.} Read the accumulated audit log or session
+state and return derived information. Example: \texttt{purpose-carry}
+(tandem carry over accumulated steps).
+\end{enumerate}
+
+A module MAY occupy more than one role. A module MAY NOT invent a
+fourth role without first extending this document.
+
+\subsection{The three surfaces a module touches}
+
+Independently of role, every module touches at most three surfaces:
+
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item \textbf{The registry} (\S\ref{sec:registry}) --- always. Every
+module is registered and dispatched through the same trait.
+\item \textbf{The terminal renderer} (\S\ref{sec:renderer}) --- if the
+module returns output that should display specially (a chart, a card, a
+table). Purely textual output uses the built-in \texttt{ArtifactText}
+and requires no renderer.
+\item \textbf{Server-side API routes} (\S\ref{sec:server}) --- if the
+module needs credentials, network access, or Node-only APIs
+(filesystem, LLM SDKs). A module that runs entirely in the browser
+skips this surface.
+\end{enumerate}
+
+Anything outside these three surfaces is the module's private business.
+The registry does not care what the module does internally.
+
+\subsection{Naming and identity}
+
+Every module has a stable string \texttt{id}. Ids are lowercase,
+kebab-cased if compound, never namespaced. Good: \texttt{lavoisier},
+\texttt{purpose-carry}, \texttt{crispr-designer}. Bad:
+\texttt{@buhera/crispr}, \texttt{CRISPRDesigner}, \texttt{crispr\_v2}.
+
+The \texttt{id} appears in the audit log, in \texttt{:modules}, in
+turbulance scripts as \texttt{dispatch("<id>", ...)}, and in the
+module's error messages. Once shipped, the \texttt{id} is a permanent
+identifier; renaming it is a breaking change to every caller.
+
+% =====================================================================
+\section{The Module Trait}
+\label{sec:registry}
+% =====================================================================
+
+The trait is defined in \texttt{src/lib/modules/registry.js}. Every
+module conforms to it verbatim; the registry is not extensible on this
+axis. This section is the load-bearing specification of the whole
+document: if a module implements this trait correctly, everything else
+in the federation just works.
+
+\subsection{The trait}
+
+\begin{lstlisting}
+export const myModule = {
+  id: "my-module",
+
+  describe() { /* returns metadata; see 2.2 */ },
+
+  async execute(instruction, actBudget = 1) {
+    /* the module's work; returns an ActResult; see 2.3 */
+  },
+
+  outputCell(instruction) {
+    /* optional sufficiency descriptor; see 2.4 */
+    return { kind: "my_cell" };
+  },
+};
+\end{lstlisting}
+
+Four fields. The \texttt{id} is a string. The \texttt{describe},
+\texttt{execute}, and \texttt{outputCell} are functions. Only
+\texttt{execute} may be \texttt{async}; \texttt{describe} and
+\texttt{outputCell} MUST be synchronous.
+
+\subsection{describe()}
+
+Returns a plain object with three fields:
+
+\begin{lstlisting}
+describe() {
+  return {
+    id: "my-module",
+    description: "one-sentence purpose of the module",
+    instructions: [
+      'dispatch("my-module", "example simple invocation")',
+      'dispatch("my-module", { kind: "action", param: value })',
+    ],
+  };
+}
+\end{lstlisting}
+
+\begin{contract}[describe]
+\label{contract:describe}
+\texttt{describe()} MUST be pure (no side effects), synchronous, and
+inexpensive. The terminal calls it on every render of \texttt{:modules}.
+It MUST return an object with the exact three fields shown. The
+\texttt{instructions} array carries example invocations shown to the
+user; it should demonstrate the module's shape, not enumerate every
+possible instruction.
+\end{contract}
+
+\subsection{execute(instruction, actBudget)}
+
+The core method. Called by the registry when a caller dispatches to
+this module.
+
+\subsubsection*{The \texttt{instruction} argument}
+
+Whatever the caller passed as the second argument of
+\texttt{dispatch()}. It MAY be a string, an object, a number, or
+\texttt{null}. A module MUST accept a bare string as its most common
+form (interactive terminal callers type strings). Modules that require
+structured input MUST accept a plain string as a request for a default
+demo, or produce a clear error explaining what shape is expected.
+
+The convention across existing modules: an instruction of \texttt{""}
+or \texttt{"demo"} runs a canned demonstration. This is not required
+but is strongly recommended for discoverability.
+
+\subsubsection*{The \texttt{actBudget} argument}
+
+A hint about thoroughness. Defaults to \texttt{1}. Larger values indicate
+the caller wants the module to invest more effort. Modules that are
+deterministic and non-iterative may ignore this argument; modules that
+have a knob for depth/quality/iterations SHOULD honour it.
+
+\subsubsection*{The return value: \texttt{ActResult}}
+
+Every call to \texttt{execute} MUST return a Promise resolving to an
+object of the following shape:
+
+\begin{lstlisting}
+{
+  ok: boolean,
+  output_delta: {
+    kind: string,
+    // ...any other fields the renderer for this kind expects
+  },
+  residue: number,   // >= 0
+  completed: boolean,
+  error?: string,    // present iff ok === false
+}
+\end{lstlisting}
+
+\begin{contract}[ActResult]
+\label{contract:actresult}
+Every field is mandatory unless marked optional. The registry does not
+apply defaults; a module returning \texttt{\{value: 42\}} instead of an
+ActResult is broken.
+
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item \texttt{ok} is a boolean success indicator. \texttt{false} means
+the module received a valid dispatch but could not complete it (missing
+input, upstream failure, invalid state). It does not mean the module
+crashed --- crashes throw from the caller's perspective, and the
+registry converts them to \texttt{ok:false} automatically.
+\item \texttt{output\_delta.kind} is a string tag naming the shape of
+the rest of the output. It selects which renderer runs. If no custom
+renderer is registered (\S\ref{sec:renderer}), \texttt{kind: "text"}
+with \texttt{lines: [string]} produces a plain-text fallback.
+\item \texttt{residue} is a non-negative number the caller may use as a
+progress or content signal. See \S\ref{sec:residue} for what to put
+here.
+\item \texttt{completed} is \texttt{true} when the module has nothing
+more to produce for this instruction. All current modules return
+\texttt{true} unconditionally; streaming or partial-result support is a
+future extension.
+\item \texttt{error} is a human-readable error string. It MUST be
+present when \texttt{ok} is \texttt{false} and absent when \texttt{ok}
+is \texttt{true}.
+\end{itemize}
+\end{contract}
+
+\begin{caution}[Do not throw]
+\label{caution:throw}
+A module SHOULD NOT let exceptions propagate out of \texttt{execute}.
+The registry does catch them and converts them to a generic
+\texttt{ok:false} ActResult, but the error message will be less specific
+than one the module produces itself. Wrap the module's work in a
+\texttt{try/catch} at the top of \texttt{execute} and return a proper
+ActResult with a domain-specific error string.
+\end{caution}
+
+\subsection{outputCell(instruction)}
+
+Returns a descriptor of what kind of output the module would produce for
+this instruction, without producing it. This is used by future
+sufficiency-check machinery (the scheduler's gate) to decide whether a
+dispatch is worth performing. In the current federation
+\texttt{outputCell} is a stub returning \texttt{\{kind: "<something>\_cell"\}};
+a real implementation will land when the scheduler needs it.
+
+\begin{contract}[outputCell]
+\label{contract:outputcell}
+Every module MUST implement \texttt{outputCell}. It MUST be synchronous
+and cheap. A stub returning \texttt{\{kind: "<module\_id>\_cell"\}} is
+acceptable and is what current modules use.
+\end{contract}
+
+% =====================================================================
+\section{The Registry, the Audit Log, and Post-Dispatch Hooks}
+\label{sec:registry-mechanics}
+% =====================================================================
+
+Every dispatched act flows through the same code path in
+\texttt{src/lib/modules/registry.js}. A module writer does not modify
+this file; understanding it is nonetheless necessary because the
+mechanics affect what a module can rely on.
+
+\subsection{The dispatch cycle}
+
+The registry's \texttt{dispatch(moduleId, instruction, actBudget)}
+performs, in order:
+
+\begin{enumerate}[leftmargin=1.6em,itemsep=1pt]
+\item Look up the module by \texttt{moduleId}; throw if unknown.
+\item Record the wall-clock start time.
+\item Call \texttt{module.execute(instruction, actBudget)} in a
+\texttt{try/catch}. Exceptions are converted to a synthetic
+\texttt{ok:false} ActResult.
+\item Construct an audit-log entry: monotone \texttt{act\_id}, module
+id, verbatim instruction, act budget, the returned result, wall-clock
+duration, ISO timestamp.
+\item Push the entry onto the append-only audit log.
+\item Run every registered post-dispatch hook against the entry.
+Hooks are isolated: an exception in one hook is logged and swallowed.
+\item Return the ActResult to the caller.
+\end{enumerate}
+
+The audit log is in-memory. It resets on page reload. A future
+persistence layer will not require modules to change.
+
+\subsection{Post-dispatch hooks}
+
+Hooks let observers watch every dispatched act without the modules
+knowing about them. The signature is \texttt{(entry) => void}. Hooks
+are registered by consumers (currently: the purpose-carry session
+feeder in \texttt{BuheraTerminal.js}); modules do not register their
+own hooks.
+
+\begin{invariant}[Modules are hook-oblivious]
+\label{inv:hookoblivious}
+A module MUST NOT rely on any specific hook being registered, nor on
+its execution order. Modules interact with the world only through their
+\texttt{execute()} return value.
+\end{invariant}
+
+\subsection{What a module may read from the registry}
+
+A module may import and call:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item \texttt{getAuditLog()} --- returns a shallow copy of the audit
+log; useful for meta modules like purpose-carry that reason about
+history.
+\item \texttt{listModules()} --- returns the metadata of every
+registered module; useful for a routing/interceptor module.
+\item \texttt{getModule(id)} --- returns another module's trait object;
+rarely needed.
+\item \texttt{dispatch(id, instr, actBudget)} --- lets one module
+dispatch to another. Use sparingly; deep call chains are hard to debug.
+\end{itemize}
+
+A module MUST NOT import \texttt{clearAuditLog}, \texttt{register}, or
+\texttt{onDispatch}. Those belong to the terminal's bootstrap.
+
+% =====================================================================
+\section{Terminal Wiring}
+\label{sec:renderer}
+% =====================================================================
+
+Two edits to \texttt{src/components/BuheraTerminal.js} land every new
+module: registration and (optionally) a renderer. Nothing else in the
+file changes.
+
+\subsection{Registration}
+
+At the top of the file, add a new import next to the existing module
+imports:
+
+\begin{lstlisting}
+import { myModule } from "@/lib/modules/my-module";
+\end{lstlisting}
+
+Inside the mount \texttt{useEffect}, add one \texttt{register()} call:
+
+\begin{lstlisting}
+useEffect(() => {
+  kernelRef.current = bootBlank();
+  register(vaheraModule);
+  register(echoModule);
+  register(lavoisierModule);
+  register(purposeModule);
+  register(zangalewaModule);
+  register(graffitiModule);
+  register(purposeCarryModule);
+  register(myModule);           // <-- new
+  // ...post-dispatch hooks below
+}, []);
+\end{lstlisting}
+
+That is the only file change required for a module that returns plain
+text.
+
+\subsection{Renderers}
+
+A module producing rich output (a chart, a card, a table) SHOULD supply
+a React component and register a case in the artifact switch. The
+convention is:
+
+\begin{lstlisting}
+function ArtifactMyModule({ ...fields }) {
+  return (
+    <div className="text-gray-300">
+      {/* render the fields */}
+    </div>
+  );
+}
+\end{lstlisting}
+
+Then in the \texttt{Artifact} switch, add a case:
+
+\begin{lstlisting}
+case "my_module_result":
+  return <ArtifactMyModule
+    fieldA={result.fieldA}
+    fieldB={result.fieldB}
+  />;
+\end{lstlisting}
+
+The \texttt{result} argument here is the \texttt{output\_delta} object
+the module returned. The switch is keyed on \texttt{result.kind}, so
+the \texttt{output\_delta.kind} string chosen by the module MUST match
+the \texttt{case} label.
+
+\begin{recipe}[Naming a kind]
+\label{recipe:kind}
+Use \texttt{<module\_id>\_<result\_type>}. Examples from the current
+federation: \texttt{lavoisier\_run}, \texttt{graffiti\_result},
+\texttt{zangalewa\_render}, \texttt{purpose\_synthesis},
+\texttt{purpose\_carry}, \texttt{purpose\_carry\_stats}. Consistent
+naming makes the switch statement legible and prevents accidental
+collisions.
+\end{recipe}
+
+\subsection{Textual output as fallback}
+
+A module that returns
+
+\begin{lstlisting}
+{
+  ok: true,
+  output_delta: {
+    kind: "text",
+    lines: ["first line", "second line", ...]
+  },
+  residue: 1,
+  completed: true,
+}
+\end{lstlisting}
+
+renders as multi-line grey text with no custom code required. This is
+the fastest path to a working module and a legitimate first step for a
+new module before a proper renderer is designed.
+
+% =====================================================================
+\section{Server-Side API Routes}
+\label{sec:server}
+% =====================================================================
+
+A module that needs credentials, filesystem access, or Node-only APIs
+splits into two files:
+
+\begin{enumerate}[nosep,leftmargin=1.4em]
+\item A client-side adapter under \texttt{src/lib/modules/} that
+conforms to the Module trait. Its \texttt{execute} makes a
+\texttt{fetch()} call to a server route.
+\item A server route under \texttt{src/pages/api/} that does the
+actual work and returns JSON.
+\end{enumerate}
+
+This split is not optional for modules touching credentials --- the
+browser bundle MUST NOT contain any secret. Vercel's environment
+variables reach only the server side.
+
+\subsection{The server-route contract}
+
+An API route is a plain Next.js API handler:
+
+\begin{lstlisting}
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ ok: false, error: "method not allowed" });
+  }
+
+  const { field1, field2 } = req.body || {};
+  if (typeof field1 !== "string") {
+    return res.status(400).json({ ok: false, error: "field1 required" });
+  }
+
+  try {
+    const result = await doTheWork(field1, field2);
+    return res.status(200).json({ ok: true, ...result });
+  } catch (err) {
+    return res.status(502).json({
+      ok: false,
+      error: err.message || String(err),
+    });
+  }
+}
+\end{lstlisting}
+
+Conventions:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item POST only. GET is reserved for introspection endpoints like
+\texttt{/api/providers}.
+\item JSON body in, JSON body out.
+\item Errors return a JSON body with \texttt{ok: false} and a
+descriptive \texttt{error} string; the HTTP status distinguishes the
+failure class (400 bad input, 500 our fault, 502 upstream fault, 503
+missing configuration).
+\item Never throw across the handler boundary. Every error path returns
+a JSON body.
+\end{itemize}
+
+\subsection{The client-side adapter}
+
+The adapter posts to the route and translates the response into an
+ActResult:
+
+\begin{lstlisting}
+export const myModule = {
+  id: "my-module",
+  describe() { /* ... */ },
+
+  async execute(instruction, _actBudget = 1) {
+    const body = normaliseInstruction(instruction);
+
+    let res;
+    try {
+      res = await fetch("/api/my-module", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        output_delta: {
+          kind: "text",
+          lines: [`my-module: network error — ${err.message}`],
+        },
+        residue: 0,
+        completed: true,
+        error: err.message,
+      };
+    }
+
+    const json = await res.json().catch(() => null);
+    if (!json || !json.ok) {
+      return {
+        ok: false,
+        output_delta: {
+          kind: "text",
+          lines: [`my-module: ${json?.error ?? `HTTP ${res.status}`}`],
+        },
+        residue: 0,
+        completed: true,
+        error: json?.error ?? `HTTP ${res.status}`,
+      };
+    }
+
+    return {
+      ok: true,
+      output_delta: {
+        kind: "my_module_result",
+        ...json,
+      },
+      residue: 1,
+      completed: true,
+    };
+  },
+
+  outputCell() { return { kind: "my_module_cell" }; },
+};
+\end{lstlisting}
+
+\subsection{Using the shared LLM cascade}
+
+Modules that need LLM output SHOULD use the shared cascade in
+\texttt{src/lib/server/llm-cascade.js} rather than calling providers
+directly. The cascade tries Ollama, then Gemini, then HuggingFace, then
+OpenAI, using whichever is configured. Signature:
+
+\begin{lstlisting}
+import { chatCascade } from "@/lib/server/llm-cascade";
+
+const result = await chatCascade({
+  system: "system prompt...",
+  user: "user prompt...",
+  jsonSchema: { /* optional; requests structured output */ },
+  maxTokens: 2048,
+  temperature: 0.2,
+  only: ["gemini"], // optional: restrict to a subset
+});
+
+if (!result.ok) {
+  // result.error, result.stage, result.provider
+}
+// result.content: string
+// result.provider: which provider actually answered
+// result.model: which model within that provider
+\end{lstlisting}
+
+\begin{contract}[Cascade usage]
+\label{contract:cascade}
+Modules SHOULD NOT call OpenAI, Gemini, HuggingFace, or Ollama APIs
+directly. All LLM calls flow through \texttt{chatCascade}. This
+centralises the ``which key is set'' logic, the fallback logic, and the
+JSON-schema translation for structured output. A module that ships a
+direct provider call will silently break when the deployment switches
+providers.
+\end{contract}
+
+% =====================================================================
+\section{The Residue Field: What to Put There}
+\label{sec:residue}
+% =====================================================================
+
+Every ActResult carries a \texttt{residue} number. Its semantics are set
+by the scheduling-mechanism paper and the tandem-carry paper: residue is
+the measured distance of a partial result from a recognised solution,
+with a strictly positive floor $\beta > 0$.
+
+For a new module, pick a residue interpretation that is:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item \textbf{Non-negative} --- always.
+\item \textbf{Monotone in content produced} --- more work done should
+correspond to a specific direction (higher or lower), consistently
+across every dispatch of the module.
+\item \textbf{Interpretable by callers} --- the residue is a signal, so
+picking arbitrary numbers is worse than picking any consistent rule.
+\end{itemize}
+
+Common patterns:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item \textbf{Content-count residue.} \texttt{residue = records.length}
+(lavoisier), \texttt{= number of yielded claims} (graffiti). Higher =
+more produced.
+\item \textbf{Confidence proxy.} \texttt{residue = 1 - confidence}
+(zangalewa's \texttt{S\_e} approximation). Lower = closer to done.
+\item \textbf{Trivial signal.} \texttt{residue = 0} for a pure query,
+\texttt{residue = 1} for a successful action. Acceptable for modules
+whose progress isn't naturally continuous.
+\end{itemize}
+
+The residue field is not currently consumed by any scheduler in the
+frontend; the scheduler in \texttt{src/lib/scheduler/} reads it in
+principle but is not yet wired into the dispatch path. Nevertheless,
+modules ship with valid residues so that when the wiring lands, the
+module works without change.
+
+% =====================================================================
+\part{Building a New Module}
+% =====================================================================
+
+% =====================================================================
+\section{Directory Layout and File Skeleton}
+\label{sec:skeleton}
+% =====================================================================
+
+\subsection{Where files live}
+
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Path} & \textbf{What lives there} \\
+\midrule
+\texttt{src/lib/modules/<id>-module.js} & The Module trait implementation. Required. \\
+\texttt{src/lib/<domain>/} & Domain library code (helpers, algorithms, data). Optional. \\
+\texttt{src/pages/api/<route>.js} & Server routes. Optional. \\
+\texttt{src/lib/server/} & Server-only helpers imported only by API routes. Optional. \\
+\texttt{src/components/BuheraTerminal.js} & Two edits: import + register + optional renderer. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Minimal skeleton (pure client, plain text output)}
+
+The smallest working module. Create
+\texttt{src/lib/modules/greeter-module.js}:
+
+\begin{lstlisting}
+export const greeterModule = {
+  id: "greeter",
+
+  describe() {
+    return {
+      id: "greeter",
+      description: "greets whatever you send it",
+      instructions: [
+        'dispatch("greeter", "world")',
+        'dispatch("greeter", { name: "Alice" })',
+      ],
+    };
+  },
+
+  async execute(instruction, _actBudget = 1) {
+    const name = typeof instruction === "string"
+      ? instruction
+      : instruction?.name ?? "stranger";
+
+    return {
+      ok: true,
+      output_delta: {
+        kind: "text",
+        lines: [`hello, ${name}`],
+      },
+      residue: 1,
+      completed: true,
+    };
+  },
+
+  outputCell(_instruction) {
+    return { kind: "greeter_cell" };
+  },
+};
+\end{lstlisting}
+
+Then in \texttt{BuheraTerminal.js}:
+
+\begin{lstlisting}
+import { greeterModule } from "@/lib/modules/greeter-module";
+// ...
+register(greeterModule);
+\end{lstlisting}
+
+That's it. \texttt{next build} passes; \texttt{:modules} shows
+\texttt{greeter}; \texttt{dispatch("greeter", "buhera")} returns
+\texttt{hello, buhera}.
+
+% =====================================================================
+\section{Recipes by Module Type}
+\label{sec:recipes}
+% =====================================================================
+
+Three concrete construction recipes, each corresponding to a common
+class of scientific/domain module. Follow the recipe that matches the
+module's shape.
+
+\subsection{Recipe A: A pure computational module (no network)}
+
+Use when the module runs an algorithm on inputs and returns a result.
+Examples: a sequence-alignment module, a numerical-integration module,
+a chemistry-formula parser.
+
+\begin{recipe}[Pure computational]
+\label{recipe:pure}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+\item Put the algorithm in \texttt{src/lib/<domain>/} as one or more
+plain \texttt{.js} or \texttt{.ts} files. Test the algorithm in
+isolation; the trait wrapper should be trivial.
+\item Create \texttt{src/lib/modules/<id>-module.js} exporting a trait
+object that imports the algorithm and wraps it.
+\item Accept both a bare string (as \texttt{"demo"} or a domain-natural
+form) and a structured object as instruction.
+\item Return an ActResult with a domain-specific \texttt{output\_delta.kind}
+and enough structured data for a future renderer.
+\item Add a renderer if the output benefits from visual formatting.
+\end{enumerate}
+\end{recipe}
+
+Lavoisier is the reference for this recipe. Look at
+\texttt{src/lib/modules/lavoisier-module.js} for the trait wrapper and
+\texttt{src/lib/lavoisier/experiment/virtualinstrument.js} for the
+underlying algorithm.
+
+\subsection{Recipe B: A module that calls an LLM}
+
+Use when the module needs a language model in the loop. Examples: a
+paper-summariser, a code-explainer, a natural-language SQL translator.
+
+\begin{recipe}[LLM-backed]
+\label{recipe:llm}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+\item Create a server route \texttt{src/pages/api/<id>.js} that accepts
+POST, validates its inputs, calls \texttt{chatCascade} from
+\texttt{src/lib/server/llm-cascade}, and returns JSON with
+\texttt{ok/content/provider/model}.
+\item Design the system prompt carefully. If the output must be
+structured, define a JSON schema and pass it to \texttt{chatCascade} as
+\texttt{jsonSchema}. Gemini and OpenAI honour it natively; HuggingFace
+is skipped automatically when a schema is required.
+\item Create \texttt{src/lib/modules/<id>-module.js} whose \texttt{execute}
+POSTs to \texttt{/api/<id>} and translates the response into an
+ActResult. Surface the provider used in the \texttt{output\_delta} so
+the renderer can display it.
+\item Renderer shows the LLM's response as either free text or a
+structured card. Include the provider name as a small header.
+\item In the module's \texttt{describe}, note that an LLM key is
+required.
+\end{enumerate}
+\end{recipe}
+
+Zangalewa is the reference for this recipe. See
+\texttt{src/pages/api/extract.js} for the server route and
+\texttt{src/lib/modules/zangalewa-module.js} for the client adapter.
+
+\subsection{Recipe C: A module that reads history}
+
+Use when the module's job is to observe the running system and produce
+derived information. Examples: a session summariser, a token-usage
+counter, a contradiction detector.
+
+\begin{recipe}[Meta / history-reading]
+\label{recipe:meta}
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+\item Import \texttt{getAuditLog} from \texttt{@/lib/modules/registry}.
+Do not import \texttt{onDispatch}; the hook mechanism is for the
+terminal's wiring layer, not for modules.
+\item In \texttt{execute}, read the audit log, filter or aggregate as
+needed, and return the derived information.
+\item If the module maintains its own state across dispatches (as
+purpose-carry does with its Session), keep the state in a
+module-private singleton and expose \texttt{reset}-style instructions
+so callers can wipe it.
+\item Consider whether the module's dispatches should themselves feed
+back into any state the module reads. Purpose-carry avoids this by
+skipping self-dispatches in the audit-log feeder. A new meta module
+must make an equivalent decision explicitly.
+\end{enumerate}
+\end{recipe}
+
+Purpose-carry is the reference for this recipe. See
+\texttt{src/lib/modules/purpose-carry-module.js} for the module and
+\texttt{src/components/BuheraTerminal.js} for how the audit-log hook
+is wired (only the terminal registers the hook; the module does not).
+
+% =====================================================================
+\section{Instruction Design}
+\label{sec:instruction-design}
+% =====================================================================
+
+The most important design decision for a new module is the shape of its
+instruction. A well-designed instruction is small, orthogonal, and
+covers three cases: a demo, a common single-value form, and a full
+structured form.
+
+\subsection{The three canonical shapes}
+
+Every existing module accepts at least these:
+
+\begin{enumerate}[nosep,leftmargin=1.4em]
+\item \texttt{"demo"} or \texttt{""} --- runs a canned demonstration.
+Zero-argument invocation is discoverable and testable.
+\item A bare string --- the module interprets it in a domain-natural
+way (a query, a source snippet, a name, a URL). This is the form
+turbulance scripts most commonly emit.
+\item A structured object \texttt{\{ kind: "action", ...args \}} ---
+the fully explicit form used by callers who need control over every
+parameter.
+\end{enumerate}
+
+Modules SHOULD accept all three. Modules MUST accept at least one.
+
+\subsection{The \texttt{kind} discriminator}
+
+When a module has multiple actions, the structured form MUST include a
+\texttt{kind} field:
+
+\begin{lstlisting}
+dispatch("my-module", { kind: "search", query: "..." })
+dispatch("my-module", { kind: "index",  document: "..." })
+dispatch("my-module", { kind: "stats" })
+dispatch("my-module", { kind: "reset" })
+\end{lstlisting}
+
+Purpose-carry uses this pattern (\texttt{carry}, \texttt{add},
+\texttt{stats}, \texttt{reset}). It is the recommended pattern for any
+module with more than one action.
+
+\subsection{Backwards-compatible evolution}
+
+Once shipped, an instruction shape is a contract. Evolving it safely:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item Adding a new optional field is safe.
+\item Adding a new \texttt{kind} is safe.
+\item Renaming a required field is a breaking change.
+\item Changing the meaning of \texttt{"demo"} is a breaking change if
+users script against it.
+\end{itemize}
+
+A module's tests should exercise every documented instruction shape so
+that regressions in the shape are caught before shipping.
+
+% =====================================================================
+\section{Integrating with the Existing Federation}
+\label{sec:integration}
+% =====================================================================
+
+New modules should compose with, not replace, existing ones. Three
+common composition patterns.
+
+\subsection{Reading from vaHera}
+
+If a new module benefits from a semantic memory (retrieval by S-distance
+against stored notes), it can read from vaHera's live kernel. Import
+\texttt{getKernel} from \texttt{src/lib/modules/vahera-module.js} (which
+exports it) and use \texttt{kernel.proximity(target, k)} or
+\texttt{kernel.surgicalRetrieve(target, k)}. The graffiti kernel-search
+catalyst is the reference implementation.
+
+\subsection{Feeding purpose-carry}
+
+Every dispatched act is automatically τ-extracted and fed into
+purpose-carry's session by the terminal's post-dispatch hook. A new
+module does not do anything special to appear in the carry --- it
+happens automatically as long as the instruction contains extractable
+terms.
+
+If the module's instruction is inherently structured (say, a large
+config object with no natural text content), consider including a
+short descriptive string field in the instruction so the τ extractor
+has something to work with. Example: lavoisier's config accepts a
+\texttt{description} field alongside the numeric parameters.
+
+\subsection{Being called by another module}
+
+The registry's \texttt{dispatch} is callable from inside any module's
+\texttt{execute}. This lets a module compose others. Caveats:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item Cross-module dispatch appears in the audit log with the inner
+call's module id, not the outer's.
+\item Deep chains are hard to debug. If a module calls three others in
+sequence, the audit log will show four acts and a caller has to trace
+the causal chain.
+\item Circular dispatch (module A calls module B calls module A) will
+loop forever. The registry does not detect this.
+\end{itemize}
+
+Use cross-module dispatch when the composition is genuinely one-way and
+narrow: an interceptor calling a solver, a meta module calling a
+solver, a synthesis module calling a search module.
+
+% =====================================================================
+\section{Testing a New Module}
+\label{sec:testing}
+% =====================================================================
+
+Four tests every new module should pass before it lands in
+\texttt{main}.
+
+\subsection{Build}
+
+\begin{lstlisting}[style=shell]
+cd long-grass
+npm run build
+\end{lstlisting}
+
+Must complete without errors. Warnings about caniuse-lite are cosmetic
+and can be ignored.
+
+\subsection{Lint}
+
+\begin{lstlisting}[style=shell]
+cd long-grass
+npx next lint --dir src --max-warnings 999
+\end{lstlisting}
+
+Must report zero errors.
+
+\subsection{Dispatch smoke test}
+
+Boot \texttt{npm run dev}, open the terminal, and dispatch to the new
+module. It MUST:
+
+\begin{itemize}[nosep,leftmargin=1.4em]
+\item Appear in \texttt{:modules} with the expected description.
+\item Return an ActResult with \texttt{ok: true} for its \texttt{demo}
+form.
+\item Return an ActResult with \texttt{ok: false} and a specific error
+for known bad input (empty string when a string is required, missing
+required field, etc.).
+\item Log to \texttt{:audit} with the correct \texttt{module\_id}.
+\end{itemize}
+
+\subsection{Federation smoke test}
+
+Confirm that every other module still works after adding the new one.
+\texttt{:modules} shows the correct count. A dispatch to
+\texttt{purpose-carry} still reads the audit log correctly. If the new
+module returns a domain-specific \texttt{output\_delta.kind}, the
+renderer correctly renders it.
+
+% =====================================================================
+\part{Reference}
+% =====================================================================
+
+% =====================================================================
+\section{Complete Example: A Sequence-Alignment Module}
+\label{sec:example}
+% =====================================================================
+
+A fully worked example following Recipe A. This module computes a
+Needleman-Wunsch global alignment between two DNA sequences and returns
+the aligned strings, the score, and the CIGAR string.
+
+\subsection{The algorithm}
+
+Put in \texttt{src/lib/bioinformatics/needleman-wunsch.js}:
+
+\begin{lstlisting}
+export function align(seq1, seq2, opts = {}) {
+  const match = opts.match ?? 1;
+  const mismatch = opts.mismatch ?? -1;
+  const gap = opts.gap ?? -1;
+
+  const n = seq1.length, m = seq2.length;
+  const dp = Array.from({length: n+1}, () => new Int32Array(m+1));
+
+  for (let i = 0; i <= n; i++) dp[i][0] = i * gap;
+  for (let j = 0; j <= m; j++) dp[0][j] = j * gap;
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      const s = seq1[i-1] === seq2[j-1] ? match : mismatch;
+      dp[i][j] = Math.max(
+        dp[i-1][j-1] + s,
+        dp[i-1][j] + gap,
+        dp[i][j-1] + gap
+      );
+    }
+  }
+
+  // Traceback
+  let a1 = "", a2 = "", cigar = "";
+  let i = n, j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 &&
+        dp[i][j] === dp[i-1][j-1] +
+          (seq1[i-1] === seq2[j-1] ? match : mismatch)) {
+      a1 = seq1[i-1] + a1;
+      a2 = seq2[j-1] + a2;
+      cigar = "M" + cigar;
+      i--; j--;
+    } else if (i > 0 && dp[i][j] === dp[i-1][j] + gap) {
+      a1 = seq1[i-1] + a1;
+      a2 = "-" + a2;
+      cigar = "D" + cigar;
+      i--;
+    } else {
+      a1 = "-" + a1;
+      a2 = seq2[j-1] + a2;
+      cigar = "I" + cigar;
+      j--;
+    }
+  }
+
+  return { seq1: a1, seq2: a2, score: dp[n][m], cigar };
+}
+\end{lstlisting}
+
+\subsection{The module}
+
+Put in \texttt{src/lib/modules/align-module.js}:
+
+\begin{lstlisting}
+import { align } from "@/lib/bioinformatics/needleman-wunsch";
+
+const DEMO_INPUT = { seq1: "GATTACA", seq2: "GCATGCU" };
+
+function resolveInput(instruction) {
+  if (instruction == null || instruction === "" || instruction === "demo") {
+    return DEMO_INPUT;
+  }
+  if (typeof instruction === "object" && instruction.kind === "align") {
+    return {
+      seq1: String(instruction.seq1 ?? "").toUpperCase(),
+      seq2: String(instruction.seq2 ?? "").toUpperCase(),
+      opts: instruction.opts || {},
+    };
+  }
+  return null;
+}
+
+export const alignModule = {
+  id: "align",
+
+  describe() {
+    return {
+      id: "align",
+      description:
+        "global pairwise sequence alignment (Needleman-Wunsch). " +
+        "Returns aligned sequences, score, and CIGAR.",
+      instructions: [
+        'dispatch("align", "demo")',
+        'dispatch("align", { kind: "align", seq1: "ACGT", seq2: "AGGT" })',
+      ],
+    };
+  },
+
+  async execute(instruction, _actBudget = 1) {
+    const input = resolveInput(instruction);
+    if (!input) {
+      return {
+        ok: false,
+        output_delta: {
+          kind: "text",
+          lines: [
+            'align: instruction must be "demo" or ' +
+              '{ kind: "align", seq1, seq2 }',
+          ],
+        },
+        residue: 0,
+        completed: true,
+        error: "invalid instruction",
+      };
+    }
+    if (!input.seq1 || !input.seq2) {
+      return {
+        ok: false,
+        output_delta: {
+          kind: "text",
+          lines: ["align: seq1 and seq2 must both be non-empty"],
+        },
+        residue: 0,
+        completed: true,
+        error: "empty sequences",
+      };
+    }
+
+    try {
+      const result = align(input.seq1, input.seq2, input.opts);
+      return {
+        ok: true,
+        output_delta: {
+          kind: "align_result",
+          seq1_aligned: result.seq1,
+          seq2_aligned: result.seq2,
+          score: result.score,
+          cigar: result.cigar,
+        },
+        residue: Math.max(0, result.score),
+        completed: true,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        output_delta: {
+          kind: "text",
+          lines: [`align error: ${err.message || String(err)}`],
+        },
+        residue: 0,
+        completed: true,
+        error: err.message || String(err),
+      };
+    }
+  },
+
+  outputCell(_instruction) {
+    return { kind: "align_cell" };
+  },
+};
+\end{lstlisting}
+
+\subsection{The renderer}
+
+In \texttt{BuheraTerminal.js}, add a component near the other artifact
+renderers:
+
+\begin{lstlisting}
+function ArtifactAlign({ seq1_aligned, seq2_aligned, score, cigar }) {
+  return (
+    <div className="text-gray-300 font-mono text-sm">
+      <div className="text-xs text-gray-500 mb-1">
+        score: <span className="text-white">{score}</span>
+        {"  ·  "}CIGAR: <span className="text-white">{cigar}</span>
+      </div>
+      <pre className="whitespace-pre">{seq1_aligned}</pre>
+      <pre className="whitespace-pre">{seq2_aligned}</pre>
+    </div>
+  );
+}
+\end{lstlisting}
+
+And add a case in the artifact switch:
+
+\begin{lstlisting}
+case "align_result":
+  return <ArtifactAlign
+    seq1_aligned={result.seq1_aligned}
+    seq2_aligned={result.seq2_aligned}
+    score={result.score}
+    cigar={result.cigar}
+  />;
+\end{lstlisting}
+
+\subsection{Registration}
+
+At the top of \texttt{BuheraTerminal.js}:
+
+\begin{lstlisting}
+import { alignModule } from "@/lib/modules/align-module";
+\end{lstlisting}
+
+In the mount effect:
+
+\begin{lstlisting}
+register(alignModule);
+\end{lstlisting}
+
+\subsection{Verification}
+
+\begin{lstlisting}[style=shell]
+npm run build     # should pass
+npm run dev
+# in the browser terminal:
+:modules          # should list "align"
+dispatch("align", "demo")
+# expected: aligned GATTACA and GCATGCU, some negative score, CIGAR
+dispatch("align", { kind: "align", seq1: "ACGT", seq2: "AGGT" })
+# expected: alignment showing one mismatch
+:audit            # two entries with module_id: "align"
+\end{lstlisting}
+
+That is a complete, working, testable module. Every scientific module
+follows this same shape at a higher level of domain complexity.
+
+% =====================================================================
+\section{Common Pitfalls}
+\label{sec:pitfalls}
+% =====================================================================
+
+Nine mistakes I have seen (or made) that break a module in ways whose
+error messages are unhelpful.
+
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item \textbf{Forgetting to make \texttt{execute} async.} The registry
+awaits the return value; a non-async function that returns a plain
+object also happens to work, but the moment the function does any
+\texttt{await} inside it, forgetting \texttt{async} is a syntax error.
+Always declare \texttt{async execute(...)}.
+
+\item \textbf{Throwing instead of returning \texttt{ok:false}.} The
+registry catches exceptions, but the resulting error is generic and the
+audit-log entry loses domain context. Wrap the module's work in
+\texttt{try/catch} and return proper ActResults.
+
+\item \textbf{Naming an \texttt{output\_delta.kind} that clashes with an
+existing renderer.} If a new module returns \texttt{kind: "text"} with
+non-\texttt{lines} fields, the text renderer will silently do the wrong
+thing. Namespace kinds with the module id.
+
+\item \textbf{Importing server-side code into the client bundle.} A
+module that imports \texttt{fs}, \texttt{child\_process}, or any
+Node-only package into \texttt{src/lib/modules/} will break the build.
+Server code lives under \texttt{src/pages/api/} or
+\texttt{src/lib/server/}; nothing in \texttt{src/lib/modules/} may
+transitively import Node built-ins.
+
+\item \textbf{Storing state on the module trait object itself.} The
+module object is a singleton, but so are its fields. Mutating
+\texttt{myModule.someState = ...} inside \texttt{execute} creates
+subtle bugs. Use a module-private variable (as vahera-module and
+purpose-carry-module do with their \texttt{\_kernel} and \texttt{\_session}
+singletons) and export a \texttt{reset} function if needed.
+
+\item \textbf{Blocking the render thread with a long synchronous
+computation.} The module runs in the browser's main thread. A CPU-bound
+algorithm running for seconds will freeze the terminal. Break large
+computations across microtasks (\texttt{await new Promise(r => setTimeout(r, 0))})
+or offload to a Web Worker.
+
+\item \textbf{Depending on module load order.} Modules are registered
+in the mount effect in a fixed order, but a module MUST NOT rely on
+another module being registered before it. Cross-module dispatch reads
+the registry at call time, not at load time, so ordering only matters
+for early-boot calls; even those should use defensive lookups.
+
+\item \textbf{Assuming the audit log persists.} It resets on page
+reload. A meta module that needs long-term memory must persist its own
+state (\texttt{localStorage}, \texttt{IndexedDB}, or a snapshot API).
+
+\item \textbf{Skipping the outputCell stub.} The registry's
+\texttt{register()} does not check for \texttt{outputCell}, but the
+future scheduler gate will. Add the two-line stub now to avoid the
+churn later.
+\end{enumerate}
+
+% =====================================================================
+\section{Where to Look in the Existing Codebase}
+\label{sec:references}
+% =====================================================================
+
+Every claim in this document corresponds to code in the shipped
+Buhera. When in doubt, read the referenced file.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Topic} & \textbf{File} \\
+\midrule
+Module trait definition & \texttt{src/lib/modules/registry.js} \\
+Reference: pure computational module & \texttt{src/lib/modules/lavoisier-module.js} \\
+Reference: DSL-executing module & \texttt{src/lib/modules/vahera-module.js} \\
+Reference: DSL search module & \texttt{src/lib/modules/graffiti-module.js} \\
+Reference: LLM-backed module & \texttt{src/lib/modules/zangalewa-module.js} \\
+Reference: meta / history-reading & \texttt{src/lib/modules/purpose-carry-module.js} \\
+Reference: server-side federation & \texttt{src/lib/modules/purpose-module.js} \\
+LLM cascade helper & \texttt{src/lib/server/llm-cascade.js} \\
+Sample server route (LLM) & \texttt{src/pages/api/extract.js} \\
+Sample server route (JS federation) & \texttt{src/pages/api/purpose-federation.js} \\
+Provider introspection & \texttt{src/pages/api/providers.js} \\
+Terminal registration + hooks & \texttt{src/components/BuheraTerminal.js} \\
+τ (term extraction) & \texttt{src/lib/purpose-terms.js} \\
+Cost estimation & \texttt{src/lib/purpose-cost.js} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Checklist Before Shipping a New Module}
+\label{sec:checklist}
+% =====================================================================
+
+Print this. Tick every line.
+
+\begin{itemize}[leftmargin=1.6em,itemsep=1pt]
+\item[$\square$] Module id chosen; lowercase, kebab-case if compound.
+\item[$\square$] File \texttt{src/lib/modules/<id>-module.js} created and exports the trait object.
+\item[$\square$] \texttt{describe()} returns \texttt{\{id, description, instructions\}}.
+\item[$\square$] \texttt{execute()} is \texttt{async}, wrapped in \texttt{try/catch}, returns a valid ActResult in every branch.
+\item[$\square$] Instruction handling covers \texttt{"demo"}, bare string, structured object.
+\item[$\square$] Every ActResult has \texttt{ok}, \texttt{output\_delta}, \texttt{residue}, \texttt{completed}, and \texttt{error} iff \texttt{ok:false}.
+\item[$\square$] \texttt{output\_delta.kind} is namespaced (starts with the module id).
+\item[$\square$] \texttt{outputCell} stub present.
+\item[$\square$] If LLM-backed: server route created; uses \texttt{chatCascade}; adapter posts to route; no direct provider calls in client bundle.
+\item[$\square$] If it has a domain-specific output: renderer written; case added to the artifact switch.
+\item[$\square$] Import and \texttt{register(myModule)} added to \texttt{BuheraTerminal.js} mount effect.
+\item[$\square$] \texttt{npm run build} passes.
+\item[$\square$] \texttt{npx next lint --dir src} passes.
+\item[$\square$] \texttt{:modules} lists the new module with correct description.
+\item[$\square$] \texttt{dispatch("<id>", "demo")} returns \texttt{ok:true} in the terminal.
+\item[$\square$] \texttt{:audit} shows the dispatched act.
+\item[$\square$] At least one other module (e.g. \texttt{purpose-carry}) still works after registration.
+\item[$\square$] \texttt{tutorial.md} updated with at least one worked example of the new module.
+\end{itemize}
+
+% =====================================================================
+\section{Closing}
+\label{sec:closing}
+% =====================================================================
+
+The federation is designed to grow by addition. Every architectural
+decision in Buhera exists to make it possible for a new module to land
+without requiring anyone to understand the whole system. Read the trait
+in \S\ref{sec:registry}, pick the recipe in \S\ref{sec:recipes} that
+matches the module's shape, copy the skeleton in \S\ref{sec:skeleton},
+consult the worked example in \S\ref{sec:example}, and run through the
+checklist in \S\ref{sec:checklist}. What lands is a module that speaks
+the same protocol every existing module speaks, appears in
+\texttt{:modules}, dispatches from turbulance, contributes to the audit
+log, and interoperates with purpose-carry, graffiti, zangalewa, and the
+rest without any of them knowing about it.
+
+Every scientific tool that the group produces --- protein structure,
+molecular docking, chemical reaction networks, imaging pipelines,
+statistical analyses, phylogenetics, whatever --- can become a Buhera
+module by following this document. That is what the federation is for.
+
+\end{document}
