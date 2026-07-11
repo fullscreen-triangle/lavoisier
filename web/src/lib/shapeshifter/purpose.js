@@ -18,7 +18,7 @@
  *   diatomics:    99.99%
  */
 
-import { ternaryAddress } from "../partition/ionDroplet";
+import { ternaryAddress } from "../partition/ionDroplet.js";
 
 /* ── Domain definitions ──────────────────────────────────────────────────── */
 // Each domain specifies a bounding box in S-entropy space: [sk_lo, sk_hi] × [st_lo, st_hi] × [se_lo, se_hi]

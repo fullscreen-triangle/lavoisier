@@ -14,7 +14,7 @@
  *   via Phase-Coherent Decomposition"
  */
 
-import { nState, mzToN } from "./partitionStateGraph";
+import { nState, mzToN } from "./partitionStateGraph.js";
 
 /* ── Physical constants ──────────────────────────────────────────────────── */
 const PLANCK_TIME = 5.391e-44;   // s

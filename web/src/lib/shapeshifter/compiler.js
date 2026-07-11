@@ -12,15 +12,15 @@
  *   "empty"     — nothing produced
  */
 
-import { runExperiment, summariseRecords } from "@/lib/experiment/virtualinstrument";
-import { LIPID_CLASSES } from "@/lib/experiment/lipidomics";
-import { PROTEIN_CLASSES } from "@/lib/experiment/proteomics";
-import { computeSEntropyFromFrequencies, dualPathValidate, ternaryAddress } from "@/lib/partition/ionDroplet";
-import { GenerativeDb, addressToSentropy, commonPrefixScore } from "@/lib/partition/GenerativeDb";
-import { DOMAINS, getPurposePrefixes, matchingDomains, combineDomains } from "@/lib/shapeshifter/purpose";
-import { sebdMs, sebdMsToRecords, reconstructPrecursor } from "@/lib/partition/partitionStateGraph";
-import { fragmentSubharmonics, virtualTensorComponents, verifyMeanRecovery, planckDepth, effectiveDimensionality, impossibleIons, partitionComplement, transientContents } from "@/lib/partition/virtualTensor";
-import { searchAll } from "@/lib/spectral/dbSearch";
+import { runExperiment, summariseRecords } from "../experiment/virtualinstrument.js";
+import { LIPID_CLASSES } from "../experiment/lipidomics.js";
+import { PROTEIN_CLASSES } from "../experiment/proteomics.js";
+import { computeSEntropyFromFrequencies, dualPathValidate, ternaryAddress } from "../partition/ionDroplet.js";
+import { GenerativeDb, addressToSentropy, commonPrefixScore } from "../partition/GenerativeDb.js";
+import { DOMAINS, getPurposePrefixes, matchingDomains, combineDomains } from "./purpose.js";
+import { sebdMs, sebdMsToRecords, reconstructPrecursor } from "../partition/partitionStateGraph.js";
+import { fragmentSubharmonics, virtualTensorComponents, verifyMeanRecovery, planckDepth, effectiveDimensionality, impossibleIons, partitionComplement, transientContents } from "../partition/virtualTensor.js";
+import { searchAll } from "../spectral/dbSearch.js";
 
 /* ── Parser helpers ──────────────────────────────────────────────────────── */
 

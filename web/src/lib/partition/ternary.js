@@ -166,7 +166,7 @@ function tritsToInt(trits) {
  * exactly as in the summary-statistics encoding, but now grounded in
  * actual peak identity rather than aggregate moments.
  *
- * @param {import("./hierarchy").HierarchicalDecomposition} decomp
+ * @param {import("./hierarchy.js").HierarchicalDecomposition} decomp
  * @param {Object} [opts]
  * @param {number} [opts.peaks=6]        oscillators to encode (top by intensity)
  * @param {number} [opts.tritsPerPeak=5] base-3 width per cell index

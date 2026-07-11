@@ -15,7 +15,7 @@
  * Equivalent to closed forms in the literature (see e.g. LIPID MAPS).
  */
 
-import { ATOMIC_MASS, GROUP_MASS, monoisotopicMass } from "./constants";
+import { ATOMIC_MASS, GROUP_MASS, monoisotopicMass } from "./constants.js";
 
 /**
  * Each class has backboneComposition (atoms NOT including FA chains) and

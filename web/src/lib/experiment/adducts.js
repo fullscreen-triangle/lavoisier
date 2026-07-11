@@ -3,7 +3,7 @@
  * mass = analyte M plus the adduct delta divided by charge.
  */
 
-import { ATOMIC_MASS, PROTON_MASS } from "./constants";
+import { ATOMIC_MASS, PROTON_MASS } from "./constants.js";
 
 export const ADDUCTS = {
   // Positive

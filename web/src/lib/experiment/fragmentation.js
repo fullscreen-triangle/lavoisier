@@ -11,10 +11,10 @@
  *     | "neutral_loss" | "isotope"
  */
 
-import { LIPID_CLASSES } from "./lipidomics";
-import { RESIDUES } from "./proteomics";
-import { ADDUCTS } from "./adducts";
-import { ATOMIC_MASS, GROUP_MASS, PROTON_MASS } from "./constants";
+import { LIPID_CLASSES } from "./lipidomics.js";
+import { RESIDUES } from "./proteomics.js";
+import { ADDUCTS } from "./adducts.js";
+import { ATOMIC_MASS, GROUP_MASS, PROTON_MASS } from "./constants.js";
 
 const H2O_FRAG = 18.01056468;
 const CO_MASS  = 27.99491462;

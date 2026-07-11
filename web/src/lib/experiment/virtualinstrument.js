@@ -14,26 +14,26 @@
  * analyte set.
  */
 
-import { LIPID_CLASSES, enumerateAnalytes } from "./lipidomics";
+import { LIPID_CLASSES, enumerateAnalytes } from "./lipidomics.js";
 import {
   enumerateProteinAnalytes,
   preferredProteinAdducts,
-} from "./proteomics";
+} from "./proteomics.js";
 import {
   ADDUCTS,
   applyAdduct,
   preferredAdducts,
   adductRelativeIntensity,
-} from "./adducts";
-import { fragmentsFor, normaliseFragments } from "./fragmentation";
-import { observe, partitionField } from "../partition/lagrangian";
-import { computeFromSpectrum } from "../partition/sentropy";
+} from "./adducts.js";
+import { fragmentsFor, normaliseFragments } from "./fragmentation.js";
+import { observe, partitionField } from "../partition/lagrangian.js";
+import { computeFromSpectrum } from "../partition/sentropy.js";
 import {
   decomposeSpectrum,
   shellDistribution,
   partitionEntropy,
-} from "../partition/hierarchy";
-import { hierarchicalEncode } from "../partition/ternary";
+} from "../partition/hierarchy.js";
+import { hierarchicalEncode } from "../partition/ternary.js";
 
 /**
  * Map a lipid analyte to a partition principal coordinate n.

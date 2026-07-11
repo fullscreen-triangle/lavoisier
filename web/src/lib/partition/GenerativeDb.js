@@ -15,8 +15,8 @@
  * Storage:     O(0)  — no spectra stored; phase space IS the database
  */
 
-import { ternaryAddress, computeSEntropyFromFrequencies } from "./ionDroplet";
-import { TernaryTrie } from "./trie";
+import { ternaryAddress, computeSEntropyFromFrequencies } from "./ionDroplet.js";
+import { TernaryTrie } from "./trie.js";
 
 /* ── Streaming architecture ──────────────────────────────────────────────── */
 

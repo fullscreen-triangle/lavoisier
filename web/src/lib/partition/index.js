@@ -9,20 +9,20 @@
  * This is the main entry point the worker and UI call.
  */
 
-export * as sentropy from "./sentropy";
-export * as ternary from "./ternary";
-export * as lagrangian from "./lagrangian";
-export * as hierarchy from "./hierarchy";
-export { TernaryTrie } from "./trie";
+export * as sentropy from "./sentropy.js";
+export * as ternary from "./ternary.js";
+export * as lagrangian from "./lagrangian.js";
+export * as hierarchy from "./hierarchy.js";
+export { TernaryTrie } from "./trie.js";
 
-import { computeFromSpectrum, clamp01 } from "./sentropy";
-import { ternaryEncode, hierarchicalEncode } from "./ternary";
-import { observe, partitionInertia } from "./lagrangian";
+import { computeFromSpectrum, clamp01 } from "./sentropy.js";
+import { ternaryEncode, hierarchicalEncode } from "./ternary.js";
+import { observe, partitionInertia } from "./lagrangian.js";
 import {
   decomposeSpectrum,
   shellDistribution,
   partitionEntropy,
-} from "./hierarchy";
+} from "./hierarchy.js";
 
 /**
  * @typedef {Object} HierarchyView
