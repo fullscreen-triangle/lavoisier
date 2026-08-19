@@ -21,6 +21,7 @@ import { DOMAINS, getPurposePrefixes, matchingDomains, combineDomains } from "./
 import { sebdMs, sebdMsToRecords, reconstructPrecursor } from "../partition/partitionStateGraph.js";
 import { fragmentSubharmonics, virtualTensorComponents, verifyMeanRecovery, planckDepth, effectiveDimensionality, impossibleIons, partitionComplement, transientContents } from "../partition/virtualTensor.js";
 import { searchAll } from "../spectral/dbSearch.js";
+import { synthLibrary, sentropyOne, separation, drift, baseline, shuffleControl, scoreCriterion, parameterSweep } from "./experiment.js";
 
 /* ── Parser helpers ──────────────────────────────────────────────────────── */
 
@@ -477,6 +478,109 @@ function executeCall(fn, args, env, ast, log) {
 
   /* ── Online spectral database search ──────────────────────────────────── */
 
+  /* ── Experiment operations (acquisition half of the language) ────────── */
+
+  if (fn === "lavoisier.acquire.library") {
+    const scans = synthLibrary({
+      analytes: a.analytes || 60,
+      seed:     a.seed     || 20260819,
+    });
+    const minPeaks = a.min_peaks ?? 3;
+    const kept = scans.filter(s2 => s2.n_peaks >= minPeaks);
+    log(`  ${kept.length} spectra over ${a.analytes || 60} analytes x 9 collision energies`);
+    log(`  ${kept.reduce((t, s2) => t + s2.n_peaks, 0)} peaks total`);
+    return kept;
+  }
+
+  if (fn === "lavoisier.acquire.filter_scans") {
+    const scans = a.scans || [];
+    let out = scans;
+    if (a.nce_in)   out = out.filter(s2 => a.nce_in.includes(s2.nce));
+    if (a.min_peaks != null) out = out.filter(s2 => s2.n_peaks >= a.min_peaks);
+    log(`  filter: ${scans.length} → ${out.length} scans`);
+    return out;
+  }
+
+  if (fn === "lavoisier.transform.sentropy") {
+    const scans = a.scans || [];
+    const alpha = a.alpha ?? 1.0, beta = a.beta ?? 1.0, k = a.k_neighbors ?? 5;
+    const out = scans.map(s2 => ({
+      scan_id: s2.scan_id, compound: s2.compound, nce: s2.nce,
+      precursor_mz: s2.precursor_mz, n_peaks: s2.n_peaks,
+      ...sentropyOne(s2.peaks, s2.precursor_mz, alpha, beta, k),
+    }));
+    log(`  ${out.length} coordinate triples (alpha=${alpha}, beta=${beta}, k=${k})`);
+    return out;
+  }
+
+  if (fn === "lavoisier.analyse.separation") {
+    const r = separation(a.coords || [], {
+      key: a.key || "compound",
+      axes: a.axes || ["s_k", "s_t", "s_e"],
+      minGroup: a.min_group ?? 9,
+    });
+    if (!r) throw new Error("separation needs at least two groups of the minimum size");
+    log(`  within=${r.mean_within.toFixed(4)} between=${r.mean_between.toFixed(4)} ratio=${r.separation_ratio.toFixed(3)}`);
+    return r;
+  }
+
+  if (fn === "lavoisier.analyse.drift") {
+    const r = drift(a.coords || [], {
+      over: a.over || "nce",
+      axes: a.axes || ["s_k", "s_t", "s_e"],
+    });
+    for (const ax of Object.keys(r.axes)) {
+      log(`  ${ax} vs ${r.over}: slope=${r.axes[ax].slope.toFixed(5)} r=${r.axes[ax].pearson_r.toFixed(3)}`);
+    }
+    return r;
+  }
+
+  if (fn === "lavoisier.analyse.baseline") {
+    const r = baseline(a.scans || [], {
+      key: a.key || "compound",
+      tolerance: a.tolerance ?? 0.01,
+      minGroup: a.min_group ?? 9,
+      maxGroups: a.max_groups ?? 40,
+    });
+    log(`  cosine: all-pairs=${r.mean_within_compound.toFixed(4)} adjacent=${r.mean_adjacent_level.toFixed(4)} over ${r.n_pairs} pairs`);
+    return r;
+  }
+
+  if (fn === "lavoisier.analyse.shuffle_control") {
+    const r = shuffleControl(a.coords || [], {
+      key: a.key || "compound",
+      axes: a.axes || ["s_k", "s_t", "s_e"],
+      minGroup: a.min_group ?? 9,
+      seed: a.seed,
+    });
+    if (!r) throw new Error("shuffle control needs at least two groups");
+    log(`  shuffled ratio=${r.separation_ratio.toFixed(3)} (seed ${r.seed})`);
+    return r;
+  }
+
+  if (fn === "lavoisier.analyse.score") {
+    const r = scoreCriterion({
+      separation: a.separation,
+      drift: a.drift,
+      minRatio: a.min_ratio ?? 2.0,
+      maxAbsR: a.max_abs_r ?? 0.3,
+    });
+    for (const c of r.conditions) {
+      log(`  ${c.pass ? "PASS" : "FAIL"}  ${c.name}  required ${c.required}  observed ${c.observed.toFixed(3)}`);
+    }
+    log(`  verdict: ${r.verdict} (${r.n_passed}/${r.n_total} conditions)`);
+    return r;
+  }
+
+  if (fn === "lavoisier.analyse.sweep") {
+    const r = parameterSweep(a.scans || [], {
+      alphas: a.alphas, betas: a.betas,
+      k: a.k_neighbors ?? 5, minGroup: a.min_group ?? 9,
+    });
+    log(`  swept ${r.n_settings} settings; best ratio=${(r.best_ratio ?? 0).toFixed(3)} at alpha=${r.best_at?.alpha}, beta=${r.best_at?.beta}`);
+    return r;
+  }
+
   if (fn === "lavoisier.db.search") {
     const precMz = a.precursor_mz ?? 500;
     const frags  = a.fragments ?? [];
@@ -620,6 +724,8 @@ function classifyValue(fn, value) {
       if ("frequencyRatio" in value[0])                            return "subharmonics";
       if ("impossibleMz" in value[0])                              return "impossible";
       if ("instrument" in value[0] && "value" in value[0])         return "tensor";
+      if ("s_k" in value[0] && "s_t" in value[0] && "s_e" in value[0]) return "coords";
+      if ("peaks" in value[0] && "nce" in value[0])                return "scans";
     }
     return "array";
   }
@@ -630,6 +736,11 @@ function classifyValue(fn, value) {
     if (fn && fn.includes("combine"))     return "domain";
     if ("sk" in value && "st" in value && "se" in value) return "sentropy";
     if ("tensor" in value && "verified" in value) return "tensorReport";
+    if ("separation_ratio" in value)      return "separation";
+    if ("verdict" in value && "conditions" in value) return "criterion";
+    if ("by_lag" in value)                return "baselineStat";
+    if ("grid" in value && "best_ratio" in value) return "sweep";
+    if (value.axes && value.over)         return "drift";
     if ("complementMz" in value)          return "complement";
     if ("precursor" in value && "fragments" in value) return "transient";
     return "object";

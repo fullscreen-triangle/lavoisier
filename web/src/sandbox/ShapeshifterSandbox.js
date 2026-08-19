@@ -464,6 +464,22 @@ phase Execute:
 | \`lavoisier.purpose.match(sentropy)\` | Matching domain contexts |
 | \`lavoisier.purpose.combine(domains, depth)\` | Prompt contraction |
 
+### Experiment operations (acquisition half)
+| Function | Output |
+|---|---|
+| \`lavoisier.acquire.library(analytes, seed)\` | Spectra: N analytes x 9 collision energies |
+| \`lavoisier.acquire.filter_scans(scans, nce_in)\` | Filtered scan set |
+| \`lavoisier.transform.sentropy(scans, alpha, beta, k_neighbors)\` | (Sk,St,Se) per spectrum |
+| \`lavoisier.analyse.separation(coords, key, min_group)\` | Within vs between spread + ratio |
+| \`lavoisier.analyse.drift(coords, over)\` | Per-axis slope and correlation |
+| \`lavoisier.analyse.baseline(scans, tolerance)\` | Cosine similarity (comparison method) |
+| \`lavoisier.analyse.shuffle_control(coords, seed)\` | Label-permutation negative control |
+| \`lavoisier.analyse.score(separation, drift, min_ratio, max_abs_r)\` | Verdict against a stated criterion |
+| \`lavoisier.analyse.sweep(scans, alphas, betas)\` | Ratio over a parameter grid |
+
+See \`experiments/TUTORIAL.md\` for a walkthrough of a program that states
+a criterion in advance and can return a verdict against its author.
+
 ## Key papers
 
 - **Partition Lagrangian**: all four analyser equations from one Lagrangian (Papers 1–3)
@@ -471,6 +487,172 @@ phase Execute:
 - **Triple Equivalence**: oscillation ≡ counting ≡ partition (Paper 2)
 - **Generative database**: O(1) memory, O(k) query, stores nothing (Paper 3)
 - **Dual-path validation**: ion-droplet bijection, no ground truth needed (Papers 2–3)
+`;
+
+
+const TUTORIAL_CONTENT = "# Running an experiment that can fail\n\nMost of the scripts in \\`examples/\\` **generate** data: you declare\nparameters and the runtime synthesises records. Nothing they produce can\ncontradict you.\n\nThe scripts in this folder do something different. They state a\n**criterion before the run**, then score the result against it. That is\nthe difference between a demonstration and an experiment.\n\n---\n\n## 1. The shape of a testable program\n\nFour blocks, in this order:\n\n| Block | Role |\n|---|---|\n| \\`objective\\` | states the claim **and the criterion**, in the source |\n| \\`phase Read\\` | acquires spectra |\n| \\`phase Transform\\` | computes coordinates |\n| \\`phase Score\\` | scores the criterion, returns a verdict |\n\nThe criterion lives in the document. A reviewer can see it was chosen\n*before* the numbers, not after.\n\n---\n\n## 2. Experiment 0 \u2014 the address and collision energy\n\nOpen \\`exp0_invariance.ss\\` and run it.\n\n**The claim.** The S-entropy address \\`(Sk, St, Se)\\` is a property of the\ncompound, not of the spectrum.\n\n**The test.** A reference library measures each analyte at nine collision\nenergies. If the claim holds, moving the energy should shift the address\n*less* than changing the analyte does.\n\n**The criterion**, declared in the \\`objective\\` block:\n\n    separation_ratio > 2.0    and    |r| < 0.3  for each axis\n\nwhere \\`separation_ratio = mean_between / mean_within\\`.\n\n**What you will see.** The ratio comes out near **0.93** \u2014 below 1.0,\nmeaning changing the collision energy moves a spectrum as far through\nthe coordinate space as changing the compound. \\`Sk\\` and \\`Se\\` both breach\nthe correlation bound. The verdict is \\`NOT MET\\`.\n\nThat is the point. The program was capable of returning a different\nanswer, and did not.\n\n---\n\n## 3. Why a failed criterion needs controls\n\nA negative result is uninterpretable on its own: it could mean the claim\nis wrong, or that the pipeline is broken. Run \\`exp0_controls.ss\\`.\n\n**Negative control** \u2014 shuffle the compound labels. The ratio drops to\nabout **0.35**, well below the measured 0.93. So the statistic *does*\ndistinguish real grouping from random grouping, by roughly 2.7\u00d7. The\napparatus works; the transformation is what falls short.\n\n**Comparison method** \u2014 cosine similarity of the raw peak lists. Between\n*adjacent* energy levels it stays near **0.93**; across the full range it\nfalls to near zero. The established method is stable exactly where the\ncriterion asked the coordinates to be stable.\n\nA result reported without both of these is a claim, not evidence.\n\n---\n\n## 4. Was it just a bad parameter choice?\n\n\\`alpha\\`, \\`beta\\` and \\`k\\` are analyst choices. The language makes you\nstate them; it does not tell you what to pick. So the honest follow-up is\nwhether some *other* setting would have passed.\n\nRun \\`exp0_sweep.ss\\`. Fifteen settings, scored identically. None reaches\nthe threshold, and none reaches even 1.0.\n\nNote the shape of the dependence: the ratio is flat in \\`beta\\` and falls\nin \\`alpha\\`. That is diagnostic \u2014 the mass term separates *spectra*\nwithout separating *compounds*, so weighting it harder makes things\nworse.\n\nA grid search proves no impossibility, and this one does not claim to.\nIt shows the declared setting was not unlucky.\n\n---\n\n## 5. The mechanism\n\nRun \\`exp0_mechanism.ss\\`. It splits the library into low and high\ncollision energy and transforms each separately.\n\n\\`Se\\` is the Shannon entropy of the local intensity neighbourhood.\nRaising collision energy produces more fragments of comparable\nintensity \u2014 which raises that entropy directly. The correlation is not\nan implementation defect; it is what the definition computes.\n\nFragment count rises from about 7 peaks at NCE 10 to 34 at NCE 40, and\n\\`Se\\` tracks it.\n\n---\n\n## 6. What the language contributed\n\nEverything above could be done in a script. What the document adds:\n\n- **The criterion is in the source**, not in a notebook cell or a memory.\n- **Compile before execute.** Compiling lists the operations and inputs\n  a program will touch, having touched none of them.\n- **The workspace is append-only.** Every intermediate stays inspectable,\n  so a surprising verdict can be traced back through the bindings that\n  produced it.\n- **Failure is named.** An operation that cannot proceed says which\n  condition it could not meet.\n\n---\n\n## 7. Try to break the result\n\nThe useful exercise is to attempt a pass:\n\n1. In \\`exp0_invariance.ss\\`, change \\`k_neighbors\\` to 2, then 20.\n2. Restrict the axes: \\`axes: [\"s_k\"]\\` in the separation call.\n3. Narrow the energy range with \\`filter_scans(nce_in: [20, 25, 30])\\`\n   \u2014 a narrower range is an easier test, and an honest report says so.\n4. Lower \\`min_ratio\\` to 1.0 and ask whether the weaker criterion is one\n   you would have declared beforehand.\n\nIf you find a configuration that passes, the next question is whether you\nwould have chosen it before seeing the data.\n\\";
+
+/* ── Experiment 0: does the address survive collision energy? ───────────── */
+
+const SS_EXP0_INVARIANCE = `\
+// Experiment 0 — NCE invariance of the S-entropy address.
+//
+// CLAIM UNDER TEST: the address (Sk, St, Se) is a property of the
+// COMPOUND, not of the spectrum. If true, changing collision energy at
+// fixed compound should move the address LESS than changing compound.
+//
+// The criterion is declared here, before the run. The program can fail.
+
+import lavoisier.acquire
+import lavoisier.transform
+import lavoisier.analyse
+
+objective NCEInvariance:
+    target: "does the S-entropy address survive collision-energy variation"
+    criterion: "separation_ratio > 2.0 and |r| < 0.3 for each axis"
+
+phase Read:
+    // 60 analytes x 9 collision energies, HCD-like fragment ladders
+    scans = lavoisier.acquire.library(analytes: 60, min_peaks: 3)
+
+phase Transform:
+    coords = lavoisier.transform.sentropy(
+        scans: scans,
+        alpha: 1.0,
+        beta: 1.0,
+        k_neighbors: 5
+    )
+
+phase Test:
+    // Primary: within-compound spread vs between-compound spread
+    separation = lavoisier.analyse.separation(
+        coords: coords,
+        key: "compound",
+        min_group: 9
+    )
+
+    // Secondary: does any axis track collision energy?
+    drift = lavoisier.analyse.drift(coords: coords, over: "nce")
+
+phase Score:
+    // The verdict, computed against the criterion declared above.
+    verdict = lavoisier.analyse.score(
+        separation: separation,
+        drift: drift,
+        min_ratio: 2.0,
+        max_abs_r: 0.3
+    )
+`;
+
+const SS_EXP0_CONTROLS = `\
+// Controls — what makes a negative result interpretable.
+//
+// A criterion that fails tells you nothing unless you can show the
+// apparatus WOULD have detected the effect had it been there.
+//   Negative control : shuffle the labels; the ratio must collapse.
+//   Comparison method: raw cosine similarity, the established practice.
+
+import lavoisier.acquire
+import lavoisier.transform
+import lavoisier.analyse
+
+objective ExperimentControls:
+    target: "show the pipeline discriminates, and score it against practice"
+
+phase Read:
+    scans  = lavoisier.acquire.library(analytes: 40, min_peaks: 3)
+    coords = lavoisier.transform.sentropy(scans: scans, alpha: 1.0, beta: 1.0)
+
+phase Measured:
+    measured = lavoisier.analyse.separation(coords: coords, min_group: 9)
+
+phase NegativeControl:
+    // Permute compound labels. If the measured ratio is real, this must
+    // fall well below it. If it does not, the statistic is measuring noise.
+    shuffled = lavoisier.analyse.shuffle_control(
+        coords: coords,
+        min_group: 9,
+        seed: 20260819
+    )
+
+phase ComparisonMethod:
+    // Cosine similarity of raw peak lists across collision energy.
+    // Known to be stable between adjacent levels and to degrade across
+    // distant ones — the behaviour the coordinates were meant to improve on.
+    baseline = lavoisier.analyse.baseline(
+        scans: scans,
+        tolerance: 0.01,
+        min_group: 9,
+        max_groups: 30
+    )
+`;
+
+const SS_EXP0_SWEEP = `\
+// Parameter sweep — is the outcome just an unlucky parameter choice?
+//
+// alpha, beta and k are analyst choices. The language requires them to
+// be stated in the source but offers no procedure for selecting them.
+// So the honest question after a failed criterion is whether some other
+// setting would have passed.
+
+import lavoisier.acquire
+import lavoisier.transform
+import lavoisier.analyse
+
+objective ParameterDependence:
+    target: "does any (alpha, beta, k) setting meet the criterion"
+
+phase Read:
+    scans = lavoisier.acquire.library(analytes: 40, min_peaks: 3)
+
+phase Sweep:
+    // Every combination is scored by the same separation statistic.
+    sweep = lavoisier.analyse.sweep(
+        scans: scans,
+        alphas: [0.0, 0.5, 1.0, 2.0, 4.0],
+        betas:  [0.5, 1.0, 2.0],
+        k_neighbors: 5,
+        min_group: 9
+    )
+
+phase Compare:
+    // The declared setting, for reference against the sweep's best.
+    coords     = lavoisier.transform.sentropy(scans: scans, alpha: 1.0, beta: 1.0)
+    declared   = lavoisier.analyse.separation(coords: coords, min_group: 9)
+`;
+
+const SS_EXP0_MECHANISM = `\
+// Mechanism — WHY the evolution coordinate tracks collision energy.
+//
+// Se is the Shannon entropy of the local intensity neighbourhood.
+// Raising collision energy adds fragments of comparable intensity,
+// which raises that entropy directly. The correlation is not a bug in
+// the implementation; it is what the definition computes.
+//
+// Run this at low and high energy separately and compare.
+
+import lavoisier.acquire
+import lavoisier.transform
+import lavoisier.analyse
+
+objective FragmentationMechanism:
+    target: "trace Se to fragment count, not to compound identity"
+
+phase Read:
+    scans = lavoisier.acquire.library(analytes: 50, min_peaks: 3)
+
+phase LowEnergy:
+    low        = lavoisier.acquire.filter_scans(scans: scans, nce_in: [10, 15, 20])
+    low_coords = lavoisier.transform.sentropy(scans: low, alpha: 1.0, beta: 1.0)
+
+phase HighEnergy:
+    high        = lavoisier.acquire.filter_scans(scans: scans, nce_in: [50, 60, 80])
+    high_coords = lavoisier.transform.sentropy(scans: high, alpha: 1.0, beta: 1.0)
+
+phase Drift:
+    // Across the full range, the trend is monotone in Se and opposite in Sk.
+    all_coords = lavoisier.transform.sentropy(scans: scans, alpha: 1.0, beta: 1.0)
+    trend      = lavoisier.analyse.drift(coords: all_coords, over: "nce")
 `;
 
 const initialFiles = {
@@ -488,6 +670,16 @@ const initialFiles = {
       "sebd_ms_search.ss":        { type: "file", lang: "ss", content: SS_SEBD_SEARCH },
       "virtual_tensor.ss":        { type: "file", lang: "ss", content: SS_VIRTUAL_TENSOR },
       "db_search.ss":             { type: "file", lang: "ss", content: SS_DB_SEARCH },
+    },
+  },
+  experiments: {
+    type: "folder",
+    children: {
+      "exp0_invariance.ss": { type: "file", lang: "ss", content: SS_EXP0_INVARIANCE },
+      "exp0_controls.ss":   { type: "file", lang: "ss", content: SS_EXP0_CONTROLS },
+      "exp0_sweep.ss":      { type: "file", lang: "ss", content: SS_EXP0_SWEEP },
+      "exp0_mechanism.ss":  { type: "file", lang: "ss", content: SS_EXP0_MECHANISM },
+      "TUTORIAL.md":        { type: "file", lang: "md", content: TUTORIAL_CONTENT },
     },
   },
   "README.md": { type: "file", lang: "md", content: README_CONTENT },
