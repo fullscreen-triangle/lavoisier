@@ -1,0 +1,86 @@
+# Lavoisier lens — see mushina/sources/purpose-ckg.md
+#
+# KNOWN TOOL BUG (verified 2026-08-16, purpose ckg build):
+# `.purpose/ckg.json` contains a phantom node `m` that is absent from `items`
+# (145 real modules) yet appears in 145 of 463 edges — one edge to every single
+# module, each at exactly weight 1.0. It is not derived from any indexed path;
+# no file in the index maps to a module `m`.
+# Blast radius is narrow and worth knowing precisely:
+#   NOT affected — COMPONENTS, DENSITY, TERM SPREAD (the tool's own diagnostics
+#     already exclude it: 80/55%/0.030 recomputes identically without it), and
+#     `ckg ask` verdicts/σ (σ is a min-cut; m adds at most 1.0).
+#   AFFECTED — `ckg why` resting cuts, which gain one spurious edge per module
+#     and list `m — <module>` pairs throughout. Ignore any line mentioning `m`.
+#
+# The calculus is correct for ANY choice here; what this decides is whether the
+# graph can tell modules apart at all. Read COMPONENTS / TERM SPREAD / GOAL
+# SATURATION, never a score. There deliberately is none.
+#
+# Repo shape (35,874 symbols, 1,662 files): 69% of the index is prose
+# (section 16,125 + heading 8,606). Code is def 8,257 / class 1,392 / fn 755 /
+# func 474 / struct 221. File granularity over 1,662 modules does not terminate;
+# dir granularity is required here.
+
+[lens]
+granularity = "dir"    # 1,662 files is too many modules; directories are the unit
+floor = 1
+
+[include]
+paths = []
+# Prose dominates the index 2:1 over code. Including section/heading puts every
+# manuscript in contact with every other through shared vocabulary.
+#
+# `def` is deliberately EXCLUDED, and it is a real trade, not a free win:
+#   with def:  11,143 admitted, 165 modules, density 0.335, giant comp 127 (77%),
+#              top term __init__ at 51% spread
+#   without:    2,886 admitted, 145 modules, density 0.030, giant comp  80 (55%),
+#              top term validationresult at 7% spread
+# Cost: 8,257 entries and 20 modules leave τ. Bought: a graph whose top terms are
+# domain types (SEntropyCoordinates, Spectrum, DDAEvent, MzMLReader) rather than
+# Python ceremony. Re-add "def" if you need method-level coverage and accept that
+# every module will be in contact with every other.
+kinds = ["class", "fn", "func", "struct", "enum", "trait", "type"]
+
+[terms]
+min_len = 4                  # 3 admits too many collide-y stems in this repo
+split_camel_case = true      # Python/Rust here mixes snake_case and CamelCase
+prose_kinds = ["heading", "section"]
+
+stopwords = [
+  "the", "and", "not", "for", "with", "from", "that", "this",
+  "what", "when", "where", "which", "how", "why", "who", "are",
+  "was", "were", "has", "have", "had", "can", "will", "its",
+  "into", "out", "over", "than", "then", "there", "does", "did",
+  "you", "your", "our", "all", "any", "but", "use", "using",
+  "used", "via", "per", "about", "also",
+]
+
+[terms.alias]
+
+[terms.weight]
+# Python dunders and `main` are ceremony, not distinctions: __init__ carried 51%
+# of modules and main 33% before this. Stopwords cannot reach them (§3: symbol
+# names are never stopworded), so they are priced near-zero here instead.
+# Zero is refused by the parser; 0.01 is the honest encoding — the contact is
+# real, it just distinguishes almost nothing.
+"def:__init__" = 0.01
+"def:__post_init__" = 0.01
+"def:__repr__" = 0.01
+"def:__str__" = 0.01
+"def:__eq__" = 0.01
+"def:__hash__" = 0.01
+"def:__len__" = 0.01
+"def:main" = 0.01
+"def:to_dict" = 0.01
+"def:from_dict" = 0.01
+"def:save" = 0.01
+"def:load" = 0.01
+"def:run" = 0.01
+"def:setup" = 0.01
+"def:cleanup" = 0.01
+"fn:main" = 0.01
+"fn:new" = 0.01
+"fn:default" = 0.01
+
+[edges]
+weight = "sum"

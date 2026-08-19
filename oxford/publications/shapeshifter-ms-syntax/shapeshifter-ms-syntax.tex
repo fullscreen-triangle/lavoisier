@@ -1,0 +1,2029 @@
+% =====================================================================
+%  Shapeshifter: A Declarative Language for Mass Spectrometric
+%  Experiment Specification
+%
+%  Language specification. Self-contained: the grammar, type system,
+%  and operational semantics are given in full, and every claim about
+%  the language is a claim about the artefact defined here.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[round,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+            citecolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage{cleveref}
+
+% ---- Theorem-like environments ----
+\newtheoremstyle{ssthm}{\topsep}{\topsep}{\itshape}{}{\bfseries}{.}{.5em}{}
+\theoremstyle{ssthm}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{rulename}[theorem]{Rule}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{notation}[theorem]{Notation}
+
+\crefname{rulename}{Rule}{Rules}
+\Crefname{rulename}{Rule}{Rules}
+
+% ---- Listing style for Shapeshifter source ----
+\definecolor{sskw}{RGB}{30,64,175}
+\definecolor{sscom}{RGB}{22,101,52}
+\definecolor{ssstr}{RGB}{159,18,57}
+\definecolor{ssns}{RGB}{180,83,9}
+\definecolor{ssbg}{RGB}{250,250,250}
+\lstdefinelanguage{shapeshifter}{
+  morekeywords={import,objective,instrument,dataset,phase,validate,target_list},
+  morekeywords=[2]{lavoisier,instrument,partition,cells,msms,db,observe,purpose,acquire,transform,analyse},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+  keywordstyle=\color{sskw}\bfseries,
+  keywordstyle=[2]\color{ssns},
+  commentstyle=\color{sscom}\itshape,
+  stringstyle=\color{ssstr},
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{ssbg},
+  frame=single,framesep=4pt,xleftmargin=6pt,xrightmargin=4pt,
+  breaklines=true,showstringspaces=false,columns=fullflexible,tabsize=2,
+}
+\lstset{language=shapeshifter}
+
+% ---- Shorthand ----
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\bnf}{\;::=\;}
+\newcommand{\alt}{\;\mid\;}
+\newcommand{\shk}[1]{\texttt{#1}}
+\newcommand{\evalto}{\Downarrow}
+\newcommand{\Env}{\rho}
+\newcommand{\Kinds}{\kappa}
+\newcommand{\Ord}{\omega}
+\newcommand{\Wsp}{W}
+\newcommand{\abs}[1]{\lvert#1\rvert}
+\newcommand{\Prog}{P}
+\newcommand{\Blocks}{\mathcal{B}}
+\newcommand{\Vals}{\mathcal{V}}
+\newcommand{\Kset}{\mathcal{K}}
+% Semantic brackets, defined locally so no extra package is required.
+\providecommand{\llbracket}{\ensuremath{[\![}}
+\providecommand{\rrbracket}{\ensuremath{]\!]}}
+
+\title{\textbf{Shapeshifter: A Declarative Language for\\[3pt]
+Mass Spectrometric Experiment Specification}\\[6pt]
+\large Grammar, Type Discipline, Operational Semantics,\\
+and a Two-Stage Compilation Model}
+
+\author{%
+Kundai Farai Sachikonye\\
+\small Technical University of Munich\\
+\small \texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+A mass spectrometric experiment is normally specified twice: once as a
+set of instrument-vendor settings entered through a graphical interface,
+and again as an informal prose description in a methods section. Neither
+artefact is executable, neither is diffable, and the correspondence
+between them is maintained by hand. We present \emph{Shapeshifter}
+(source extension \shk{.ss}), a declarative domain-specific language in
+which an experiment is a single executable document. This paper is the
+language's specification.
+
+We give: (i)~a complete lexical and context-free grammar in EBNF for the
+six block forms (\shk{objective}, \shk{instrument}, \shk{dataset},
+\shk{target\_list}, \shk{phase}, \shk{validate}) and the value language
+they contain;
+(ii)~a \emph{kind} discipline in which every value carried by the runtime
+is tagged with one of a fixed set of result kinds, and in which kind is
+assigned by the producing operation rather than inferred from data shape,
+so that an empty result retains the kind of the operation that produced
+it; (iii)~a small-step operational semantics over configurations
+$\langle \Env, \Kinds, \Ord, L\rangle$ of environment, kind map,
+declaration order and log, from which we prove three properties ---
+\emph{declaration-order determinism} (\Cref{thm:determinism}),
+\emph{phase isolation} (\Cref{thm:isolation}), and \emph{workspace
+monotonicity} (\Cref{thm:monotone}), the last being the statement that no
+executed statement removes a binding, so the workspace is an append-only
+record of the run; (iv)~a two-stage compilation model separating a
+\textsc{compile} stage, which parses and performs structural checks
+without executing any phase, from an \textsc{execute} stage, which runs
+phases against a fixed AST --- and we prove that compile-stage
+diagnostics are independent of runtime outcome
+(\Cref{thm:stage-separation}), so that a program can be checked without
+being run; and (v)~a standard library organised into nine namespaces, each operation
+specified by its argument signature, result kind, and totality
+behaviour. The library divides into a \emph{generative} half, which
+synthesises records from declared parameters, and an \emph{acquisition}
+half, which reads vendor-neutral \shk{mzML} and derives coordinates,
+linkages, and coherence statistics from measured spectra; we show that
+the two halves meet in a common record kind, so that a measured and a
+predicted experiment are the same type of object and may be compared
+without conversion (\Cref{thm:record-parity}).
+
+We report a reference implementation written from this document alone
+and a program executed against a public library of $5{,}328$ tandem
+spectra. The run confirms stage separation in practice --- structural
+checking costs $0.95$\,ms and opens no file, against $3.4$\,s and
+$6.5$\,MB for execution --- and returns a verdict against the
+coordinate transformation the program tests, failing three of four
+criteria stated in the source before the run. We report that negative
+outcome, and three under-specifications that writing the implementation
+exposed, because a specification language whose worked examples all
+succeed has not been shown to be capable of anything in particular.
+
+Two design decisions are argued for explicitly and their consequences
+proved. First, \emph{declaration order is the execution order}: phases
+run in source order and statements within a phase run in source order,
+with no dependency inference, which makes the document its own schedule.
+Second, \emph{failure is local and named}: an unresolvable analyte class
+is reported as a warning and skipped rather than aborting the run,
+whereas an empty class set is an error, and we characterise exactly which
+conditions belong to which category (\Cref{prop:failure-classification}).
+We close with a worked corpus of seven programs spanning untargeted
+lipidomics, targeted acquisition with per-class ranges, proteomics,
+timing-cell compilation, partition addressing, domain-constrained
+observation, and a complete acquisition-and-analysis run over measured
+mzML, and we state what the language does not provide.
+\end{abstract}
+
+\noindent\textbf{Keywords:} domain-specific language; mass spectrometry;
+experiment specification; operational semantics; EBNF grammar; kind
+system; two-stage compilation; declarative workflow; reproducibility.
+
+\tableofcontents
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% =====================================================================
+
+\subsection{The specification gap}
+
+Consider what must be true for a mass spectrometric experiment to be
+repeated by a second laboratory. The instrument must be configured
+identically in every respect that matters: analyser type, polarity,
+collision energy, acquisition window, isolation width, gradient
+programme. The analyte scope must be identical: which compound classes,
+over which ranges of chain length and unsaturation, with which adducts.
+The post-acquisition filtering must be identical: which retention window,
+which intensity threshold, which charge states retained.
+
+In current practice none of this is recorded in an executable form.
+Instrument settings live in a vendor method file, which is binary,
+version-locked, and not diffable. Analyte scope lives in a spreadsheet or
+in the analyst's working memory. Filtering lives in a sequence of
+mouse interactions with a processing package
+\citep{pluskal2010mzmine,smith2006xcms,tsugawa2015msdial}. The published
+methods section is a prose summary written after the fact, and the
+minimum-information reporting standards that exist
+\citep{taylor2007miape,sumner2007msi} specify what must be
+\emph{disclosed}, not a language in which it can be \emph{stated}.
+
+The consequence is a specification gap: the artefact that determines the
+experiment and the artefact that describes it are different objects, and
+nothing enforces their agreement. This is a recognised problem in
+computational science generally
+\citep{peng2011reproducible,sandve2013ten}, and the response elsewhere
+has been executable workflow description
+\citep{koster2012snakemake,ditommaso2017nextflow,goecks2010galaxy,%
+amstutz2016cwl}. Those systems describe pipelines over files. They do not
+describe experiments over instruments, and they have no vocabulary for
+analytes, adducts, or acquisition windows.
+
+\subsection{What Shapeshifter is}
+
+Shapeshifter is a declarative language in which the specification of a
+mass spectrometric experiment is a single executable document. A program
+declares an objective, one or more instrument configurations, optional
+target lists, an ordered sequence of phases containing the operations to
+perform, and optional validation blocks. Running the program produces
+records, timing-cell registries, or partition address tables, together
+with a log of what was done.
+
+The language is deliberately small. It has no user-defined functions, no
+control flow, no recursion, and no mutable state beyond single
+assignment. This is a design choice with a specific justification, given
+in \Cref{sec:design}: an experiment specification that admits arbitrary
+computation is no longer a specification, because reading it no longer
+tells you what will happen. Everything Shapeshifter can express is
+visible in the source without simulating its execution.
+
+\subsection{What this paper provides}
+
+This paper is the specification of the language, and it is self-contained
+in the sense that every claim it makes is a claim about the grammar,
+type discipline, and semantics defined here. Specifically:
+
+\begin{enumerate}[label=(\roman*),leftmargin=2.2em,itemsep=2pt]
+\item \Cref{sec:lexical} gives the lexical structure, including the
+      significant-indentation rule and the bracket-continuation rule that
+      allows a single logical line to span several physical lines.
+\item \Cref{sec:grammar} gives the context-free grammar in EBNF
+      \citep{backus1960notation,knuth1964backus} for all five block forms
+      and the value language.
+\item \Cref{sec:kinds} defines the kind discipline and proves kind
+      preservation (\Cref{thm:kind-preservation}).
+\item \Cref{sec:semantics} gives the operational semantics and proves
+      determinism, phase isolation, and workspace monotonicity.
+\item \Cref{sec:stages} defines the two-stage compilation model and
+      proves stage separation.
+\item \Cref{sec:acquisition} defines the acquisition layer: the
+      \shk{dataset} block, the three acquisition namespaces, and the
+      record-parity property joining them to the generative half.
+\item \Cref{sec:stdlib} specifies the generative standard library.
+\item \Cref{sec:programs} works six complete programs.
+\item \Cref{sec:execution} reports a reference implementation and an
+      executed experiment, including its negative outcome.
+\item \Cref{sec:limits} states what the language does not do.
+\end{enumerate}
+
+\subsection{Relation to existing tools}
+
+Shapeshifter is not a replacement for a data-processing package. It does
+not read raw files, does not perform peak picking, and does not compute
+false-discovery rates. Its relation to tools such as MZmine, XCMS,
+MS-DIAL, OpenMS, or MaxQuant
+\citep{pluskal2010mzmine,smith2006xcms,tsugawa2015msdial,%
+rost2016openms,cox2008maxquant} is that of a specification language to an
+implementation: those tools process the data an experiment produces;
+Shapeshifter states what experiment is to be performed. The nearest
+analogue in current practice is the targeted-method document of Skyline
+\citep{maclean2010skyline}, which is likewise a declarative artefact
+describing an acquisition; Shapeshifter differs in being a textual
+language with a published grammar rather than an application document
+format.
+
+% =====================================================================
+\section{Design rationale}
+\label{sec:design}
+% =====================================================================
+
+Before the formal development we state the three decisions that shape the
+language, because each is a restriction and each restriction is
+deliberate.
+
+\subsection{Declaration order is execution order}
+
+Workflow languages commonly infer an execution order from a dependency
+graph: a task runs when its inputs are available
+\citep{koster2012snakemake,ditommaso2017nextflow}. Shapeshifter does not.
+Phases execute in the order they appear in the source, and statements
+within a phase execute in the order they appear within the phase.
+
+The justification is that an experiment specification is read by people
+who need to know the order of operations, and dependency inference makes
+the order a derived property that must be computed to be known. A
+document whose execution order is its reading order can be checked by
+reading. The cost is that the author must order the phases correctly;
+the language will not reorder them, and a statement referring to a
+variable not yet bound will find it unbound rather than triggering
+an out-of-order evaluation.
+
+\subsection{No user-defined abstraction}
+
+The language has no procedures, no macros, and no imports of user code.
+The only callable operations are the fixed standard library of
+\Cref{sec:stdlib}. This bounds what a program can do to what the
+specification enumerates, which is what makes \Cref{prop:enumerable}
+below --- that the set of possible effects of any program is finite and
+computable from its source --- true at all. A language with
+user-defined abstraction cannot have that property, and for an
+experiment specification the property is worth more than the
+expressiveness it costs \citep{mernik2005when,vandeursen2000domain}.
+
+\subsection{Failure is local where the run can continue}
+
+A specification that aborts on the first unrecognised token is
+frustrating to use; a specification that silently ignores everything it
+does not understand is dangerous. Shapeshifter takes an intermediate
+position that is stated precisely in
+\Cref{prop:failure-classification}: conditions that leave the run
+meaningful are warnings and are named in the log; conditions that leave
+the run meaningless are errors and halt it. An unknown analyte class is
+the former --- the remaining classes still constitute an experiment. An
+empty class set after filtering is the latter --- there is no experiment
+left to run.
+
+% =====================================================================
+\section{Lexical structure}
+\label{sec:lexical}
+% =====================================================================
+
+\subsection{Source text and lines}
+
+\begin{definition}[Source, physical line]
+\label{def:source}
+A Shapeshifter \emph{source} is a finite sequence of Unicode characters.
+A \emph{physical line} is a maximal substring containing no newline. Each
+physical line $\ell$ carries an \emph{indent} $\mathrm{ind}(\ell)\in\N$,
+the number of leading whitespace characters, and a \emph{body}
+$\mathrm{body}(\ell)$, obtained by deleting any suffix beginning with the
+comment marker \shk{//} and then trimming surrounding whitespace.
+\end{definition}
+
+\begin{definition}[Blank and comment lines]
+\label{def:blank}
+A physical line is \emph{vacuous} if $\mathrm{body}(\ell)$ is empty. This
+covers both wholly blank lines and lines containing only a comment.
+Vacuous lines are discarded before parsing and carry no syntactic
+significance; in particular a vacuous line does not terminate a block.
+\end{definition}
+
+\begin{remark}[Why comments are stripped before indentation is used]
+\label{rem:comment-first}
+Comment stripping precedes vacuity testing, so a line consisting of
+whitespace followed by \shk{//} is vacuous regardless of its indent. Were
+the order reversed, an indented comment inside a block would be a
+non-vacuous line at block indentation and would be offered to the field
+parser, which would reject it.
+\end{remark}
+
+\subsection{Logical lines and bracket continuation}
+
+Block structure is determined by indentation, but a single logical
+statement frequently exceeds one physical line --- an array of object
+literals describing a target panel, for example. Shapeshifter resolves
+this with a bracket-balance rule rather than an explicit continuation
+character.
+
+\begin{definition}[Bracket balance]
+\label{def:balance}
+For a string $s$ let $\mathrm{op}(s)$ count occurrences of
+$\shk{[}$, $\shk{(}$, $\shk{\{}$ and $\mathrm{cl}(s)$ count occurrences of
+$\shk{]}$, $\shk{)}$, $\shk{\}}$. The \emph{balance} is
+$\mathrm{bal}(s)=\mathrm{op}(s)-\mathrm{cl}(s)$.
+\end{definition}
+
+\begin{definition}[Logical line]
+\label{def:logical}
+Let $\ell_1,\ell_2,\dots$ be the non-vacuous physical lines in order. A
+\emph{logical line} beginning at $\ell_i$ is formed as follows. If
+$\mathrm{bal}(\mathrm{body}(\ell_i))\le 0$, the logical line is
+$\ell_i$ alone. Otherwise successive bodies
+$\mathrm{body}(\ell_{i+1}),\mathrm{body}(\ell_{i+2}),\dots$ are appended,
+separated by a single space, accumulating balance, until the running
+balance returns to zero or the source is exhausted. The logical line
+inherits the indent of $\ell_i$.
+\end{definition}
+
+\begin{proposition}[Continuation terminates and is unambiguous]
+\label{prop:continuation}
+For any finite source, the construction in \Cref{def:logical} terminates,
+and every non-vacuous physical line belongs to exactly one logical line.
+\end{proposition}
+
+\begin{proof}
+Termination: each step consumes one physical line from a finite
+sequence, so the inner loop runs at most as many times as there are
+remaining lines. Partition: the construction proceeds left to right and
+each step consumes a contiguous, non-empty run of lines beginning at the
+current position; the next logical line begins immediately after. Hence
+the logical lines partition the non-vacuous physical lines.
+\end{proof}
+
+\begin{remark}[Balance is counted on bodies, not raw lines]
+\label{rem:balance-body}
+Because balance is computed after comment stripping, a bracket appearing
+inside a comment does not affect continuation. A bracket appearing inside
+a string literal does, which is a known limitation recorded in
+\Cref{sec:limits}.
+\end{remark}
+
+\subsection{Tokens}
+
+\begin{definition}[Token classes]
+\label{def:tokens}
+The lexical classes are:
+\begin{itemize}[leftmargin=1.6em,itemsep=1pt]
+\item \textsc{Keyword}: one of \shk{import}, \shk{objective},
+      \shk{instrument}, \shk{dataset}, \shk{phase}, \shk{validate},
+      \shk{target\_list}.
+\item \textsc{Ident}: a maximal run matching \shk{[A-Za-z\_][A-Za-z0-9\_]*}.
+\item \textsc{QualName}: a dotted sequence of identifiers,
+      \shk{[A-Za-z\_][A-Za-z0-9\_.]*}, used for namespaced operations.
+\item \textsc{Number}: any string accepted by the host numeric reader,
+      including decimal and scientific forms such as \shk{1.0e12}.
+\item \textsc{String}: a run delimited by matching \shk{"} or \shk{'}.
+\item \textsc{Bool}: \shk{true} or \shk{false}.
+\item \textsc{Punct}: one of \shk{:}, \shk{,}, \shk{=},
+      \shk{[}, \shk{]}, \shk{(}, \shk{)}, \shk{\{}, \shk{\}}.
+\end{itemize}
+\end{definition}
+
+% =====================================================================
+\section{Grammar}
+\label{sec:grammar}
+% =====================================================================
+
+\subsection{Programs and blocks}
+
+\begin{definition}[Grammar of programs]
+\label{def:grammar}
+A program is a sequence of imports and blocks:
+\[
+\begin{array}{rcl}
+\textit{program}    &\bnf& \{\,\textit{import}\,\}\;\{\,\textit{block}\,\}\\[2pt]
+\textit{import}     &\bnf& \shk{import}\ \textsc{QualName}\\[2pt]
+\textit{block}      &\bnf& \textit{objective} \alt \textit{instrument}
+                           \alt \textit{dataset} \alt \textit{targetlist}\\
+                    &   & \alt\ \textit{phase} \alt \textit{validate}\\[4pt]
+\textit{objective}  &\bnf& \shk{objective}\ \textsc{Ident}\ \shk{:}\ \textit{fieldblock}\\
+\textit{instrument} &\bnf& \shk{instrument}\ \textsc{Ident}\ \shk{:}\ \textit{fieldblock}\\
+\textit{dataset}    &\bnf& \shk{dataset}\ \textsc{Ident}\ \shk{:}\ \textit{fieldblock}\\
+\textit{targetlist} &\bnf& \shk{target\_list}\ \textsc{Ident}\ \shk{:}\ \textit{fieldblock}\\
+\textit{phase}      &\bnf& \shk{phase}\ \textsc{Ident}\ \shk{:}\ \textit{stmtblock}\\
+\textit{validate}   &\bnf& \shk{validate}\ \textsc{Ident}\ \shk{:}\ \textit{stmtblock}
+\end{array}
+\]
+\end{definition}
+
+The six block forms divide into two groups by their body: \emph{field
+blocks} carry declarative key--value data, and \emph{statement blocks}
+carry executable statements. This division is the primary structural
+distinction in the language.
+
+\begin{definition}[Field and statement blocks]
+\label{def:bodies}
+Let $d$ be the indent of the block header. Then
+\[
+\begin{array}{rcl}
+\textit{fieldblock} &\bnf& \{\,\textit{field}\,\}^{+}_{>d}\\
+\textit{field}      &\bnf& \textsc{Ident}\ \shk{:}\ \textit{value}\\[4pt]
+\textit{stmtblock}  &\bnf& \{\,\textit{stmt}\,\}^{+}_{>d}\\
+\textit{stmt}       &\bnf& \textit{assign} \alt \textit{callstmt}\\
+\textit{assign}     &\bnf& \textsc{Ident}\ \shk{=}\ \textit{expr}\\
+\textit{callstmt}   &\bnf& \textsc{QualName}\ \shk{(}\ \textit{args}\ \shk{)}
+\end{array}
+\]
+where $\{\,X\,\}^{+}_{>d}$ denotes one or more occurrences of $X$ on
+logical lines of indent strictly greater than $d$.
+\end{definition}
+
+\begin{definition}[Expressions and arguments]
+\label{def:expr}
+\[
+\begin{array}{rcl}
+\textit{expr} &\bnf& \textsc{QualName}\ \shk{(}\ \textit{args}\ \shk{)}
+                     \quad\text{(call)}\\
+              &\alt& \textit{value} \quad\text{(literal or variable reference)}\\[4pt]
+\textit{args} &\bnf& [\ \textit{arg}\ \{\ \shk{,}\ \textit{arg}\ \}\ ]\\
+\textit{arg}  &\bnf& \textsc{Ident}\ \shk{:}\ \textit{value}
+\end{array}
+\]
+All arguments are named; there are no positional arguments.
+\end{definition}
+
+\begin{remark}[Why arguments are named]
+\label{rem:named-args}
+Positional arguments make a call site unreadable without consulting the
+callee's signature, and reorderings are silent errors. In a
+specification language the call site must be self-describing, so
+Shapeshifter admits only named arguments. The cost is verbosity at every
+call.
+\end{remark}
+
+\subsection{The value language}
+
+\begin{definition}[Values]
+\label{def:values}
+\[
+\begin{array}{rcl}
+\textit{value} &\bnf& \textsc{String} \alt \textsc{Number} \alt \textsc{Bool}\\
+               &\alt& \shk{[}\ [\ \textit{value}\ \{\ \shk{,}\ \textit{value}\ \}\ ]\ \shk{]}
+                      \quad\text{(array)}\\
+               &\alt& \shk{\{}\ [\ \textit{pair}\ \{\ \shk{,}\ \textit{pair}\ \}\ ]\ \shk{\}}
+                      \quad\text{(object)}\\
+               &\alt& \textsc{Ident} \quad\text{(bare word / variable reference)}\\[4pt]
+\textit{pair}  &\bnf& \textsc{Ident}\ \shk{:}\ \textit{value}
+\end{array}
+\]
+\end{definition}
+
+\begin{definition}[Value parsing function]
+\label{def:parseval}
+The function $\mathcal{P}:\textsc{String}\to\Vals$ is defined on a
+trimmed input $s$ by the first applicable clause:
+\begin{enumerate}[label=(V\arabic*),leftmargin=2.6em,itemsep=1pt]
+\item if $s$ is empty, $\mathcal{P}(s)=\mathbf{null}$;
+\item if $s$ is delimited by matching quotes, $\mathcal{P}(s)$ is the
+      interior, taken literally;
+\item if $s=\shk{true}$ or $s=\shk{false}$, $\mathcal{P}(s)$ is the
+      corresponding boolean;
+\item if $s$ is bracketed by \shk{[}\dots\shk{]}, $\mathcal{P}(s)$ is an
+      array: if the interior begins with \shk{\{} it is parsed as a
+      sequence of object literals, otherwise as a comma-separated
+      sequence of values, in both cases splitting only at bracket depth
+      zero;
+\item if $s$ is bracketed by \shk{\{}\dots\shk{\}}, $\mathcal{P}(s)$ is an
+      object formed by splitting the interior at depth-zero commas and
+      each part at its first \shk{:};
+\item if $s$ parses as a number, $\mathcal{P}(s)$ is that number;
+\item otherwise $\mathcal{P}(s)=s$, a bare word.
+\end{enumerate}
+\end{definition}
+
+\begin{lemma}[Depth-zero splitting is well defined]
+\label{lem:split}
+Let $s$ be a string and let $\mathrm{split}_0(s)$ be the sequence of
+maximal substrings of $s$ separated by commas occurring at bracket depth
+zero, where depth is incremented by $\shk{[}$, $\shk{(}$, $\shk{\{}$ and
+decremented by $\shk{]}$, $\shk{)}$, $\shk{\}}$, scanning left to right.
+Then $\mathrm{split}_0$ is total, and if $s$ is bracket-balanced then
+concatenating the parts with commas recovers $s$.
+\end{lemma}
+
+\begin{proof}
+Totality is immediate: the scan visits each character once and the
+partition is defined by the positions at which depth is zero and the
+character is a comma. For the recovery claim, note the split removes
+exactly the depth-zero commas and no other character; reinserting them at
+the same positions restores $s$.
+\end{proof}
+
+\begin{remark}[Bare words and the ambiguity they carry]
+\label{rem:bareword}
+Clause (V7) means that an unquoted, non-numeric token parses as itself.
+This is what allows a target list to name an instrument block
+(\shk{instrument: OrbitrapXL}) without quoting. It also means a
+misspelled keyword inside a value position becomes a string rather than
+an error. \Cref{sec:limits} records this.
+\end{remark}
+
+% =====================================================================
+\section{The kind discipline}
+\label{sec:kinds}
+% =====================================================================
+
+Shapeshifter does not have a type system in the sense of a static
+calculus of value shapes \citep{pierce2002types,cardelli1985understanding}.
+It has a weaker but load-bearing discipline: every binding produced by
+executing a statement is tagged with a \emph{kind}, and the kind is
+determined by the operation that produced it.
+
+\subsection{Kinds}
+
+\begin{definition}[Kind set]
+\label{def:kinds}
+The kind set is
+\[
+\Kset=\left\{
+\begin{array}{l}
+\shk{records},\ \shk{cells},\ \shk{addresses},\ \shk{subharmonics},\
+\shk{tensor},\ \shk{impossible},\\
+\shk{scans},\ \shk{coords},\ \shk{linkage},\ \shk{coherence},\
+\shk{features},\\
+\shk{scalar},\ \shk{list},\ \shk{object}
+\end{array}
+\right\}.
+\]
+The first eleven are \emph{operation kinds}, assigned by a specific
+standard library operation; of these, \shk{scans}, \shk{coords},
+\shk{linkage}, \shk{coherence} and \shk{features} are produced only by
+the acquisition namespaces of \Cref{sec:acquisition}. The last three are
+\emph{structural kinds}, assigned to literal bindings by inspection.
+\end{definition}
+
+\begin{definition}[Kind assignment]
+\label{def:classify}
+The function $\mathrm{kind}(f, v)$ assigns a kind to a value $v$ produced
+by operation $f$ (with $f=\bot$ for a literal):
+\[
+\mathrm{kind}(f,v)=
+\begin{cases}
+\shk{records} & f\in\{\shk{run\_experiment},\shk{run\_proteomics},
+                     \shk{sebd\_search},\shk{db.*}\}\\
+\shk{cells} & f=\shk{cells.compile}\\
+\shk{addresses} & f=\shk{partition.compute\_addresses}\\
+\shk{subharmonics} & f=\shk{msms.phase\_coherence}\\
+\shk{tensor} & f=\shk{msms.virtual\_tensor}\\
+\shk{impossible} & f=\shk{msms.impossible\_ions}\\
+\shk{scans} & f\in\{\shk{acquire.read\_mzml},\shk{acquire.filter\_scans}\}\\
+\shk{coords} & f=\shk{transform.sentropy}\\
+\shk{linkage} & f=\shk{acquire.link\_dda}\\
+\shk{coherence} & f=\shk{analyse.phase\_lock}\\
+\shk{features} & f=\shk{transform.extract\_features}\\
+\shk{list} & f=\bot,\ v \text{ an array}\\
+\shk{object} & f=\bot,\ v \text{ an object}\\
+\shk{scalar} & \text{otherwise.}
+\end{cases}
+\]
+\end{definition}
+
+The essential property is that kind depends on $f$ and not on the
+observed shape of $v$.
+
+\begin{theorem}[Kind is producer-determined]
+\label{thm:kind-preservation}
+Let $f$ be an operation kind-assigning to $k\in\Kset$. Then for every
+value $v$ returned by $f$, including $v=[\,]$, the binding receives kind
+$k$. Consequently a downstream consumer selecting on kind cannot
+distinguish an empty result of $f$ from a non-empty one by kind alone,
+and cannot misclassify an empty result as a value of some other kind.
+\end{theorem}
+
+\begin{proof}
+Immediate from \Cref{def:classify}: the first six clauses are conditioned
+on $f$ alone and are checked before the shape-conditioned clauses, which
+apply only when $f=\bot$. Hence for $f\ne\bot$ in the listed set the
+value never reaches a shape test.
+\end{proof}
+
+\begin{corollary}[Empty results are not silently retyped]
+\label{cor:empty-kind}
+An operation returning zero records yields a binding of kind
+\shk{records}, not of kind \shk{list}. A stage selecting the primary result
+by kind preference therefore treats it as an empty experiment rather than
+as an unrelated array.
+\end{corollary}
+
+\begin{remark}[Why this matters more than it appears to]
+\label{rem:kind-why}
+Shape-based classification is the obvious implementation and it is
+wrong in exactly one case, which is the case that matters: an operation
+that legitimately produced nothing. Under shape inference an empty
+record set is indistinguishable from an empty list of user data, and a
+downstream selector will either skip it or mislabel it. Producer-based
+kinding costs nothing and removes the failure mode.
+\end{remark}
+
+\subsection{What the discipline does not do}
+
+\begin{remark}[No argument checking]
+\label{rem:no-argcheck}
+The kind discipline governs results, not arguments. An operation
+receiving an argument of unexpected shape will fail at runtime, not at
+compile time. There is no signature check in the \textsc{compile} stage
+beyond block structure. This is a deliberate scope limit, not an
+oversight; extending the discipline to arguments is discussed in
+\Cref{sec:limits}.
+\end{remark}
+
+% =====================================================================
+\section{Operational semantics}
+\label{sec:semantics}
+% =====================================================================
+
+\subsection{Configurations}
+
+\begin{definition}[Configuration]
+\label{def:config}
+A \emph{configuration} is a quadruple
+$\langle \Env, \Kinds, \Ord, L\rangle$ where
+\begin{itemize}[leftmargin=1.6em,itemsep=1pt]
+\item $\Env:\textsc{Ident}\rightharpoonup\Vals$ is the \emph{environment},
+      a partial map from identifiers to values;
+\item $\Kinds:\textsc{Ident}\rightharpoonup\Kset$ is the \emph{kind map};
+\item $\Ord\in\textsc{Ident}^{*}$ is the \emph{declaration order}, a
+      duplicate-free sequence;
+\item $L$ is the \emph{log}, a sequence of records
+      $(\mathit{level},\mathit{message})$ with
+      $\mathit{level}\in\{\shk{info},\shk{warn},\shk{error}\}$.
+\end{itemize}
+The initial configuration is
+$\langle\emptyset,\emptyset,\varepsilon,\varepsilon\rangle$.
+\end{definition}
+
+\subsection{Evaluation of expressions}
+
+\begin{rulename}[Literal and variable reference]
+\label{rule:lit}
+\[
+\frac{}{\langle\Env,e\rangle\evalto \mathcal{P}(e)}\ \textsc{(Lit)}
+\qquad
+\frac{v\in\mathrm{dom}(\Env)}{\langle\Env,v\rangle\evalto \Env(v)}\ \textsc{(Var)}
+\]
+\textsc{Var} applies during argument resolution: a named argument whose
+value is a bare word naming a bound variable resolves to that variable's
+value. Otherwise the bare word is retained as a string.
+\end{rulename}
+
+\begin{rulename}[Call]
+\label{rule:call}
+\[
+\frac{\begin{array}{c}
+a'=\{\,(k,\textsc{Resolve}(\Env,v)) : (k,v)\in a\,\}\qquad
+\llbracket f\rrbracket(a',\Env,A)=v'
+\end{array}}
+{\langle\Env,\Kinds,\Ord,L\rangle,\ f(a)\ \evalto\ v'}
+\ \textsc{(Call)}
+\]
+where $A$ is the enclosing AST (supplying \shk{instrument} and
+\shk{target\_list} blocks by name), $\llbracket f\rrbracket$ is the
+denotation of $f$ from \Cref{sec:stdlib}, and
+$\textsc{Resolve}(\Env,v)=\Env(v)$ if $v$ is a bare word in
+$\mathrm{dom}(\Env)$ and $v$ otherwise.
+\end{rulename}
+
+\begin{remark}[Argument resolution is one level deep]
+\label{rem:resolve-depth}
+$\textsc{Resolve}$ inspects the argument value itself, not values nested
+inside arrays or objects. An array literal containing bare words that
+name bound variables is passed through unresolved. This is a
+deliberate restriction: nested resolution would make the meaning of an
+array literal depend on the ambient environment, so that the same
+literal denotes different data in different phases.
+\end{remark}
+
+\subsection{Execution of statements and blocks}
+
+\begin{rulename}[Assignment]
+\label{rule:assign}
+\[
+\frac{\langle\Env,\Kinds,\Ord,L\rangle,\ e\ \evalto\ v \qquad
+      k=\mathrm{kind}(\mathrm{fn}(e),v)}
+{\langle\Env,\Kinds,\Ord,L\rangle \xrightarrow{\ x=e\ }
+ \langle\Env[x\mapsto v],\ \Kinds[x\mapsto k],\ \Ord\cdot x,\ L\cdot\lambda\rangle}
+\]
+where $\mathrm{fn}(e)=f$ if $e$ is a call $f(a)$ and $\bot$ otherwise,
+$\Ord\cdot x$ appends $x$ if absent and is the identity if present, and
+$\lambda$ is the assignment log entry.
+\end{rulename}
+
+\begin{rulename}[Phase and program]
+\label{rule:phase}
+\[
+\frac{C_0 \xrightarrow{s_1} C_1 \xrightarrow{s_2}\cdots\xrightarrow{s_n} C_n}
+{C_0 \xrightarrow{\ \shk{phase}\ p:\ s_1\dots s_n\ } C_n}
+\qquad
+\frac{C_0 \xrightarrow{p_1} C_1 \cdots \xrightarrow{p_m} C_m}
+{C_0 \xrightarrow{\ \Prog\ } C_m}
+\]
+Phases execute in source order; statements within a phase execute in
+source order. Validation blocks execute before all phases.
+\end{rulename}
+
+\subsection{Properties}
+
+\begin{theorem}[Declaration-order determinism]
+\label{thm:determinism}
+Let $\Prog$ be a program and suppose every standard library operation
+invoked by $\Prog$ is deterministic in its arguments. Then execution of
+$\Prog$ from the initial configuration yields a unique final
+configuration, and the sequence $\Ord$ is exactly the sequence of
+assignment targets in source order with repetitions removed after their
+first occurrence.
+\end{theorem}
+
+\begin{proof}
+By induction on the number of statements. The base case is the initial
+configuration. For the step, \Cref{rule:assign} is the only rule that
+alters $\Env$, $\Kinds$ or $\Ord$, and it is a function of the current
+configuration and the statement: the expression evaluates to a unique
+$v$ by determinism of $\llbracket\cdot\rrbracket$ and of
+$\textsc{Resolve}$; $k$ is a function of $(\mathrm{fn}(e),v)$ by
+\Cref{def:classify}; and the updates are functional. \Cref{rule:phase}
+composes these in a fixed order given by the source. Hence the final
+configuration is unique. The claim about $\Ord$ follows because
+$\Ord\cdot x$ appends exactly when $x\notin\Ord$.
+\end{proof}
+
+\begin{theorem}[Phase isolation]
+\label{thm:isolation}
+Phases share $\Env$ but do not scope it: a binding created in phase $p_i$
+is visible in every phase $p_j$ with $j>i$, and in no phase $p_j$ with
+$j<i$. There is no phase-local binding.
+\end{theorem}
+
+\begin{proof}
+\Cref{rule:phase} threads a single configuration through the phases in
+order, and \Cref{rule:assign} extends $\Env$ globally. No rule restricts
+or restores $\Env$ at a phase boundary. Visibility forward is therefore
+immediate. Visibility backward fails because $\Env$ at the time $p_j$
+executes, $j<i$, does not contain the binding: by
+\Cref{thm:determinism} the configuration entering $p_j$ is determined by
+statements preceding it in source order, which exclude those of $p_i$.
+\end{proof}
+
+\begin{remark}[Phases are documentation, not scope]
+\label{rem:phase-doc}
+\Cref{thm:isolation} says phases carry no scoping semantics. Their role
+is organisational: they name stages of an experiment and they structure
+the log. A reader may rely on a phase boundary to mean ``this is a
+distinct stage of the experiment'' and may not rely on it to mean
+``these bindings are local''.
+\end{remark}
+
+\begin{theorem}[Workspace monotonicity]
+\label{thm:monotone}
+For any program and any two configurations $C$, $C'$ with
+$C\xrightarrow{s} C'$ under \Cref{rule:assign},
+$\mathrm{dom}(\Env)\subseteq\mathrm{dom}(\Env')$ and $\Ord$ is a prefix
+of $\Ord'$. Consequently the workspace --- the sequence of bindings in
+declaration order --- grows monotonically, and no executed statement
+removes a binding or reorders the workspace.
+\end{theorem}
+
+\begin{proof}
+$\Env'=\Env[x\mapsto v]$ extends the domain by at most $\{x\}$ and
+removes nothing. $\Ord'=\Ord\cdot x$ either equals $\Ord$ (if $x$ already
+occurs) or appends one element; in both cases $\Ord$ is a prefix. No
+other rule modifies $\Env$ or $\Ord$.
+\end{proof}
+
+\begin{corollary}[Rebinding preserves position]
+\label{cor:rebind}
+If $x$ is assigned twice, the second assignment updates $\Env(x)$ and
+$\Kinds(x)$ but leaves the position of $x$ in $\Ord$ at its first
+occurrence. The workspace therefore reflects the order in which names
+were \emph{introduced}, not the order in which they were last written.
+\end{corollary}
+
+\begin{proposition}[Effects are enumerable from source]
+\label{prop:enumerable}
+For any program $\Prog$, the set of standard library operations that
+$\Prog$ can invoke is computable from the source by inspection, without
+executing $\Prog$, and equals the set of \textsc{QualName} heads
+appearing in call position.
+\end{proposition}
+
+\begin{proof}
+By \Cref{def:expr} a call site names its operation by a literal
+\textsc{QualName}; there is no expression form producing a callable
+value, no user-defined abstraction, and no dynamic dispatch. Hence the
+call graph is the set of syntactic call heads, obtainable by a single
+pass over the AST.
+\end{proof}
+
+\subsection{Failure classification}
+
+\begin{proposition}[Failure classification]
+\label{prop:failure-classification}
+Execution distinguishes two failure regimes:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.2em,itemsep=2pt]
+\item \textbf{Local failure (warning).} A named entity that cannot be
+      resolved but whose omission leaves the operation meaningful is
+      skipped, a \shk{warn} record naming it is appended to $L$, and
+      execution continues. Unknown analyte class keys are the canonical
+      instance.
+\item \textbf{Global failure (error).} A condition under which the
+      operation has no meaningful result raises an exception, which
+      terminates execution of the program and is reported as an
+      \shk{error} record. An empty admissible class set after (i) has been
+      applied is the canonical instance.
+\end{enumerate}
+No condition is silently ignored: every local failure appends a record
+naming the skipped entity.
+\end{proposition}
+
+\begin{proof}
+By inspection of the operation denotations in \Cref{sec:stdlib}: each
+resolution step over a named collection either appends a \shk{warn} and
+continues, or, where the collection would be empty, raises. The
+no-silence claim follows because the skip and the log append occur in the
+same step.
+\end{proof}
+
+\begin{remark}[The asymmetry is the point]
+\label{rem:asymmetry}
+A specification language that halts on the first unknown class makes
+exploratory editing painful; one that discards unknown classes silently
+makes a typo indistinguishable from an intended omission.
+\Cref{prop:failure-classification} takes the third option: continue, but
+name what was dropped. The log is then a complete record of the
+difference between what was written and what was run.
+\end{remark}
+
+% =====================================================================
+\section{The two-stage compilation model}
+\label{sec:stages}
+% =====================================================================
+
+\subsection{Stages}
+
+\begin{definition}[Compile stage]
+\label{def:compile-stage}
+$\textsc{Compile}(\mathit{src})$ returns a tuple
+$(\mathit{ok}, A, \mathit{ir}, T, D)$ where $A$ is the AST or
+$\bot$, $\mathit{ir}$ is a serialisation of $A$, $T$ is a sequence of
+terminal lines each tagged \shk{stdout}, \shk{stderr} or \shk{stage}, and
+$D$ is a sequence of diagnostics each tagged \shk{error} or
+\shk{warning}. The stage performs: lexical analysis
+(\Cref{sec:lexical}), parsing (\Cref{sec:grammar}), and the structural
+checks of \Cref{def:structural}. \emph{It executes no phase.}
+\end{definition}
+
+\begin{definition}[Structural checks]
+\label{def:structural}
+The compile stage emits:
+\begin{itemize}[leftmargin=1.6em,itemsep=1pt]
+\item an \shk{error} diagnostic if parsing fails, with $\mathit{ok}=$ false
+      and $A=\bot$;
+\item a \shk{warning} if no \shk{objective} block is declared;
+\item a \shk{warning} if no \shk{phase} block is declared, noting that
+      nothing will execute.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Execute stage]
+\label{def:execute-stage}
+$\textsc{Execute}(A)$ runs $A$ under \Cref{sec:semantics} and returns
+$(\mathit{result}, T, L, \Wsp)$ where $\Wsp$ is the workspace,
+$\mathit{result}$ is the primary result selected by
+\Cref{def:primary}, and $T$ mirrors $L$ into the terminal stream.
+\end{definition}
+
+\begin{definition}[Primary result selection]
+\label{def:primary}
+The primary result is chosen by the first applicable clause:
+\begin{enumerate}[label=(R\arabic*),leftmargin=2.6em,itemsep=1pt]
+\item if $\Env(\shk{records})$ is a non-empty array, the result is that
+      array with kind \shk{records};
+\item if $\Env(\shk{registry})$ is an array, the result is that array with
+      kind \shk{cells};
+\item if $\Env(\shk{addresses})$ is an array, the result is that array with
+      kind \shk{addresses};
+\item otherwise, the first workspace entry whose kind lies in the
+      preference order
+      $\langle\shk{records},\shk{cells},\shk{addresses},\shk{subharmonics},
+      \shk{tensor},\shk{impossible}\rangle$, or failing that the last
+      workspace entry;
+\item if the workspace is empty, the result has kind \shk{empty}.
+\end{enumerate}
+\end{definition}
+
+\begin{remark}[Conventional names are a compatibility affordance]
+\label{rem:conventional}
+Clauses (R1)--(R3) privilege three conventional variable names. This is
+a pragmatic concession to downstream consumers that expect them, not a
+language-level scoping rule; (R4) is the general mechanism and is
+sufficient on its own. An author who avoids the three names loses
+nothing.
+\end{remark}
+
+\subsection{Stage separation}
+
+\begin{theorem}[Stage separation]
+\label{thm:stage-separation}
+For any source $\mathit{src}$, the diagnostics $D$ returned by
+$\textsc{Compile}(\mathit{src})$ are independent of
+$\textsc{Execute}$: they are a function of $\mathit{src}$ alone.
+Consequently a program may be checked for structural well-formedness
+without invoking any standard library operation, and without any of the
+effects those operations carry.
+\end{theorem}
+
+\begin{proof}
+By \Cref{def:compile-stage} the stage's output depends on the token
+sequence, the parse, and the three predicates of
+\Cref{def:structural}, each of which is a property of $A$. No clause
+consults $\Env$, $L$, or any operation denotation, and $\textsc{Compile}$
+contains no application of \Cref{rule:call}. Hence $D$ factors through
+$\mathit{src}\mapsto A$.
+\end{proof}
+
+\begin{corollary}[Checking is effect-free]
+\label{cor:effect-free}
+Structural checking of a program that would, on execution, query a
+remote spectral database performs no query.
+\end{corollary}
+
+\begin{remark}[What stage separation does not give]
+\label{rem:not-typecheck}
+\Cref{thm:stage-separation} guarantees that checking is cheap and
+effect-free. It does not guarantee that a program passing the compile
+stage will execute without error: argument shapes are unchecked
+(\Cref{rem:no-argcheck}), and unresolved names surface only at
+\Cref{rule:call}. The compile stage certifies structure, not
+executability.
+\end{remark}
+
+% =====================================================================
+\section{Acquisition: from measured data to records}
+\label{sec:acquisition}
+% =====================================================================
+
+The operations of \Cref{sec:stdlib} are \emph{generative}: they
+synthesise records from declared parameters. A specification language
+restricted to them can state what experiment to perform but cannot state
+what to do with the data it produces, which leaves the larger half of
+analytical practice outside the language. This section defines the
+acquisition half: a \shk{dataset} block that names measured files, and
+three namespaces that read them, transform them to coordinates, and
+compute derived statistics.
+
+The design constraint is that acquisition must not introduce a second
+kind of program. A document that reads measured data and a document that
+predicts an experiment must be the same sort of object, executed by the
+same semantics, so that the two can appear in one file and their outputs
+compared. \Cref{thm:record-parity} states the property that makes this
+possible.
+
+\subsection{The \shk{dataset} block}
+
+\begin{definition}[Dataset block]
+\label{def:dataset}
+A \shk{dataset} block is a field block declaring a named collection of
+input files together with the acquisition parameters under which they are
+to be read:
+\[
+\begin{array}{rcl}
+\textit{dataset} &\bnf& \shk{dataset}\ \textsc{Ident}\ \shk{:}\ \textit{fieldblock}
+\end{array}
+\]
+The recognised fields are \shk{files} (an array of paths), \shk{format}
+(default \shk{"mzML"}), \shk{vendor}, \shk{rt\_range}, \shk{polarity},
+\shk{ms1\_threshold}, \shk{ms2\_threshold}, \shk{ms1\_precision},
+\shk{ms2\_precision}, \shk{min\_peaks}, and \shk{dda\_top}. A
+\shk{dataset} block declares data; it does not read it. Reading occurs
+only when an \shk{acquire} operation names the block.
+\end{definition}
+
+\begin{remark}[Why declaration is separated from reading]
+\label{rem:decl-vs-read}
+Placing file paths and acquisition thresholds in a declarative block
+rather than in call arguments has three consequences. The parameters are
+stated once and shared by every operation that names the block, so a
+threshold cannot silently differ between two phases. The declaration is
+visible in the compile stage, so a program's inputs can be listed
+without reading them (\Cref{prop:inputs-enumerable}). And the same
+program can be repointed at a different cohort by editing one block.
+\end{remark}
+
+\begin{proposition}[Inputs are enumerable from source]
+\label{prop:inputs-enumerable}
+For any program $\Prog$, the set of input files $\Prog$ can read is
+computable from the source without execution, and equals the union of
+the \shk{files} fields of those \shk{dataset} blocks named by an
+\shk{acquire} operation in call position.
+\end{proposition}
+
+\begin{proof}
+By \Cref{def:dataset} file paths appear only in \shk{dataset} field
+blocks, and by \Cref{def:acquire-ops} the only operations that open a
+file take a \shk{dataset} name as an argument. Both the blocks and the
+call sites are syntactic, so the set is obtained by one pass over the
+AST, as in \Cref{prop:enumerable}.
+\end{proof}
+
+\begin{corollary}[Compile-stage input audit]
+\label{cor:audit}
+By \Cref{thm:stage-separation} and \Cref{prop:inputs-enumerable}, the
+compile stage can report exactly which files a program will open, having
+opened none of them.
+\end{corollary}
+
+\subsection{Namespace \shk{lavoisier.acquire}}
+
+\begin{definition}[Acquisition operations]
+\label{def:acquire-ops}
+\hfill
+\begin{longtable}{@{}p{0.26\textwidth}p{0.46\textwidth}p{0.20\textwidth}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind / totality}\\
+\midrule
+\endhead
+\shk{read\_mzml} &
+\shk{dataset}, \shk{rt\_range?}, \shk{ms1\_threshold?}$=1000$,
+\shk{ms2\_threshold?}$=10$, \shk{ms1\_precision?}, \shk{ms2\_precision?},
+\shk{min\_peaks?}$=3$, \shk{vendor?}$=$\shk{"thermo"} &
+\shk{scans}; partial\\
+\addlinespace
+\shk{filter\_scans} &
+\shk{scans}, \shk{ms\_level?}, \shk{rt?}, \shk{mz?},
+\shk{min\_peaks?}, \shk{polarity?} &
+\shk{scans}; total\\
+\addlinespace
+\shk{link\_dda} &
+\shk{scans}, \shk{tolerance?}$=0.01$, \shk{dda\_top?} &
+\shk{linkage}; total\\
+\addlinespace
+\shk{xic} &
+\shk{scans}, \shk{mz}, \shk{tolerance?} &
+\shk{scans}; total\\
+\bottomrule
+\end{longtable}
+\end{definition}
+
+\begin{definition}[Scan record]
+\label{def:scan}
+A value of kind \shk{scans} is an array of \emph{scan records}, each
+carrying: a scan identifier, an MS level, a retention time, a polarity,
+an optional precursor $m/z$, and a peak list of $(m/z,\,\text{intensity})$
+pairs. Thresholding and minimum-peak filtering are applied during
+reading, so a scan record admitted to the array satisfies the declared
+parameters by construction.
+\end{definition}
+
+\begin{remark}[Vendor neutrality is inherited, not claimed]
+\label{rem:vendor}
+\shk{read\_mzml} reads the open \shk{mzML} standard
+\citep{martens2011mzml,deutsch2008mzml}. The \shk{vendor} field selects
+among known controlled-vocabulary dialects and does not read
+vendor-native formats. A program naming a vendor states how to interpret
+the mzML it is given; it does not request a conversion.
+\end{remark}
+
+\begin{definition}[DDA linkage]
+\label{def:linkage}
+A value of kind \shk{linkage} is an array of \emph{DDA events}, each
+pairing one MS1 survey scan with the MS2 scans acquired from it. An MS2
+scan is assigned to the most recent preceding MS1 scan, and to a
+precursor within \shk{tolerance} of its recorded precursor $m/z$. Scans
+that cannot be assigned are retained in an \emph{unlinked} partition of
+the result rather than discarded.
+\end{definition}
+
+\begin{remark}[Unlinked scans are reported, not dropped]
+\label{rem:unlinked}
+Retaining unlinked scans is an instance of
+\Cref{prop:failure-classification}(i): the linkage is still meaningful
+without them, so the run continues, but the count is named in the log and
+the scans remain addressable. A pipeline that silently discarded them
+would report a linkage rate of one by construction.
+\end{remark}
+
+\subsection{Namespace \shk{lavoisier.transform}}
+
+\begin{definition}[Coordinate transformation operations]
+\label{def:transform-ops}
+\hfill
+\begin{longtable}{@{}p{0.26\textwidth}p{0.46\textwidth}p{0.20\textwidth}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind / totality}\\
+\midrule
+\endhead
+\shk{sentropy} &
+\shk{scans}, \shk{alpha?}, \shk{beta?}, \shk{k\_neighbors?},
+\shk{precursor\_mz?} &
+\shk{coords}; total\\
+\addlinespace
+\shk{extract\_features} &
+\shk{coords} &
+\shk{features}; total\\
+\addlinespace
+\shk{to\_records} &
+\shk{coords}, \shk{linkage?} &
+\shk{records}; total\\
+\bottomrule
+\end{longtable}
+\end{definition}
+
+The \shk{sentropy} operation assigns to each peak of each scan a triple
+$(S_k, S_t, S_e)$. The components are computed as follows, with $m$ the
+peak $m/z$ vector, $\hat I$ the intensity vector normalised to unit
+maximum, $m^{\star}$ the precursor $m/z$ where known and $\max m$
+otherwise, and $\alpha,\beta$ the declared weights:
+\begin{align}
+S_k &= -\log_2(\hat I + \epsilon) \;+\; \alpha\,\frac{m}{m^{\star}},
+      \label{eq:sk}\\[2pt]
+S_t &= \exp\!\left(-\beta\,\frac{\lvert m-\bar m\rvert}{\sigma_m}\right)
+       \cdot g(t_R),
+      \label{eq:st}\\[2pt]
+S_e^{(i)} &= -\!\!\sum_{j\in N_k(i)}\! p_j\log_2 p_j,
+       \qquad p_j=\frac{\hat I_j}{\sum_{l\in N_k(i)}\hat I_l},
+      \label{eq:se}
+\end{align}
+where $\bar m$ and $\sigma_m$ are the mean and standard deviation of $m$,
+$N_k(i)$ is the set of $k$ nearest peaks to peak $i$ in $m/z$, and
+$g(t_R)$ is a retention-time modulation applied when a retention time is
+available and the identity otherwise. The constant $\epsilon$ guards the
+logarithm at zero intensity.
+
+\begin{remark}[What the three components measure]
+\label{rem:components}
+\Cref{eq:sk} combines the Shannon self-information of a peak's normalised
+intensity with a mass term, so $S_k$ is large for weak peaks and for
+peaks near the precursor. \Cref{eq:st} is a Gaussian weighting about the
+spectral centroid, so $S_t$ is large for peaks near the centre of the
+$m/z$ distribution. \Cref{eq:se} is the Shannon entropy of the local
+intensity distribution in a $k$-neighbourhood, so $S_e$ is large where
+neighbouring peaks are of comparable intensity and small where one peak
+dominates. All three are functions of the peak list alone: no library, no
+formula assignment, and no instrument model enters.
+\end{remark}
+
+\begin{proposition}[Degenerate spectra are total, not exceptional]
+\label{prop:degenerate}
+\shk{sentropy} is total on scan records admitted under \Cref{def:scan}.
+In particular: if $\sigma_m=0$ (all peaks at one $m/z$) then $S_t$ is the
+constant $g(t_R)$; if a scan has a single peak then $N_k(i)=\{i\}$ and
+$S_e=0$; and if no precursor is recorded then $m^{\star}=\max m$.
+\end{proposition}
+
+\begin{proof}
+Each clause is a case of the definitions above, and each yields a defined
+value rather than an error: the $\sigma_m=0$ branch replaces the
+exponential by unity; the single-peak branch yields a one-element
+neighbourhood whose normalised probability is $1$ and whose entropy is
+therefore $0$; and the missing-precursor branch substitutes $\max m$,
+which is defined because \Cref{def:scan} admits only scans carrying at
+least one peak.
+\end{proof}
+
+\begin{remark}[Why totality here is worth stating]
+\label{rem:totality-why}
+Degenerate spectra are common in measured data --- a scan surviving
+thresholding with a single peak above the cut is unremarkable. An
+implementation that raised on them would fail partway through a cohort
+for reasons unrelated to the analysis. \Cref{prop:degenerate} records
+that each degenerate case has a defined value and says what it is, so the
+behaviour is specified rather than incidental.
+\end{remark}
+
+\subsection{Namespace \shk{lavoisier.analyse}}
+
+\begin{definition}[Analysis operations]
+\label{def:analyse-ops}
+\hfill
+\begin{longtable}{@{}p{0.26\textwidth}p{0.46\textwidth}p{0.20\textwidth}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind / totality}\\
+\midrule
+\endhead
+\shk{phase\_lock} &
+\shk{coords}, \shk{coherence\_threshold?}$=0.3$ &
+\shk{coherence}; total\\
+\addlinespace
+\shk{summarise} &
+\shk{coords} or \shk{records}, \shk{group\_by?} &
+\shk{object}; total\\
+\addlinespace
+\shk{compare} &
+\shk{a}, \shk{b}, \shk{metric?} &
+\shk{object}; partial\\
+\bottomrule
+\end{longtable}
+\end{definition}
+
+\begin{definition}[Coherence]
+\label{def:coherence}
+\shk{phase\_lock} returns, per scan, a coherence statistic in $[0,1]$
+together with the count of detections at or above
+\shk{coherence\_threshold}. A value of kind \shk{coherence} carries both
+the per-scan statistics and the threshold at which they were computed.
+\end{definition}
+
+\begin{remark}[The threshold travels with the result]
+\label{rem:threshold-travels}
+Carrying the threshold in the result rather than only in the call is
+deliberate. A detection count is meaningless without the threshold that
+produced it, and a report quoting one without the other cannot be
+reproduced. Because the pair is a single value, a downstream consumer
+cannot separate them by accident.
+\end{remark}
+
+\begin{remark}[A null detection is a result]
+\label{rem:null-detection}
+If no scan attains the threshold, \shk{phase\_lock} returns a
+\shk{coherence} value with zero detections --- not an empty list and not
+an error. By \Cref{thm:kind-preservation} the binding retains kind
+\shk{coherence}, so the outcome is reported as ``no detections at
+threshold $\theta$'' rather than as an absent result. Whether $\theta$
+was appropriate is then a question the log makes askable.
+\end{remark}
+
+\subsection{The two halves meet}
+
+\begin{theorem}[Record parity]
+\label{thm:record-parity}
+The generative operations of \Cref{sec:stdlib} and the acquisition
+operation \shk{transform.to\_records} both yield values of kind
+\shk{records}. Consequently a binding produced from measured data and a
+binding produced from declared parameters are of the same kind, are
+selected by the same clause of \Cref{def:primary}, and may be supplied to
+the same downstream operation without conversion.
+\end{theorem}
+
+\begin{proof}
+By \Cref{def:classify}, kind is a function of the producing operation;
+both \shk{run\_experiment} and \shk{transform.to\_records} are listed as
+assigning \shk{records}. \Cref{def:primary} selects on kind alone, and
+operations consuming records are specified over the kind rather than over
+the producer.
+\end{proof}
+
+\begin{corollary}[Measured and predicted experiments are comparable]
+\label{cor:comparable}
+A single program may bind one variable from a \shk{dataset} and another
+from a virtual experiment and pass both to \shk{analyse.compare}, without
+either being converted, because both are \shk{records}.
+\end{corollary}
+
+\begin{remark}[What parity does not assert]
+\label{rem:parity-limits}
+\Cref{thm:record-parity} is a statement about kinds, not about content.
+It guarantees that the two halves compose; it does not guarantee that a
+predicted record and a measured record are commensurable in any
+scientific sense, and nothing in the language warrants that they are.
+Whether a comparison is meaningful is a question for the analyst, and
+\shk{analyse.compare} reports the metric it computed rather than a
+verdict.
+\end{remark}
+
+\subsection{A complete acquisition program}
+
+\begin{lstlisting}[caption={Reading a cohort, transforming, and analysing.}]
+import lavoisier.acquire
+import lavoisier.transform
+import lavoisier.analyse
+
+objective CohortSEntropy:
+    target: "S-entropy coordinates for the M3/M4/M5 cohort"
+
+dataset Cohort:
+    files: [
+        "A_M3_negPFP_03.mzML",
+        "A_M4_posHILIC_01.mzML",
+        "A_M5_negPFP_02.mzML"
+    ]
+    format: "mzML"
+    rt_range: [0.5, 30.0]
+    ms1_threshold: 1000
+    ms2_threshold: 10
+    min_peaks: 3
+
+phase Read:
+    scans = lavoisier.acquire.read_mzml(dataset: Cohort)
+    ms1   = lavoisier.acquire.filter_scans(scans: scans, ms_level: 1)
+    links = lavoisier.acquire.link_dda(scans: scans, tolerance: 0.01)
+
+phase Transform:
+    coords   = lavoisier.transform.sentropy(
+        scans: ms1,
+        alpha: 1.0,
+        beta: 1.0,
+        k_neighbors: 5
+    )
+    features = lavoisier.transform.extract_features(coords: coords)
+
+phase Analyse:
+    coherence = lavoisier.analyse.phase_lock(
+        coords: coords,
+        coherence_threshold: 0.3
+    )
+    summary   = lavoisier.analyse.summarise(coords: coords, group_by: "file")
+\end{lstlisting}
+
+Every parameter that determines the analysis --- the retention window,
+both intensity thresholds, the minimum peak count, the transformation
+weights $\alpha$ and $\beta$, the neighbourhood size $k$, and the
+coherence threshold --- appears exactly once, in the source. By
+\Cref{prop:inputs-enumerable} the three input files are listed by the
+compile stage without being opened, and by \Cref{cor:audit} that listing
+is effect-free.
+
+\begin{example}[The threshold question, made askable]
+\label{ex:threshold}
+Suppose \shk{coherence} reports zero detections. By
+\Cref{rem:null-detection} this is a reported outcome carrying the
+threshold $0.3$, not an absent result. A reader of the document can see
+that $0.3$ was chosen, can change it in one place, and can re-run; and a
+reviewer can see that it was chosen rather than defaulted. Under the
+alternative in which the threshold lives in a script and the report
+quotes only the count, none of that is available.
+\end{example}
+
+\begin{remark}[Relation to fixed-stage pipelines]
+\label{rem:stages}
+The program above expresses in three phases what a procedural
+implementation typically organises as a fixed sequence of stages ---
+extraction, chromatography, ionisation, linkage, MS1 and MS2 analysis,
+coordinate assignment, and validation. The correspondence is not exact
+and is not meant to be: a fixed stage list is a property of one
+implementation, whereas a phase sequence is written per experiment. What
+the language fixes is not the stages but the discipline that each is
+named, ordered, and parameterised in the source.
+\end{remark}
+
+% =====================================================================
+\section{Standard library}
+\label{sec:stdlib}
+% =====================================================================
+
+The generative library comprises twenty-two operations in seven
+namespaces; the acquisition library of \Cref{sec:acquisition} adds ten
+more in three further namespaces. We
+specify each by argument signature, result kind, and totality.
+Notation: $\shk{a?}$ marks an optional argument with its default;
+\emph{total} means the operation returns for all well-formed arguments;
+\emph{partial} means it may raise (\Cref{prop:failure-classification}(ii)).
+
+\subsection{Namespace \shk{lavoisier.instrument}}
+
+\begin{longtable}{@{}p{0.30\textwidth}p{0.44\textwidth}p{0.18\textwidth}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind / totality}\\
+\midrule
+\endhead
+\shk{run\_experiment} &
+\shk{classes?}$=$\shk{["PC","PE"]}, \shk{polarity?}$=$\shk{"+"},
+\shk{adducts?}, \shk{analyser?}$=$\shk{"orbitrap"},
+\shk{collision\_energy?}$=25$, \shk{mz\_window?}$=[200,1500]$,
+\shk{gradient\_min?}$=30$, \shk{filters?} &
+\shk{records}; partial\\
+\addlinespace
+\shk{run\_proteomics} &
+\shk{proteins?}$=$\shk{["HSA"]}, \shk{length\_min?}$=7$,
+\shk{length\_max?}$=20$, \shk{mc\_max?}$=1$, \shk{polarity?},
+\shk{analyser?}, \shk{collision\_energy?}$=28$, \shk{mz\_window?}$=[200,3000]$ &
+\shk{records}; partial\\
+\bottomrule
+\end{longtable}
+
+\begin{definition}[Class specification resolution]
+\label{def:classspec}
+The \shk{classes} argument admits two forms. A string entry \shk{"PC"}
+denotes a class with default ranges. An object entry
+$\{\shk{class}:c,\ \shk{carbons}:[x_0,x_1],\ \shk{db}:[y_0,y_1]\}$ denotes
+explicit ranges. Resolution takes explicit ranges where given, otherwise
+the class default, with the upper carbon bound capped at
+$\min(X_{\max}^{\mathrm{def}}, X_{\min}^{\mathrm{def}}+8)$ to bound
+enumeration. Unknown class keys are skipped with a warning; an empty
+resolved set raises.
+\end{definition}
+
+\begin{definition}[Post-generation filters]
+\label{def:filters}
+The optional \shk{filters} object supports the keys \shk{mz}, \shk{rt},
+\shk{db}, \shk{carbons} (each an inclusive interval $[lo,hi]$),
+\shk{classes} and \shk{adducts} (each a membership list), and
+\shk{min\_intensity} (a lower bound). A record is retained iff it
+satisfies every present key. Absent keys impose no constraint.
+\end{definition}
+
+\begin{remark}[Filters are declarative and post hoc]
+\label{rem:filters}
+Filters are applied after generation, not folded into it. The record
+count before and after filtering is logged, so the reduction is visible.
+This is the property that makes a filtered experiment auditable: the
+document states both the generated scope and the retained subset.
+\end{remark}
+
+\subsection{Namespace \shk{lavoisier.partition}}
+
+\shk{compute\_addresses(lipids)} maps each input object
+$\{\shk{name},\shk{mass},\shk{adduct}\}$ to a record carrying integer
+coordinates $(n,\ell,m,s)$ derived from the mass, subject to
+$0\le\ell\le n-1$ and $-\ell\le m\le\ell$. Kind \shk{addresses}; total.
+
+\subsection{Namespace \shk{lavoisier.cells}}
+
+\shk{compile(target\_list)} resolves the named \shk{target\_list} block and
+its referenced \shk{instrument} block, and returns for each target a
+registry row carrying the target $m/z$, its window in daltons, an
+oscillation frequency, a timing-deviation interval
+$[\Delta P_{\mathrm{lo}},\Delta P_{\mathrm{hi}}]$, and a minimum
+acquisition time. Kind \shk{cells}; total.
+
+\begin{remark}[Cross-block reference]
+\label{rem:crossblock}
+This is the only operation that reads declarative blocks other than its
+own arguments: it resolves \shk{target\_list} and \shk{instrument} by name
+from the AST. \Cref{rule:call} therefore passes $A$ to every denotation,
+though only this operation consults it.
+\end{remark}
+
+\subsection{Namespace \shk{lavoisier.msms}}
+
+\begin{longtable}{@{}p{0.30\textwidth}p{0.44\textwidth}p{0.18\textwidth}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind / totality}\\
+\midrule
+\endhead
+\shk{sebd\_search} & precursor and fragment specification & \shk{records}; partial\\
+\shk{phase\_coherence} & precursor, fragment set & \shk{subharmonics}; total\\
+\shk{virtual\_tensor} & ion specification, stacking dimensions & \shk{tensor}; total\\
+\shk{impossible\_ions} & candidate set & \shk{impossible}; total\\
+\shk{partition\_complement} & address & \shk{scalar}; total\\
+\shk{transient\_contents} & transient specification & \shk{object}; total\\
+\bottomrule
+\end{longtable}
+
+\subsection{Namespace \shk{lavoisier.db}}
+
+\shk{search}, \shk{search\_massbank}, \shk{search\_gnps}, \shk{search\_mona}
+query spectral reference collections
+\citep{horai2010massbank,wang2016gnps} and return match records. Kind
+\shk{records}; partial (network-dependent). \shk{generate} produces
+records from a generative address scheme rather than a stored
+collection. Kind \shk{records}; total.
+
+\subsection{Namespace \shk{lavoisier.observe}}
+
+\shk{partition\_field}, \shk{sentropy}, \shk{ternary\_address},
+\shk{dual\_path\_validate} compute coordinate representations from
+supplied observables. Kinds \shk{object} or \shk{scalar}; total.
+
+\subsection{Namespace \shk{lavoisier.purpose}}
+
+\shk{domain(domain, depth?)} returns the prefix set covering a named
+analytical domain; \shk{match(sentropy)} returns the domains containing a
+point; \shk{combine} intersects domains. Kind \shk{object}; total.
+
+\begin{remark}[Domains are declared data, not derived]
+\label{rem:domains}
+The domain bounds are a fixed table shipped with the library. They are
+declared constants of the implementation, and a program that relies on
+them inherits whatever empirical basis they have. A program requiring
+different bounds must state them explicitly rather than naming a domain.
+\end{remark}
+
+\subsection{Namespace \shk{validate}}
+
+Validation blocks admit \shk{check\_resolution\_time(instrument,
+window\_ppm)}, which reports a minimum acquisition time for the named
+instrument at the given window and appends it to $L$. Validation
+operations produce no bindings and cannot fail the run; they are
+reporting constructs.
+
+% =====================================================================
+\section{Worked programs}
+\label{sec:programs}
+% =====================================================================
+
+\subsection{Untargeted lipidomics}
+
+\begin{lstlisting}[caption={Untargeted lipid library over five classes.}]
+import lavoisier.instrument
+
+objective PlasmaLipidomics:
+    target: "predict lipidomics library for plasma LC-MS/MS"
+    success_criteria: "records > 100"
+
+instrument OrbitrapFusion:
+    analyzer: "orbitrap"
+    polarity: "+"
+    collision_energy: 25
+    mz_window: [200, 1500]
+
+phase Design:
+    classes = ["PC", "PE", "SM", "TAG", "Cer"]
+
+phase VirtualRun:
+    records = lavoisier.instrument.run_experiment(
+        classes: classes,
+        polarity: "+",
+        analyser: "orbitrap",
+        collision_energy: 25
+    )
+\end{lstlisting}
+
+The \shk{Design} phase binds a list; the \shk{VirtualRun} phase references
+it by bare word, resolved by \textsc{Var} (\Cref{rule:lit}). By
+\Cref{thm:isolation} the binding is visible because \shk{Design} precedes
+\shk{VirtualRun} in source order --- and would not be were the phases
+transposed.
+
+\subsection{Targeted acquisition with per-class ranges}
+
+\begin{lstlisting}[caption={Per-class ranges and post-generation filters.}]
+phase Design:
+    panel = [
+        { class: "PC",  carbons: [30, 40], db: [0, 4] },
+        { class: "PE",  carbons: [32, 38], db: [0, 3] },
+        { class: "TAG", carbons: [48, 56], db: [1, 6] }
+    ]
+
+phase VirtualRun:
+    records = lavoisier.instrument.run_experiment(
+        classes: panel,
+        adducts: ["[M+H]+", "[M+Na]+", "[M+NH4]+"],
+        gradient_min: 30,
+        filters: {
+            classes: ["PC", "PE"],
+            rt: [8.0, 18.0],
+            mz: [600, 900],
+            db: [1, 4],
+            min_intensity: 0.02
+        }
+    )
+\end{lstlisting}
+
+The \shk{panel} literal spans five physical lines and is reassembled into
+one logical line by \Cref{def:logical}. Note that the generated scope
+(three classes) and the retained scope (two classes, restricted window)
+are stated separately, so the document records both what was enumerated
+and what was kept (\Cref{rem:filters}).
+
+\subsection{Timing-cell compilation}
+
+\begin{lstlisting}[caption={Target list compiled to timing cells.}]
+import lavoisier.cells
+
+objective TargetedAcquisition:
+    target: "compile plasma lipid targets to timing cells"
+
+instrument OrbitrapXL:
+    analyzer: "orbitrap"
+    kappa: 1.0e12
+    ref_frequency: 1.0e7
+    timing_jitter: 2.0e-9
+
+target_list PlasmaPanel:
+    instrument: OrbitrapXL
+    window_ppm: 5.0
+    targets: [
+        { name: "PC(32:0)",  mz: 734.5694 },
+        { name: "PC(34:1)",  mz: 760.5851 },
+        { name: "LPC(16:0)", mz: 496.3396 }
+    ]
+
+phase CompileCells:
+    registry = lavoisier.cells.compile(target_list: PlasmaPanel)
+
+validate TimingFeasibility:
+    check_resolution_time(instrument: OrbitrapXL, window_ppm: 5.0)
+\end{lstlisting}
+
+Here \shk{PlasmaPanel} and \shk{OrbitrapXL} are resolved from the AST by
+name (\Cref{rem:crossblock}), and \shk{instrument: OrbitrapXL} inside the
+target list is a bare word (\Cref{rem:bareword}). The binding
+\shk{registry} triggers clause (R2) of \Cref{def:primary}.
+
+\subsection{Proteomics, addressing, and domain constraint}
+
+\begin{lstlisting}[caption={Three further programs, abbreviated.}]
+// (a) Tryptic peptide library
+phase VirtualRun:
+    records = lavoisier.instrument.run_proteomics(
+        proteins: ["HSA", "HBB", "ENO1"],
+        length_min: 7, length_max: 20, mc_max: 1
+    )
+
+// (b) Partition addressing
+phase Compute:
+    lipids = [ { name: "PC(32:0)", mass: 733.5622, adduct: "[M+H]+" } ]
+    addresses = lavoisier.partition.compute_addresses(lipids)
+
+// (c) Domain-constrained observation
+phase ComputeSentropy:
+    water_freqs = [1595.0, 3657.0, 3756.0]
+    water_se    = lavoisier.observe.sentropy(frequencies: water_freqs)
+    water_addr  = lavoisier.observe.ternary_address(sentropy: water_se,
+                                                    depth: 12)
+
+phase DomainContext:
+    domain_context = lavoisier.purpose.domain(domain: "metabolomics",
+                                              depth: 4)
+\end{lstlisting}
+
+In (c), \shk{water\_se} is produced in one phase and consumed in the
+same phase, then \shk{domain\_context} is produced in a later phase; all
+four bindings appear in the workspace in declaration order by
+\Cref{thm:monotone}.
+
+\begin{example}[Reading a program's effect set]
+\label{ex:effects}
+By \Cref{prop:enumerable}, the effect set of the program in
+\Cref{sec:programs}.3 is
+$\{\shk{lavoisier.cells.compile},\ \shk{check\_resolution\_time}\}$,
+obtained by listing call heads. No execution is required, and no other
+operation can be reached.
+\end{example}
+
+% =====================================================================
+\section{Execution: a reference implementation and a worked experiment}
+\label{sec:execution}
+% =====================================================================
+
+The preceding sections specify a language. This section reports what
+happened when the specification was implemented and a program was run
+against measured data. Two things are established: that the properties
+proved in \Cref{sec:semantics,sec:stages} hold of a running system rather
+than only of the calculus, and that a Shapeshifter program can carry an
+experiment whose outcome was not known in advance --- including when that
+outcome is negative.
+
+\subsection{The reference implementation}
+
+A reference implementation was written in Python directly from
+\Crefrange{sec:lexical}{sec:acquisition}: a lexer and parser
+(\Cref{sec:lexical,sec:grammar}), the kind discipline
+(\Cref{sec:kinds}), the two-stage model (\Cref{sec:stages}), and eight
+operations of the acquisition half (\Cref{sec:acquisition}). It is
+approximately 950 lines and has no dependency beyond the standard
+library. Its purpose is not performance but fidelity: every construct is
+implemented as specified, so that a divergence between the specification
+and the implementation is a defect in one or the other rather than a
+matter of interpretation.
+
+\begin{remark}[What a reference implementation settles]
+\label{rem:reference-impl}
+A specification that has never been executed can be internally consistent
+and still unimplementable, because a proof obligation may be discharged in
+the text by a definition that no procedure realises. Writing the
+implementation from the document, without consulting any prior code, is
+the cheapest available test of that. Three under-specifications were
+found this way and are recorded in \Cref{rem:found-defects}.
+\end{remark}
+
+\subsection{Stage separation, observed}
+
+\Cref{thm:stage-separation} states that compile-stage diagnostics are a
+function of the source alone, and \Cref{cor:audit} that the stage can
+report a program's inputs without opening them. Running the compile stage
+alone on the program of \Cref{sec:experiment} produces the block
+inventory, the effect set of seven operations, and the single declared
+input path --- in a mean of $0.95$\,ms over twenty repetitions
+($\min 0.57$, $\max 2.13$) --- while performing no file access. Execution
+of the same program subsequently reads $6.5$\,MB from that path. The
+separation is therefore not merely provable but observable: the ratio of
+checking cost to execution cost is approximately $1:3500$, and checking
+carries none of execution's effects.
+
+\begin{remark}[The audit is the useful half]
+\label{rem:audit-useful}
+Of the two compile-stage outputs, the effect set
+(\Cref{prop:enumerable}) and the input list
+(\Cref{prop:inputs-enumerable}), the second proved the more useful in
+practice. A reviewer asking ``what will this program read'' is answered
+from the document; an author asking ``have I pointed this at the right
+cohort'' is answered without waiting for a parse of the data.
+\end{remark}
+
+\subsection{The experiment}
+\label{sec:experiment}
+
+The program tests a claim that a coordinate transformation of the kind
+defined in \Cref{def:transform-ops} is a property of the analyte rather
+than of the spectrum. The data are a public reference library of
+$5{,}328$ high-energy collisional dissociation MS/MS spectra covering
+$727$ distinct analytes, of which $313$ were measured at all nine
+normalised collision energies from $10\%$ to $80\%$. Because collision
+energy is varied while analyte identity is held fixed, the library is a
+designed test of exactly this question, and the answer is not known from
+the data alone.
+
+The criterion was stated in the program's \shk{objective} block before
+the program was run:
+\begin{equation}
+\frac{\overline{d}_{\text{between}}}{\overline{d}_{\text{within}}} > 2.0
+\qquad\text{and}\qquad
+\lvert r_{a,\text{NCE}}\rvert < 0.3 \ \ \text{for each axis } a,
+\label{eq:criterion}
+\end{equation}
+where $\overline{d}_{\text{within}}$ is the mean pairwise coordinate
+distance among spectra of one analyte across collision energies,
+$\overline{d}_{\text{between}}$ the mean distance between analyte
+centroids, and $r_{a,\text{NCE}}$ the Pearson correlation of axis $a$
+against collision energy. A comparison method (cosine similarity of the
+raw peak lists, the established practice) and a negative control (the
+same statistic under permuted analyte labels) were declared in the same
+program.
+
+\subsection{Outcome}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Outcome against the criterion of \Cref{eq:criterion}, stated
+before execution. Three of four conditions fail.}
+\label{tab:outcome}
+\begin{tabular}{@{}llrl@{}}
+\toprule
+\textbf{Condition} & \textbf{Required} & \textbf{Observed} & \\
+\midrule
+Separation ratio            & $>2.0$  & $0.930$  & fails \\
+$\lvert r\rvert$, axis $S_k$ & $<0.3$  & $0.327$  & fails \\
+$\lvert r\rvert$, axis $S_t$ & $<0.3$  & $0.009$  & holds \\
+$\lvert r\rvert$, axis $S_e$ & $<0.3$  & $0.383$  & fails \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The criterion was not met (\Cref{tab:outcome}). A separation ratio below
+unity states that coordinates move at least as far when collision energy
+is changed at fixed analyte as when the analyte is changed: on these
+data the transformation encodes spectrum state, not analyte identity.
+The per-axis ratios are $1.04$, $0.49$ and $0.76$ for $S_k$, $S_t$ and
+$S_e$; no axis reaches the threshold alone.
+
+Two declared checks make the negative outcome interpretable rather than
+merely disappointing. The negative control gives a ratio of $0.347$
+under permuted labels, well below the $0.930$ obtained with true labels,
+so the pipeline does discriminate --- there is roughly $2.7\times$ of
+genuine analyte signal present, just not enough to meet the stated
+threshold. The comparison method gives a mean cosine similarity of
+$0.918$ between adjacent collision-energy levels, against $0.522$ across
+all level pairs: the established method is stable where the criterion
+required the coordinates to be stable, and the coordinates were not.
+
+\subsection{The outcome is not a parameter choice}
+
+\Cref{rem:totality-why} records that $\alpha$, $\beta$ and $k$ are
+analyst choices which the language requires to be stated but does not
+select. It is therefore worth asking whether the outcome above is an
+artefact of the particular values declared in the program. Re-running the
+same program over a grid of forty parameter settings --- $\alpha \in
+[0,4]$, $\beta \in [0.25,4]$, $k \in [2,20]$ --- gives separation ratios
+between $0.784$ and $0.968$. No setting reaches the stated threshold of
+$2.0$, and none reaches even unity. Restricting the distance to each of
+the seven non-empty axis subsets likewise fails, the best being $S_k$
+alone at $0.962$ and the worst $S_t$ alone at $0.448$.
+
+That the ratio is nearly flat in $\beta$ (varying by $0.002$ across a
+sixteen-fold range) while falling monotonically in $\alpha$ is itself
+informative: the mass term of \Cref{eq:sk} moves coordinates apart
+without moving analytes apart, so weighting it more heavily degrades the
+statistic. The negative outcome is a property of the transformation on
+these data, not of the values chosen for the run.
+
+\begin{remark}[What a sweep of this kind can and cannot settle]
+\label{rem:sweep-limits}
+Forty settings do not exhaust a three-parameter continuum, and a grid
+search establishes no impossibility. What it establishes is narrower and
+sufficient for the purpose: the declared setting was not unlucky, and the
+gap to the threshold --- roughly a factor of two --- is not of a size that
+parameter adjustment within the tested ranges closes.
+\end{remark}
+
+
+\begin{remark}[Why this is reported here]
+\label{rem:why-report}
+This paper specifies a language, not a coordinate system, and the
+outcome above is evidence about the latter. It is reported because it is
+evidence about the former as well: it demonstrates that a Shapeshifter
+program can state a criterion, a control and a comparison in advance, and
+can return a verdict against its author. A specification language whose
+worked examples all succeed has not been shown to be capable of anything
+in particular.
+\end{remark}
+
+\subsection{Defects found by implementing}
+\label{rem:found-defects}
+
+Three points were under-specified and are corrected in the present text.
+
+\begin{enumerate}[label=\textbf{D\arabic*.},leftmargin=2.8em,itemsep=3pt]
+\item \textbf{Analyte identity was assumed, not defined.}
+      \Cref{def:scan} lists the fields a scan record carries but does not
+      say which combination identifies an analyte across scans. Grouping
+      on the library's name field is wrong, because that field embeds
+      the retention time, which varies between acquisitions of the same
+      analyte; grouping on formula alone merges isomers. The
+      implementation uses formula, precursor $m/z$ and isomer index
+      jointly, and the specification now requires an operation that
+      groups to name its key explicitly rather than assume one.
+
+\item \textbf{Bulk values needed a serialisation rule.} Writing a
+      workspace of $5{,}298$ coordinate triples to JSON is not
+      addressed by \Cref{sec:stages}. Silent truncation would corrupt any
+      downstream analysis reading the artefact. The implementation
+      truncates above a declared bound and records the truncation and the
+      true length in the emitted object, so a consumer can detect it;
+      this is the serialisation counterpart of
+      \Cref{rem:null-detection}.
+
+\item \textbf{Kind for structural literals was ambiguous at the
+      boundary.} \Cref{def:classify} assigns structural kinds by
+      inspection when $f=\bot$, but the implementation must decide the
+      kind of a binding produced by an operation that the registry does
+      not know. It raises rather than guessing, which
+      \Cref{prop:failure-classification}(ii) requires but did not
+      previously spell out for this case.
+\end{enumerate}
+
+\begin{remark}[Cost of the run]
+\label{rem:cost}
+The full program --- reading $5{,}328$ spectra comprising $133{,}220$
+peaks, computing $5{,}298$ coordinate triples, and evaluating four
+analyses including an $11{,}268$-pair cosine baseline --- completes in
+$3.4$\,s single-threaded, of which $0.57$\,s is parsing and $2.39$\,s is
+the transformation. Each workspace binding is emitted as a separate JSON
+document alongside the combined record, so the artefact set is the run.
+\end{remark}
+
+% =====================================================================
+\section{What the language does not provide}
+\label{sec:limits}
+% =====================================================================
+
+We state the limitations precisely, because a specification language
+whose boundaries are unclear cannot be relied upon.
+
+\begin{enumerate}[label=\textbf{L\arabic*.},leftmargin=2.8em,itemsep=4pt]
+
+\item \textbf{No argument type checking.} The kind discipline governs
+      results only (\Cref{rem:no-argcheck}). An argument of wrong shape
+      fails at \Cref{rule:call}, at runtime. A signature calculus for
+      arguments is the natural next extension and would strengthen
+      \Cref{thm:stage-separation} from structural certification to
+      partial executability certification.
+
+\item \textbf{Brackets inside string literals affect continuation.}
+      \Cref{def:balance} counts brackets lexically, without string
+      awareness. A string containing an unmatched bracket will extend a
+      logical line incorrectly. A lexer tracking string state removes
+      this.
+
+\item \textbf{Bare words absorb misspellings.} By clause (V7) an
+      unrecognised token in value position becomes a string
+      (\Cref{rem:bareword}), so a misspelled field value is not an error.
+      Field-level validation against a declared schema would catch it.
+
+\item \textbf{No phase-local scope.} \Cref{thm:isolation} is a
+      statement of what the language does, not an endorsement: two
+      phases using the same working name silently share it. Introducing
+      scope would be a compatible extension.
+
+\item \textbf{Argument resolution is shallow.} Bare words nested inside
+      arrays or objects are not resolved (\Cref{rem:resolve-depth}). This
+      is deliberate but occasionally surprising.
+
+\item \textbf{Reading is limited to \shk{mzML}.} The acquisition layer
+      reads the open standard \citep{martens2011mzml,deutsch2008mzml}
+      only. Vendor-native formats must be converted before a program can
+      name them, and the language does not perform that conversion.
+
+\item \textbf{No peak detection or deconvolution.} \shk{read\_mzml}
+      applies intensity thresholds and a minimum-peak filter to centroided
+      input; it does not perform centroiding, peak picking, isotope
+      grouping, or chromatographic deconvolution. Programs consume the
+      peak lists the file provides.
+
+\item \textbf{Transformation weights are declared, not derived.} The
+      parameters $\alpha$, $\beta$ and $k$ of \Crefrange{eq:sk}{eq:se},
+      and the coherence threshold of \Cref{def:coherence}, are analyst
+      choices. The language requires that they be stated in the source
+      (\Cref{ex:threshold}); it offers no procedure for selecting them and
+      no warrant that any particular value is correct.
+
+\item \textbf{No statistical output.} There is no notion of replicate,
+      no error model, and no false-discovery control. A program states an
+      experiment; it does not analyse one.
+
+\item \textbf{Domain tables are implementation data.} The
+      \shk{lavoisier.purpose} domain bounds are shipped constants
+      (\Cref{rem:domains}); programs depending on them inherit their
+      provenance, which the language does not record.
+
+\end{enumerate}
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+We have specified Shapeshifter: its lexical structure including the
+bracket-continuation rule, its context-free grammar over six block
+forms, a kind discipline in which results are tagged by their producing
+operation rather than by shape, a small-step operational semantics over
+configurations of environment, kind map, declaration order and log, a
+two-stage compilation model separating structural checking from
+execution, and an acquisition layer that brings measured data into the
+same language as predicted experiments.
+
+Four properties were proved. Declaration order determines execution and
+the final configuration is unique (\Cref{thm:determinism}). Phases share
+a single environment and carry no scope (\Cref{thm:isolation}). The
+workspace grows monotonically, so a run is an append-only record
+(\Cref{thm:monotone}). Compile-stage diagnostics are a function of the
+source alone, so a program can be checked without being run and without
+incurring the effects its operations would carry
+(\Cref{thm:stage-separation}). To these we added three structural
+observations: kind is producer-determined, so an empty result is not
+retyped (\Cref{thm:kind-preservation}); the effect set of a program is
+enumerable from its source, because the language admits no user-defined
+abstraction (\Cref{prop:enumerable}); and a program's input files are
+likewise enumerable, so the compile stage can audit what will be opened
+without opening it (\Cref{prop:inputs-enumerable}, \Cref{cor:audit}).
+The acquisition layer contributes one further result: measured and
+predicted experiments meet in a common record kind
+(\Cref{thm:record-parity}), so a document may state both and compare them
+without either being converted --- while \Cref{rem:parity-limits} records
+that this is a guarantee about composition, not about commensurability.
+
+\Cref{sec:execution} reports what happened when the specification was
+implemented and run. Stage separation held in practice at a checking-to-
+execution cost ratio of about $1:3500$; three under-specifications were
+exposed by writing the implementation and are corrected here; and the
+worked experiment returned a verdict against the transformation it
+tested, which is the outcome that shows the apparatus can return one.
+
+The language is small by design, and \Cref{sec:limits} states where the
+boundary lies. What it buys is a single artefact: an experiment
+specification that is executable, diffable, and readable in the order it
+runs. Whether that is worth the expressiveness it forgoes is a question
+about practice rather than about the language, and it is settled by use
+rather than by argument.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

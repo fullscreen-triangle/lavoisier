@@ -1,0 +1,1354 @@
+% =====================================================================
+%  EXPERIMENTAL VALIDATION PLAN FOR THE BOUNDED PHASE SPACE
+%  FRAMEWORK: FROM THEORY TO BENCHMARKED COMPOUND IDENTIFICATION
+%
+%  A detailed specification of experiments, code architecture,
+%  and language extensions required to close the gap between
+%  the BPS/S-Entropy theoretical corpus and empirically scored
+%  compound identification.
+% =====================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,top=2.4cm,bottom=2.4cm,left=2.4cm,right=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[round,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,
+            citecolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage{cleveref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Experimental Validation Plan}
+\fancyhead[R]{\small Sachikonye}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---- Theorem-like environments ----
+\newtheoremstyle{planstyle}{\topsep}{\topsep}{\itshape}{}{\bfseries}{.}{.5em}{}
+\theoremstyle{planstyle}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{requirement}[theorem]{Requirement}
+\newtheorem{experiment}[theorem]{Experiment}
+\newtheorem{deliverable}[theorem]{Deliverable}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\crefname{experiment}{Experiment}{Experiments}
+\Crefname{experiment}{Experiment}{Experiments}
+\crefname{requirement}{Requirement}{Requirements}
+\Crefname{requirement}{Requirement}{Requirements}
+\crefname{deliverable}{Deliverable}{Deliverables}
+\Crefname{deliverable}{Deliverable}{Deliverables}
+
+% ---- Listing style ----
+\definecolor{sskw}{RGB}{30,64,175}
+\definecolor{sscom}{RGB}{22,101,52}
+\definecolor{ssstr}{RGB}{159,18,57}
+\definecolor{ssbg}{RGB}{250,250,250}
+\lstdefinelanguage{shapeshifter}{
+  morekeywords={import,objective,instrument,phase,validate,target_list,source,
+                network,precursor,foreach,in},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+  keywordstyle=\color{sskw}\bfseries,
+  commentstyle=\color{sscom}\itshape,
+  stringstyle=\color{ssstr},
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{ssbg},
+  frame=single,framesep=4pt,xleftmargin=6pt,xrightmargin=4pt,
+  breaklines=true,showstringspaces=false,columns=fullflexible,tabsize=2
+}
+\lstdefinelanguage{rust}{
+  morekeywords={pub,fn,struct,impl,enum,let,mut,self,use,mod,return,if,else,
+                for,in,match,Ok,Err,Result,Option,Some,None,Vec,f64,u32,u64,
+                i32,usize,bool,true,false,String,where,trait},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  keywordstyle=\color{sskw}\bfseries,
+  commentstyle=\color{sscom}\itshape,
+  stringstyle=\color{ssstr},
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{ssbg},
+  frame=single,framesep=4pt,xleftmargin=6pt,xrightmargin=4pt,
+  breaklines=true,showstringspaces=false,columns=fullflexible,tabsize=2
+}
+\lstset{language=shapeshifter}
+
+% ---- Shorthand ----
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Sv}{\mathbf{S}}
+\newcommand{\Sk}{S_{\mathrm{k}}}
+\newcommand{\St}{S_{\mathrm{t}}}
+\newcommand{\Se}{S_{\mathrm{e}}}
+\newcommand{\Parts}{\mathcal{P}}
+\newcommand{\calG}{\mathcal{G}}
+\newcommand{\calV}{\mathcal{V}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\nP}{n_{\mathrm{P}}}
+\newcommand{\estar}{e^{*}}
+\newcommand{\Tmap}{\mathcal{T}}
+\newcommand{\shk}[1]{\texttt{#1}}
+
+\title{\textbf{Experimental Validation Plan for the Bounded Phase Space
+Framework}\\[6pt]
+\large From Theory to Benchmarked Compound Identification:\\
+Experiments, Code Architecture, and Language Extensions}
+
+\author{
+Kundai Farai Sachikonye\\
+\small Technical University of Munich\\
+\small Chair of Proteomics and Bioanalytics\\
+\small \texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+The Bounded Phase Space (BPS) framework comprises a corpus of
+theoretical papers---partition-state graph search for tandem mass
+spectrometry, complete ion trajectory tracing, the Shapeshifter DSL for
+experiment specification, database-free peptide identification via
+categorical fragmentation networks, causal knowledge graph construction
+by circuit propagation, and attention-allocated federated retrieval---together
+with a Python implementation covering mzML extraction, S-entropy
+coordinate transformation, phase-lock detection, and vector embedding.
+
+The theoretical results are internally consistent and validated against
+narrow datasets (NIST AC\_CAC for small molecules, PRIDE PXD000001 for
+peptides, UC Davis for metabolomics). No result has been tested
+head-to-head against established methods on community benchmarks, and
+the cross-domain universality claim remains empirically ungrounded.
+
+This document specifies the experimental programme required to close
+that gap. We define seven experiments ordered by priority, each with
+its dataset, ground truth, success criterion, and the theoretical claim
+it tests. We then specify the code changes required to execute them:
+three new block types and one structural extension to the Shapeshifter
+DSL; eleven new namespaces comprising fifty-five standard library
+operations; a Rust core library of thirteen modules replacing
+approximately 2,500 lines of Python with 800 lines of type-safe,
+visualisation-free computation; and a third failure category (principled
+refusal) extending the DSL's operational semantics. Every specification
+is stated with the invariant it must preserve or is explicitly marked as
+a design decision subject to revision.
+\end{abstract}
+
+\noindent\textbf{Keywords:} bounded phase space; S-entropy coordinates;
+SEBD-MS; Shapeshifter DSL; CASMI benchmark; transition state validation;
+causal knowledge graph; attention allocation; federated retrieval;
+experimental design.
+
+\tableofcontents
+\clearpage
+
+% =====================================================================
+\part{Current State and the Gap}
+% =====================================================================
+
+\section{Theoretical Corpus}
+\label{sec:corpus}
+
+The framework as currently developed consists of six authored papers,
+each contributing a distinct theoretical component, and a Python
+implementation providing data extraction, coordinate transformation,
+phase-lock detection, and vector embedding. \Cref{tab:corpus} summarises
+the papers, their central claims, and the datasets against which each
+has been validated.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Theoretical corpus with validation status.}
+\label{tab:corpus}
+\begin{tabular}{@{}p{3.2cm}p{4.8cm}p{3.5cm}p{2.5cm}@{}}
+\toprule
+\textbf{Paper} & \textbf{Central claim} & \textbf{Validated against} &
+\textbf{Comparison} \\
+\midrule
+Partition-State Graph (SEBD-MS) &
+  MS/MS identification as shortest-path in partition-state graph; virtual substates
+  are transition states &
+  3,000 NIST AC\_CAC HCD spectra &
+  None \\[4pt]
+Ion Trajectory &
+  All four analyzer types read the same partition count (Time-Count Identity) &
+  Theoretical; single-ion walkthrough &
+  None \\[4pt]
+Shapeshifter DSL &
+  Experiment specification as single executable document with proved determinism,
+  isolation, monotonicity, stage separation &
+  Formal proofs only; no executed programs &
+  None \\[4pt]
+Categorical Fragmentation (Lavoisier) &
+  Database-free peptide identification via droplet encoding and fragment graphs;
+  42\% partial match, 88.7\% PTM localisation, 89.3\% cross-platform transfer &
+  PRIDE PXD000001 (1,247 spectra), 589 phosphopeptides, 400 multi-platform &
+  MaxQuant \\[4pt]
+Causal Knowledge Graphs (CKG) &
+  CKG is propagation operator at rest; backward completion collapses from
+  $\Theta(N)$ to $\Theta(\log_3 N)$ via virtual sub-states &
+  Four metabolic networks; 17 consistency checks &
+  None \\[4pt]
+Attention Allocation &
+  Join yield is sigmoid; threshold reverses optimal policy;
+  allocator refuses below computable threshold &
+  21 checks, 6 negative controls; closed-form validation &
+  Brute-force exhaustive search \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Gap}
+\label{sec:gap}
+
+Three categories of gap separate the current state from publishable
+experimental results.
+
+\subsection{No community benchmark comparison}
+
+No paper has been tested against established methods on a dataset the
+community uses for comparison. SEBD-MS has not been run on CASMI.
+The Lavoisier peptide pipeline has not been compared against SIRIUS,
+MetFrag, or CFM-ID. The CKG has not been compared against curated
+databases on a shared network.
+
+\subsection{No cross-domain validation}
+
+Each paper validates against one dataset in one domain. The
+universality claim---that partition states and S-entropy coordinates
+apply across small molecules, peptides, metabolites, and metabolic
+networks---has no empirical support spanning two of these domains
+simultaneously.
+
+\subsection{No executable specification}
+
+The Shapeshifter DSL has formal proofs but no executed programs against
+real data. The Python implementation is imperative code that the DSL
+cannot currently invoke, because the DSL lacks the block types, standard
+library operations, and structural extensions required to express the
+experiments described here.
+
+% =====================================================================
+\part{Experimental Programme}
+% =====================================================================
+
+\section{Design Principles}
+\label{sec:principles}
+
+Each experiment is specified by five components: the \emph{dataset}
+(what data is used), the \emph{ground truth} (what the correct answer
+is and how it was determined), the \emph{theoretical claim} (which
+theorem or proposition is being tested), the \emph{success criterion}
+(a quantitative threshold stated before results are seen), and the
+\emph{comparison method} (an established tool or published result
+against which the framework's output is scored). An experiment without
+a comparison method is a characterisation study, not a validation.
+
+\section{Experiment 1: CASMI 2022 Benchmark}
+\label{sec:exp-casmi}
+
+\begin{experiment}[CASMI 2022 Compound Identification]
+\label{exp:casmi}
+\textbf{Objective.} Score SEBD-MS and ternary trie lookup against the
+CASMI 2022 challenge set on all four evaluation categories.
+
+\textbf{Dataset.} UC Davis CASMI 2022 challenge: 500 compounds (250
+priority, 250 bonus) with raw LC-MS/MS data in positive and negative ESI,
+provided as mzML with retention times and precursor $m/z$ values. Solutions
+published at the Google Drive repository maintained by the West Coast
+Metabolomics Center.
+
+\textbf{Ground truth.} Published solutions comprising InChIKey, molecular
+formula, SMILES, and compound class for each challenge compound. Ground
+truth was determined by the organisers using authentic standards.
+
+\textbf{Theoretical claims tested.}
+\begin{enumerate}[nosep,label=(\roman*)]
+\item SEBD-MS (Theorem~4.2 of the partition-state graph paper) finds
+  minimum-cost paths corresponding to correct identifications.
+\item The ternary trie provides $\mathcal{O}(k_0)$ lookup independent
+  of database size (Corollary~7.2).
+\item CKG-derived constraints improve identification over unconstrained
+  search (Theorem~4.5 of the CKG paper).
+\item The attention allocator correctly distributes query budget across
+  federated sources (Theorem~3.1 of the allocation paper).
+\end{enumerate}
+
+\textbf{Success criteria.}
+\begin{itemize}[nosep]
+\item Category 1 (adduct annotation): $\geq 70\%$ correct.
+\item Category 2 (molecular formula): $\geq 50\%$ correct.
+\item Category 3 (compound class): $\geq 40\%$ correct.
+\item Category 4 (2D structure, InChIKey first block): $\geq 20\%$
+  rank-1 accuracy.
+\end{itemize}
+
+These thresholds are set conservatively below published CASMI 2022
+results from SIRIUS+CSI:FingerID and MetFrag, so that meeting them
+establishes viability rather than claiming superiority.
+
+\textbf{Comparison methods.} Published CASMI 2022 submissions:
+SIRIUS+CSI:FingerID, MetFrag, CFM-ID, MS-FINDER. Scores are available
+from the workshop proceedings.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Extract spectra from mzML files using \shk{lavoisier.extract.load}.
+\item Build ternary tries over HMDB (220K), MassBank (93K), and
+  GNPS (500K) reference libraries.
+\item Allocate query budget across the three sources using
+  \shk{lavoisier.allocate.gated} with per-source thresholds computed
+  from corpus sizes.
+\item For each challenge spectrum: compute S-entropy coordinates,
+  run SEBD-MS backward and forward search, query each trie with
+  allocated budget, and collect candidate lists.
+\item Optionally: solve the central metabolism circuit, recover the CKG,
+  compute the reachable set from already-identified compounds, and
+  re-rank candidates using the CKG constraint.
+\item Score against published solutions on all four categories.
+\item Report: rank-1 accuracy, top-5 accuracy, computation time per
+  spectrum, and the CKG-constrained versus unconstrained comparison.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 2: Transition State Geometry}
+\label{sec:exp-ts}
+
+\begin{experiment}[Virtual Substates vs.\ DFT Transition States]
+\label{exp:ts}
+\textbf{Objective.} Test whether off-shell virtual substates found by
+SEBD-MS backward search correspond to DFT-computed transition state
+geometries for known fragmentation mechanisms.
+
+\textbf{Dataset.} Published MS/MS spectra of compounds with
+well-characterised fragmentation mechanisms: McLafferty rearrangement
+(ketones, esters), retro-Diels-Alder (cyclohexenes), $\alpha$-cleavage
+(amines, ethers). DFT saddle-point geometries from published
+computational chemistry literature.
+
+\textbf{Ground truth.} DFT-optimised transition state structures with
+published energies and geometries (bond lengths, angles, dihedrals) at
+the B3LYP/6-31G(d) or M06-2X/6-311+G(2d,2p) level.
+
+\textbf{Theoretical claim tested.} Theorem~5.4 of the partition-state
+graph paper: every off-shell component $\Sv_i \notin [0,1]^3$ in an
+optimal virtual decomposition of a fragment node is a transition state
+in the fragmentation pathway.
+
+\textbf{Success criterion.} Statistically significant correlation
+($p < 0.01$) between off-shell S-entropy coordinates and DFT
+saddle-point geometry projected into S-entropy space, for at least
+5 of 10 tested reaction mechanisms.
+
+\textbf{Comparison methods.} No existing tool connects graph-search
+intermediates to quantum-chemical transition states. A positive result
+here is novel with no prior comparison.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Select 10 compounds with published fragmentation mechanisms and
+  DFT transition state geometries.
+\item For each compound: obtain experimental MS/MS spectrum (from NIST
+  or MassBank), run SEBD-MS with full backward search, extract all
+  virtual substate coordinates via
+  \shk{lavoisier.msms.extract\_virtual\_substates}.
+\item Project DFT transition state geometry into S-entropy space using
+  the partition bijection $\varPhi$ and coordinate embedding.
+\item Compute Euclidean distance between each virtual substate and the
+  projected DFT geometry.
+\item Report: correlation coefficient, per-mechanism agreement, and
+  the distribution of virtual-to-DFT distances.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 3: Cross-Platform Lagrangian Convergence}
+\label{sec:exp-lagrangian}
+
+\begin{experiment}[Time-Count Identity Across Analyzers]
+\label{exp:lagrangian}
+\textbf{Objective.} Test whether S-entropy coordinates computed
+independently from different mass analyzer platforms converge for the
+same compounds.
+
+\textbf{Dataset.} NIST SRM 1950 (Metabolites in Frozen Human Plasma),
+measured on Orbitrap, FT-ICR, TOF, and triple-quad instruments by
+independent laboratories. Approximately 100 metabolites with
+cross-platform measurements available.
+
+\textbf{Ground truth.} Compound identities established by consensus
+across laboratories; mass accuracy certified by NIST.
+
+\textbf{Theoretical claim tested.} Time-Count Identity (Theorem~6.2 of
+the ion trajectory paper): $d\mathcal{M}/dt = \omega/(2\pi) = 1/\langle\tau_p\rangle$
+exactly for every analyzer, so S-entropy coordinates from any analyzer
+should give the same embedding.
+
+\textbf{Success criterion.} Maximum pairwise $L_2$ distance between
+S-entropy coordinates computed from different platforms for the same
+compound: $d_{\max} < 0.05$ for $\geq 80\%$ of compounds.
+
+\textbf{Comparison methods.} No existing framework predicts
+platform-convergence of spectral coordinates. The Lavoisier paper's
+cross-platform CV $< 2.1\%$ for topology features is the internal
+comparison; this experiment tests the underlying coordinate convergence
+that topology invariance depends on.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Obtain SRM 1950 spectra from each platform.
+\item For each compound on each platform: extract spectrum, compute
+  S-entropy coordinates via \shk{lavoisier.sentropy.transform}, compute
+  partition coordinates via \shk{lavoisier.observe.partition\_from\_sentropy}.
+\item Optionally: compute circuit-derived coordinates from a metabolic
+  network context via \shk{lavoisier.circuit.node\_coordinates}, providing
+  a third independent derivation.
+\item For each compound: compute pairwise $L_2$ distances across platforms.
+\item Report: distribution of pairwise distances, maximum deviation,
+  and the fraction of compounds meeting the convergence threshold.
+  Systematic platform-dependent offsets, if any, are reported as
+  diagnostic rather than averaged away.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 4: Glycopeptide Fragmentation}
+\label{sec:exp-glyco}
+
+\begin{experiment}[Forward Reachability on Nonlinear Structures]
+\label{exp:glyco}
+\textbf{Objective.} Test whether the SEBD-MS forward reachability cone
+correctly contains observed glycan fragments from glycopeptide
+precursors, stress-testing the framework on branching (nonlinear)
+fragmentation.
+
+\textbf{Dataset.} Published glycopeptide HCD spectra with known
+structures from the Struwe and Wuhrer groups. Glycan fragments include
+oxonium ions (HexNAc 204.087, Hex 163.060, NeuAc 292.103) and Y-ions
+from glycosidic cleavage.
+
+\textbf{Ground truth.} Glycan composition and peptide sequence
+determined by orthogonal methods (enzymatic release, HPAEC-PAD, or
+synthetic standards).
+
+\textbf{Theoretical claim tested.} The forward reachability cone
+$\mathcal{R}_f^{(d)}$ from the precursor (Definition~6.1 of the
+partition-state graph paper) should contain all observed glycan
+fragments if the partition-state graph correctly handles branching
+structures.
+
+\textbf{Success criterion.} $\geq 85\%$ of observed glycan-specific
+fragments fall within $\mathcal{R}_f^{(d_{\max})}$ for $d_{\max} = 10$.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item For each glycopeptide: compute the precursor's partition state,
+  build the forward reachability cone to depth 10 via
+  \shk{lavoisier.msms.reachability\_cone}.
+\item Check membership of each observed fragment via
+  \shk{lavoisier.msms.cone\_membership}.
+\item Report: membership rate for glycan-specific fragments versus
+  peptide backbone fragments; identify systematic failures, if any,
+  attributable to branching topology.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 5: MassBank-Scale Ternary Trie Scaling}
+\label{sec:exp-scaling}
+
+\begin{experiment}[Database-Size Independence of Query Cost]
+\label{exp:scaling}
+\textbf{Objective.} Verify that SEBD-MS per-query cost is independent
+of database size, as claimed by Corollary~7.2 of the partition-state
+graph paper.
+
+\textbf{Dataset.} MassBank (93K spectra), GNPS MassIVE subset (500K),
+and optionally PubChem-scale candidate lists ($10^8$). Query set: the
+CASMI 2022 challenge spectra from \cref{exp:casmi}.
+
+\textbf{Ground truth.} Wall-clock time is the measurement; the
+theoretical prediction is $\mathcal{O}(k_0)$ per query, independent
+of $N_{\text{db}}$.
+
+\textbf{Theoretical claim tested.} Corollary~7.2: per-query cost is
+$\mathcal{O}(k_0 \cdot n_p d_{\max} \log(n_p d_{\max}))$, independent
+of $N_{\text{db}}$. Additionally, Corollary~5.7: empty lookups at
+on-shell addresses predict unknown compounds.
+
+\textbf{Success criterion.} Wall-clock time per query varies by $< 20\%$
+across a 100-fold range of database sizes ($N_{\text{db}}$ from 1K to
+100K).
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Build ternary tries at depths $k_0 \in \{9, 12, 15, 18\}$ over
+  subsampled databases of sizes $\{1\text{K}, 5\text{K}, 10\text{K},
+  50\text{K}, 93\text{K}\}$.
+\item Run a fixed set of 100 query spectra against each trie.
+\item Record wall-clock time per query via
+  \shk{validate.timing\_profile}.
+\item Plot query time versus database size; fit slope.
+\item Report: coefficient of variation of query time across database
+  sizes; empty-lookup addresses and whether any correspond to compounds
+  added to MassBank in later versions.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 6: Federated Retrieval with Attention Allocation}
+\label{sec:exp-federated}
+
+\begin{experiment}[Gated Allocation Across Federated Sources]
+\label{exp:federated}
+\textbf{Objective.} Test the gated attention allocator on a real
+federated retrieval task, verifying that normalised efforts equalise
+and that the allocator refuses below threshold.
+
+\textbf{Dataset.} Three federated spectral databases: MassBank (93K),
+HMDB (220K), GNPS (500K). Query budget: variable from $0.1\estar$ to
+$5\estar$ of the smallest source.
+
+\textbf{Ground truth.} The allocator's output is compared against
+brute-force exhaustive search over the allocation simplex, which shares
+no reasoning with the allocator.
+
+\textbf{Theoretical claims tested.}
+\begin{enumerate}[nosep,label=(\roman*)]
+\item Theorem~2.1 (allocation paper): $\estar = 2\ln 2 / \ln(1/(1-1/N))$
+  is exact and $Y(\estar) = N/4$.
+\item Theorem~3.1: below $\estar$ committing beats splitting.
+\item Proposition~3.3: the optimum equalises $e/\estar$, not $e$.
+\item Definition~4.2: the allocator refuses below $\min_i \estar_i$ and
+  reports the required budget.
+\end{enumerate}
+
+\textbf{Success criterion.} Allocator yield within $10^{-4}$ of
+brute-force yield at every tested budget. Refusal fires below threshold
+and does not fire above.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Compute $\estar_i$ for each source from corpus sizes.
+\item Sweep budget from $0.1 \cdot \min_i \estar_i$ to $5 \cdot \sum_i \estar_i$.
+\item At each budget: run \shk{lavoisier.allocate.gated}, run
+  brute-force search, compare yields.
+\item Report: yield gap, normalised efforts, refusal points, and
+  the budget at which the refusal resolves.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment 7: Shapeshifter DSL Validation}
+\label{sec:exp-dsl}
+
+\begin{experiment}[Specification Fidelity]
+\label{exp:dsl}
+\textbf{Objective.} Demonstrate that Shapeshifter programs faithfully
+encode published experimental methods and that execution reproduces
+published results.
+
+\textbf{Dataset.} Five published methods sections from metabolomics and
+proteomics papers with fully specified protocols.
+
+\textbf{Ground truth.} The published results (compound lists, retention
+times, mass accuracies) from each paper.
+
+\textbf{Theoretical claim tested.} The specification-gap thesis of the
+Shapeshifter paper: a single executable document captures what a methods
+section describes.
+
+\textbf{Success criterion.} For each of five methods sections, the
+\shk{.ss} program compiles without error and produces output matching
+the published results to within stated mass accuracy and retention time
+tolerance.
+
+\textbf{Protocol.}
+\begin{enumerate}[nosep]
+\item Select five published papers with complete methods sections.
+\item Encode each as a \shk{.ss} program using the extended grammar.
+\item Compile each program (\textsc{Compile} stage, no execution).
+\item Execute each program (\textsc{Execute} stage, against available data).
+\item Compare output against published results.
+\end{enumerate}
+\end{experiment}
+
+\section{Experiment Dependency Structure}
+\label{sec:dependencies}
+
+The experiments have a partial order dictated by shared infrastructure.
+\Cref{tab:dependencies} records the ordering.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Experiment dependencies. An entry $(i, j)$ means experiment $i$
+requires infrastructure built for experiment $j$.}
+\label{tab:dependencies}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & Exp.~1 & Exp.~2 & Exp.~3 & Exp.~4 & Exp.~5 & Exp.~6 & Exp.~7 \\
+\midrule
+Exp.~1 (CASMI)       & ---  &      &      &      & $\leftarrow$ & $\leftarrow$ & \\
+Exp.~2 (Trans.\ St.) &      & ---  &      &      &       &       & \\
+Exp.~3 (Lagrangian)  &      &      & ---  &      &       &       & \\
+Exp.~4 (Glyco)       &      &      &      & ---  &       &       & \\
+Exp.~5 (Scaling)     &      &      &      &      & ---   &       & \\
+Exp.~6 (Federated)   &      &      &      &      &       & ---   & \\
+Exp.~7 (DSL)         & $\leftarrow$ & & & & & $\leftarrow$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Experiment~2 (transition states) and Experiment~3 (Lagrangian
+convergence) are independent of all others. Experiment~1 (CASMI)
+depends on the trie infrastructure of Experiment~5 and the allocator
+of Experiment~6. Experiment~7 (DSL) depends on Experiments~1 and~6
+for the programs it encodes.
+
+The recommended execution order for maximum information per unit of
+implementation effort is:
+
+\begin{enumerate}[nosep]
+\item Experiment~2 (transition states): highest novelty, requires no
+  new data collection, tests the most distinctive theoretical claim.
+\item Experiment~5 (trie scaling): required infrastructure for
+  Experiment~1; pure algorithmic validation.
+\item Experiment~6 (federated allocation): required infrastructure for
+  Experiment~1; closed-form validation.
+\item Experiment~1 (CASMI): the benchmark that gives everything else
+  credibility.
+\item Experiment~3 (Lagrangian convergence): independent, uses existing
+  SRM 1950 data.
+\item Experiment~4 (glycopeptide): stress-test on nonlinear structures.
+\item Experiment~7 (DSL validation): requires most infrastructure,
+  provides software-engineering rather than scientific evidence.
+\end{enumerate}
+
+% =====================================================================
+\part{Language Extensions}
+% =====================================================================
+
+\section{Design Constraints}
+\label{sec:design-constraints}
+
+All extensions to the Shapeshifter DSL must preserve the four proved
+properties of the original specification: declaration-order determinism
+(Theorem~5.3), phase isolation (Theorem~5.4), workspace monotonicity
+(Theorem~5.5), and stage separation (Theorem~5.7). Each extension is
+stated with the invariant it preserves or modifies.
+
+\section{New Block Types}
+\label{sec:blocks}
+
+\subsection{The \texttt{source} block}
+
+\begin{requirement}[\texttt{source} block]
+\label{req:source}
+A \shk{source} block is a field block (no executable statements)
+declaring external data to be consumed by standard library operations.
+Grammar:
+\begin{lstlisting}
+source  ::=  "source" IDENT ":" fieldblock
+\end{lstlisting}
+Required fields: \shk{format} (one of \shk{"mzml"}, \shk{"mgf"},
+\shk{"msp"}, \shk{"csv"}), \shk{path} (string). Optional fields:
+\shk{vendor}, \shk{provenance} (free text), \shk{ground\_truth} (path),
+\shk{ground\_truth\_key} (field name in the truth file),
+\shk{instrument} (bare-word reference to an \shk{instrument} block).
+
+\emph{Invariant:} \shk{source} is a field block, so Theorems~5.3--5.7
+hold without modification. The compile stage validates that \shk{format}
+and \shk{path} are present; it does not check file existence (stage
+separation preserved).
+\end{requirement}
+
+\subsection{The \texttt{network} block}
+
+\begin{requirement}[\texttt{network} block]
+\label{req:network}
+A \shk{network} block declares a reaction network for CKG construction.
+Grammar:
+\begin{lstlisting}
+network  ::=  "network" IDENT ":" fieldblock
+\end{lstlisting}
+Required fields: \shk{species} (array of objects with \shk{name},
+\shk{mu\_std}, \shk{concentration}), \shk{reactions} (array of objects
+with \shk{from}, \shk{to}, \shk{k\_cat}), \shk{temperature} (number
+in Kelvin).
+
+\emph{Invariant:} Same as \shk{source}---field block, no execution,
+all theorems preserved.
+\end{requirement}
+
+\subsection{The \texttt{precursor} block}
+
+\begin{requirement}[\texttt{precursor} block]
+\label{req:precursor}
+A \shk{precursor} block declares a target ion for structured
+precursor-fragment operations.
+Grammar:
+\begin{lstlisting}
+precursor  ::=  "precursor" IDENT ":" fieldblock
+\end{lstlisting}
+Required fields: \shk{mz} (number), \shk{charge} (integer). Optional:
+\shk{adduct} (string), \shk{rt\_range} (pair), \shk{tolerance\_ppm}.
+
+\emph{Invariant:} Field block; theorems preserved.
+\end{requirement}
+
+\section{Structural Extension: The \texttt{foreach} Modifier}
+\label{sec:foreach}
+
+\begin{requirement}[\texttt{foreach} phase modifier]
+\label{req:foreach}
+Grammar:
+\begin{lstlisting}
+phase  ::=  "phase" IDENT ["foreach" IDENT "in" IDENT] ":" stmtblock
+\end{lstlisting}
+Semantics: the body is a template instantiated once per element of the
+named source or list, in source order. Bindings produced across
+iterations are collected into a list under the original name.
+
+\emph{Invariants preserved:}
+\begin{enumerate}[nosep,label=(\roman*)]
+\item \emph{Declaration-order determinism} (Theorem~5.3): elements are
+  processed in source order; the body is fixed.
+\item \emph{Workspace monotonicity} (Theorem~5.5): the collected list
+  is appended once after all iterations complete.
+\item \emph{Enumerability} (Proposition~5.9): call heads in the body
+  are visible by inspection.
+\end{enumerate}
+
+\emph{Invariant modified:} Phase isolation (Theorem~5.4) gains a
+scoped exception: the iteration variable is local to each instantiation
+of the body. This is the single exception to the ``no phase-local
+binding'' rule and is stated explicitly in the modified theorem.
+\end{requirement}
+
+\section{Failure Classification Extension: Principled Refusal}
+\label{sec:refusal}
+
+\begin{requirement}[Refusal as a third failure category]
+\label{req:refusal}
+Proposition~5.8 of the original specification defines two failure
+categories: local failure (warning) and global failure (error). We
+add a third:
+
+\textbf{(iii) Principled refusal.} A condition under which the
+operation has a well-defined answer that is not a result but a
+diagnostic statement about why no result is defensible. The binding
+receives kind \shk{object} with a distinguished field
+\shk{refused: true}. The refusal carries: the offered value, the
+required value, the shortfall, and per-component diagnostics.
+
+The refusal does not halt execution (unlike an error) and cannot be
+consumed as a result by downstream operations (unlike a warning-tagged
+binding). It is appended to the log with level \shk{refusal}.
+
+\emph{Source:} Definition~4.2 and Principle~4.1 of the attention
+allocation paper; Definition~4.2 of the medium-vertex paper.
+\end{requirement}
+
+% =====================================================================
+\part{Standard Library Extensions}
+% =====================================================================
+
+\section{Overview}
+\label{sec:stdlib-overview}
+
+The extended standard library comprises eleven namespaces and fifty-five
+operations. \Cref{tab:stdlib-summary} gives the counts; the full
+specification of each operation follows in
+\crefrange{sec:ns-extract}{sec:ns-validate}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Standard library namespace summary.}
+\label{tab:stdlib-summary}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Namespace} & \textbf{Domain} & \textbf{Operations} &
+\textbf{New} \\
+\midrule
+\shk{lavoisier.instrument}  & Experiment generation     & 2 & 0 \\
+\shk{lavoisier.extract}     & mzML/spectral data I/O    & 6 & 6 \\
+\shk{lavoisier.sentropy}    & S-entropy transformation  & 4 & 4 \\
+\shk{lavoisier.partition}   & Partition coordinates     & 1 & 0 \\
+\shk{lavoisier.phaselock}   & Phase-lock detection      & 7 & 7 \\
+\shk{lavoisier.vectors}     & Vector embeddings         & 4 & 4 \\
+\shk{lavoisier.msms}        & SEBD-MS and fragmentation & 10 & 4 \\
+\shk{lavoisier.db}          & Database/trie operations  & 6 & 3 \\
+\shk{lavoisier.circuit}     & CKG construction          & 7 & 7 \\
+\shk{lavoisier.allocate}    & Attention allocation      & 4 & 4 \\
+\shk{lavoisier.compare}     & Cross-pipeline comparison & 4 & 4 \\
+\shk{validate}              & Validation operations     & 6 & 5 \\
+\midrule
+\textbf{Total}              &                           & \textbf{61} & \textbf{48} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Namespace: \texttt{lavoisier.extract}}
+\label{sec:ns-extract}
+
+These operations replace the imperative Python functions
+\shk{extract\_mzml}, \shk{MSDataContainer}, \shk{get\_spectra}, and
+\shk{get\_xic\_from\_pl} with declarative operations whose parameters
+are exposed as named arguments.
+
+\begin{longtable}{@{}p{3.8cm}p{5.5cm}p{1.8cm}p{1.5cm}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind} & \textbf{Totality} \\
+\midrule
+\endhead
+\shk{load} &
+  \shk{source}, \shk{instrument}, \shk{rt\_range}, \shk{dda\_top?}$=6$,
+  \shk{ms1\_threshold?}$=1000$, \shk{ms2\_threshold?}$=10$,
+  \shk{ms1\_max?}$=0$, \shk{min\_spec\_peaks?}$=3$ &
+  \shk{records} & partial \\
+\addlinespace
+\shk{organize} & \shk{raw\_data} & \shk{records} & total \\
+\shk{link\_precursors} & \shk{organized}, \shk{precision?} & \shk{records} & total \\
+\shk{xic} & \shk{source}, \shk{target\_mz}, \shk{tolerance\_ppm?}$=10$,
+  \shk{rt\_range?} & \shk{records} & total \\
+\shk{xic\_batch} & \shk{source}, \shk{targets} (list), \shk{tolerance\_ppm?},
+  \shk{rt\_range?} & \shk{records} & total \\
+\shk{metadata} & \shk{source} & \shk{object} & total \\
+\bottomrule
+\end{longtable}
+
+The \shk{vendor} field resides on the \shk{source} block rather than
+the \shk{instrument} block, because vendor-specific parsing logic
+affects how raw data is structured (e.g., Waters multi-function DDA),
+not the physics of the instrument.
+
+\section{Namespace: \texttt{lavoisier.sentropy}}
+\label{sec:ns-sentropy}
+
+These operations replace \shk{SEntropyTransformer} with declarative
+operations exposing the four configurable parameters
+($\alpha$, $\beta$, $k$-neighbors, minimum intensity).
+
+\begin{longtable}{@{}p{3.8cm}p{5.5cm}p{1.8cm}p{1.5cm}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind} & \textbf{Totality} \\
+\midrule
+\endhead
+\shk{transform} & \shk{spectra}, \shk{alpha?}$=0.5$, \shk{beta?}$=1.0$,
+  \shk{k\_neighbors?}$=5$, \shk{min\_intensity?}$=0$ &
+  \shk{records} & total \\
+\shk{extract\_features} & \shk{coordinates} & \shk{records} & total \\
+\shk{transform\_and\_extract} & (combined) & \shk{records} & total \\
+\shk{pairwise\_distances} & \shk{coordinates} & \shk{tensor} & total \\
+\shk{from\_retention} & \shk{retention\_times}, \shk{column}, \shk{k\_factor?}$=1$ &
+  \shk{records} & total \\
+\shk{to\_retention} & \shk{coordinates}, \shk{column}, \shk{k\_factor?}$=1$ &
+  \shk{records} & total \\
+\bottomrule
+\end{longtable}
+
+The \shk{from\_retention} and \shk{to\_retention} operations replace
+\shk{PartitionLagCalculator} from the chromatographic trap array module.
+
+\section{Namespace: \texttt{lavoisier.circuit}}
+\label{sec:ns-circuit}
+
+\begin{longtable}{@{}p{3.8cm}p{5.5cm}p{1.8cm}p{1.5cm}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind} & \textbf{Totality} \\
+\midrule
+\endhead
+\shk{solve} & \shk{network} & \shk{object} & partial \\
+\shk{propagate} & \shk{circuit}, \shk{process?}$=$\shk{"rest"} &
+  \shk{records} & total \\
+\shk{reachable\_set} & \shk{ckg}, \shk{identified}, \shk{depth?}$=3$ &
+  \shk{records} & total \\
+\shk{contact\_map} & \shk{circuit} & \shk{tensor} & total \\
+\shk{node\_coordinates} & \shk{circuit}, \shk{species} & \shk{object} & total \\
+\shk{coherence} & \shk{circuit} & \shk{scalar} & total \\
+\shk{axis\_reducibility} & \shk{circuit} & \shk{object} & total \\
+\bottomrule
+\end{longtable}
+
+The \shk{solve} operation is partial because it requires the Wegscheider
+condition (Theorem~2.2 of the CKG paper). Violation is a global failure:
+without a consistent potential function, no circuit and no CKG exist.
+
+\section{Namespace: \texttt{lavoisier.allocate}}
+\label{sec:ns-allocate}
+
+\begin{longtable}{@{}p{3.8cm}p{5.5cm}p{1.8cm}p{1.5cm}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind} & \textbf{Totality} \\
+\midrule
+\endhead
+\shk{gated} & \shk{sources}, \shk{budget},
+  \shk{threshold\_method?}$=$\shk{"quarter\_corpus"} &
+  \shk{object} & partial (may refuse) \\
+\shk{threshold} & \shk{corpus\_size} & \shk{scalar} & total \\
+\shk{quarter\_corpus\_check} & \shk{yield\_count}, \shk{corpus\_size} &
+  \shk{scalar} & total \\
+\shk{normalised\_effort} & \shk{effort}, \shk{corpus\_size} &
+  \shk{scalar} & total \\
+\bottomrule
+\end{longtable}
+
+The \shk{gated} operation is the only operation in the standard library
+that may produce a principled refusal (\cref{req:refusal}).
+
+\section{Namespace: \texttt{validate} (extended)}
+\label{sec:ns-validate}
+
+\begin{longtable}{@{}p{3.8cm}p{5.5cm}p{1.8cm}p{1.5cm}@{}}
+\toprule
+\textbf{Operation} & \textbf{Arguments} & \textbf{Kind} & \textbf{Totality} \\
+\midrule
+\endhead
+\shk{score\_against\_truth} & \shk{results}, \shk{source}, \shk{metric}
+  (\shk{"rank1\_accuracy"}, \shk{"top5\_accuracy"}, \shk{"formula\_accuracy"},
+  \shk{"class\_accuracy"}) & \shk{scalar} & partial \\
+\shk{compare\_results} & \shk{result\_a}, \shk{result\_b}, \shk{key},
+  \shk{metric} & \shk{object} & total \\
+\shk{assert\_convergence} & \shk{results} (list), \shk{metric},
+  \shk{threshold} & \shk{object} & total \\
+\shk{assert\_within} & \shk{value}, \shk{bounds} & \shk{scalar} & total \\
+\shk{timing\_profile} & \shk{results}, \shk{label} & \shk{object} & total \\
+\shk{check\_resolution\_time} & \shk{instrument}, \shk{window\_ppm} &
+  (existing) & total \\
+\bottomrule
+\end{longtable}
+
+The \shk{score\_against\_truth} operation is partial because it requires
+the \shk{ground\_truth} field on the \shk{source} block. If
+\shk{ground\_truth} is absent, the operation appends a warning (not an
+error) and returns $-1$, consistent with the failure classification:
+the experiment is meaningful without scoring, but the score is not
+available.
+
+% =====================================================================
+\part{Rust Core Library}
+% =====================================================================
+
+\section{Architecture}
+\label{sec:rust-arch}
+
+The Rust core library provides the computational backend for all
+standard library operations. It replaces approximately 2,500 lines of
+Python across five modules (\shk{DataContainer}, \shk{EntropyTransformation},
+\shk{PhaseLockDetectionNetworks}, \shk{VectorTransformation},
+\shk{ChromatographicTrapArray}) with approximately 800 lines of
+type-safe Rust distributed across thirteen modules. The Rust modules
+contain no I/O, no visualisation, and no class hierarchies.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Rust module structure. Lines are estimates based on the
+specified interfaces.}
+\label{tab:rust-modules}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Module} & \textbf{Contains} & \textbf{Source} & \textbf{Est.\ lines} \\
+\midrule
+\shk{constants.rs}     & Physical constants              & All papers   & 15 \\
+\shk{sentropy.rs}      & \shk{SEntropy}, magnitude, distance,
+                         from/to retention                & Papers 1,2; Doc 11 & 80 \\
+\shk{partition.rs}     & \shk{PartitionState}, bijection index,
+                         capacity, from\_sentropy         & Paper 1; Doc 11 & 90 \\
+\shk{ternary.rs}       & \shk{TernaryAddress}, encode, decode,
+                         navigate, common\_prefix         & Paper 1; CKG & 70 \\
+\shk{trie.rs}          & Lazy dictionary, empty lookup    & Paper 1      & 100 \\
+\shk{column.rs}        & \shk{ColumnParams}, RT $\leftrightarrow$
+                         S-entropy, undetermined residue  & Doc 11       & 60 \\
+\shk{analyzer.rs}      & Cyclotron freq, TOF time,
+                         Orbitrap freq, quad stability    & Paper 2      & 50 \\
+\shk{sebd.rs}          & SEBD-MS algorithm, forward/backward
+                         search, virtual substates        & Paper 1      & 120 \\
+\shk{graph.rs}         & Fragment graph, admissible transitions,
+                         Hamiltonian path                 & Paper 4      & 80 \\
+\shk{circuit.rs}       & \shk{ReactionNetwork}, solve,
+                         Kirchhoff, Wegscheider           & CKG          & 90 \\
+\shk{propagation.rs}   & $\Tmap$ operator, CKG recovery,
+                         reachable set                    & CKG          & 70 \\
+\shk{allocator.rs}     & Gated allocation, refusal,
+                         threshold, normalised effort     & Allocation   & 80 \\
+\shk{equivalence.rs}   & \shk{TripleEquivalence},
+                         agreement checks                 & Doc 12       & 40 \\
+\shk{validation.rs}    & Resolution, distinguishability,
+                         panel floor                      & CKG; Doc 11  & 50 \\
+\midrule
+\textbf{Total}         &                                  &              & $\sim$\textbf{895} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Core Types}
+\label{sec:core-types}
+
+Three types are shared across all modules and constitute the framework's
+type-level invariants.
+
+\begin{lstlisting}[language=rust]
+/// S-Entropy coordinates in [0,1]^3.
+/// Invariant: all components in [0,1] enforced at construction.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SEntropy {
+    pub s_k: f64,  // knowledge / throughput
+    pub s_t: f64,  // time / capacity
+    pub s_e: f64,  // entropy / potential
+}
+
+/// Partition state (n, l, m, s).
+/// Invariant: n >= 1, 0 <= l < n, -l <= m <= l, s in {Up, Down}.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct PartitionState {
+    pub n: u32,
+    pub l: u32,
+    pub m: i32,
+    pub s: Spin,
+}
+
+/// Ternary address of depth k.
+/// Invariant: each trit in {0, 1, 2}.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TernaryAddress {
+    pub trits: Vec<u8>,
+}
+\end{lstlisting}
+
+\section{Module Interfaces}
+\label{sec:interfaces}
+
+We specify the public interface of each module by its function
+signatures. Internal implementation is not specified; the interfaces
+are the contract the DSL runtime depends on.
+
+\subsection{\texttt{circuit.rs}}
+
+\begin{lstlisting}[language=rust]
+pub struct ReactionNetwork {
+    pub species: Vec<Species>,
+    pub reactions: Vec<Reaction>,
+}
+
+pub struct SolvedCircuit {
+    pub potentials: Vec<f64>,      // mu_i
+    pub conductances: Vec<f64>,    // G_ij
+    pub fluxes: Vec<f64>,          // J_ij
+    pub coordinates: Vec<SEntropy>,
+    pub kirchhoff_residual: f64,
+    pub wegscheider_holds: bool,
+}
+
+impl ReactionNetwork {
+    pub fn solve(&self, temperature_k: f64)
+        -> Result<SolvedCircuit, CircuitError>;
+}
+
+impl SolvedCircuit {
+    pub fn contact_map(&self) -> Vec<(usize, usize, f64)>;
+    pub fn coherence(&self) -> f64;
+    pub fn axis_reducibility(&self) -> [f64; 3]; // R^2 per axis
+}
+\end{lstlisting}
+
+\subsection{\texttt{allocator.rs}}
+
+\begin{lstlisting}[language=rust]
+pub struct JoinSource {
+    pub name: String,
+    pub corpus_size: u64,
+}
+
+pub enum AllocationResult {
+    Allocated {
+        per_source: Vec<(String, f64)>,
+        normalised: Vec<(String, f64)>,
+        policy: AllocationPolicy,
+    },
+    Refused {
+        offered_budget: f64,
+        required_budget: f64,
+        shortfall: f64,
+        per_source_thresholds: Vec<(String, f64)>,
+    },
+}
+
+pub fn allocate(sources: &[JoinSource], budget: f64)
+    -> AllocationResult;
+pub fn threshold(corpus_size: u64) -> f64;
+pub fn yield_at(corpus_size: u64, effort: f64) -> f64;
+\end{lstlisting}
+
+\subsection{\texttt{sebd.rs}}
+
+\begin{lstlisting}[language=rust]
+pub struct SEBDResult {
+    pub best_costs: Vec<f64>,
+    pub meeting_points: Vec<Option<PartitionState>>,
+    pub transition_states: Vec<Vec<SEntropy>>,
+    pub matched_compounds: Vec<Vec<String>>,
+}
+
+pub fn sebd_search(
+    precursor: &PartitionState,
+    fragments: &[PartitionState],
+    trie: &TernaryTrie,
+    max_shell_drop: u32,
+    trie_depth: usize,
+) -> SEBDResult;
+
+pub fn extract_virtual_substates(
+    result: &SEBDResult,
+) -> Vec<SEntropy>;
+
+pub fn reachability_cone(
+    precursor: &PartitionState,
+    depth: u32,
+) -> Vec<PartitionState>;
+
+pub fn cone_membership(
+    cone: &[PartitionState],
+    fragments: &[PartitionState],
+) -> Vec<bool>;
+\end{lstlisting}
+
+% =====================================================================
+\part{Validation Architecture}
+% =====================================================================
+
+\section{Test Categories}
+\label{sec:test-categories}
+
+Every experiment produces three categories of output, each with
+distinct validation requirements.
+
+\begin{definition}[Consistency check]
+A test that verifies the implementation computes what the formula says.
+Passes by construction if the implementation is correct; informative
+only when it fails. Examples: Kirchhoff residual $= 0$, relabelling
+invariance, step-to-root $=$ address length.
+\end{definition}
+
+\begin{definition}[Positive control]
+A test on a case where the answer is known independently. Must be
+capable of failing on well-formed input. Example: coupon-collector
+retrieval is analytically concave, so the diminishing-returns detector
+must report concavity there.
+\end{definition}
+
+\begin{definition}[Negative control]
+A test asserting that something does \emph{not} happen on well-formed
+input. Example: the allocator does not refuse above threshold; spreading
+does not lose above threshold; the concave branch recovers water-filling
+exactly.
+\end{definition}
+
+\section{Per-Experiment Validation Design}
+\label{sec:per-exp-validation}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Validation design per experiment. Each experiment carries
+consistency checks, at least one positive control, and at least one
+negative control.}
+\label{tab:validation-design}
+\begin{tabular}{@{}lp{3cm}p{3cm}p{3cm}@{}}
+\toprule
+\textbf{Experiment} & \textbf{Consistency} & \textbf{Positive control} &
+\textbf{Negative control} \\
+\midrule
+1.\ CASMI &
+  InChIKey format; mass accuracy within tolerance &
+  Known compounds from NIST must rank 1 &
+  Decoy compounds must not rank 1 \\[4pt]
+2.\ Trans.\ states &
+  Virtual substates average to physical point &
+  McLafferty TS geometry matches DFT &
+  Random off-shell points do not correlate with DFT \\[4pt]
+3.\ Lagrangian &
+  $\Sv \in [0,1]^3$ for all compounds &
+  Same compound $\rightarrow$ same coordinates on same platform &
+  Different compounds $\rightarrow$ different coordinates \\[4pt]
+4.\ Glycopeptide &
+  Precursor mass conserved in cone &
+  Peptide backbone fragments in cone &
+  Noise peaks not in cone \\[4pt]
+5.\ Scaling &
+  Trie depth matches specification &
+  Query time flat across DB sizes &
+  Empty lookups at off-shell addresses \\[4pt]
+6.\ Federated &
+  Allocator yield $\leq$ brute force &
+  Refusal fires below threshold &
+  Refusal does not fire above threshold \\[4pt]
+7.\ DSL &
+  Programs compile without error &
+  Output matches published results &
+  Misspelled field names produce warnings \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Reporting Requirements}
+\label{sec:reporting}
+
+Each experiment report must contain, at minimum:
+
+\begin{enumerate}[nosep,label=(\roman*)]
+\item The exact version of the Shapeshifter program used, as a
+  \shk{.ss} file committed to the repository.
+\item The exact version of the Rust core library, as a Git commit hash.
+\item The dataset provenance, including download URLs and file checksums.
+\item All numerical results as JSON files produced by the validation
+  pipeline, not manually transcribed.
+\item The comparison method's results, with citation to the source.
+\item A table distinguishing consistency checks (pass by construction)
+  from controls (capable of failing).
+\item Any measurement error or implementation flaw discovered during
+  validation, described with the same prominence as positive results
+  (following the practice of the attention allocation paper,
+  Section~7.3).
+\end{enumerate}
+
+% =====================================================================
+\part{Implementation Roadmap}
+% =====================================================================
+
+\section{Phase 1: Core Infrastructure}
+\label{sec:phase1}
+
+\begin{deliverable}[Rust core library: types and ternary addressing]
+\label{del:core}
+Implement \shk{constants.rs}, \shk{sentropy.rs}, \shk{partition.rs},
+\shk{ternary.rs}. These four modules provide the type-level invariants
+shared by all subsequent modules. Estimated: 255 lines.
+\end{deliverable}
+
+\begin{deliverable}[Trie and lazy dictionary]
+\label{del:trie}
+Implement \shk{trie.rs} with insert, exact lookup, prefix match, and
+empty-lookup detection. Estimated: 100 lines. Required for
+Experiments~1 and~5.
+\end{deliverable}
+
+\begin{deliverable}[Shapeshifter grammar extensions]
+\label{del:grammar}
+Add \shk{source}, \shk{network}, and \shk{precursor} block types to
+the parser. Add the \shk{foreach} modifier. Update the compile stage
+to validate the new blocks. Prove that the four invariant theorems
+hold under the extensions.
+\end{deliverable}
+
+\section{Phase 2: Experiment-Specific Modules}
+\label{sec:phase2}
+
+\begin{deliverable}[SEBD-MS implementation]
+\label{del:sebd}
+Implement \shk{sebd.rs} and \shk{graph.rs}. The SEBD-MS algorithm,
+virtual substate extraction, and forward reachability cone. Required
+for Experiments~1, 2, and~4. Estimated: 200 lines.
+\end{deliverable}
+
+\begin{deliverable}[Circuit solver and CKG]
+\label{del:circuit}
+Implement \shk{circuit.rs} and \shk{propagation.rs}. Required for the
+CKG-constrained variant of Experiment~1 and the triple-convergence test
+of Experiment~3. Estimated: 160 lines.
+\end{deliverable}
+
+\begin{deliverable}[Attention allocator]
+\label{del:allocator}
+Implement \shk{allocator.rs} with gated allocation, refusal, and
+brute-force comparison. Required for Experiment~6 and the federated
+variant of Experiment~1. Estimated: 80 lines.
+\end{deliverable}
+
+\section{Phase 3: Experiments and Publication}
+\label{sec:phase3}
+
+\begin{deliverable}[Experiment 2 execution]
+\label{del:exp2}
+Run the transition state experiment. This is first because it has the
+highest novelty-to-effort ratio and requires no external data
+collection.
+\end{deliverable}
+
+\begin{deliverable}[Experiment 1 execution]
+\label{del:exp1}
+Run CASMI 2022. This requires Deliverables~\ref{del:trie},
+\ref{del:sebd}, and optionally~\ref{del:circuit} and~\ref{del:allocator}.
+Produce a spreadsheet in the CASMI submission format (InChIKey or
+SMILES per compound) and score against published solutions.
+\end{deliverable}
+
+\begin{deliverable}[Results manuscript]
+\label{del:manuscript}
+Write a single results paper covering Experiments~1--6, structured as:
+introduction (the gap), methods (the framework, briefly, with citations
+to the theory papers), results (per-experiment, with comparison tables),
+and discussion (what works, what fails, and what each failure localises).
+Target venue: Analytical Chemistry or the Journal of Chemical Information
+and Modeling.
+\end{deliverable}
+
+% =====================================================================
+\section*{Summary of All Specifications}
+% =====================================================================
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Complete specification summary.}
+\label{tab:summary}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Component} & \textbf{Count} \\
+\midrule
+Experiments defined & 7 \\
+Success criteria stated & 7 \\
+Comparison methods named & 6 (Exp.~2 has none: novel) \\
+DSL block types added & 3 (\shk{source}, \shk{network}, \shk{precursor}) \\
+DSL structural extensions & 1 (\shk{foreach} modifier) \\
+Failure categories & 3 (warning, error, refusal) \\
+Standard library namespaces & 12 (7 existing + 5 new) \\
+Standard library operations & 61 (13 existing + 48 new) \\
+Rust modules & 14 \\
+Estimated Rust lines & 895 \\
+Invariant theorems preserved & 4 of 4 \\
+Invariant theorems modified & 1 (phase isolation, scoped exception) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
