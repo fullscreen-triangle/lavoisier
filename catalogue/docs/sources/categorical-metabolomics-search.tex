@@ -1,0 +1,1174 @@
+% ============================================================
+%  CATEGORICAL SEARCH FOR METABOLOMICS ANNOTATION:
+%  GENERATIVE PHASE-SPACE ADDRESSING WITH COHERENCE-GROUNDED
+%  VERIFICATION FOR UNKNOWN COMPOUND IDENTIFICATION
+% ============================================================
+
+\documentclass[twocolumn,10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,top=2cm,bottom=2.2cm,left=1.8cm,right=1.8cm,
+            columnsep=0.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[round,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,
+            citecolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\small Categorical Search for Metabolomics Annotation}
+\fancyhead[LO]{\small Sachikonye}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---- Theorem environments -----------------------------------------------
+\newtheoremstyle{thmstyle}{\topsep}{\topsep}{\itshape}{}{\bfseries}{.}{.5em}{}
+\theoremstyle{thmstyle}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{axiom}{Axiom}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---- Custom commands ----------------------------------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Zp}{\mathbb{Z}^{+}}
+\newcommand{\kB}{k_{\mathrm{B}}}
+\newcommand{\Parts}{\mathcal{P}}
+\newcommand{\Sv}{\mathbf{S}}
+\newcommand{\Sk}{S_{k}}
+\newcommand{\St}{S_{t}}
+\newcommand{\Se}{S_{e}}
+\newcommand{\nP}{n_{\mathrm{P}}}
+\newcommand{\calG}{\mathcal{G}}
+\newcommand{\calV}{\mathcal{V}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\calT}{\mathcal{T}}
+\newcommand{\calC}{\mathcal{C}}
+\newcommand{\calL}{\mathcal{L}}
+\newcommand{\calS}{\mathcal{S}}
+\newcommand{\calR}{\mathcal{R}}
+\newcommand{\calD}{\mathcal{D}}
+\newcommand{\calH}{\mathcal{H}}
+\newcommand{\flo}{\beta}
+\DeclareMathOperator{\mean}{mean}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+% =========================================================
+\title{\textbf{Categorical Search for Metabolomics Annotation:\\
+Generative Phase-Space Addressing with Coherence-Grounded\\
+Verification for Unknown Compound Identification}}
+
+\author{
+Kundai Farai Sachikonye\\
+Technical University of Munich\\
+Chair of Proteomics and Bioanalytics\\
+\texttt{kundai.sachikonye@wzw.tum.de}
+}
+\date{\today}
+% =========================================================
+
+\begin{document}
+\maketitle
+
+% =========================================================
+\begin{abstract}
+\noindent
+We present a complete search algorithm for the annotation of unknown
+compounds from tandem mass spectrometry (MS/MS) data. The algorithm
+operates in three stages. First, an observed spectrum is embedded into
+three-dimensional S-entropy coordinate space $\Sv = (\Sk, \St, \Se)
+\in [0,1]^3$ via a platform-independent transformation that encodes
+mass-scale, structural complexity, and harmonic connectivity of the
+fragment ion series. Second, the S-entropy triple is encoded as an
+interleaved ternary address of depth~$k$, and a lazy trie over a
+structural candidate database is traversed in $\mathcal{O}(k)$
+operations to retrieve a candidate set of size
+$|\calC_k| \ll N_{\mathrm{db}}$. Third, each candidate is verified
+by three independent channels~--- spectral intensity prediction from
+phase-lock edge density, fragmentation pathway admissibility from
+partition-state graph search, and neutral loss consistency from
+functional-group phase coherence~--- required to form a coherence
+triangle before the annotation is accepted. The algorithm terminates
+at closure: the state in which no further available verification
+channel produces a materially different candidate, strictly stronger
+than a confidence threshold. If the verification channels disagree,
+the algorithm emits an explicit decline carrying the distinct candidate
+classes, rather than silently selecting one.
+
+We prove: (i)~the per-query cost is $\mathcal{O}(k + |\calC_k| \cdot
+F)$ where $F$ is the per-candidate verification cost, independent of
+database size $N_{\mathrm{db}}$ after a one-time $\mathcal{O}(N_{\mathrm{db}}
+\cdot k)$ trie construction; (ii)~the ternary encoding preserves
+chemical similarity, so that candidates sharing a longer address prefix
+are metrically closer in S-entropy space; (iii)~the coherence triangle
+requirement is both necessary and sufficient for robustness against
+single-channel failure; and (iv)~every annotation carries an explicit
+residual quantifying the irreducible gap between the observed spectrum
+and any finite candidate set, derived from the non-completability of
+the chemical medium.
+
+\bigskip\noindent\textbf{Keywords:}
+metabolomics annotation; database search; S-entropy coordinates;
+ternary phase-space addressing; categorical fragmentation; coherence
+triangle; partition-state graph; generative spectral database;
+unknown compound identification; tandem mass spectrometry
+\end{abstract}
+
+\tableofcontents
+
+% =========================================================
+\section{Introduction}
+\label{sec:intro}
+% =========================================================
+
+\subsection{The annotation problem}
+
+Untargeted metabolomics by liquid chromatography coupled to tandem mass
+spectrometry (LC-MS/MS) routinely detects thousands of molecular features
+per sample, of which approximately 80\% remain
+unannotated~\citep{fiehn2002metabolomics,kind2018identification}. The
+annotation problem is: given a precursor mass-to-charge ratio $m/z$, a
+charge state~$z$, a retention time, and a fragment ion spectrum
+$\{(m/z_i, I_i)\}_{i=1}^{K}$, determine the molecular identity of the
+precursor.
+
+Two classes of approach dominate. \textbf{Spectral library matching}
+scores an observed spectrum against a database of reference spectra
+acquired on the same or similar instrument
+types~\citep{stein2012mass,horai2010massbank}. The cost is
+$\mathcal{O}(N_{\mathrm{db}} \times d)$ per query, where
+$N_{\mathrm{db}}$ is the library size and $d$ is the spectral
+dimensionality. The fundamental limitation is coverage: a compound
+absent from the library cannot be identified, and compounds acquired on
+a different instrument type may not match due to platform-dependent
+intensity variations~\citep{kind2007fiehnlib}. \textbf{In-silico
+fragmentation} predicts theoretical spectra for candidate structures
+and scores against the observed spectrum~\citep{duhrkop2019sirius,
+wei2019rapid}. This extends coverage to any structure whose
+fragmentation can be simulated, but the per-candidate cost of quantum-
+chemical or rule-based prediction is substantial, and the candidate
+enumeration from molecular formula alone can exceed $10^6$ for masses
+above 400\,Da.
+
+Both approaches treat the spectrum as an empirical fingerprint. Neither
+exploits the geometric structure of the fragmentation process: that
+each ion occupies a specific location in a bounded oscillatory phase
+space, and that fragmentations are transitions between locations in a
+structured graph whose topology determines both which fragments appear
+and at what relative intensities.
+
+\subsection{Approach}
+
+We present an algorithm that replaces the linear scan of spectral
+library matching with a logarithmic-depth trie traversal, and replaces
+the black-box scoring of in-silico methods with a three-channel
+verification grounded in independently derived physical theories:
+
+\begin{enumerate}[nosep,label=(\roman*)]
+\item \textbf{S-entropy embedding and ternary addressing}
+  (Section~\ref{sec:embedding}). Each spectrum is mapped to a
+  platform-independent three-dimensional coordinate
+  $\Sv = (\Sk, \St, \Se) \in [0,1]^3$ and encoded as a ternary string
+  of depth~$k$. A candidate database pre-indexed as a ternary trie is
+  traversed in $\mathcal{O}(k)$, returning a candidate set
+  $\calC_k$ of compounds whose S-entropy coordinates share a common
+  prefix with the query.
+
+\item \textbf{Categorical intensity verification}
+  (Section~\ref{sec:intensity}). For each candidate in $\calC_k$,
+  the phase-lock edge density $|E_i|$ of every predicted fragment is
+  computed from the candidate's molecular graph, yielding predicted
+  intensities $I_i \propto \exp(-|E_i|/\langle E \rangle)$. The
+  correlation between predicted and observed intensities is the first
+  verification channel.
+
+\item \textbf{Partition-state pathway verification}
+  (Section~\ref{sec:pathway}). Each candidate's precursor is mapped to
+  a partition state $(n, \ell, m, s)$ via the partition bijection, and
+  the S-Entropy Bidirectional Dijkstra (SEBD-MS) algorithm is run to
+  verify that all observed fragments lie within the forward
+  reachability cone. The fraction of covered fragments is the second
+  verification channel.
+
+\item \textbf{Neutral loss phase-coherence verification}
+  (Section~\ref{sec:neutralloss}). For each observed neutral loss, the
+  candidate's molecular structure is checked for the corresponding
+  functional group with residual phase coherence to the precursor. The
+  fraction of correctly predicted neutral losses is the third
+  verification channel.
+
+\item \textbf{Coherence-grounded acceptance}
+  (Section~\ref{sec:coherence}). The three channels must form a
+  coherence triangle~--- each channel mutually supports the other
+  two~--- before the annotation is accepted. Acceptance occurs at
+  closure: the point where no further verification channel can produce
+  a materially different candidate. If the channels disagree, the
+  algorithm emits an explicit decline.
+\end{enumerate}
+
+\subsection{Relation to prior work}
+
+The components of this algorithm have been developed independently.
+The S-entropy coordinate system and ternary encoding were introduced
+in~\citet{sachikonye2024generative} for generative spectral databases.
+The partition-state graph and SEBD-MS algorithm were developed
+in~\citet{sachikonye2024partition} for MS/MS fragment identification.
+The categorical fragmentation theory and intensity model were
+established in~\citet{sachikonye2024categorical}. The coherence
+triangle and closure criterion were derived
+in~\citet{sachikonye2024scp} as domain-agnostic search theory. The
+platform-independent coordinate transformation was validated on
+LC-MS/MS data in~\citet{sachikonye2024ucdavis}. This paper synthesises
+these components into a single executable algorithm and proves its
+correctness and complexity.
+
+The novelty is the synthesis. No prior work combines ternary phase-space
+addressing (sublinear candidate retrieval) with categorical intensity
+prediction (first-principles scoring) and coherence-grounded acceptance
+(principled stopping and decline). Each component addresses a different
+failure mode of existing annotation pipelines:
+\begin{itemize}[nosep]
+\item Ternary addressing eliminates the $\mathcal{O}(N_{\mathrm{db}})$
+  scan, making the algorithm database-size-independent at query time.
+\item Categorical intensity prediction provides a mechanistic score
+  without requiring training data, enabling annotation of novel
+  chemical classes absent from any training set.
+\item Coherence-grounded acceptance prevents silent misannotation: a
+  result is never emitted unless three independent channels agree, and
+  disagreement is reported explicitly rather than suppressed.
+\end{itemize}
+
+
+% =========================================================
+\section{Mathematical Foundations}
+\label{sec:foundations}
+% =========================================================
+
+\subsection{The Bounded Phase Space axiom}
+
+\begin{axiom}[Bounded Phase Space]
+\label{ax:bps}
+Every persistent physical system occupies a bounded region
+$\Omega \subset \R^{2d}$ of phase space with finite Liouville measure
+$\mu(\Omega) < \infty$.
+\end{axiom}
+
+By the Poincar\'{e} recurrence theorem~\citep{poincare1890}, any
+bounded Hamiltonian system without fixed points is oscillatory. For
+integrable systems, the Arnold--Liouville theorem~\citep{arnold1989}
+guarantees action-angle coordinates with quasi-periodic motion.
+
+\subsection{Partition states and the bijection}
+
+\begin{definition}[Partition State]
+\label{def:partition-state}
+A partition state of a bounded three-dimensional Hamiltonian system is
+an equivalence class of phase-space points sharing closure label
+$(n, \ell, m, s)$ where $n \in \{1,2,\ldots\}$ is the principal level,
+$\ell \in \{0,\ldots,n-1\}$ the angular sublevel,
+$m \in \{-\ell,\ldots,+\ell\}$ the azimuthal projection, and
+$s \in \{-\tfrac{1}{2},+\tfrac{1}{2}\}$ the rotational parity. The
+number of states at level~$n$ is $C(n) = 2n^2$, and the cumulative
+count is $N_{\mathrm{state}}(n) = n(n+1)(2n+1)/3$.
+\end{definition}
+
+\begin{definition}[Partition Bijection $\Phi$]
+\label{def:bijection}
+The map $\Phi\colon \Zp \to \Parts$ sends each positive integer
+$M$ to a unique partition state $(n,\ell,m,s)$ by: (i)~find $n$ with
+$N_{\mathrm{state}}(n-1) < M \le N_{\mathrm{state}}(n)$; (ii)~set
+$\delta = M - N_{\mathrm{state}}(n-1)$; (iii)~assign $(\ell,m,s)$ as
+the $\delta$-th element of the lexicographic enumeration of level-$n$
+states. $\Phi$ is a bijection~\citep{sachikonye2024partition}.
+\end{definition}
+
+An ion with mass-to-charge ratio $m/z$ maps to partition coordinates
+via $n_{\mathrm{ion}} = \lfloor\sqrt{m/z}\rfloor + 1$.
+
+\subsection{S-entropy coordinates}
+
+\begin{definition}[Spectral S-Entropy Embedding]
+\label{def:sentropy}
+For a tandem mass spectrum with $K$ fragment peaks
+$\{(m/z_i, I_i)\}_{i=1}^K$ and precursor $m/z_p$, the S-entropy
+coordinates are:
+\begin{align}
+\Sk &= -\frac{1}{\ln K} \sum_{i=1}^{K} p_i \ln p_i,
+  \quad p_i = \frac{I_i}{\sum_j I_j},
+\label{eq:sk}\\[4pt]
+\St &= \frac{\ln(m/z_{\max} / m/z_{\min})}
+            {\ln(\omega_{\mathrm{ref,max}}/\omega_{\mathrm{ref,min}})},
+\label{eq:st}\\[4pt]
+\Se &= \frac{N_{\mathrm{harmonic}}}
+            {\max\bigl(\binom{K}{2}, 1\bigr)},
+\label{eq:se}
+\end{align}
+where $\Sk$ is the normalised Shannon entropy of the intensity
+distribution (knowledge entropy), $\St$ is the normalised log-ratio
+of the fragment $m/z$ range (temporal entropy), and $\Se$ is the
+fraction of fragment pairs in harmonic proximity (evolution
+entropy). Two fragments $m/z_a, m/z_b$ are in harmonic proximity if
+there exist integers $p, q$ with $1 \le p, q \le 8$ such that
+$|\max(m/z_a, m/z_b)/\min(m/z_a, m/z_b) - p/q| < \delta$ with
+tolerance $\delta = 0.05$. Reference constants
+$\omega_{\mathrm{ref,max}} = 4401\,\mathrm{cm}^{-1}$ and
+$\omega_{\mathrm{ref,min}} = 67\,\mathrm{cm}^{-1}$ are the extremes
+of known diatomic vibrational
+frequencies~\citep{sachikonye2024generative}.
+\end{definition}
+
+\begin{proposition}[Well-definedness and Range]
+\label{prop:sentropy-range}
+For any spectrum with $K \ge 2$ peaks and positive intensities:
+$\Sk \in [0,1]$, $\St \in [0,1]$, $\Se \in [0,1]$.
+\end{proposition}
+
+\begin{proof}
+$\Sk$: Shannon entropy of a discrete distribution on $K$ outcomes is
+maximised at $\ln K$ (uniform distribution) and minimised at $0$
+(degenerate); normalisation by $\ln K$ maps to $[0,1]$. $\St$: the
+numerator is $\ln(m/z_{\max}/m/z_{\min}) \ge 0$ and is bounded above
+by the denominator by choice of reference constants spanning the full
+physical range. $\Se$: a count of pairs divided by the total number
+of pairs is in $[0,1]$ by definition. \qed
+\end{proof}
+
+\begin{remark}[Platform independence]
+\label{rem:platform}
+$\Sk$ depends on normalised intensities (ratios), not absolute
+intensities; $\St$ depends on $m/z$ ratios; $\Se$ depends on $m/z$
+ratios. All three are therefore invariant to absolute intensity
+scaling and to systematic $m/z$ shifts within calibration tolerance.
+This is the mathematical basis for the measured CV~$< 1.8\%$ across
+Waters Q-TOF and Thermo Orbitrap
+platforms~\citep{sachikonye2024categorical}.
+\end{remark}
+
+
+% =========================================================
+\section{Ternary Phase-Space Addressing}
+\label{sec:embedding}
+% =========================================================
+
+\subsection{Interleaved ternary encoding}
+
+\begin{definition}[Interleaved Ternary Address]
+\label{def:ternary}
+For $\Sv = (\Sk, \St, \Se) \in [0,1]^3$ and depth $k$, the
+interleaved ternary address $\alpha^{(k)}(\Sv) \in \{0,1,2\}^k$ is
+computed by Algorithm~\ref{alg:encode}.
+\end{definition}
+
+\begin{algorithm}[h]
+\caption{Interleaved Ternary Encoder}
+\label{alg:encode}
+\begin{algorithmic}[1]
+\Require $\Sv = (\Sk,\St,\Se) \in [0,1]^3$; depth $k$
+\Ensure Trit string $\alpha = (t_1,\ldots,t_k) \in \{0,1,2\}^k$
+\State $r_0 \gets \Sk$;\; $r_1 \gets \St$;\; $r_2 \gets \Se$
+\For{$j = 1$ \textbf{to} $k$}
+  \State $d \gets (j-1) \bmod 3$
+  \State $t_j \gets \min(\lfloor 3 r_d \rfloor, 2)$
+  \State $r_d \gets 3 r_d - t_j$
+\EndFor
+\Return $(t_1, \ldots, t_k)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Distance Preservation]
+\label{thm:distance}
+Two spectra with ternary addresses sharing a common prefix of length
+$j$ satisfy:
+\begin{equation}
+\|\Sv_1 - \Sv_2\|_2 \le \sqrt{3} \cdot 3^{-\lfloor j/3 \rfloor}.
+\label{eq:distance-bound}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+A common prefix of length $j$ means both addresses fall within the
+same level-$j$ cell. After $\lfloor j/3 \rfloor$ complete refinement
+cycles, each coordinate interval has width $3^{-\lfloor j/3 \rfloor}$.
+The cell diameter is
+$\sqrt{3} \cdot 3^{-\lfloor j/3 \rfloor}$. \qed
+\end{proof}
+
+\begin{corollary}[Chemical Similarity Preservation]
+Compounds sharing a longer ternary prefix are closer in S-entropy
+space. Chemical families (e.g., hydrogen halides, bent triatomics)
+cluster by common prefix without any chemical knowledge being
+encoded in the coordinate
+system~\citep{sachikonye2024generative}.
+\end{corollary}
+
+\subsection{The lazy ternary trie}
+
+\begin{definition}[Candidate Database Trie]
+\label{def:trie}
+Given a structural candidate database
+$\calD = \{c_1, \ldots, c_{N_{\mathrm{db}}}\}$ with precomputed
+S-entropy coordinates, the \emph{candidate trie} $\calT$ is a ternary
+trie of depth $k$ where each compound $c_j$ is stored at the leaf
+reached by following its ternary address $\alpha^{(k)}(\Sv_{c_j})$
+from the root.
+\end{definition}
+
+\begin{theorem}[$\mathcal{O}(k)$ Candidate Retrieval]
+\label{thm:retrieval}
+Given a query spectrum with S-entropy triple $\Sv_q$, the candidate
+set $\calC_k(\Sv_q) = \calT.\mathrm{prefix}(\alpha^{(k)}(\Sv_q))$
+is retrieved in $\mathcal{O}(k)$ time, independent of
+$N_{\mathrm{db}}$.
+\end{theorem}
+
+\begin{proof}
+Each trie traversal step follows one of three child pointers (one per
+trit value), performing $\mathcal{O}(1)$ work per step. After $k$
+steps the leaf (or internal node for prefix queries) is reached. The
+cost is $k$ pointer dereferences plus $\mathcal{O}(|\calC_k|)$ to
+enumerate the candidates at the resolved cell. Since
+$|\calC_k| \ll N_{\mathrm{db}}$ for $k \ge 12$ in
+practice~\citep{sachikonye2024generative}, the total cost is
+$\mathcal{O}(k + |\calC_k|)$. \qed
+\end{proof}
+
+\begin{remark}[Adaptive depth]
+\label{rem:adaptive}
+If the candidate set at depth $k$ is empty (no compound in the
+database occupies that cell), the algorithm ascends to depth $k-1$,
+broadening the search radius by a factor of~3 in the refined
+dimension. This trades specificity for coverage and is particularly
+relevant for unknown compounds not yet in any database: an empty cell
+at depth $k$ with non-empty parent at depth $k-3$ predicts the
+existence of a compound at the cell centre, as established by
+the generative database framework~\citep{sachikonye2024generative}.
+\end{remark}
+
+
+% =========================================================
+\section{Categorical Intensity Verification}
+\label{sec:intensity}
+% =========================================================
+
+\subsection{The intensity model}
+
+For each candidate $c \in \calC_k$, the molecular graph
+$G_c = (V_c, E_c)$ is known (atoms as vertices, bonds as edges). The
+fragmentation of $c$ under collision-induced dissociation produces a
+set of predicted fragments, each inheriting a subgraph of $G_c$.
+
+\begin{definition}[Phase-Lock Edge Density]
+\label{def:edge-density}
+For a fragment $f_i$ of candidate $c$ with molecular subgraph
+$G_i = (V_i, E_i)$, the phase-lock edge density is
+$|E_i| = |E(G_i)|$, the number of edges (bonds) in the fragment's
+molecular graph. The reference edge count is
+$\langle E \rangle = |E(G_c)|/N_{\mathrm{frag}}$, the mean edge count
+per fragment.
+\end{definition}
+
+\begin{definition}[Predicted Fragment Intensity]
+\label{def:predicted-intensity}
+The predicted normalised intensity of fragment $f_i$ is:
+\begin{equation}
+\hat{I}_i = \frac{\alpha_i}{\sum_j \alpha_j},
+\qquad
+\alpha_i = \exp\!\left(-\frac{|E_i|}{\langle E \rangle}\right).
+\label{eq:intensity}
+\end{equation}
+This is the topological entropy formulation: simple fragments (few
+bonds, low $|E_i|$) have high termination probability and thus high
+intensity; complex fragments (many bonds, high $|E_i|$) have low
+intensity~\citep{sachikonye2024categorical}.
+\end{definition}
+
+\subsection{Spectral similarity score}
+
+\begin{definition}[Intensity Verification Score]
+\label{def:intensity-score}
+The intensity verification score of candidate $c$ against observed
+spectrum $\{(m/z_i, I_i^{\mathrm{obs}})\}$ is the Pearson correlation
+between predicted and observed normalised intensities over matched
+peaks:
+\begin{equation}
+\kappa_A(c) = \mathrm{corr}\!\bigl(
+  \{\hat{I}_i\}_{i \in \calH(c)},\;
+  \{I_i^{\mathrm{obs}}\}_{i \in \calH(c)}
+\bigr),
+\label{eq:kappa-a}
+\end{equation}
+where $\calH(c) = \{i : |\hat{m/z}_i - m/z_j^{\mathrm{obs}}| <
+\varepsilon_{m/z} \text{ for some } j\}$ is the set of matched peaks
+within mass tolerance $\varepsilon_{m/z}$.
+\end{definition}
+
+The correlation is computed without adjustable parameters beyond the
+mass tolerance: $|E_i|$ and $\langle E \rangle$ are determined entirely
+by the candidate's molecular graph. A correlation of $r = 0.87$ has
+been validated across 2{,}847 MS/MS spectra on two
+platforms~\citep{sachikonye2024categorical}.
+
+
+% =========================================================
+\section{Partition-State Pathway Verification}
+\label{sec:pathway}
+% =========================================================
+
+\subsection{Forward reachability}
+
+For each candidate $c$, the precursor ion maps to a partition state
+$(n_p, \ell_p, m_p, s_p)$ via
+$n_p = \lfloor\sqrt{m/z_p}\rfloor + 1$. Each observed fragment maps
+similarly to $(n_f, \ell_f, m_f, s_f)$.
+
+\begin{definition}[Forward Reachability Cone]
+\label{def:forward-cone}
+The forward reachability cone at depth $d_{\max}$ from precursor $n_p$
+is:
+\begin{equation}
+\calR_f^{(d_{\max})} = \bigl\{v : \exists \text{ admissible path of
+length } \le d_{\max} \text{ from } n_p \text{ to } v,\;
+n_v \le n_p\bigr\}.
+\end{equation}
+An admissible transition $(u, v)$ requires mass reduction
+($n_v \le n_u$), energy conservation, and charge conservation. The
+size is bounded: $|\calR_f^{(d_{\max})}| \le 2n_p d_{\max} +
+d_{\max}^2$~\citep{sachikonye2024partition}.
+\end{definition}
+
+\begin{definition}[Pathway Verification Score]
+\label{def:pathway-score}
+The pathway verification score is the fraction of observed fragments
+falling within the forward reachability cone:
+\begin{equation}
+\kappa_B(c) = \frac{|\{i : n_{f_i} \in \calR_f^{(d_{\max})}(c)\}|}{K}.
+\label{eq:kappa-b}
+\end{equation}
+\end{definition}
+
+Validation on NIST HCD spectra yields
+$\kappa_B = 0.947$~\citep{sachikonye2024partition}, with the remaining
+5.3\% attributable to isotope peaks and adducts falling outside the
+mass-reduction constraint.
+
+\subsection{Virtual substate transition states}
+
+The SEBD-MS algorithm searches backward from observed fragments through
+virtual substate decompositions. A virtual predecessor
+$\Sv^* = 2\Sv_f - \Sv_2$ for $\Sv_2 \in [0,1]^3$ may lie outside
+$[0,1]^3$ (off-shell). Off-shell components correspond to
+fragmentation transition states: intermediate configurations that
+mediate bond cleavage but cannot be isolated as stable
+ions~\citep{sachikonye2024partition}. The off-shell fraction
+(8.3\% in validation) provides additional structural information:
+candidates whose predicted off-shell fraction matches the observed
+fraction receive a bonus to $\kappa_B$.
+
+
+% =========================================================
+\section{Neutral Loss Phase-Coherence Verification}
+\label{sec:neutralloss}
+% =========================================================
+
+\subsection{Functional group phase coherence}
+
+Neutral losses ($-18$\,Da for H$_2$O, $-44$\,Da for CO$_2$,
+$-17$\,Da for NH$_3$) are not independent stochastic events but
+phase-correlated processes arising from residual correlations between
+fragments and precursor functional
+groups~\citep{sachikonye2024categorical}.
+
+\begin{definition}[Phase Coherence]
+\label{def:phase-coherence}
+For a candidate $c$ with functional group $g$ (e.g., hydroxyl,
+carboxyl, amine), the phase coherence between the precursor and the
+fragment retaining the functional group's site is:
+\begin{equation}
+C_{\phi}(g) = \bigl|\bigl\langle
+  e^{i(\phi_g - \phi_{\mathrm{prec}})}
+\bigr\rangle\bigr|,
+\label{eq:phase-coherence}
+\end{equation}
+where the phase $\phi_g$ is determined by the fragment's position in
+S-entropy space and $\phi_{\mathrm{prec}}$ by the precursor's
+position. In practice, $C_{\phi}(g)$ is computed from the S-entropy
+distance between the fragment and the precursor projected onto the
+$\Se$ axis (which encodes harmonic connectivity).
+\end{definition}
+
+\begin{definition}[Neutral Loss Verification Score]
+\label{def:nl-score}
+The neutral loss verification score is the fraction of observed neutral
+losses correctly predicted by the candidate's functional group
+inventory with phase coherence exceeding threshold $\theta_{\phi}$:
+\begin{equation}
+\kappa_C(c) = \frac{|\{l \in \calL_{\mathrm{obs}} :
+  \exists\, g \in \mathrm{FG}(c),\;
+  \mathrm{mass}(g) = l,\;
+  C_{\phi}(g) > \theta_{\phi}\}|}
+  {|\calL_{\mathrm{obs}}|},
+\label{eq:kappa-c}
+\end{equation}
+where $\calL_{\mathrm{obs}}$ is the set of observed neutral losses,
+$\mathrm{FG}(c)$ is the functional group inventory of candidate $c$,
+and $\theta_{\phi} = 0.3$ is the coherence
+threshold~\citep{sachikonye2024categorical}.
+\end{definition}
+
+Validation yields $P(\text{loss} \mid C_{\phi} > 0.3) = 0.943 \pm
+0.032$ versus $P(\text{loss} \mid C_{\phi} \le 0.3) = 0.247 \pm
+0.071$, a 3.8-fold enhancement confirming the phase-memory
+mechanism~\citep{sachikonye2024categorical}.
+
+
+% =========================================================
+\section{Coherence-Grounded Acceptance}
+\label{sec:coherence}
+% =========================================================
+
+\subsection{The coherence triangle}
+
+The three verification scores
+$(\kappa_A, \kappa_B, \kappa_C)$~--- intensity, pathway, neutral
+loss~--- are computed from independent physical models (topological
+entropy, partition-state graph, phase coherence respectively). We now
+require that they form a coherence triangle before accepting an
+annotation.
+
+\begin{definition}[Support Relation]
+\label{def:support}
+Verification channel $j$ \emph{supports} channel $i$ at threshold
+$\theta$ if the presence of channel $j$'s score does not reduce, and
+to degree $\ge \theta$ reinforces, channel $i$'s discrimination between
+the top-ranked candidate and the second-ranked candidate. The support
+graph $G_S$ has an edge $j \to i$ whenever $j$ supports $i$.
+\end{definition}
+
+\begin{theorem}[Coherence Triangle Necessity]
+\label{thm:triangle}
+If an annotation is to be robust against the failure of any single
+verification channel, the support graph $G_S$ must contain a directed
+cycle of length $\ge 3$. No linear chain and no pair of mutually
+supporting channels suffices~\citep{sachikonye2024scp}.
+\end{theorem}
+
+\begin{proof}
+A linear support chain has an unsupported terminal channel; its removal
+collapses the justification. A 2-cycle is mutual definition between
+two channels with no independent third check. Only a cycle of length
+$\ge 3$ provides each channel with at least two independent supporters,
+so that removal of any one leaves the remaining two still mutually
+supporting. With three channels at mutual support threshold
+$\theta > \tfrac{1}{2}$, the two survivors jointly exceed any single
+dissenting signal. \qed
+\end{proof}
+
+\begin{definition}[Composite Verification Power]
+\label{def:composite}
+The composite verification power of the three channels is:
+\begin{equation}
+\kappa_{\mathrm{comp}} = 1 - (1 - \kappa_A)(1 - \kappa_B)(1 - \kappa_C).
+\label{eq:composite}
+\end{equation}
+This is the multiplicative composition law: the fraction of the
+initial above-floor gap closed by the combined verification, with
+each channel closing its own fraction
+independently~\citep{sachikonye2024scp}.
+\end{definition}
+
+\subsection{The resolution floor}
+
+\begin{definition}[Resolution Floor]
+\label{def:floor}
+The resolution floor $\flo > 0$ is the irreducible residual between
+any finite candidate set and the true identity of an unknown compound.
+It follows from the non-completability of the chemical medium: for any
+finite database, there exist compounds not in the database, so no
+finite search exhausts the
+medium~\citep{sachikonye2024scp,sachikonye2024generative}.
+\end{definition}
+
+\begin{theorem}[Every Annotation Carries a Residual]
+\label{thm:residual}
+For every accepted annotation with composite verification power
+$\kappa_{\mathrm{comp}}$, the residual above-floor gap is:
+\begin{equation}
+r = (1 - \kappa_{\mathrm{comp}})(a_0 - \flo),
+\label{eq:residual}
+\end{equation}
+where $a_0$ is the initial alignment gap. This residual is strictly
+positive for all finite verification efforts: no annotation achieves
+$r = 0$.
+\end{theorem}
+
+\begin{proof}
+By the multiplicative law
+(Equation~\ref{eq:composite}), each verification channel closes a
+fraction of the remaining gap. The product
+$(1-\kappa_A)(1-\kappa_B)(1-\kappa_C) > 0$ whenever each
+$\kappa_i < 1$. Since no finite verification can close the full gap
+(this would require exhaustive comparison against the entire chemical
+medium, which is non-completable), $r > 0$. \qed
+\end{proof}
+
+\subsection{Closure criterion}
+
+\begin{definition}[Closure]
+\label{def:closure}
+The annotation search for a given query spectrum is \emph{closed} if,
+for every verification channel not yet applied and every candidate not
+yet tested, extending the search cannot add a candidate to the
+accepted set that is materially different from the current best
+candidate. Formally, closure holds when:
+\begin{equation}
+\forall\, c' \in \calC_k \setminus \{c^*\}:\quad
+\kappa_{\mathrm{comp}}(c') < \kappa_{\mathrm{comp}}(c^*) - \flo,
+\label{eq:closure}
+\end{equation}
+where $c^*$ is the current best candidate and $\flo$ is the resolution
+floor.
+\end{definition}
+
+\begin{theorem}[Closure is Strictly Stronger Than a Confidence Threshold]
+\label{thm:closure-stronger}
+There exist spectra and databases for which
+$\kappa_{\mathrm{comp}}(c^*) > \theta$ for any fixed threshold
+$\theta$, yet the search is not closed: a further untested candidate
+$c'$ may achieve $\kappa_{\mathrm{comp}}(c') > \kappa_{\mathrm{comp}}(c^*)$~\citep{sachikonye2024scp}.
+\end{theorem}
+
+\begin{definition}[Decline]
+\label{def:decline}
+If closure is reached but two or more candidates have composite
+verification power within $\flo$ of each other, the algorithm emits a
+\emph{decline}: an explicit statement that the evidence is insufficient
+to distinguish the candidates, together with the distinct candidate
+classes found. A decline is a first-class output, not an error.
+\end{definition}
+
+
+% =========================================================
+\section{The Complete Algorithm}
+\label{sec:algorithm}
+% =========================================================
+
+\begin{algorithm}[t]
+\caption{Categorical Search for Metabolomics Annotation}
+\label{alg:main}
+\begin{algorithmic}[1]
+\Require Observed spectrum $\{(m/z_i, I_i)\}_{i=1}^K$; precursor
+  $m/z_p$; charge $z$; candidate trie $\calT$; depth $k$;
+  floor $\flo$; coherence threshold $\theta$; mass tolerance
+  $\varepsilon_{m/z}$; phase coherence threshold $\theta_{\phi}$
+\Ensure Annotation $c^*$ with verification scores, or decline with
+  candidate classes
+\Statex
+\State \textbf{// Stage 1: S-Entropy Embedding}
+\State Compute $\Sk, \St, \Se$ via
+  Equations~\eqref{eq:sk}--\eqref{eq:se}
+\State $\Sv_q \gets (\Sk, \St, \Se)$
+\Statex
+\State \textbf{// Stage 2: Ternary Candidate Retrieval}
+\State $\alpha \gets \textsc{TernaryEncode}(\Sv_q, k)$
+  \Comment{Algorithm~\ref{alg:encode}, $\mathcal{O}(k)$}
+\State $\calC_k \gets \calT.\mathrm{prefix}(\alpha)$
+  \Comment{$\mathcal{O}(k)$}
+\While{$\calC_k = \emptyset$ and $k > 3$}
+  \Comment{Adaptive depth}
+  \State $k \gets k - 3$;\quad
+    $\alpha \gets \alpha[1..k]$;\quad
+    $\calC_k \gets \calT.\mathrm{prefix}(\alpha)$
+\EndWhile
+\If{$\calC_k = \emptyset$}
+  \State \Return \textsc{Decline}(``no candidates at any depth'')
+\EndIf
+\Statex
+\State \textbf{// Stage 3: Three-Channel Verification}
+\For{each candidate $c \in \calC_k$}
+  \State Compute $\kappa_A(c)$ via Equation~\eqref{eq:kappa-a}
+    \Comment{Intensity}
+  \State Compute $\kappa_B(c)$ via Equation~\eqref{eq:kappa-b}
+    \Comment{Pathway}
+  \State Compute $\kappa_C(c)$ via Equation~\eqref{eq:kappa-c}
+    \Comment{Neutral loss}
+  \State $\kappa_{\mathrm{comp}}(c) \gets
+    1-(1-\kappa_A)(1-\kappa_B)(1-\kappa_C)$
+\EndFor
+\Statex
+\State \textbf{// Stage 4: Coherence Check}
+\State $c^* \gets \argmin_{c \in \calC_k}
+  (1 - \kappa_{\mathrm{comp}}(c))$
+\State Build support graph $G_S$ over $(\kappa_A, \kappa_B, \kappa_C)$
+  for $c^*$
+\If{$G_S$ has no cycle of length $\ge 3$}
+  \State Emit \textsc{CoherenceWarning}
+\EndIf
+\Statex
+\State \textbf{// Stage 5: Closure or Decline}
+\State Sort $\calC_k$ by $\kappa_{\mathrm{comp}}$ descending
+\If{$\kappa_{\mathrm{comp}}(c^*) -
+    \kappa_{\mathrm{comp}}(c^*_2) > \flo$}
+  \Comment{Closure}
+  \State $r \gets (1-\kappa_{\mathrm{comp}}(c^*))(1 - \flo)$
+  \State \Return $(c^*, \kappa_A, \kappa_B, \kappa_C, r)$
+\Else
+  \Comment{Contested}
+  \State \Return \textsc{Decline}($\{c :
+    \kappa_{\mathrm{comp}}(c) \ge
+    \kappa_{\mathrm{comp}}(c^*) - \flo\}$)
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+
+% =========================================================
+\section{Complexity Analysis}
+\label{sec:complexity}
+% =========================================================
+
+\begin{theorem}[Total Query Complexity]
+\label{thm:complexity}
+Algorithm~\ref{alg:main} has total per-query cost:
+\begin{equation}
+T_{\mathrm{query}} = \underbrace{\mathcal{O}(K)}_{\text{S-entropy}} +
+  \underbrace{\mathcal{O}(k)}_{\text{trie}} +
+  \underbrace{\mathcal{O}(|\calC_k| \cdot F)}_{\text{verification}},
+\label{eq:complexity}
+\end{equation}
+where $K$ is the number of fragment peaks, $k$ is the trie depth, and
+$F$ is the per-candidate verification cost. The verification cost is:
+\begin{equation}
+F = \underbrace{\mathcal{O}(K)}_{\kappa_A} +
+  \underbrace{\mathcal{O}(n_p d_{\max} \log(n_p d_{\max}))}_{\kappa_B} +
+  \underbrace{\mathcal{O}(|\calL_{\mathrm{obs}}| \cdot
+    |\mathrm{FG}(c)|)}_{\kappa_C}.
+\label{eq:F}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Stage~1 computes three scalar functions of $K$ peaks: $\mathcal{O}(K)$.
+Stage~2 is trie traversal: $\mathcal{O}(k)$
+(Theorem~\ref{thm:retrieval}). Stage~3 applies three verification
+functions to each of $|\calC_k|$ candidates. $\kappa_A$ requires
+matching $K$ observed peaks against predicted peaks and computing
+a correlation: $\mathcal{O}(K)$. $\kappa_B$ runs the forward
+reachability computation of SEBD-MS: $\mathcal{O}(n_p d_{\max}
+\log(n_p d_{\max}))$~\citep{sachikonye2024partition}. $\kappa_C$
+checks each observed neutral loss against each functional group:
+$\mathcal{O}(|\calL_{\mathrm{obs}}| \cdot |\mathrm{FG}(c)|)$. Stages~4
+and~5 are $\mathcal{O}(|\calC_k| \log |\calC_k|)$ (sorting). The
+dominant term is Stage~3. \qed
+\end{proof}
+
+\begin{corollary}[Database-Size Independence]
+\label{cor:db-independence}
+The per-query cost is independent of $N_{\mathrm{db}}$. The database
+size affects only the one-time trie construction cost
+$\mathcal{O}(N_{\mathrm{db}} \cdot k)$.
+\end{corollary}
+
+\begin{table}[h]
+\centering
+\caption{Complexity comparison with existing approaches.}
+\label{tab:complexity}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Method} & \textbf{Per-Query Cost} & \textbf{Depends on $N_{\mathrm{db}}$?} \\
+\midrule
+Spectral library search & $\mathcal{O}(N_{\mathrm{db}} \cdot d)$ & Yes \\
+Fingerprint search & $\mathcal{O}(N_{\mathrm{db}} \cdot d_{\mathrm{fp}})$ & Yes \\
+In-silico fragmentation & $\mathcal{O}(|\mathrm{cand}| \cdot T_{\mathrm{sim}})$ & Yes$^\dagger$ \\
+Categorical search (ours) & $\mathcal{O}(k + |\calC_k| \cdot F)$ & No \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+{\footnotesize $^\dagger$Candidate enumeration from molecular formula
+scales with database coverage.}
+\end{table}
+
+\begin{corollary}[Speedup at Scale]
+\label{cor:speedup}
+For $N_{\mathrm{db}} = 10^8$ (PubChem scale), $k = 18$,
+$|\calC_k| = 10$, and $F = 10^3$ operations per candidate: the
+categorical search cost is $\approx 10^4$ operations per query versus
+$\approx 10^{11}$ for exhaustive spectral library search, a speedup
+of $\sim 10^7$.
+\end{corollary}
+
+
+% =========================================================
+\section{CASMI-2022 Application}
+\label{sec:casmi}
+% =========================================================
+
+The CASMI (Critical Assessment of Small Molecule Identification) 2022
+challenge~\citep{fiehn2022casmi} provides 500 unknown compounds
+acquired by LC-MS/MS, deliberately excluded from public spectral
+libraries, with evaluation on four categories: (1)~adduct annotation,
+(2)~elemental formula, (3)~compound structure class, and
+(4)~2D chemical structure.
+
+\subsection{Mapping to Algorithm Outputs}
+
+\textbf{Adduct annotation} (Category~1). The partition bijection maps
+$m/z_p$ to $n_p = \lfloor\sqrt{m/z_p}\rfloor + 1$. The charge state
+$z$ is determined by the partition malformation energy:
+$\mathcal{M}_{\mathrm{ion}}(Z, z) = \kB T_{\mathrm{cat}}
+\ln(Z!/(Z-z)!)$~\citep{sachikonye2024partition}. The adduct type
+($[\mathrm{M}+\mathrm{H}]^+$, $[\mathrm{M}+\mathrm{Na}]^+$, etc.)
+is identified by comparing the observed $n_p$ against the predicted
+$n_p$ for each adduct hypothesis.
+
+\textbf{Elemental formula} (Category~2). The candidate's molecular
+formula is a direct output of the trie lookup: each candidate in
+$\calC_k$ carries its molecular formula.
+
+\textbf{Compound class} (Category~3). The ternary prefix at coarse
+depth ($k = 3$) determines the compound class. Compounds sharing a
+3-trit prefix co-locate in S-entropy space without chemical knowledge
+being encoded: the cell $[202]$ captures molecules with high $\Sk$,
+low $\St$, high $\Se$~\citep{sachikonye2024generative}.
+
+\textbf{2D structure} (Category~4). The full-depth ($k = 12$--$18$)
+trie resolution, combined with the three-channel verification, selects
+the best structural candidate. The output is the candidate's InChIKey
+or SMILES.
+
+\subsection{Handling unknown compounds}
+
+For compounds not in any structural database, the algorithm's adaptive
+depth mechanism (Remark~\ref{rem:adaptive}) broadens the search. If no
+candidate is found at any depth, the S-entropy coordinates themselves
+constrain the possible molecular properties:
+\begin{itemize}[nosep]
+\item $\Sk$ constrains the intensity distribution and hence the
+  fragmentation complexity.
+\item $\St$ constrains the $m/z$ range and hence the mass.
+\item $\Se$ constrains the harmonic connectivity and hence the
+  structural family.
+\end{itemize}
+Combined with the accurate mass and isotope pattern, these constraints
+narrow the candidate space even without a database hit. The algorithm
+reports a decline with the constraints as payload rather than forcing
+an incorrect annotation.
+
+
+% =========================================================
+\section{Discussion}
+\label{sec:discussion}
+% =========================================================
+
+\subsection{The circularity and its resolution}
+
+The intensity model (Section~\ref{sec:intensity}) requires the
+candidate's molecular graph to compute $|E_i|$. For an unknown
+compound, the molecular graph is not known a priori. This is resolved
+by the two-stage architecture: Stage~2 (ternary retrieval) reduces the
+candidate set to $|\calC_k|$ compounds whose molecular graphs \emph{are}
+known (they are entries in a structural database). Stage~3 then
+computes $|E_i|$ from each candidate's known graph. The intensity
+model is thus applied as a \emph{verification} step, not a generation
+step: it verifies whether a known candidate's predicted spectrum
+matches the observed spectrum, rather than generating a molecular graph
+from an intensity pattern.
+
+For compounds genuinely absent from any structural database (the
+hardest CASMI cases), the intensity model is unavailable and the
+algorithm falls back to $\kappa_B$ (pathway) and $\kappa_C$ (neutral
+loss) verification only. The coherence triangle is then broken (only
+two channels), and the algorithm emits a coherence warning rather than
+a confident annotation. This is the honest outcome: with two channels,
+the annotation is not robustly grounded against single-channel failure
+(Theorem~\ref{thm:triangle}).
+
+\subsection{Scope and limitations}
+
+\textbf{Database dependence.} The algorithm's power depends on the
+structural database indexing the trie. A trie built over PubChem
+($\sim 10^8$ compounds) covers a vast chemical space; a trie over a
+specialised metabolite database covers less space but with higher
+relevance. The choice of database is a user decision, not a property of
+the algorithm.
+
+\textbf{S-entropy degeneracy.} At low trie depth, multiple chemically
+distinct compounds may share a ternary cell (degeneracy). The three-channel
+verification resolves this degeneracy: compounds with similar S-entropy
+coordinates but different molecular graphs will have different
+$\kappa_A$ scores. Full resolution is achieved at depth $k = 11$ for
+39 compounds~\citep{sachikonye2024generative}; the required depth for
+$10^8$ compounds is an open empirical question.
+
+\textbf{Fragmentation coverage.} The intensity model assumes
+collision-induced dissociation of singly charged small molecules
+($m < 1500$\,Da). Extension to multi-charge states, electron-transfer
+dissociation, and large biomolecules requires modifications to the
+phase-lock network accounting~\citep{sachikonye2024categorical}.
+
+
+% =========================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =========================================================
+
+We have presented a complete algorithm for metabolomics annotation that
+synthesises four independently derived theoretical frameworks:
+S-entropy coordinates for platform-independent spectral embedding,
+ternary phase-space addressing for sublinear candidate retrieval,
+categorical fragmentation theory for first-principles intensity
+prediction, and coherence-grounded verification for principled
+acceptance and decline.
+
+The algorithm's five structural properties distinguish it from existing
+annotation pipelines:
+
+\begin{enumerate}[nosep,label=(\roman*)]
+\item \textbf{Database-size independence}: per-query cost is
+  $\mathcal{O}(k + |\calC_k| \cdot F)$, independent of
+  $N_{\mathrm{db}}$.
+\item \textbf{Training-data independence}: the intensity model has no
+  adjustable parameters beyond the candidate's molecular graph.
+\item \textbf{Platform independence}: S-entropy coordinates achieve
+  CV~$< 1.8\%$ across instrument types.
+\item \textbf{Principled acceptance}: three independent verification
+  channels must form a coherence triangle before annotation is accepted.
+\item \textbf{Honest decline}: disagreement between channels is
+  reported explicitly as a first-class output.
+\end{enumerate}
+
+Every component reduces to a computation on finite weighted graphs or
+finite sets: S-entropy coordinates are scalar functions of peak lists,
+ternary addresses are string encodings, the partition-state graph is
+a finite directed graph, and the coherence triangle is a support graph
+on three nodes. The algorithm is therefore fully specified and directly
+implementable.
+
+
+% =========================================================
+% REFERENCES
+% =========================================================
+
+\begin{thebibliography}{99}
+
+\bibitem[Arnold(1989)]{arnold1989}
+V.~I. Arnold.
+\newblock \emph{Mathematical Methods of Classical Mechanics}.
+\newblock Springer, 2nd edition, 1989.
+
+\bibitem[D\"{u}hrkop et~al.(2019)]{duhrkop2019sirius}
+K.~D\"{u}hrkop, M.~Fleischauer, M.~Ludwig, A.~A. Aksenov, A.~V. Melnik,
+  M.~Meusel, P.~C. Dorrestein, J.~Rousu, and S.~B\"{o}cker.
+\newblock {SIRIUS} 4: a rapid tool for turning tandem mass spectra into
+  metabolite structure information.
+\newblock \emph{Nature Methods}, 16:299--302, 2019.
+
+\bibitem[Fiehn(2002)]{fiehn2002metabolomics}
+O.~Fiehn.
+\newblock Metabolomics---the link between genotypes and phenotypes.
+\newblock \emph{Plant Molecular Biology}, 48:155--171, 2002.
+
+\bibitem[Fiehn et~al.(2022)]{fiehn2022casmi}
+O.~Fiehn et~al.
+\newblock {CASMI} 2022: Critical Assessment of Small Molecule Identification.
+\newblock UC Davis West Coast Metabolomics Center, 2022.
+\newblock \url{https://fiehnlab.ucdavis.edu/casmi}
+
+\bibitem[Horai et~al.(2010)]{horai2010massbank}
+H.~Horai, M.~Arita, S.~Kanaya, Y.~Nihei, T.~Ikeda, K.~Suwa, Y.~Ojima,
+  K.~Tanaka, S.~Tanaka, K.~Aoshima, et~al.
+\newblock {MassBank}: a public repository for sharing mass spectral data for
+  life sciences.
+\newblock \emph{Journal of Mass Spectrometry}, 45:703--714, 2010.
+
+\bibitem[Kind and Fiehn(2007)]{kind2007fiehnlib}
+T.~Kind and O.~Fiehn.
+\newblock Seven golden rules for heuristic filtering of molecular formulas
+  obtained by accurate mass spectrometry.
+\newblock \emph{BMC Bioinformatics}, 8:105, 2007.
+
+\bibitem[Kind et~al.(2018)]{kind2018identification}
+T.~Kind, H.~Tsugawa, T.~Cajka, Y.~Ma, Z.~Lai, S.~S. Mehta, G.~Wohlgemuth,
+  D.~K. Barupal, M.~R. Showalter, M.~Arita, and O.~Fiehn.
+\newblock Identification of small molecules using accurate mass {MS/MS}
+  search.
+\newblock \emph{Mass Spectrometry Reviews}, 37:513--532, 2018.
+
+\bibitem[Poincar\'{e}(1890)]{poincare1890}
+H.~Poincar\'{e}.
+\newblock Sur le probl\`{e}me des trois corps et les \'{e}quations de la
+  dynamique.
+\newblock \emph{Acta Mathematica}, 13:1--270, 1890.
+
+\bibitem[Sachikonye(2024a)]{sachikonye2024generative}
+K.~F. Sachikonye.
+\newblock Context-based spectral database: Generative phase space addressing
+  for mass spectrometric identification from first principles.
+\newblock Technical report, AIMe Registry for Artificial Intelligence, 2024.
+
+\bibitem[Sachikonye(2024b)]{sachikonye2024partition}
+K.~F. Sachikonye.
+\newblock Partition-state graph search for tandem mass spectrometry:
+  Bidirectional {D}ijkstra with virtual substate transition states.
+\newblock Technical report, Technical University of Munich, 2024.
+
+\bibitem[Sachikonye(2024c)]{sachikonye2024categorical}
+K.~F. Sachikonye.
+\newblock Categorical fragmentation networks in tandem mass spectrometry:
+  Phase-lock topology and entropy-intensity relations.
+\newblock Technical report, Technical University of Munich, 2024.
+
+\bibitem[Sachikonye(2024d)]{sachikonye2024scp}
+K.~F. Sachikonye.
+\newblock Semantic causal propagation: An individuation-theoretic calculus of
+  boundary-free search.
+\newblock Technical report, Technical University of Munich, 2024.
+
+\bibitem[Sachikonye(2024e)]{sachikonye2024ucdavis}
+K.~F. Sachikonye.
+\newblock Coordinate transformation for platform-independent metabolomics
+  analysis: Application to the {UC Davis} dataset.
+\newblock Technical report, Lavoisier Project, 2024.
+
+\bibitem[Sachikonye(2024f)]{sachikonye2024gpu}
+K.~F. Sachikonye.
+\newblock Fragment shader as observation apparatus: {O}(1)-memory universal
+  computation through the rendering--measurement identity.
+\newblock Technical report, AIMe Registry for Artificial Intelligence, 2024.
+
+\bibitem[Stein(2012)]{stein2012mass}
+S.~E. Stein.
+\newblock Mass spectral reference libraries: An ever-expanding resource for
+  chemical identification.
+\newblock \emph{Analytical Chemistry}, 84:7274--7282, 2012.
+
+\bibitem[Wei et~al.(2019)]{wei2019rapid}
+J.~N. Wei, D.~Duvenaud, and A.~Aspuru-Guzik.
+\newblock Neural networks for the prediction of organic chemistry reactions.
+\newblock \emph{ACS Central Science}, 2:725--732, 2019.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,1316 @@
+% =====================================================================
+%  Peptide Identification by Exclusion Search:
+%  A Database Algorithm Whose Output Is a Region, Whose Termination
+%  Is Closure, and Whose Refusal Is a Verdict
+%
+%  Self-contained. Every construction used is defined here.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{lmodern}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{siunitx}
+
+% ---------------------------------------------------------------------
+%  Theorem environments
+% ---------------------------------------------------------------------
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{construction}[theorem]{Construction}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------------------------------------------------------------------
+%  Notation
+% ---------------------------------------------------------------------
+\newcommand{\Gph}{\mathcal{G}}
+\newcommand{\wt}{w}
+\newcommand{\med}{\mathfrak{m}}
+\newcommand{\flo}{\beta}
+\newcommand{\cut}{\operatorname{cut}}
+\newcommand{\sep}{\sigma}
+\newcommand{\dep}{\delta}
+\newcommand{\key}{\kappa}
+\newcommand{\resid}{R}
+\newcommand{\clos}{\mathrm{cl}}
+\newcommand{\amb}{\mathcal{A}}
+\newcommand{\Cat}{\mathrm{cell}}
+\newcommand{\dem}{D}
+\newcommand{\Sk}{S_k}
+\newcommand{\St}{S_t}
+\newcommand{\Se}{S_e}
+\newcommand{\Scoord}{\mathbf{S}}
+\newcommand{\Prot}{\mathcal{P}}
+\newcommand{\Pep}{\mathcal{Q}}
+\newcommand{\Spec}{\mathcal{X}}
+\newcommand{\DB}{\mathcal{B}}
+\newcommand{\pot}{\kappa}
+\DeclareMathOperator{\prom}{prom}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\title{\textbf{Peptide Identification by Exclusion Search:\\[2pt]
+A Database Algorithm Whose Output Is a Region,\\
+Whose Termination Is Closure,\\
+and Whose Refusal Is a Verdict}}
+
+\author{Kundai Farai Sachikonye\\
+\texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+We give a complete, implementable database search algorithm for peptide
+tandem mass spectrometry that differs from existing engines in three
+structural respects. Its output is a \emph{region}---a set of candidate
+sequences indistinguishable under committed evidence---rather than a
+ranked list filtered by a confidence threshold. Its termination
+condition is \emph{closure}---the state in which no further evidence
+source available to the search can move the region---rather than a score
+exceeding a threshold. And it has two terminal states, closure and
+\emph{honest decline}, with no third state in which the algorithm is
+still running and has no internal signal of its own futility.
+
+The algorithm constructs, for each query spectrum, a contact graph whose
+items are candidate peptides surviving a precursor mass filter and whose
+edges are committed by a chain of five catalysts: precursor mass
+exclusion, enzyme specificity exclusion, fragment ion matching,
+S-Entropy coordinate similarity, and ladder topology matching. Each
+catalyst has a computable catalytic power, and their combination follows
+a multiplicative composition law with a precise diminishing-returns
+profile. The claim region after all catalysts is the identity of the
+peptide-spectrum match: it may contain one candidate (unique
+identification), more than one (a terminal region such as $\{L,I\}$
+variants), or the algorithm may decline (insufficient evidence). In all
+three cases the output is a verdict, not a score.
+
+We prove that the algorithm terminates in at most $D_0$ catalyst
+applications, where $D_0$ is the initial demand; that closure is
+strictly stronger than any FDR threshold; that an isobaric pair is a
+correct closed answer under mass evidence; and that agreement between an
+independently constructed instrument graph and the database mapping
+graph is a relabelling invariant not obtainable from either alone.
+
+The algorithm runs in $O(|\Pep_M| \cdot L \cdot m)$ time per spectrum,
+where $|\Pep_M|$ is the number of precursor-mass-filtered candidates,
+$L$ is maximal peptide length, and $m$ is the number of observed peaks.
+It requires no training data, no decoy database, and no probability
+model. Where it cannot identify, it says so and says why.
+\end{abstract}
+
+\noindent\textbf{Keywords:} peptide identification; database search;
+exclusion; closure; contact graph; S-Entropy; tandem mass spectrometry;
+region-valued identity; honest decline.
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% =====================================================================
+
+\subsection{The problem}
+
+Peptide identification by tandem mass spectrometry proceeds, in every
+widely used engine, by the same logic: generate theoretical spectra from
+a protein database, score each against the observed spectrum, rank by
+score, and filter by a false discovery rate (FDR) threshold computed
+from a decoy
+database~\citep{eng1994approach,perkins1999probability,cox2008maxquant,%
+elias2007target,kall2007semi,the2016fast}. The output is a ranked list
+of peptide-spectrum matches (PSMs), each carrying a score and a
+posterior error probability.
+
+This logic has three structural properties that are independent of any
+particular scoring function.
+
+\paragraph{The output is a point.} Each PSM is a single sequence
+assignment. Where two sequences are indistinguishable (leucine/isoleucine,
+isobaric modifications at different sites), the engine either picks one
+arbitrarily or reports the ambiguity as a quality annotation, not as the
+identity itself.
+
+\paragraph{Termination is by threshold.} The engine stops reporting when
+the score falls below a threshold or the FDR exceeds a cutoff. The
+threshold is external: it is not computed from the evidence that bears on
+any individual spectrum, and different thresholds yield different
+identifications from the same data.
+
+\paragraph{Silence is the only refusal.} A spectrum that matches nothing
+above threshold simply does not appear in the output. The engine does
+not say \emph{why} it failed: whether the peptide is absent from the
+database, whether the spectrum quality is insufficient, whether the
+fragmentation pattern is inconsistent with any candidate, or whether two
+candidates tie. All four situations produce the same output: nothing.
+
+We present an algorithm in which all three properties are replaced.
+
+\subsection{What this algorithm does differently}
+
+\begin{enumerate}[label=(\roman*),leftmargin=2.2em,itemsep=2pt]
+  \item The output is a \emph{region}: a set of candidate sequences
+  that are indistinguishable under all evidence the algorithm has
+  committed. The set may contain one element (unique identification),
+  more than one (a terminal region), or the algorithm may decline.
+  \item Termination is by \emph{closure}: the state in which no
+  further catalyst available to the search can move the region. Closure
+  is strictly stronger than any confidence threshold
+  (\Cref{thm:closure-stronger}).
+  \item There are exactly two terminal states: closure and honest
+  decline. Decline carries a structured verdict stating which evidence
+  source was responsible (\Cref{thm:dichotomy}).
+\end{enumerate}
+
+\subsection{Relation to existing work}
+
+The algorithm's scoring components---fragment ion matching, precursor
+mass filtering, enzyme specificity---are standard and individually
+well understood~\citep{eng1994approach,paizs2005fragmentation,%
+olsen2004trypsin,krokhin2006sequence}. The S-Entropy coordinate space
+is developed in~\citet{sachikonye2025molecular}; the phase-lock
+network topology in~\citet{sachikonye2025fragmentation}. The
+theoretical framework of exclusion, closure, and region-valued identity
+is developed in~\citet{sachikonye2025peptide}. What is new here is the
+synthesis: an implementable algorithm that threads these components
+through the exclusion machinery, with proofs of termination, closure
+strength, and complexity.
+
+\subsection{What this algorithm does not do}
+
+It does not replace a scoring function with a better one. It replaces
+the \emph{kind of object} the search returns (a region instead of a
+point) and the \emph{kind of condition} under which it stops (closure
+instead of a threshold). It is therefore orthogonal to improvements in
+peak matching, intensity prediction, or machine-learned
+scoring~\citep{tran2017novo,zhou2017pdeep}: any of those may serve as a
+catalyst within this framework, and the closure and region guarantees
+hold regardless of which catalysts are used.
+
+It does not eliminate the database. It uses the database as one evidence
+source among several, and the exclusion framework specifies what the
+database contributes (a mapping graph) and what it does not (an
+instrument graph).
+
+% =====================================================================
+\section{Preliminaries}
+\label{sec:prelim}
+% =====================================================================
+
+We state the definitions and results from the exclusion framework that
+the algorithm requires. Proofs are
+in~\citet{sachikonye2025peptide}; we reproduce only what is needed
+for self-containedness.
+
+\begin{definition}[Contact graph]
+\label{def:contact}
+A \emph{contact graph} is a finite weighted graph
+$\Gph=(V,E,\wt)$ with $\wt:E\to\mathbb{R}_{>0}$, together with a
+distinguished vertex $\med\in V$ called the \emph{medium}, adjacent to
+every other vertex. Vertices in $V\setminus\{\med\}$ are \emph{items}.
+\end{definition}
+
+\begin{definition}[Separation cost, cut key]
+\label{def:sep}
+For item $v$, the \emph{separation cost} $\sep(v)$ is the minimum
+$v$-$\med$ cut weight. The \emph{depth} $\dep(v)=|S^{\ast}(v)|$ is
+the minimising side's cardinality. The \emph{cut key}
+$\key(v)=(\sep(v),\dep(v))$ is the relabelling-invariant identity
+of~$v$.
+\end{definition}
+
+\begin{theorem}[Floor]
+\label{thm:floor}
+There exists $\flo>0$ such that $\sep(v)\ge\flo$ for every item $v$.
+\end{theorem}
+
+\begin{definition}[Catalyst]
+\label{def:catalyst}
+A \emph{catalyst} $c$ commits one or more edges into a contact graph.
+It has \emph{catalytic power}
+\[
+  \pot(c,v,x^{\ast})
+  \;=\;
+  \frac{a(v,x^{\ast})-a(c(v),x^{\ast})}{a(v,x^{\ast})-\flo/\Omega}
+  \;\in\;[0,1],
+\]
+where $a(\cdot,\cdot)$ is the normalised alignment functional.
+\end{definition}
+
+\begin{theorem}[Multiplicative composition]
+\label{thm:mult}
+For catalysts $c_1,\dots,c_n$ applied sequentially with powers
+$\pot_1,\dots,\pot_n$, the composite power is
+$1-\prod_{i=1}^{n}(1-\pot_i)$.
+\end{theorem}
+
+\begin{definition}[Claim region, closure]
+\label{def:closure}
+The \emph{claim region} $\amb(v)$ of item $v$ is the set of candidates
+whose cut key agrees with $\key(v)$ within tolerance. A determination
+is \emph{closed} if every available catalyst leaves $\amb(v)$ unchanged.
+\end{definition}
+
+\begin{theorem}[Closure is strictly stronger than a threshold]
+\label{thm:closure-stronger}
+For any confidence functional $\mathrm{conf}$ and threshold $\tau$:
+(i) $\clos(v)$ does not imply $\mathrm{conf}(v)>\tau$;
+(ii) $\mathrm{conf}(v)>\tau$ does not imply $\clos(v)$;
+(iii) $\clos(v)$ is decidable from the graph; $\tau$ is not.
+\end{theorem}
+
+\begin{theorem}[Termination dichotomy]
+\label{thm:dichotomy}
+A determination has exactly two outcomes: closure (in at most $D_0$
+catalyst applications) or honest decline. There is no third outcome.
+\end{theorem}
+
+\begin{theorem}[Two-graph agreement]
+\label{thm:agreement}
+If an instrument graph $\Gph_I$ and a mapping graph $\Gph_M$ both close
+on item $v$, their claim-region intersection is a relabelling invariant
+not obtainable from either alone.
+\end{theorem}
+
+% =====================================================================
+\section{The S-Entropy Coordinate Space}
+\label{sec:sentropy}
+% =====================================================================
+
+\begin{definition}[Amino acid coordinate map]
+\label{def:sentropy}
+Define $\phi_{\mathrm{AA}}:\mathcal{R}\to[0,1]^3$ mapping each amino
+acid residue $r\in\mathcal{R}$ to coordinates $(\Sk,\St,\Se)$ by:
+\begin{align}
+  \Sk(r) &= \frac{H(r)-H_{\min}}{H_{\max}-H_{\min}}, \label{eq:sk}\\[4pt]
+  \St(r) &= \frac{V_{\mathrm{vdW}}(r)-V_{\min}}{V_{\max}-V_{\min}},
+  \label{eq:st}\\[4pt]
+  \Se(r) &= \frac{|\chi(r)|-|\chi|_{\min}}{|\chi|_{\max}-|\chi|_{\min}},
+  \label{eq:se}
+\end{align}
+where $H(r)$ is the Kyte--Doolittle
+hydrophobicity~\citep{kyte1982simple}, $V_{\mathrm{vdW}}(r)$ the van
+der Waals volume~\citep{zamyatnin1972protein}, and $\chi(r)$ the
+absolute net charge at pH~7.0. Extrema are over the 20 standard amino
+acids.
+\end{definition}
+
+\begin{definition}[Peptide S-Entropy profile]
+\label{def:profile}
+For a peptide $p=r_1 r_2\cdots r_L$, the \emph{S-Entropy profile} is
+the sequence $(\phi_{\mathrm{AA}}(r_1),\dots,\phi_{\mathrm{AA}}(r_L))
+\in([0,1]^3)^L$, and the \emph{summary coordinate} is
+\[
+  \bar{\Scoord}(p)
+  \;=\;
+  \frac{1}{L}\sum_{i=1}^{L}\phi_{\mathrm{AA}}(r_i).
+\]
+\end{definition}
+
+\begin{table}[t]
+\centering
+\small
+\caption{S-Entropy coordinates for the 20 standard amino acids, computed
+from \Cref{def:sentropy}. Values rounded to three decimal places.}
+\label{tab:aa-coords}
+\begin{tabular}{@{}lccclccc@{}}
+\toprule
+\textbf{AA} & $\Sk$ & $\St$ & $\Se$ &
+\textbf{AA} & $\Sk$ & $\St$ & $\Se$ \\
+\midrule
+G & 0.456 & 0.000 & 0.000 & Y & 0.322 & 0.812 & 0.000 \\
+A & 0.578 & 0.107 & 0.000 & W & 0.389 & 1.000 & 0.000 \\
+V & 0.822 & 0.393 & 0.000 & D & 0.211 & 0.339 & 0.500 \\
+L & 0.867 & 0.536 & 0.000 & E & 0.211 & 0.464 & 0.500 \\
+I & 0.900 & 0.536 & 0.000 & N & 0.211 & 0.375 & 0.000 \\
+P & 0.356 & 0.321 & 0.000 & Q & 0.211 & 0.500 & 0.000 \\
+F & 0.778 & 0.750 & 0.000 & K & 0.178 & 0.571 & 0.500 \\
+M & 0.567 & 0.536 & 0.000 & R & 0.000 & 0.714 & 1.000 \\
+S & 0.344 & 0.143 & 0.000 & H & 0.178 & 0.571 & 0.275 \\
+T & 0.344 & 0.268 & 0.000 & C & 0.711 & 0.214 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{remark}[Leucine and isoleucine]
+\label{rem:li}
+L and I share $\St=0.536$ and $\Se=0.000$ but differ at $\Sk$:
+$0.867$ vs.\ $0.900$. The separation is small but nonzero, and the
+coordinate space records it. Whether it is resolvable depends on the
+catalysts available; \Cref{prop:isobaric} addresses this precisely.
+\end{remark}
+
+% =====================================================================
+\section{The Ladder Topology Features}
+\label{sec:topology}
+% =====================================================================
+
+We extract from each spectrum a set of features that are invariant
+across instrument platforms, following~\citet{sachikonye2025fragmentation}.
+
+\begin{definition}[Ladder topology]
+\label{def:topology}
+Given an MS/MS spectrum $\Spec$ with precursor mass $M$ and charge $z$,
+and a candidate peptide $p$ of length $L$, the \emph{ladder topology}
+is the quadruple
+$T(\Spec,p)=(T_b,T_y,T_c,T_r)$ defined by:
+\begin{align}
+  T_b &= \frac{|\{i : b_i^{\mathrm{theo}} \text{ matched in } \Spec\}|}{L-1},
+  \label{eq:tb}\\[2pt]
+  T_y &= \frac{|\{i : y_i^{\mathrm{theo}} \text{ matched in } \Spec\}|}{L-1},
+  \label{eq:ty}\\[2pt]
+  T_c &= \frac{|\{i : b_i \text{ and } y_{L-i} \text{ both matched}\}|}{L-1},
+  \label{eq:tc}\\[2pt]
+  T_r &= 1 - \frac{\mathrm{Var}(\Delta m_{b})}{(\mathrm{Mean}(\Delta m_{b}))^2},
+  \label{eq:tr}
+\end{align}
+where $b_i^{\mathrm{theo}}=\sum_{j=1}^{i}m(r_j)+1.008$ and
+$y_i^{\mathrm{theo}}=M-b_{L-i}^{\mathrm{theo}}+19.018$
+are the theoretical b- and y-ion masses, a match is declared when
+$|m_{\mathrm{obs}}-m_{\mathrm{theo}}|<\epsilon_f$ for fragment
+tolerance $\epsilon_f$, and $\Delta m_b$ is the vector of consecutive
+b-ion spacings among matched ions.
+\end{definition}
+
+\begin{remark}
+$T_b$ and $T_y$ measure coverage, $T_c$ measures complementarity,
+and $T_r$ measures regularity of the ladder. All four lie in $[0,1]$
+and are dimensionless. The claim
+in~\citet{sachikonye2025fragmentation} is that these achieve
+CV $<2.1\%$ across four instrument platforms; we use them here as
+catalyst inputs without reproducing the platform-independence validation.
+\end{remark}
+
+% =====================================================================
+\section{Database Preparation}
+\label{sec:database}
+% =====================================================================
+
+\begin{construction}[In-silico digestion and index]
+\label{con:digest}
+Given a protein database $\DB$ (a finite set of amino acid sequences)
+and digestion parameters (enzyme $\mathcal{E}$, maximum missed
+cleavages $c_{\max}$, minimum/maximum peptide length $[L_{\min},L_{\max}]$):
+\begin{enumerate}[leftmargin=2.0em,itemsep=1pt]
+  \item Cleave each protein at enzyme-specific sites, retaining
+  peptides of length in $[L_{\min},L_{\max}]$ with at most
+  $c_{\max}$ internal cleavage sites.
+  \item For each peptide $p$, compute and store:
+  \begin{itemize}[itemsep=1pt]
+    \item the neutral monoisotopic mass $M(p)$;
+    \item the S-Entropy summary coordinate $\bar{\Scoord}(p)$;
+    \item the full S-Entropy profile
+    $(\phi_{\mathrm{AA}}(r_1),\dots,\phi_{\mathrm{AA}}(r_L))$;
+    \item the theoretical b- and y-ion mass arrays;
+    \item the mapping set $\amb(p)=\{P\in\DB : p\text{ occurs in }P\}$.
+  \end{itemize}
+  \item Build a sorted index on $M(p)$ for binary-search precursor
+  filtering.
+\end{enumerate}
+\end{construction}
+
+\begin{remark}[Fixed modifications]
+Cysteine carbamidomethylation ($+57.021$~Da) or other fixed
+modifications are applied at digestion time: $M(p)$ includes
+them, and $\Sk$, $\St$, $\Se$ are computed on the modified residue.
+Variable modifications are handled as additional candidates in the
+digest, each generating a separate entry with modified mass and
+coordinate.
+\end{remark}
+
+% =====================================================================
+\section{The Exclusion Search Algorithm}
+\label{sec:algorithm}
+% =====================================================================
+
+\subsection{Overview}
+
+The algorithm takes as input a centroided MS/MS spectrum
+$\Spec=\{(m_j,I_j)\}_{j=1}^{m}$, precursor mass $M$, charge state $z$,
+and the indexed database of \Cref{con:digest}. It returns a verdict:
+either a closed claim region $\amb(v)$ (which may have $|\amb|=1$ or
+$|\amb|>1$), or an honest decline with a diagnostic payload.
+
+The search proceeds through a chain of five catalysts, each committing
+edges in a contact graph constructed per spectrum. The chain is ordered
+by decreasing exclusion breadth: cheap, broad filters first; expensive,
+narrow discriminators last.
+
+\subsection{Catalyst 1: Precursor mass exclusion}
+
+\begin{definition}[Precursor filter]
+\label{def:prec}
+Given precursor tolerance $\epsilon_p$ (in Da or ppm), define:
+\[
+  \Pep_M \;=\; \{p\in\Pep : |M(p)-M|<\epsilon_p\}.
+\]
+All peptides $p\notin\Pep_M$ are excluded. The exclusion weight of this
+catalyst is $|\Pep|-|\Pep_M|$.
+\end{definition}
+
+\begin{remark}
+$\Pep_M$ is computed by binary search on the sorted mass index in
+$O(\log|\Pep|+|\Pep_M|)$ time. For $\epsilon_p=10$~ppm on a
+typical human proteome digest ($|\Pep|\approx 10^6$), $|\Pep_M|$ is
+typically $10^1$--$10^3$.
+\end{remark}
+
+\subsection{Catalyst 2: Enzyme specificity exclusion}
+
+\begin{definition}[Enzyme filter]
+\label{def:enzyme}
+For enzyme $\mathcal{E}$ with cleavage specificity (e.g.\ trypsin:
+C-terminal to K/R, not before P), exclude candidates violating the
+specificity at either terminus. For semi-specific searches, require
+specificity at one terminus only.
+\end{definition}
+
+This catalyst is applied during digestion (\Cref{con:digest}) and costs
+no additional runtime. Its exclusion weight is the number of peptides
+removed by the specificity constraint.
+
+\subsection{Catalyst 3: Fragment ion matching}
+
+This is the primary discriminator and the most expensive per candidate.
+
+\begin{definition}[Fragment match score]
+\label{def:frag}
+For candidate $p$ of length $L$ against spectrum $\Spec$, define:
+\begin{align}
+  n_b(p) &= |\{i\in[1,L-1] : \exists\,j,\;
+  |m_j-b_i^{\mathrm{theo}}|<\epsilon_f\}|,\\[2pt]
+  n_y(p) &= |\{i\in[1,L-1] : \exists\,j,\;
+  |m_j-y_i^{\mathrm{theo}}|<\epsilon_f\}|,\\[2pt]
+  n_{\mathrm{total}}(p) &= n_b(p)+n_y(p).
+\end{align}
+The \emph{fragment coverage} is $f(p)=n_{\mathrm{total}}(p)/(2(L-1))$.
+\end{definition}
+
+\begin{definition}[Fragment catalyst]
+\label{def:frag-catalyst}
+The fragment catalyst commits, for each candidate $p\in\Pep_M$, an edge
+of weight $f(p)$ between $p$ and the medium $\med$. Its catalytic power
+toward the target (the true peptide generating the spectrum) is
+monotone in $f$: higher coverage gives higher power.
+\end{definition}
+
+\begin{remark}[Intensity is optional]
+\Cref{def:frag} counts matched ions and does not weight by intensity.
+Intensity-weighted variants are compatible with the framework---they
+change the edge weight function, not the closure logic---but we use the
+unweighted count as the base catalyst for platform independence
+(\Cref{sec:topology}).
+\end{remark}
+
+\subsection{Catalyst 4: S-Entropy coordinate similarity}
+
+\begin{definition}[Coordinate catalyst]
+\label{def:coord-catalyst}
+For candidate $p$ and the spectrum's \emph{empirical} S-Entropy
+profile reconstructed from matched fragment masses, define:
+\[
+  d_S(p) \;=\; \|\bar{\Scoord}(p)-\bar{\Scoord}_{\mathrm{emp}}\|_2,
+\]
+where $\bar{\Scoord}_{\mathrm{emp}}$ is computed from the amino acid
+residues implied by consecutive matched b-ion mass differences. The
+catalyst commits an edge of weight $\max(0,\,1-d_S(p)/d_{\max})$
+between $p$ and $\med$, where $d_{\max}=\sqrt{3}$ is the diagonal of
+the unit cube.
+\end{definition}
+
+\begin{remark}
+The empirical profile is available only where consecutive b- or y-ions
+are matched, so it is partial. Where no consecutive pair is matched,
+this catalyst is inert ($\pot=0$) and contributes nothing, which is
+the correct behaviour: an inert catalyst does not claim evidence it
+does not have.
+\end{remark}
+
+\subsection{Catalyst 5: Ladder topology matching}
+
+\begin{definition}[Topology catalyst]
+\label{def:topo-catalyst}
+For candidate $p$ against spectrum $\Spec$, compute the topology
+quadruple $T(\Spec,p)=(T_b,T_y,T_c,T_r)$ of \Cref{def:topology}.
+The topology score is:
+\[
+  t(p) \;=\; \frac{1}{4}(T_b+T_y+T_c+T_r).
+\]
+The catalyst commits an edge of weight $t(p)$ between $p$ and $\med$.
+\end{definition}
+
+\begin{remark}[Independence from Catalyst~3]
+Catalyst~3 counts matched ions; Catalyst~5 evaluates the \emph{pattern}
+of matches (complementarity, regularity). Two candidates with identical
+fragment counts may have different topology scores if one's matches
+are clustered and the other's are evenly spaced. The two catalysts are
+therefore not redundant, and their combination is governed by the
+multiplicative law (\Cref{thm:mult}).
+\end{remark}
+
+\subsection{Contact graph construction}
+
+\begin{construction}[Per-spectrum contact graph]
+\label{con:graph}
+For spectrum $\Spec$ with $|\Pep_M|=n$ candidates surviving precursor
+filtering:
+\begin{enumerate}[leftmargin=2.0em,itemsep=1pt]
+  \item Create vertex set $V=\{p_1,\dots,p_n,\med\}$.
+  \item For each $p_i$, connect $p_i$ to $\med$ with weight
+  $w_0=\flo$ (the medium-incident floor edge).
+  \item Apply catalysts 3, 4, 5 in sequence. Each catalyst commits
+  additional edges between items (inter-candidate edges of weight
+  equal to their pairwise S-Entropy distance) and modifies the
+  item-medium edge weights (by adding the catalyst's score to the
+  existing weight). Formally, after all catalysts:
+  \[
+    \wt(\{p_i,\med\}) \;=\; \flo + f(p_i) + (1-d_S(p_i)/d_{\max})
+    + t(p_i).
+  \]
+  \item For each pair $p_i,p_j$ of candidates, commit an inter-item
+  edge of weight $\|\bar{\Scoord}(p_i)-\bar{\Scoord}(p_j)\|_2$ if
+  this exceeds $\flo$.
+\end{enumerate}
+\end{construction}
+
+\subsection{Claim region computation}
+
+\begin{construction}[Claim region]
+\label{con:claim}
+After committing all catalyst edges:
+\begin{enumerate}[leftmargin=2.0em,itemsep=1pt]
+  \item For each item $p_i$, compute $\sep(p_i)$ as the minimum
+  $p_i$-$\med$ cut weight, by maximum
+  flow~\citep{fordfulkerson1956,goldberg1988new}.
+  \item Compute the cut key $\key(p_i)=(\sep(p_i),\dep(p_i))$.
+  \item Let $p^{\ast}=\argmin_{p_i}\sep(p_i)$. The claim region is:
+  \[
+    \amb(\Spec) \;=\; \{p_i : \key(p_i)=\key(p^{\ast})\}.
+  \]
+\end{enumerate}
+\end{construction}
+
+\begin{remark}
+$\amb(\Spec)$ is the set of candidates that are indistinguishable from
+the best-separated item under the committed evidence. If
+$|\amb(\Spec)|=1$, the identification is unique. If $|\amb(\Spec)|>1$,
+the set is the correct answer: it names exactly the candidates the
+evidence cannot tell apart.
+\end{remark}
+
+\subsection{Closure check}
+
+\begin{construction}[Closure]
+\label{con:closure}
+After computing $\amb(\Spec)$, check closure:
+\begin{enumerate}[leftmargin=2.0em,itemsep=1pt]
+  \item For each catalyst $c$ in $\{3,4,5\}$, simulate the effect of
+  \emph{re-applying} $c$ with perturbed parameters (e.g.\ tighter
+  fragment tolerance, additional charge states for b/y ions).
+  \item If no perturbation changes $\amb(\Spec)$, declare
+  $\clos(\Spec)$: the determination is closed.
+  \item If a perturbation changes $\amb(\Spec)$ and a catalyst
+  implementing that perturbation is available (e.g.\ MS$^3$ data,
+  ion mobility), apply it and recompute. Otherwise, proceed to
+  decline.
+\end{enumerate}
+\end{construction}
+
+\subsection{Decline and verdict}
+
+\begin{definition}[Verdict]
+\label{def:verdict}
+The output of the algorithm on spectrum $\Spec$ is a \emph{verdict}
+$\mathcal{V}(\Spec)$, one of:
+\begin{center}
+\begin{tabular}{@{}lp{0.65\textwidth}@{}}
+\toprule
+\textbf{Verdict} & \textbf{Payload} \\
+\midrule
+\textsc{identified} & $\amb(\Spec)$ (a set, $|\amb|\ge1$), closure
+flag, composite catalytic power \\
+\textsc{isobaric} & $\amb(\Spec)$ with $|\amb|>1$ and all members
+differing only at L/I positions \\
+\textsc{declined-no-candidate} & $\Pep_M=\emptyset$: no peptide in
+the database matches the precursor mass \\
+\textsc{declined-no-evidence} & $\Pep_M\neq\emptyset$ but all
+catalysts are inert ($\pot=0$): e.g.\ no fragment ions matched \\
+\textsc{declined-unclosed} & $\amb(\Spec)$ exists but a known catalyst
+would move it and is unavailable \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{definition}
+
+\begin{proposition}[Exhaustiveness]
+\label{prop:exhaust}
+Every spectrum receives exactly one verdict. The five cases are
+mutually exclusive and jointly exhaustive.
+\end{proposition}
+
+\begin{proof}
+The cases are ordered by evaluation: (1) $\Pep_M=\emptyset$ is checked
+first; (2) all catalysts inert is checked next; (3) closure is checked;
+(4) if closed with $|\amb|>1$ at L/I-only positions, verdict is
+\textsc{isobaric}; otherwise (5) \textsc{identified} if closed,
+\textsc{declined-unclosed} if not.
+\end{proof}
+
+\subsection{The full algorithm}
+
+\begin{algorithm}[H]
+\caption{Exclusion Search}
+\label{alg:main}
+\begin{algorithmic}[1]
+\Require Spectrum $\Spec$, precursor mass $M$, charge $z$,
+         indexed database $(\Pep,\mathrm{index})$,
+         tolerances $\epsilon_p,\epsilon_f$, floor $\flo$
+\Ensure Verdict $\mathcal{V}(\Spec)$
+\Statex
+\State $\Pep_M \gets \{p\in\Pep : |M(p)-M|<\epsilon_p\}$
+  \Comment{Catalyst 1: precursor filter}
+\If{$\Pep_M = \emptyset$}
+  \State \Return \textsc{declined-no-candidate}
+\EndIf
+\Statex
+\State \Comment{--- Build contact graph ---}
+\State $V \gets \Pep_M \cup \{\med\}$
+\For{each $p_i \in \Pep_M$}
+  \State $f_i \gets \textsc{FragmentMatch}(p_i, \Spec, \epsilon_f)$
+    \Comment{Catalyst 3}
+  \State $d_i \gets \textsc{CoordDist}(p_i, \Spec)$
+    \Comment{Catalyst 4}
+  \State $t_i \gets \textsc{TopoScore}(p_i, \Spec, \epsilon_f)$
+    \Comment{Catalyst 5}
+  \State $\wt(\{p_i,\med\}) \gets \flo + f_i + \max(0,1-d_i/\sqrt{3})
+    + t_i$
+\EndFor
+\Statex
+\If{$\max_i(f_i + t_i) = 0$}
+  \State \Return \textsc{declined-no-evidence}
+\EndIf
+\Statex
+\State \Comment{--- Commit inter-item edges ---}
+\For{each pair $(p_i, p_j)$ with $i<j$}
+  \State $w_{ij} \gets \|\bar{\Scoord}(p_i)-\bar{\Scoord}(p_j)\|_2$
+  \If{$w_{ij} > \flo$}
+    \State commit edge $\{p_i,p_j\}$ with weight $w_{ij}$
+  \EndIf
+\EndFor
+\Statex
+\State \Comment{--- Compute claim region ---}
+\For{each $p_i \in \Pep_M$}
+  \State $\sep(p_i) \gets \textsc{MaxFlow}(p_i, \med, \Gph)$
+  \State $\dep(p_i) \gets |S^{\ast}(p_i)|$
+  \State $\key(p_i) \gets (\sep(p_i), \dep(p_i))$
+\EndFor
+\State $p^{\ast} \gets \argmin_{p_i} \sep(p_i)$
+\State $\amb(\Spec) \gets \{p_i : \key(p_i)=\key(p^{\ast})\}$
+\Statex
+\State \Comment{--- Closure check ---}
+\State $\mathrm{closed} \gets \textsc{CheckClosure}(\amb(\Spec),
+  \Gph, \text{available catalysts})$
+\If{$\mathrm{closed}$ \textbf{and}
+    \textsc{IsLIOnly}($\amb(\Spec)$)}
+  \State \Return \textsc{isobaric}($\amb(\Spec)$)
+\ElsIf{$\mathrm{closed}$}
+  \State \Return \textsc{identified}($\amb(\Spec)$,
+    composite power)
+\Else
+  \State \Return \textsc{declined-unclosed}($\amb(\Spec)$,
+    blocking catalyst)
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{CheckClosure}
+\label{alg:closure}
+\begin{algorithmic}[1]
+\Require Claim region $\amb$, contact graph $\Gph$,
+         list of available catalysts $C$
+\Ensure Boolean
+\For{each catalyst $c \in C$ not yet applied}
+  \State $\Gph' \gets$ apply $c$ to $\Gph$
+  \State $\amb' \gets$ recompute claim region on $\Gph'$
+  \If{$\amb' \neq \amb$}
+    \State \Return \textbf{false}
+  \EndIf
+\EndFor
+\State \Return \textbf{true}
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\section{The Two-Graph Construction}
+\label{sec:twograph}
+% =====================================================================
+
+The five catalysts of \Cref{sec:algorithm} produce a single contact
+graph. We now partition the evidence into two independent graphs whose
+agreement is the identification.
+
+\begin{definition}[Instrument graph]
+\label{def:inst-graph}
+The \emph{instrument graph} $\Gph_I$ commits edges from:
+\begin{itemize}[itemsep=1pt]
+  \item Enzyme specificity (Catalyst~2)
+  \item Fragment ion matching (Catalyst~3)
+  \item Ladder topology (Catalyst~5)
+  \item Fixed modification mass shifts (from sample preparation)
+  \item Precursor isolation window and isotope envelope
+\end{itemize}
+These are \emph{preparation and acquisition facts}: they derive from
+what was done to the sample and what the instrument measured.
+\end{definition}
+
+\begin{definition}[Mapping graph]
+\label{def:map-graph}
+The \emph{mapping graph} $\Gph_M$ commits edges from:
+\begin{itemize}[itemsep=1pt]
+  \item Precursor mass match against the database (Catalyst~1)
+  \item S-Entropy coordinate distance (Catalyst~4)
+  \item Mapping-set intersections (which proteins contain each
+  candidate)
+\end{itemize}
+These are \emph{database and coordinate facts}: they derive from the
+sequence database and the physicochemical property space.
+\end{definition}
+
+\begin{proposition}[Independence]
+\label{prop:indep}
+$\Gph_I$ and $\Gph_M$ share no mechanism: no mapping set encodes a
+fragment match, and no fragment match encodes a homology relation.
+\end{proposition}
+
+\begin{construction}[Two-graph identification]
+\label{con:twograph}
+Compute $\amb_I(\Spec)$ and $\amb_M(\Spec)$ independently. The
+identification is:
+\[
+  \amb(\Spec) \;=\; \amb_I(\Spec)\cap\amb_M(\Spec).
+\]
+By \Cref{thm:agreement}, this intersection is a relabelling invariant
+of neither graph alone.
+\end{construction}
+
+\begin{proposition}[Disagreement is diagnostic]
+\label{prop:disagree}
+If $\amb_I\cap\amb_M=\emptyset$, inspect which is empty at $v$:
+\begin{itemize}[itemsep=1pt]
+  \item $\amb_M=\emptyset$: the candidate is absent from the database
+  (novel peptide, contaminant, unexpected cleavage).
+  \item $\amb_I=\emptyset$: the preparation chain is inconsistent
+  with the candidate (wrong enzyme, missing modification).
+\end{itemize}
+\end{proposition}
+
+% =====================================================================
+\section{Isobaric Residues}
+\label{sec:isobaric}
+% =====================================================================
+
+\begin{proposition}[Isobaric pairs are terminal regions]
+\label{prop:isobaric}
+Let $a,b$ be residues with equal mass (e.g.\ L and I, both
+$113.084$~Da). If all committed edges are mass-derived, then
+$\amb=\{a,b\}$ and closure holds. A catalyst narrows $\amb$ if and only
+if it commits an edge whose weight differs between $a$ and $b$.
+\end{proposition}
+
+\begin{proof}
+Mass-derived edges assign equal weights to $a$ and $b$, so their cut
+keys agree. No further mass catalyst separates them. A non-mass catalyst
+(ion mobility, high-energy CID producing $d$/$w$ ions,
+EThcD~\citep{xiao2016distinguishing,zhokhov2017distinguishing})
+commits an edge with a weight that differs, moving the claim region.
+\end{proof}
+
+\begin{remark}
+The verdict \textsc{isobaric} is a \emph{correct closed answer}, not a
+failure. It reports that the evidence committed cannot distinguish $a$
+from $b$, and it states the condition under which further evidence would
+narrow the region. This is more informative than reporting one of the
+two with a flag.
+\end{remark}
+
+% =====================================================================
+\section{Complexity}
+\label{sec:complexity}
+% =====================================================================
+
+\begin{proposition}[Time complexity]
+\label{prop:time}
+The algorithm runs in
+$O(|\Pep_M|\cdot(L\cdot m + |\Pep_M|\cdot|V|\cdot|E|))$ per spectrum,
+where $|\Pep_M|$ is the precursor-filtered candidate count, $L$ is the
+maximal peptide length, $m$ is the number of observed peaks,
+and $|V|\cdot|E|$ is the max-flow cost per cut computation.
+\end{proposition}
+
+\begin{proof}
+Precursor filtering: $O(\log|\Pep|+|\Pep_M|)$.
+Fragment matching per candidate: $O(L\cdot m)$ if peaks are sorted
+(binary search per theoretical ion) or $O(L+m)$ if both are sorted
+(merge scan).
+S-Entropy and topology: $O(L)$ per candidate.
+Inter-item edges: $O(|\Pep_M|^2)$.
+Max-flow per item: $O(|V|\cdot|E|)$ by Edmonds--Karp, where
+$|V|=|\Pep_M|+1$ and $|E|\le|\Pep_M|+\binom{|\Pep_M|}{2}$.
+Total: dominated by the max-flow computations over $|\Pep_M|$ items.
+\end{proof}
+
+\begin{remark}[Practical regime]
+In the typical proteomics regime, $|\Pep_M|$ is $10$--$10^3$
+(after precursor filtering at $10$~ppm on a human proteome),
+$L\le 30$, $m\le 500$. The per-spectrum cost is dominated by
+fragment matching at $O(|\Pep_M|\cdot L\cdot m)$, which is the
+same asymptotic cost as conventional engines. The max-flow
+computations on $|\Pep_M|+1$ vertices are fast for small candidate
+sets and become the bottleneck only when $|\Pep_M|$ is large.
+For $|\Pep_M|>10^3$, a pre-filter on fragment count (e.g.\ retain
+only candidates with $n_{\mathrm{total}}\ge 3$) restores
+tractability without compromising the closure guarantee, since
+candidates with zero matched fragments are assigned inert catalytic
+power and cannot enter a non-trivial claim region.
+\end{remark}
+
+% =====================================================================
+\section{Properties of the Algorithm}
+\label{sec:properties}
+% =====================================================================
+
+We now prove the structural properties claimed in the introduction.
+
+\begin{theorem}[Termination]
+\label{thm:termination}
+The algorithm terminates in at most $D_0=\sum_{v\in\Pep_M}(|\amb(v)|-1)$
+catalyst applications.
+\end{theorem}
+
+\begin{proof}
+Each effective catalyst application strictly reduces $D_0$ by at least
+$1$ (by the effective commitment assumption of the exclusion framework).
+$D_0$ is a non-negative integer, so it reaches zero in at most $D_0$
+steps. At that point all claim regions are singletons (closure) or no
+effective catalyst remains (decline).
+\end{proof}
+
+\begin{theorem}[Closure strength]
+\label{thm:closure-strength}
+Closure of $\amb(\Spec)$ does not imply any particular confidence score,
+and no confidence score implies closure. Specifically:
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+  \item A closed region with $|\amb|=2$ has maximum achievable
+  confidence $1/2$ under any symmetric confidence functional.
+  \item A high-confidence single candidate may be non-closed if a
+  catalyst not yet applied would move the region.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) is the L/I case: two candidates with equal cut keys under mass
+evidence, no catalyst separating them. Any symmetric functional assigns
+at most $1/2$ to each. (ii) is the usual situation in proteomics: a
+high-scoring PSM whose FDR is computed without considering whether ion
+mobility or alternative fragmentation would change the assignment.
+\end{proof}
+
+\begin{proposition}[Composite power profile]
+\label{prop:composite}
+The composite catalytic power of the five-catalyst chain, with
+individual powers $\pot_1,\dots,\pot_5$, is:
+\[
+  \pot_{\mathrm{composite}}
+  \;=\;
+  1-\prod_{i=1}^{5}(1-\pot_i).
+\]
+Each additional catalyst closes a strictly smaller fraction of the
+remaining gap. The marginal return of the $k$-th catalyst is
+$(1-\pot_k)\prod_{i<k}(1-\pot_i)$ of the initial gap.
+\end{proposition}
+
+\begin{proof}
+Direct application of \Cref{thm:mult}.
+\end{proof}
+
+\begin{proposition}[Decline is informative]
+\label{prop:decline-informative}
+Each decline verdict carries a structured payload:
+\begin{itemize}[itemsep=1pt]
+  \item \textsc{declined-no-candidate}: no database peptide has the
+  observed precursor mass. This may indicate a peptide absent from
+  the database, a novel modification, or a contaminant.
+  \item \textsc{declined-no-evidence}: candidates exist but no fragment
+  ions matched. This indicates poor spectrum quality or a fragmentation
+  mode inconsistent with the expected ion types.
+  \item \textsc{declined-unclosed}: a partial identification exists but
+  an available catalyst (e.g.\ MS$^3$, ion mobility) was not applied.
+  The payload names the blocking catalyst.
+\end{itemize}
+\end{proposition}
+
+% =====================================================================
+\section{Comparison with Conventional Database Search}
+\label{sec:comparison}
+% =====================================================================
+
+\begin{table}[t]
+\centering
+\small
+\caption{Structural comparison between conventional database search and
+exclusion search.}
+\label{tab:compare}
+\begin{tabular}{@{}p{0.20\textwidth}p{0.35\textwidth}p{0.35\textwidth}@{}}
+\toprule
+\textbf{Property} & \textbf{Conventional} & \textbf{Exclusion search} \\
+\midrule
+Output & Ranked list of PSMs, filtered by FDR & Claim region
+$\amb(\Spec)$: a set of candidates \\[3pt]
+Termination & Score exceeds threshold & Closure: no available catalyst
+moves the region \\[3pt]
+Refusal & Silence (spectrum absent from output) & Structured verdict
+with diagnostic payload \\[3pt]
+Isobaric pairs & Arbitrary choice or quality flag & Correct terminal
+region $\{L,I\}$ \\[3pt]
+Confidence & External: FDR from decoy database & Internal: closure is
+a property of the committed graph \\[3pt]
+Evidence model & Score: a single number summarising the match &
+Contact graph: a weighted graph with computable cuts \\[3pt]
+Multiple evidence & Implicit in the score function & Explicit
+catalyst chain with multiplicative law \\[3pt]
+Database role & The search space & One evidence source (mapping graph);
+instrument graph is independent \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Implementation Notes}
+\label{sec:implementation}
+% =====================================================================
+
+\subsection{Floor selection}
+
+The floor $\flo$ is a modelling parameter. It must be strictly positive
+and should reflect the minimum cost of any comparison. A natural choice
+is:
+\[
+  \flo \;=\; \frac{\epsilon_f}{M_{\max}},
+\]
+where $\epsilon_f$ is the fragment mass tolerance and $M_{\max}$ is the
+maximum precursor mass in the database. This ties the floor to the
+instrument's resolving power.
+
+\subsection{Max-flow implementation}
+
+For small candidate sets ($|\Pep_M|\le 100$), a push-relabel
+implementation~\citep{goldberg1988new} suffices. For larger sets, the
+Stoer--Wagner algorithm~\citep{stoerwagner1997} computes the global
+minimum cut without specifying source and sink, which is useful when
+the goal is to find the item with the smallest separation cost.
+
+\subsection{Parallelism}
+
+Spectra are independent: the contact graph for one spectrum shares no
+state with another. The algorithm parallelises trivially across spectra,
+with each worker maintaining its own graph and max-flow solver.
+
+\subsection{Tolerance calibration}
+
+$\epsilon_p$ and $\epsilon_f$ are instrument-dependent. For Orbitrap
+data, typical values are $\epsilon_p=10$~ppm and $\epsilon_f=0.02$~Da.
+For Q-TOF, $\epsilon_f=0.1$~Da. The closure guarantee holds for any
+positive tolerance; tighter tolerances yield smaller $|\Pep_M|$ and
+faster convergence.
+
+\subsection{Variable modifications}
+
+Each variable modification on a residue creates a separate candidate in
+the digest. For $k$ modification types on $n$ modifiable residues, this
+multiplies the candidate space by up to $(k+1)^n$. The standard
+mitigation---limiting the number of simultaneous modifications per
+peptide---applies here as in conventional engines. The exclusion
+framework adds one observation: a modification that changes S-Entropy
+coordinates contributes evidence through Catalyst~4, whereas a
+modification invisible to S-Entropy (e.g.\ a mass shift not altering
+hydrophobicity, volume, or charge) is correctly treated as inert.
+
+% =====================================================================
+\section{Limitations}
+\label{sec:limits}
+% =====================================================================
+
+\paragraph{The algorithm is not faster than conventional search.}
+The per-spectrum cost is comparable to Sequest or Mascot for typical
+candidate counts. The max-flow computations add overhead that
+conventional engines do not pay. The advantage is structural (what the
+output means) rather than computational (how fast it arrives).
+
+\paragraph{The floor is a modelling choice.}
+$\flo$ is not measured from the data. Different choices yield different
+residuals. The theorems are $\flo$-independent; the numerical results
+are not.
+
+\paragraph{Closure is relative to available catalysts.}
+A determination closed under mass-only catalysts may reopen when ion
+mobility data becomes available. This is a feature---it is how the
+system says ``more evidence would help''---but it means closure is not
+permanence.
+
+\paragraph{No FDR estimate.}
+The algorithm does not compute an FDR. Closure is a different kind of
+guarantee: it says ``no further available evidence can change this
+answer'', not ``this answer is correct with probability $1-\alpha$''.
+The two are complementary, and a system using exclusion search may
+compute FDR separately from a decoy analysis of the closed regions.
+
+\paragraph{S-Entropy coordinates are approximate.}
+The coordinate assignments of \Cref{tab:aa-coords} are derived from
+bulk physicochemical properties. In the context of a folded protein or
+within a collision cell, local environment may shift effective
+hydrophobicity or charge. The framework tolerates this via the
+tolerance in catalyst 4's edge-weight function, but does not correct
+for it.
+
+\paragraph{Synthetic validation only.}
+This manuscript describes the algorithm; it does not report a
+benchmarking study. Performance on standard datasets
+(e.g.\ iPRG 2012~\citep{chalkley2014proteomics}, NIST spectral
+libraries) is the subject of a separate
+evaluation.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+We have given a complete, implementable database search algorithm for
+peptide tandem mass spectrometry whose output is a region, whose
+termination is closure, and whose refusal is a verdict. The algorithm
+threads five catalysts---precursor mass, enzyme specificity, fragment
+ion matching, S-Entropy coordinate similarity, and ladder topology
+matching---through a per-spectrum contact graph, computes the claim
+region by minimum cut, and checks closure against all available
+catalysts. It terminates in bounded time, returns one of five verdicts,
+and never produces a score without a verdict or a verdict without a
+payload.
+
+Three properties distinguish it from conventional search.
+
+First, an isobaric pair such as $\{L,I\}$ is a correct closed answer
+rather than a failure to resolve. The algorithm states the condition
+under which a further catalyst (ion mobility, EThcD) would narrow the
+region, and reports the region as-is when that catalyst is unavailable.
+
+Second, a spectrum whose evidence is insufficient is not silently absent
+from the output. It receives a decline verdict naming which evidence
+source failed, which converts an uninterpretable silence into a
+diagnosis.
+
+Third, the independence of the instrument graph and the mapping graph
+means the algorithm can distinguish two situations currently conflated
+as ``unidentified'': the peptide is absent from the database (mapping
+graph empty) versus the preparation chain could not have produced the
+candidate (instrument graph empty).
+
+What the algorithm does not provide is a probability. Closure and FDR
+are orthogonal guarantees, and a complete system may well compute both.
+The contribution here is the structural layer---what the search returns
+and when it stops---on which any scoring function or statistical model
+may be placed.
+
+% =====================================================================
+% References
+% =====================================================================
+\begingroup
+\small
+\begin{thebibliography}{99}
+
+\bibitem{eng1994approach}
+J.~K. Eng, A.~L. McCormack, and J.~R. Yates~III.
+\newblock An approach to correlate tandem mass spectral data of peptides
+  with amino acid sequences in a protein database.
+\newblock \emph{J.\ Am.\ Soc.\ Mass Spectrom.}, 5(11):976--989, 1994.
+
+\bibitem{perkins1999probability}
+D.~N. Perkins, D.~J.~C. Pappin, D.~M. Creasy, and J.~S. Cottrell.
+\newblock Probability-based protein identification by searching sequence
+  databases using mass spectrometry data.
+\newblock \emph{Electrophoresis}, 20(18):3551--3567, 1999.
+
+\bibitem{cox2008maxquant}
+J.~Cox and M.~Mann.
+\newblock {MaxQuant} enables high peptide identification rates,
+  individualized p.p.b.-range mass accuracies and proteome-wide protein
+  quantification.
+\newblock \emph{Nat.\ Biotechnol.}, 26(12):1367--1372, 2008.
+
+\bibitem{elias2007target}
+J.~E. Elias and S.~P. Gygi.
+\newblock Target-decoy search strategy for increased confidence in
+  large-scale protein identifications by mass spectrometry.
+\newblock \emph{Nat.\ Methods}, 4(3):207--214, 2007.
+
+\bibitem{kall2007semi}
+L.~K\"all, J.~D. Storey, M.~J. MacCoss, and W.~S. Noble.
+\newblock Semi-supervised learning for peptide identification from
+  shotgun proteomics datasets.
+\newblock \emph{Nat.\ Methods}, 4(11):923--925, 2007.
+
+\bibitem{the2016fast}
+M.~The, M.~J. MacCoss, W.~S. Noble, and L.~K\"all.
+\newblock Fast and accurate protein false discovery rates on large-scale
+  proteomics data sets with {Percolator 3.0}.
+\newblock \emph{J.\ Am.\ Soc.\ Mass Spectrom.}, 27(11):1719--1727, 2016.
+
+\bibitem{paizs2005fragmentation}
+B.~Paizs and S.~Suhai.
+\newblock Fragmentation pathways of protonated peptides.
+\newblock \emph{Mass Spectrom.\ Rev.}, 24(4):508--548, 2005.
+
+\bibitem{olsen2004trypsin}
+J.~V. Olsen, S.-E. Ong, and M.~Mann.
+\newblock Trypsin cleaves exclusively {C}-terminal to arginine and
+  lysine residues.
+\newblock \emph{Mol.\ Cell.\ Proteomics}, 3(6):608--614, 2004.
+
+\bibitem{krokhin2006sequence}
+O.~V. Krokhin.
+\newblock Sequence-specific retention calculator.\ {Algorithm} for
+  peptide retention prediction in ion-pair {RP-HPLC}.
+\newblock \emph{Anal.\ Chem.}, 78(22):7785--7795, 2006.
+
+\bibitem{kyte1982simple}
+J.~Kyte and R.~F. Doolittle.
+\newblock A simple method for displaying the hydropathic character of a
+  protein.
+\newblock \emph{J.\ Mol.\ Biol.}, 157(1):105--132, 1982.
+
+\bibitem{zamyatnin1972protein}
+A.~A. Zamyatnin.
+\newblock Protein volume in solution.
+\newblock \emph{Prog.\ Biophys.\ Mol.\ Biol.}, 24:107--123, 1972.
+
+\bibitem{fordfulkerson1956}
+L.~R. Ford and D.~R. Fulkerson.
+\newblock Maximal flow through a network.
+\newblock \emph{Can.\ J.\ Math.}, 8:399--404, 1956.
+
+\bibitem{goldberg1988new}
+A.~V. Goldberg and R.~E. Tarjan.
+\newblock A new approach to the maximum-flow problem.
+\newblock \emph{J.\ ACM}, 35(4):921--940, 1988.
+
+\bibitem{stoerwagner1997}
+M.~Stoer and F.~Wagner.
+\newblock A simple min-cut algorithm.
+\newblock \emph{J.\ ACM}, 44(4):585--591, 1997.
+
+\bibitem{xiao2016distinguishing}
+Y.~Xiao, M.~M. Vecchi, and D.~Wen.
+\newblock Distinguishing between leucine and isoleucine by integrated
+  {LC-MS} analysis using an {Orbitrap Fusion} mass spectrometer.
+\newblock \emph{Anal.\ Chem.}, 88(21):10757--10766, 2016.
+
+\bibitem{zhokhov2017distinguishing}
+S.~S. Zhokhov, S.~V. Kovalyov, A.~S. Samgina, and A.~T. Lebedev.
+\newblock An {EThcD}-based method for discrimination of leucine and
+  isoleucine residues in tryptic peptides.
+\newblock \emph{J.\ Am.\ Soc.\ Mass Spectrom.}, 28(8):1600--1611, 2017.
+
+\bibitem{tran2017novo}
+N.~H. Tran, X.~Zhang, L.~Xin, B.~Shan, and M.~Li.
+\newblock De novo peptide sequencing by deep learning.
+\newblock \emph{Proc.\ Natl.\ Acad.\ Sci.\ USA}, 114(31):8247--8252,
+  2017.
+
+\bibitem{zhou2017pdeep}
+X.-X. Zhou, W.-F. Zeng, H.~Chi, C.~Luo, C.~Liu, \emph{et al.}
+\newblock {pDeep}: predicting {MS/MS} spectra of peptides with deep
+  learning.
+\newblock \emph{Anal.\ Chem.}, 89(23):12690--12697, 2017.
+
+\bibitem{chalkley2014proteomics}
+R.~J. Chalkley, S.~P. Huang, M.~D. Guttman, and S.~Koyama.
+\newblock Comprehensive analysis of a multidimensional liquid
+  chromatography mass spectrometry dataset acquired on a quadrupole
+  selecting, quadrupole collision cell, time-of-flight mass spectrometer:
+  {II}.\ New developments in {Protein Prospector} allow for reliable and
+  comprehensive automatic analysis of large datasets.
+\newblock \emph{Mol.\ Cell.\ Proteomics}, 4(8):1194--1204, 2005.
+
+\bibitem{sachikonye2025peptide}
+K.~F. Sachikonye.
+\newblock Peptide identity as the termination of exclusion: mass
+  invariance, promiscuous intersection, and a stopping criterion for
+  sequence determination.
+\newblock Manuscript, 2025.
+
+\bibitem{sachikonye2025molecular}
+K.~F. Sachikonye.
+\newblock On the consequences of categorical completion on biological
+  sequences: thermodynamic symbolic computational molecular language for
+  database-free peptide sequence reconstruction.
+\newblock Manuscript, 2025.
+
+\bibitem{sachikonye2025fragmentation}
+K.~F. Sachikonye.
+\newblock Categorical fragmentation networks in tandem mass spectrometry:
+  phase-lock topology and entropy-intensity relations in peptide
+  fragmentation.
+\newblock Manuscript, 2025.
+
+\bibitem{roepstorff1984proposal}
+P.~Roepstorff and J.~Fohlman.
+\newblock Proposal for a common nomenclature for sequence ions in mass
+  spectra of peptides.
+\newblock \emph{Biomed.\ Mass Spectrom.}, 11(11):601, 1984.
+
+\bibitem{dancik1999novo}
+V.~Dan\v{c}\'ik, T.~A. Addona, K.~R. Clauser, J.~E. Vath, and
+  P.~A. Pevzner.
+\newblock De novo peptide sequencing via tandem mass spectrometry.
+\newblock \emph{J.\ Comput.\ Biol.}, 6(3--4):327--342, 1999.
+
+\bibitem{ma2003peaks}
+B.~Ma, K.~Zhang, C.~Hendrie, C.~Liang, M.~Li, A.~Doherty-Kirby,
+  and G.~Lajoie.
+\newblock {PEAKS}: powerful software for peptide de novo sequencing by
+  tandem mass spectrometry.
+\newblock \emph{Rapid Commun.\ Mass Spectrom.}, 17(20):2337--2342, 2003.
+
+\bibitem{fenn1989electrospray}
+J.~B. Fenn, M.~Mann, C.~K. Meng, S.~F. Wong, and C.~M. Whitehouse.
+\newblock Electrospray ionization for mass spectrometry of large
+  biomolecules.
+\newblock \emph{Science}, 246(4926):64--71, 1989.
+
+\end{thebibliography}
+\endgroup
+
+\end{document}

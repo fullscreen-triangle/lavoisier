@@ -12,6 +12,7 @@ import { searchAll, searchMassBank, searchGNPS, searchMoNA } from "@/lib/spectra
 import { useStore } from "@/lib/state/store";
 import ResultsDashboard from "@/components/experiment/ResultsDashboard";
 import SandboxCharts from "@/sandbox/SandboxCharts";
+import ExperimentCharts, { hasExperimentData } from "@/sandbox/ExperimentCharts";
 
 const summariseForStore = (recs) => summariseRecords(recs);
 
@@ -1153,6 +1154,9 @@ function WorkspaceValue({ entry }) {
   }
 }
 
+const EXPERIMENT_KINDS = new Set(["coords", "separation", "drift", "criterion",
+                                  "baselineStat", "sweep", "scans"]);
+
 /* ─── Results panel: dashboard for records, workspace grid otherwise ──────── */
 function ResultsPanel({ result, workspace }) {
   const hasRecords = (workspace || []).some(w => w.kind === "records");
@@ -1177,6 +1181,22 @@ function ResultsPanel({ result, workspace }) {
         {extras.length > 0 && (
           <div className="mt-4 space-y-4">
             {extras.map((w, i) => <WorkspaceValue key={i} entry={w} />)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Experiment kinds get their own chart grid; the remaining variables
+  // still render individually below it.
+  if (hasExperimentData(workspace)) {
+    const rest = (workspace || []).filter(w => !EXPERIMENT_KINDS.has(w.kind));
+    return (
+      <div className="h-full overflow-y-auto" style={{ background: "#070809" }}>
+        <ExperimentCharts workspace={workspace} />
+        {rest.length > 0 && (
+          <div className="space-y-4 p-4">
+            {rest.map((w, i) => <WorkspaceValue key={i} entry={w} />)}
           </div>
         )}
       </div>
@@ -1299,7 +1319,11 @@ function OutputColumn({ result, workspace, ir, logs, term, running, onCompile, o
       </div>
 
       <div className="min-h-0 flex-1">
-        {tab === "charts" && <SandboxCharts records={records} />}
+        {tab === "charts" && (
+          hasExperimentData(workspace)
+            ? <ExperimentCharts workspace={workspace} />
+            : <SandboxCharts records={records} />
+        )}
         {tab === "results" && <ResultsPanel result={result} workspace={workspace} />}
         {tab === "terminal" && <TerminalView term={term || []} />}
         {tab === "console" && (
