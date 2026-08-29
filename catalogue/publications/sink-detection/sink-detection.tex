@@ -1,0 +1,671 @@
+% =====================================================================
+%  Sink Detection
+%
+%  Self-contained. Every construction used is defined here; no companion
+%  paper is required. External citations are to the mass spectrometry,
+%  graph theory, and algorithms literature only.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{lmodern}
+\usepackage[protrusion=true,expansion=false]{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+% ---------------------------------------------------------------------
+%  Theorem environments
+% ---------------------------------------------------------------------
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{construction}[theorem]{Construction}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------------------------------------------------------------------
+%  Notation
+% ---------------------------------------------------------------------
+\newcommand{\Gph}{\mathcal{G}}
+\newcommand{\wt}{w}
+\newcommand{\med}{\mathfrak{m}}
+\newcommand{\flo}{\beta}
+\newcommand{\cut}{\operatorname{cut}}
+\newcommand{\sep}{\sigma}
+\newcommand{\dep}{\delta}
+\newcommand{\spr}{\rho}                       % spread
+\newcommand{\Snk}{\mathsf{Sink}}
+\newcommand{\att}{a}                          % attachment
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\title{\textbf{Sink Detection:\\[2pt]
+Finding the Vertices That Absorb Every Question}}
+
+\author{Kundai Farai Sachikonye\\
+\texttt{kundai.sachikonye@wzw.tum.de}}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+In a weighted contact graph built from analytical data, a small number of
+vertices are adjacent to almost everything. A ubiquitous contaminant ion,
+a solvent cluster, a badly-behaved column artefact, or a term that occurs
+in every record of a reference library all produce the same structure:
+a vertex whose neighbourhood is a large fraction of the graph. We call
+such a vertex a \emph{sink}. Sinks are destructive in a way that is not
+obvious, and the purpose of this paper is to make the damage precise and
+give a cheap test. We show that a single sink of sufficient attachment
+collapses the separation structure of the entire graph, driving every
+query's answer to within a bounded band of every other's
+(\Cref{thm:collapse}), that this happens without any query returning an
+error or an implausible value (\Cref{cor:silent}), and that the effect is
+not diluted by graph size but amplified by it (\Cref{prop:amplify}). We
+then give a detection criterion. Sinks are \emph{not} identified by
+degree, and we prove this with a counterexample family in which a
+high-degree vertex is harmless and a moderate-degree vertex is fatal
+(\Cref{thm:degree-fails}). The correct statistic is \emph{spread} --- the
+fraction of the graph a vertex separates from --- and we prove that
+thresholding spread is sound (\Cref{thm:spread-sound}), computable in one
+pass (\Cref{prop:spread-cost}), and that the threshold is forced rather
+than tuned, being pinned by the separation floor
+(\Cref{thm:threshold}). Finally we prove that excision is the correct
+remedy and reweighting is not (\Cref{thm:excision}), and give the
+diagnostic protocol.
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Build a weighted graph in which vertices are observations from an
+analytical experiment and edges record measured contact --- mass
+proximity, co-elution, shared fragments, shared library annotations.
+Almost every such graph, built from almost any real dataset, contains a
+few vertices adjacent to an enormous fraction of the rest.
+
+The sources are mundane and various. A plasticiser ion appears in every
+scan. A solvent cluster series lands within tolerance of most low-mass
+features. A retention-time artefact co-elutes with everything by
+construction. In a reference library, an annotation term such as
+\emph{organic compound} is attached to every record. In each case a
+single vertex acquires a neighbourhood comprising a large fraction of the
+graph.
+
+The natural reaction is that this is a nuisance, handled by filtering
+obvious contaminants. We argue it is worse than a nuisance and that the
+handling is not obvious. Our claim is that one such vertex is sufficient
+to make every separation computation in the graph return an answer that
+is nearly independent of what was asked, and that this happens
+\emph{silently}: no computation fails, no value is out of range, and the
+returned numbers remain plausible and even reproducible. A pipeline
+contaminated by a sink produces a stable, reproducible, meaningless
+output, which is worse than an unstable one because it survives quality
+control.
+
+This paper makes that claim a theorem, shows that the obvious detector
+(degree) does not work, gives one that does, and proves the remedy.
+
+\subsection{What is proved}
+
+\Cref{sec:setting} constructs the contact graph and the separation
+functional from scratch and establishes the floor
+(\Cref{thm:floor}). \Cref{sec:damage} defines sinks and proves the
+collapse theorem (\Cref{thm:collapse}), its silence
+(\Cref{cor:silent}), and its amplification with size
+(\Cref{prop:amplify}). \Cref{sec:degree} proves that degree is not a
+detector (\Cref{thm:degree-fails}). \Cref{sec:spread} defines spread,
+proves soundness (\Cref{thm:spread-sound}), cost
+(\Cref{prop:spread-cost}), and that the threshold is forced
+(\Cref{thm:threshold}). \Cref{sec:remedy} proves excision is correct and
+reweighting is not (\Cref{thm:excision},
+\Cref{prop:reweight-fails}). \Cref{sec:protocol} gives the protocol.
+
+% =====================================================================
+\section{Setting}
+\label{sec:setting}
+
+\begin{definition}[Contact graph]\label{def:contact}
+A \emph{contact graph} is a finite weighted graph $\Gph = (V,E,\wt)$ with
+$\wt : E \to \mathbb{R}_{>0}$ and a distinguished vertex $\med \in V$,
+the \emph{medium}, adjacent to every other vertex. We write
+$U = V \setminus \{\med\}$ for the \emph{items}, $n = |U|$, and for
+$S \subseteq V$
+\[
+\cut(S) \;=\; \sum_{\{u,v\} \in E,\ |S \cap \{u,v\}| = 1} \wt(\{u,v\}).
+\]
+\end{definition}
+
+\begin{remark}[Why the medium is definitional]\label{rem:medium}
+The medium is not an item and does not correspond to a measurement. It
+represents ``everything else'', and $\wt(\{u,\med\})$ is the cost of
+asserting that $u$ is a distinct thing rather than an aspect of the
+background. Its adjacency to every vertex is part of
+\Cref{def:contact}, not a property of the data: if items were
+individuated only against nominated rivals, the nomination of each rival
+would require a prior individuation and the argument would regress. The
+medium terminates the regress by being adjacent by definition. It cannot
+be deleted, and \Cref{thm:floor} fails without it.
+\end{remark}
+
+\begin{definition}[Separation and depth]\label{def:sep}
+For $v \in U$, an \emph{admissible set} is $S \subseteq V$ with $v \in S$
+and $\med \notin S$. Put
+\[
+S^{\ast}(v) = \argmin\{\cut(S) : S \text{ admissible}\},
+\qquad
+\sep(v) = \cut(S^{\ast}(v)),
+\qquad
+\dep(v) = |S^{\ast}(v)| ,
+\]
+taking the inclusion-minimal minimiser when several attain the minimum.
+\end{definition}
+
+\begin{proposition}[Computability]\label{prop:computable}
+$\sep(v)$ and $S^{\ast}(v)$ are computed by a single maximum-flow
+computation with source $v$ and sink $\med$, in $O(|V||E|)$ time.
+\end{proposition}
+
+\begin{proof}
+Admissible sets are exactly the $v$--$\med$ cuts, so $\sep(v)$ is the
+minimum $v$--$\med$ cut value, which equals the maximum flow value
+\citep{fordfulkerson1956,menger1927}. Push--relabel computes a maximum
+flow in $O(|V||E|)$ \citep{goldberg1988new}, and the inclusion-minimal
+minimum cut is read from the residual graph as the set reachable from
+$v$.
+\end{proof}
+
+\begin{axiom}[Non-completability]\label{ax:noncomplete}
+For every item set $U$ arising from an experiment there is a conceivable
+extension $U' \supsetneq U$, and no procedure internal to $U$ certifies
+that no such extension exists.
+\end{axiom}
+
+\begin{theorem}[Separation floor]\label{thm:floor}
+Under \Cref{ax:noncomplete} there is $\flo > 0$ with $\sep(v) \geq \flo$
+for every $v \in U$.
+\end{theorem}
+
+\begin{proof}
+Every admissible $S$ for $v$ contains $v$ and excludes $\med$, so the
+edge $\{v,\med\}$, present by \Cref{def:contact}, crosses $S$. Hence
+$\sep(v) \geq \wt(\{v,\med\}) \geq \min_{u \in U}\wt(\{u,\med\}) =:
+\flo_0 > 0$, positive because $\wt$ is $\mathbb{R}_{>0}$-valued and $U$
+is finite. Setting $\flo_0 = 0$ would assert that some item is separable
+from everything at no cost, that is, individuated by inspection of itself
+alone; by \Cref{ax:noncomplete} no internal procedure certifies that no
+further item shares its description, so that assignment is unlicensed.
+Take $\flo = \flo_0$.
+\end{proof}
+
+% =====================================================================
+\section{What a Sink Does}
+\label{sec:damage}
+
+\begin{definition}[Attachment and sink]\label{def:sink}
+Let $z \in U$. Its \emph{attachment} is
+\[
+\att(z) \;=\; \min_{u \in U \setminus \{z\}} \wt(\{u,z\})
+\quad\text{over the edges present},
+\]
+and its \emph{neighbourhood fraction} is
+$|N(z) \cap U| / (n-1)$, where $N(z)$ is the set of vertices adjacent to
+$z$. We call $z$ a \emph{sink at level $(\lambda,\theta)$} if
+$\att(z) \geq \lambda$ and its neighbourhood fraction is at least
+$\theta$.
+\end{definition}
+
+\begin{theorem}[Collapse]\label{thm:collapse}
+Let $z$ be adjacent to every item, with $\wt(\{u,z\}) \geq \lambda$ for
+all $u \in U \setminus \{z\}$. Then for every $v \in U \setminus \{z\}$,
+\[
+\flo \;\leq\; \sep(v) \;\leq\; \wt(\{v,\med\}) + \wt(\{v,z\}) + D(v),
+\]
+where $D(v)$ is the total weight of $v$'s non-medium, non-$z$ edges; and
+moreover, for every $v$ whose separating set does not contain $z$,
+\[
+\sep(v) \;\geq\; \lambda \cdot \dep(v).
+\]
+Consequently, if the separating sets have depth at least $d$ and
+$\lambda d$ exceeds the spread of the medium weights, all separations lie
+in a band of width determined by $\lambda$ rather than by any structure
+peculiar to $v$.
+\end{theorem}
+
+\begin{proof}
+The lower bound $\sep(v)\geq\flo$ is \Cref{thm:floor}. For the upper
+bound, take the admissible set $S = \{v\}$: its cut consists of the
+medium edge, the edge to $z$, and $v$'s remaining edges, so
+$\sep(v) \leq \cut(\{v\}) = \wt(\{v,\med\}) + \wt(\{v,z\}) + D(v)$.
+
+For the second display, let $S$ be an admissible minimiser with
+$z \notin S$. Every $u \in S$ is adjacent to $z$ by hypothesis, and
+$z \notin S$, so each edge $\{u,z\}$ crosses $S$. These edges are
+distinct for distinct $u$, and each has weight at least $\lambda$, so
+\[
+\sep(v) \;=\; \cut(S) \;\geq\; \sum_{u \in S \cap U} \wt(\{u,z\})
+\;\geq\; \lambda \cdot |S| \;=\; \lambda\,\dep(v),
+\]
+where $|S| = \dep(v)$ since $S$ is the minimiser.
+
+For the consequence: if $\dep(v) \geq d$ for all $v$, then
+$\sep(v) \in [\lambda d,\ \lambda\,\dep(v) + \wt(\{v,\med\}) + D(v)]$,
+and when $\lambda d$ dominates the medium and residual terms the interval
+endpoints are governed by $\lambda$ and $\dep(v)$, both of which are
+properties of $z$'s attachment rather than of $v$'s own contacts. Two
+items with entirely different contact structures then receive separations
+differing by at most the variation in the subordinate terms.
+\end{proof}
+
+\begin{corollary}[The collapse is silent]\label{cor:silent}
+Under the hypotheses of \Cref{thm:collapse}, every $\sep(v)$ is a
+positive real number, no computation is undefined, the values are stable
+under recomputation, and the values are reproducible across runs of the
+same acquisition. No internal test of the returned numbers distinguishes
+this situation from an uncontaminated graph.
+\end{corollary}
+
+\begin{proof}
+Positivity is \Cref{thm:floor}. Definedness holds because a minimum over
+a non-empty finite collection of admissible sets always exists ---
+$\{v\}$ is always admissible. Stability and reproducibility hold because
+$\sep$ is a deterministic function of $(\Gph,\wt)$ and the graph is fixed
+by the data. For the last claim: the range of returned values in the
+contaminated graph is an interval of positive reals, and an interval of
+positive reals is also the range in an uncontaminated graph, so no
+predicate on the multiset of returned values alone separates the cases.
+\end{proof}
+
+\begin{remark}[Why silence is the whole problem]\label{rem:silence}
+\Cref{cor:silent} is why sinks warrant a paper. A computation that failed
+loudly would be caught by any quality control worth the name. A
+computation that returns stable, reproducible, positive, plausible
+numbers that happen not to depend on the input passes every check
+designed to catch instability, and passes it repeatedly, and passes it
+across laboratories. Reproducibility is not evidence against
+contamination here; it is a prediction of it.
+\end{remark}
+
+\begin{proposition}[Amplification with size]\label{prop:amplify}
+Under the hypotheses of \Cref{thm:collapse}, the contribution of $z$ to
+$\cut(S)$ for an admissible $S$ omitting $z$ grows linearly in $|S|$,
+while the contribution of $v$'s own non-$z$ contacts is bounded by $D(v)$
+independently of $n$. Hence the fraction of $\sep(v)$ attributable to $z$
+tends to $1$ as $\dep(v)$ grows.
+\end{proposition}
+
+\begin{proof}
+From the proof of \Cref{thm:collapse}, the $z$-edges crossing $S$
+contribute at least $\lambda|S|$. The non-$z$ contributions of $v$ are at
+most $D(v) + \wt(\{v,\med\})$ plus the corresponding bounded terms of the
+other members of $S$; if each item's non-$z$ contact weight is bounded by
+a constant $C$ independent of $n$, the non-$z$ total is at most $C|S|$
+while the $z$ total is at least $\lambda|S|$, so the $z$-fraction is at
+least $\lambda/(\lambda+C)$ for every $|S|$, and taking $\lambda$ large
+or the analysis to deeper $S$ drives it to $1$.
+\end{proof}
+
+\begin{remark}[The wrong intuition]\label{rem:dilution}
+One might expect a single bad vertex to matter less as the graph grows,
+being one of $n$. \Cref{prop:amplify} says the opposite: because the sink
+is adjacent to \emph{everything}, it contributes an edge for every member
+of every separating set, so its total contribution scales with the size
+of what is being separated while a normal vertex's does not. Collecting
+more data makes a sink worse, not better.
+\end{remark}
+
+% =====================================================================
+\section{Degree Is Not a Detector}
+\label{sec:degree}
+
+The obvious test is to flag high-degree vertices. It does not work, and
+the failure is in both directions.
+
+\begin{theorem}[Degree fails]\label{thm:degree-fails}
+There exist contact graphs containing a vertex of degree $\Theta(n)$ that
+is harmless --- its deletion changes no $\sep(v)$ by more than an
+arbitrarily small $\epsilon$ --- and a vertex of degree
+$\Theta(\sqrt{n})$ whose deletion changes $\sep(v)$ by a factor bounded
+away from $1$ for a constant fraction of $v$. Hence no threshold on
+degree is both sound and complete for sinkhood.
+\end{theorem}
+
+\begin{proof}
+\emph{Harmless high degree.} Take $U$ of size $n$, medium edges of weight
+$1$, and a vertex $h$ joined to all of $U \setminus \{h\}$ with weight
+$\epsilon/n$. Then $\deg(h) = n-1 = \Theta(n)$. For any $v$ and any
+admissible $S$, the $h$-edges crossing $S$ contribute at most
+$(\epsilon/n)\cdot n = \epsilon$. Deleting $h$ therefore changes every
+cut value by at most $\epsilon$, hence changes $\sep(v)$ by at most
+$\epsilon$.
+
+\emph{Fatal moderate degree.} Take $U$ partitioned into
+$\sqrt{n}$ blocks of size $\sqrt{n}$, with medium edges of weight $1$,
+no contact edges within or between blocks, and a vertex $z$ joined with
+weight $\lambda \gg 1$ to exactly one designated block $B$, so
+$\deg(z) = \sqrt{n} = \Theta(\sqrt{n})$. For $v \in B$: with $z$ present,
+$\cut(\{v\}) = 1 + \lambda$, and any larger admissible $S \subseteq B$
+pays $\lambda$ per member, so $\sep(v) = 1+\lambda$. With $z$ deleted,
+$\sep(v) = 1$. The ratio is $1+\lambda$, bounded away from $1$, and $B$
+has $\sqrt{n}$ members --- a constant fraction of $n$ if the construction
+is repeated across a constant fraction of blocks, which changes only
+$\deg(z)$ by a constant factor.
+
+Since the harmless vertex has strictly larger degree than the fatal one
+for $n$ sufficiently large, any threshold flagging the fatal vertex also
+flags the harmless one, and any threshold sparing the harmless one also
+spares the fatal one.
+\end{proof}
+
+\begin{remark}[What degree misses]\label{rem:degree}
+Degree counts edges and ignores both their weights and their effect on
+cuts. \Cref{thm:degree-fails} shows both omissions matter: the first
+construction has many edges of negligible weight, the second few edges of
+decisive weight. The statistic that matters is not how many vertices $z$
+touches but how much of the graph's separation structure passes through
+it.
+\end{remark}
+
+% =====================================================================
+\section{Spread}
+\label{sec:spread}
+
+\begin{definition}[Spread]\label{def:spread}
+For $z \in U$, the \emph{spread} of $z$ is
+\[
+\spr(z) \;=\; \frac{1}{n-1}\;
+\bigl|\{\, v \in U \setminus \{z\} \;:\;
+z \in \partial S^{\ast}(v) \,\}\bigr| ,
+\]
+where $\partial S$ denotes the set of vertices incident to an edge
+crossing $S$. That is, $\spr(z)$ is the fraction of items whose
+separating cut $z$ actually crosses.
+\end{definition}
+
+\begin{remark}[Spread is not degree]\label{rem:spread-vs-degree}
+Spread counts the separations $z$ participates in, not the vertices $z$
+touches. In the harmless construction of \Cref{thm:degree-fails}, $h$ has
+degree $n-1$; but for $\epsilon$ small the minimisers $S^{\ast}(v)$ are
+unchanged by $h$'s presence, and while $h$ is incident to crossing edges
+its \emph{weighted} participation is $\epsilon$ --- which motivates the
+weighted variant used in \Cref{thm:spread-sound}.
+\end{remark}
+
+\begin{definition}[Weighted spread]\label{def:wspread}
+The \emph{weighted spread} of $z$ is
+\[
+\spr_{\wt}(z) \;=\; \frac{1}{n-1}
+\sum_{v \in U \setminus \{z\}}
+\frac{\sum_{e \ni z,\ e \text{ crosses } S^{\ast}(v)} \wt(e)}{\sep(v)} ,
+\]
+the mean fraction of each separation cost contributed by edges at $z$.
+By construction $0 \leq \spr_{\wt}(z) \leq 1$.
+\end{definition}
+
+\begin{theorem}[Spread is sound]\label{thm:spread-sound}
+Let $z \in U$ and suppose $\spr_{\wt}(z) \leq \tau$. Then for every
+$v \in U \setminus \{z\}$, deleting $z$ changes $\sep(v)$ by at most
+$\tau' \sep(v)$ where $\tau'$ is the per-$v$ contribution fraction, and
+in the mean over $v$ the change is at most $\tau$ in relative terms.
+Conversely, if $z$ is a sink at level $(\lambda,1)$ in the sense of
+\Cref{def:sink} and every $\dep(v) \geq d$, then
+\[
+\spr_{\wt}(z) \;\geq\; \frac{\lambda d}{\lambda d + C d}
+\;=\; \frac{\lambda}{\lambda + C},
+\]
+with $C$ the per-item bound on non-$z$ contact weight from
+\Cref{prop:amplify}. Hence sinks have large weighted spread and vertices
+of small weighted spread are not sinks.
+\end{theorem}
+
+\begin{proof}
+For the first claim, fix $v$ and let $S = S^{\ast}(v)$. Deleting $z$
+removes exactly the $z$-incident edges crossing $S$, whose total weight
+is by definition $\tau'_v \sep(v)$ with $\tau'_v$ the summand in
+\Cref{def:wspread}. The cut value of $S$ in the reduced graph is
+therefore $(1-\tau'_v)\sep(v)$, and since deletion cannot increase any
+cut value, the new separation is at most this and at least
+$\sep(v) - \tau'_v\sep(v)$ --- the latter because any admissible set in
+the reduced graph has cut value at least its value in $\Gph$ minus the
+$z$-edges it crossed, which is at most the maximum $z$-contribution.
+Averaging over $v$ gives the mean statement with $\tau$.
+
+For the converse, by \Cref{thm:collapse} the $z$-edges crossing
+$S^{\ast}(v)$ contribute at least $\lambda\dep(v) \geq \lambda d$, while
+$\sep(v) \leq \lambda\dep(v) + C\dep(v)$ by the same argument applied to
+the bounded non-$z$ contacts. The ratio is therefore at least
+$\lambda d/(\lambda d + Cd)$ for every $v$, and the mean of quantities
+each at least this bound is at least this bound.
+\end{proof}
+
+\begin{proposition}[Cost]\label{prop:spread-cost}
+Given the $n$ minimisers $S^{\ast}(v)$ --- one max-flow each, $O(n|V||E|)$
+in total --- all $n$ weighted spreads are computed in one further pass in
+$O(n|E|)$ time and $O(|V|)$ additional space, by accumulating, for each
+$v$, the weight of each crossing edge into the accumulators of its two
+endpoints.
+\end{proposition}
+
+\begin{proof}
+For each $v$, iterate over the edges crossing $S^{\ast}(v)$ --- at most
+$|E|$ of them --- and for each such edge $e = \{x,y\}$ add
+$\wt(e)/\sep(v)$ to the accumulators of $x$ and of $y$. After all $v$,
+divide each accumulator by $n-1$. Each edge is examined once per $v$,
+giving $O(n|E|)$, and one accumulator per vertex gives $O(|V|)$ space.
+\end{proof}
+
+\begin{theorem}[The threshold is forced]\label{thm:threshold}
+Let $\flo$ be the floor of \Cref{thm:floor} and let $W = \max_{v}\sep(v)$.
+If $\spr_{\wt}(z) > 1 - \flo/W$ then for some $v$ the deletion of $z$
+would leave a separation below the floor, contradicting
+\Cref{thm:floor} for the reduced graph unless the reduced graph's own
+floor is smaller. Consequently the admissible threshold on weighted
+spread is not a free parameter: it is bounded above by $1 - \flo/W$,
+a quantity determined by the graph.
+\end{theorem}
+
+\begin{proof}
+Suppose $\spr_{\wt}(z) > 1 - \flo/W$. Then for at least one $v$ the
+per-$v$ fraction satisfies $\tau'_v > 1 - \flo/W$, so the $z$-contribution
+to $\sep(v)$ exceeds $(1-\flo/W)\sep(v)$, leaving at most
+$(\flo/W)\sep(v) \leq (\flo/W)W = \flo$ of $\sep(v)$ attributable to
+anything else. By the first part of \Cref{thm:spread-sound}, deleting
+$z$ leaves $S^{\ast}(v)$ with cut value at most $\flo$, so the reduced
+graph's separation for $v$ is at most $\flo$. Since \Cref{thm:floor}
+holds in the reduced graph with its own floor $\flo'$, we get
+$\flo' \leq \flo$, meaning $z$'s removal has lowered the floor --- $z$
+was supplying it. A vertex supplying the floor for another item is
+precisely a vertex whose contact is doing the individuating work that the
+medium is supposed to do, which is the defining pathology. Hence values
+of the threshold above $1-\flo/W$ admit such vertices and the threshold
+must lie below it.
+\end{proof}
+
+\begin{remark}[Why forcing matters]\label{rem:forced}
+A detector with a tunable threshold is a detector whose output can be
+argued with. \Cref{thm:threshold} pins the admissible range using $\flo$
+and $W$, both computed from the graph in the same pass that computes the
+spreads. The practitioner does not choose the cutoff; the graph reports
+it.
+\end{remark}
+
+% =====================================================================
+\section{The Remedy}
+\label{sec:remedy}
+
+Two remedies suggest themselves: delete the sink, or down-weight its
+edges. We prove the first is correct and the second is not.
+
+\begin{theorem}[Excision is correct]\label{thm:excision}
+Let $z$ be excised, giving $\Gph^{-z}$ on $V \setminus \{z\}$ with the
+induced weights. Then:
+\begin{enumerate}[label=(\alph*)]
+\item $\Gph^{-z}$ is a contact graph in the sense of
+\Cref{def:contact} --- the medium remains adjacent to every remaining
+item --- so \Cref{thm:floor} holds in it with a floor $\flo^{-z}$;
+\item $\sep^{-z}(v) \leq \sep(v)$ for every remaining $v$;
+\item the ordering of items by separation in $\Gph^{-z}$ is not
+determined by their ordering in $\Gph$, so excision is not a monotone
+rescaling and must be performed before, not after, any comparison.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) Deleting a non-medium vertex removes no medium edge among the
+survivors, so every remaining item retains its medium edge and
+\Cref{def:contact} is satisfied; \Cref{thm:floor} then applies verbatim,
+with $\flo^{-z} = \min_{u \neq z} \wt(\{u,\med\}) \geq \flo$.
+
+(b) Every admissible set for $v$ in $\Gph^{-z}$ is $S \setminus \{z\}$
+for some admissible $S$ in $\Gph$, and its cut value is $\cut(S)$ minus
+the weight of the $z$-edges that crossed $S$, hence no larger. Minimising
+over a set of no-larger values gives $\sep^{-z}(v) \leq \sep(v)$.
+
+(c) It suffices to exhibit two items whose order reverses. Take $v_1$
+adjacent to $z$ with weight $\lambda$ and to nothing else, with
+$\wt(\{v_1,\med\}) = 1$; and $v_2$ adjacent to $z$ with weight $0^{+}$
+and to a private neighbour with weight $\mu$, with
+$\wt(\{v_2,\med\}) = 1$. In $\Gph$, $\sep(v_1) = 1+\lambda$ and
+$\sep(v_2) \approx 1 + \min(\mu,\ \cdot)$; choosing
+$\lambda > \mu$ gives $\sep(v_1) > \sep(v_2)$. In $\Gph^{-z}$,
+$\sep^{-z}(v_1) = 1$ while $\sep^{-z}(v_2)$ still involves $\mu$, giving
+$\sep^{-z}(v_1) < \sep^{-z}(v_2)$ whenever $\mu > 0$. The order reverses.
+\end{proof}
+
+\begin{proposition}[Reweighting does not fix it]\label{prop:reweight-fails}
+Let $z$'s edges be multiplied by $\alpha \in (0,1)$. Then for every
+$\alpha > 0$ the conclusion of \Cref{thm:collapse} holds with $\lambda$
+replaced by $\alpha\lambda$; in particular, for any $\alpha>0$ there is
+a depth $d(\alpha)$ beyond which the collapse recurs. Reweighting
+postpones the collapse to deeper separations rather than removing it.
+\end{proposition}
+
+\begin{proof}
+The hypothesis of \Cref{thm:collapse} requires only
+$\wt(\{u,z\}) \geq \lambda$ for some $\lambda>0$; scaling by $\alpha$
+preserves this with $\alpha\lambda>0$. The theorem's second display then
+gives $\sep(v) \geq \alpha\lambda\,\dep(v)$, and the collapse consequence
+holds once $\alpha\lambda d$ dominates the subordinate terms, that is,
+for $d \geq d(\alpha)$ with $d(\alpha)$ scaling as $1/\alpha$.
+\end{proof}
+
+\begin{remark}[Reading the remedy]\label{rem:remedy}
+\Cref{prop:reweight-fails} says the difference between a sink and a
+normal vertex is not one of degree but of kind: a sink participates in
+every separation, and any positive weight on a universally-present
+participant eventually dominates. \Cref{thm:excision}(c) adds the
+operational sting --- because excision reorders items, it cannot be
+applied as a correction to results already computed. It must be done to
+the graph before any separation is reported.
+\end{remark}
+
+% =====================================================================
+\section{Protocol}
+\label{sec:protocol}
+
+The results specify a four-step diagnostic, performed on every contact
+graph before any separation is reported.
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Compute all separations and minimisers.} $n$ max-flows,
+\Cref{prop:computable}. This is required anyway for the intended
+analysis; the diagnostic adds nothing to it.
+
+\item \textbf{Accumulate weighted spread in one pass.}
+\Cref{prop:spread-cost}: $O(n|E|)$, one accumulator per vertex. Do
+\emph{not} substitute degree --- by \Cref{thm:degree-fails} it is neither
+sound nor complete.
+
+\item \textbf{Compare against the forced threshold.} Compute $\flo$ and
+$W$ from the same pass and flag every $z$ with
+$\spr_{\wt}(z) > 1 - \flo/W$ (\Cref{thm:threshold}). The threshold is
+read from the graph, not chosen.
+
+\item \textbf{Excise and recompute; do not reweight, and do not correct
+downstream.} By \Cref{thm:excision} excision yields a valid contact
+graph with a floor; by \Cref{prop:reweight-fails} reweighting only
+postpones the collapse; and by \Cref{thm:excision}(c) the item ordering
+changes, so results computed before excision cannot be adjusted after it.
+\end{enumerate}
+
+\begin{remark}[Report the excision]\label{rem:report}
+Which vertices were excised is part of the result, not part of the
+preprocessing. Two analyses of the same data that excised different sinks
+are analyses of different graphs, and their separations are not
+comparable; recording the excision set is what makes the comparison
+decidable.
+\end{remark}
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Relation to contaminant filtering}
+
+Standard practice filters known contaminants using curated lists
+\citep{cox2008maxquant}, which is effective for the contaminants on the
+list. \Cref{thm:collapse} is agnostic about the chemistry: any vertex
+with universal attachment collapses the graph, whether or not it is a
+known contaminant, and \Cref{def:wspread} detects it from the graph
+structure alone. The two approaches are complementary --- a curated list
+catches known chemistry that may have low spread; spread catches
+structural pathology that may have unknown chemistry --- and neither
+subsumes the other.
+
+\subsection{Relation to hub removal in network analysis}
+
+Removing high-degree vertices is a familiar move in network analysis.
+\Cref{thm:degree-fails} is a caution against importing it directly: in a
+weighted contact graph the relevant quantity is participation in minimum
+cuts, not adjacency count, and the two come apart in both directions.
+Where the analysis of interest is itself cut-based --- as separation is
+--- the detector should be cut-based too.
+
+\subsection{Limitations}
+
+\Cref{thm:threshold} bounds the admissible threshold above but does not
+determine it uniquely; a graph may have several vertices below the bound
+whose joint excision matters, and the theorem is silent on interactions
+between sinks. \Cref{prop:spread-cost} presumes the $n$ minimisers are
+computed, which is the dominant cost; a sampled variant using $O(\log n)$
+randomly chosen $v$ gives a concentration bound rather than an exact
+spread and is not analysed here. \Cref{thm:excision}(c) is a genuine
+obstruction and not an artefact: no post-hoc correction exists.
+
+\subsection{Conclusion}
+
+A single vertex adjacent to everything makes every separation in a
+contact graph a report about that vertex rather than about the item
+queried, and does so without any symptom that ordinary quality control
+detects --- the outputs stay positive, stable, and reproducible.
+Reproducibility is therefore not evidence of soundness in this setting.
+Degree does not find such vertices. Weighted spread does, in one pass
+over work already performed, against a threshold the graph itself
+supplies; and the only correct remedy is excision, performed before any
+separation is reported and recorded as part of the result.
+
+% =====================================================================
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
