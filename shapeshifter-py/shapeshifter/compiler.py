@@ -97,6 +97,7 @@ def compile_stage(source: str) -> CompileResult:
     blocks += [f"instrument {k}" for k in ast.instruments]
     blocks += [f"dataset {k}" for k in ast.datasets]
     blocks += [f"target_list {k}" for k in ast.target_lists]
+    blocks += [f"ladder {k}" for k in ast.ladders]
     blocks += [f"validate {k}" for k in ast.validates]
     blocks += [f"phase {k}" for k in ast.phases]
 
@@ -136,6 +137,30 @@ def compile_stage(source: str) -> CompileResult:
             if ds and ds in ast.datasets:
                 inputs += list(ast.datasets[ds].get("files") or [])
 
+    # Static reachability  [Prop. 5.2, prediction P9]. Answered from the
+    # declared numbers alone; no phase runs and no file is opened.
+    for name, L in ast.ladders.items():
+        if not L.require:
+            continue
+        residual_p = 1.0
+        for r in L.rungs:
+            residual_p *= (1.0 - r.power)
+        achieved = 1.0 - residual_p
+        req = L.require
+        if req["metric"] != "resolution":
+            continue
+        ok = {">=": achieved >= req["value"], "<=": achieved <= req["value"],
+              ">": achieved > req["value"], "<": achieved < req["value"],
+              "==": achieved == req["value"]}[req["op"]]
+        msg = (f"ladder {name}: {len(L.rungs)} contact(s) give resolution "
+               f"{achieved:.5f}, requirement is {req['op']} {req['value']}")
+        if ok:
+            term.append({"stream": "stdout", "text": f"  . {msg} -> reachable"})
+        else:
+            diags.append(Diagnostic("error", msg + " -> UNREACHABLE"))
+            term.append({"stream": "stderr",
+                         "text": f"error: {msg} -> UNREACHABLE"})
+
     if effects:
         term.append({"stream": "stdout",
                      "text": f"effects: {', '.join(effects)}"})
@@ -149,7 +174,8 @@ def compile_stage(source: str) -> CompileResult:
 
     ir = ast.to_dict()
     ir["_audit"] = {"effects": effects, "inputs": inputs}
-    return CompileResult(True, ast, ir, term, diags)
+    ok = not any(d.severity == "error" for d in diags)
+    return CompileResult(ok, ast, ir, term, diags)
 
 
 # ---------------------------------------------------------------- stage 2

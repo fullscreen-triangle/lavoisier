@@ -23,6 +23,7 @@ QUOTES = ('"', "'")
 
 FIELD_BLOCKS = ("objective", "instrument", "dataset", "target_list")
 STMT_BLOCKS = ("phase", "validate")
+LADDER_BLOCKS = ("ladder",)
 
 
 class ParseError(Exception):
@@ -121,6 +122,23 @@ class Assign:
 
 
 @dataclass
+class Rung:
+    """One contact. `power` is a resolution increment in [0,1), not a
+    displacement --- see Definition 3.2 of the instrument paper."""
+    name: str
+    power: float
+
+
+@dataclass
+class Ladder:
+    """An ordered contact sequence with an optional declared target."""
+    name: str
+    toward: str | None
+    rungs: list = field(default_factory=list)
+    require: dict | None = None      # {"metric":..., "op":..., "value":...}
+
+
+@dataclass
 class AST:
     imports: list[str] = field(default_factory=list)
     objective: dict | None = None
@@ -129,6 +147,7 @@ class AST:
     target_lists: dict[str, dict] = field(default_factory=dict)
     phases: dict[str, list] = field(default_factory=dict)
     validates: dict[str, list] = field(default_factory=dict)
+    ladders: dict[str, Ladder] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         def stmt(s):
@@ -147,6 +166,13 @@ class AST:
             "phases": {k: [stmt(s) for s in v] for k, v in self.phases.items()},
             "validates": {k: [stmt(s) for s in v]
                           for k, v in self.validates.items()},
+            "ladders": {
+                k: {"name": L.name, "toward": L.toward,
+                    "rungs": [{"name": r.name, "power": r.power}
+                              for r in L.rungs],
+                    "require": L.require}
+                for k, L in self.ladders.items()
+            },
         }
 
 
@@ -209,6 +235,46 @@ def _args(raw: str) -> dict:
     return args
 
 
+RUNG_RE = re.compile(r"^rung\s+(\w+)\s+at\s+([-+0-9.eE]+)$")
+REQUIRE_RE = re.compile(r"^require\s+(\w+)\s*(>=|<=|==|>|<)\s*([-+0-9.eE]+)$")
+
+
+def _ladder_body(lines: list[Line], i: int, base: int,
+                 name: str, toward: str | None) -> tuple[Ladder, int]:
+    """Read a ladder block.
+
+    Two statement forms only:
+        rung <name> at <power>
+        require <metric> <op> <value>
+
+    A rung's power is a resolution increment; the parser enforces the
+    half-open range [0,1) because a rung of resolution 1 would collapse
+    the ambiguity to the floor in one contact, which Lemma 3.3 excludes.
+    """
+    lad = Ladder(name=name, toward=toward)
+    while i < len(lines) and lines[i].indent > base:
+        t = lines[i].body
+        m = RUNG_RE.match(t)
+        if m:
+            power = float(m.group(2))
+            if not (0.0 <= power < 1.0):
+                raise ParseError(
+                    f"line {lines[i].num}: rung {m.group(1)!r} has resolution "
+                    f"{power}, outside [0,1)")
+            lad.rungs.append(Rung(m.group(1), power))
+            i += 1
+            continue
+        m = REQUIRE_RE.match(t)
+        if m:
+            lad.require = {"metric": m.group(1), "op": m.group(2),
+                           "value": float(m.group(3))}
+            i += 1
+            continue
+        raise ParseError(f"line {lines[i].num}: unrecognised ladder "
+                         f"statement {t!r}")
+    return lad, i
+
+
 def _statements(lines: list[Line], i: int, base: int) -> tuple[list, int]:
     out: list[Any] = []
     while i < len(lines) and lines[i].indent > base:
@@ -239,6 +305,14 @@ def parse(source: str) -> AST:
         if ln.body.startswith("import "):
             ast.imports.append(ln.body[7:].strip())
             i += 1
+            continue
+
+        lm = re.match(r"^ladder\s+(\w+)(?:\s+toward\s+(\w+))?\s*:?$",
+                      ln.body)
+        if lm:
+            lad, i = _ladder_body(lines, i + 1, ln.indent,
+                                  lm.group(1), lm.group(2))
+            ast.ladders[lad.name] = lad
             continue
 
         m = re.match(r"^(\w+)\s+(\w+)\s*:$", ln.body)

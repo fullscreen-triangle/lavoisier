@@ -436,6 +436,163 @@ def op_shuffle_control(args, env, ast, log):
 
 # ---------------------------------------------------------------- registry
 
+# =====================================================================
+#  Ladder algebra  --- instrument-process-ladder paper, Part II
+#
+#  A rung's number is a RESOLUTION INCREMENT: the fraction of remaining
+#  categorical ambiguity it removes, normalised to the positive floor.
+#  It is not a physical displacement. Every function below is a function
+#  of the resolution sequence alone, which is what Theorem 4.4
+#  (inertness) asserts is sufficient.
+# =====================================================================
+
+def compose(powers: "list[float]") -> float:
+    """Composite resolution, eq. (compose): 1 - prod(1 - pi_i)."""
+    residual = 1.0
+    for p in powers:
+        residual *= (1.0 - p)
+    return 1.0 - residual
+
+
+def residual_gap(powers: "list[float]", gap0: float = 1.0) -> "list[float]":
+    """Gap recursion r_i = r_0 * prod_{j<=i} (1 - pi_j)."""
+    out, g = [], float(gap0)
+    for p in powers:
+        g *= (1.0 - p)
+        out.append(g)
+    return out
+
+
+def sensitivity(powers: "list[float]") -> "list[float]":
+    """d pi(L) / d pi_j = prod_{i != j} (1 - pi_i) = (1-pi(L))/(1-pi_j).
+
+    Increasing in pi_j, so control lies at the STRONGEST rung. This is
+    the ordering claim of prediction P6.
+    """
+    out = []
+    for j in range(len(powers)):
+        prod = 1.0
+        for i, p in enumerate(powers):
+            if i != j:
+                prod *= (1.0 - p)
+        out.append(prod)
+    return out
+
+
+def min_rungs(target: float, pow_max: float) -> int:
+    """Fewest contacts of resolution <= pow_max reaching composite target.
+    n >= ceil( log(1-target) / log(1-pow_max) )."""
+    if not (0.0 < pow_max < 1.0):
+        raise RefusalError("pow_max must lie in (0,1)")
+    if target >= 1.0:
+        raise RefusalError("composite resolution 1 is unreachable: the "
+                           "floor is strictly positive")
+    return int(math.ceil(math.log(1.0 - target) / math.log(1.0 - pow_max)))
+
+
+def _powers_of(args, env, ast):
+    """Resolve a ladder argument to its resolution sequence.
+
+    Accepts a ladder name declared in the program, a bare list of
+    numbers, or a list of {name, power} objects.
+    """
+    lad = args.get("ladder")
+    if isinstance(lad, str) and ast is not None and lad in ast.ladders:
+        L = ast.ladders[lad]
+        return [r.power for r in L.rungs], [r.name for r in L.rungs], L
+    src = args.get("powers", lad)
+    if isinstance(src, list):
+        if src and isinstance(src[0], dict):
+            return ([float(d["power"]) for d in src],
+                    [str(d.get("name", i)) for i, d in enumerate(src)], None)
+        return [float(x) for x in src], [str(i) for i in range(len(src))], None
+    raise RefusalError("no ladder or powers given")
+
+
+def op_ladder_resolve(args, env, ast, log):
+    """Evaluate a ladder: composite resolution, gaps, sensitivities, and
+    the verdict on its declared requirement.
+
+    This is a STATIC computation --- Proposition 5.2. No substrate is
+    simulated, and the cost is the contact count, not the flight path.
+    """
+    powers, names, L = _powers_of(args, env, ast)
+    comp = compose(powers)
+    sens = sensitivity(powers)
+    gaps = residual_gap(powers)
+
+    verdict = None
+    if L is not None and L.require:
+        req = L.require
+        metric = {"resolution": comp, "contacts": float(len(powers))}.get(
+            req["metric"])
+        if metric is None:
+            raise RefusalError(f"unknown requirement metric {req['metric']!r}")
+        ok = {">=": metric >= req["value"], "<=": metric <= req["value"],
+              ">": metric > req["value"], "<": metric < req["value"],
+              "==": metric == req["value"]}[req["op"]]
+        verdict = {"metric": req["metric"], "op": req["op"],
+                   "required": req["value"], "achieved": metric,
+                   "satisfied": bool(ok)}
+        log("info" if ok else "warn",
+            f"  require {req['metric']} {req['op']} {req['value']}: "
+            f"achieved {metric:.5f} -> {'PASS' if ok else 'FAIL'}")
+
+    log("info", f"  composite resolution {comp:.5f} over "
+                f"{len(powers)} contact(s)")
+
+    # Control lies at the strongest contact (P6): report the ordering.
+    order = sorted(range(len(powers)), key=lambda j: -sens[j])
+    return {
+        "rungs": [{"name": n, "power": p, "sensitivity": sv, "gap_after": g}
+                  for n, p, sv, g in zip(names, powers, sens, gaps)],
+        "composite": comp,
+        "contacts": len(powers),
+        "cost": len(powers),          # transit is free (P7)
+        "sensitivity_rank": [names[j] for j in order],
+        "strongest_rung": names[max(range(len(powers)),
+                                    key=lambda j: powers[j])] if powers else None,
+        "requirement": verdict,
+    }, "ladder"
+
+
+def op_ladder_ablate(args, env, ast, log):
+    """Drop each contact in turn and recompute. Establishes which
+    contacts a declared requirement actually depends on."""
+    powers, names, L = _powers_of(args, env, ast)
+    full = compose(powers)
+    req = (L.require if L is not None else None) or args.get("require")
+
+    rows = []
+    for j in range(len(powers)):
+        kept = powers[:j] + powers[j + 1:]
+        c = compose(kept)
+        row = {"dropped": names[j], "power": powers[j], "composite": c,
+               "loss": full - c}
+        if req:
+            row["still_satisfied"] = bool(
+                {">=": c >= req["value"], "<=": c <= req["value"],
+                 ">": c > req["value"], "<": c < req["value"],
+                 "==": c == req["value"]}[req["op"]])
+        rows.append(row)
+        log("info", f"  without {names[j]}: {c:.5f}"
+                    + (f" ({'still meets' if row.get('still_satisfied') else 'fails'}"
+                       f" requirement)" if req else ""))
+    return {"full_composite": full, "ablations": rows}, "ladder"
+
+
+def op_ladder_minimum(args, env, ast, log):
+    """Fewest contacts of bounded resolution reaching a target
+    (eq. rungcount). A static question answered without execution."""
+    target = float(args.get("target", 0.9))
+    pow_max = float(args.get("pow_max", 0.6))
+    n = min_rungs(target, pow_max)
+    log("info", f"  target {target} at pow_max {pow_max}: "
+                f"minimum {n} contact(s)")
+    return {"target": target, "pow_max": pow_max, "min_contacts": n,
+            "achieved_with_n": compose([pow_max] * n)}, "ladder"
+
+
 REGISTRY: dict[str, Callable] = {
     "lavoisier.acquire.read_msp": op_read_msp,
     "lavoisier.acquire.filter_scans": op_filter_scans,
@@ -445,4 +602,7 @@ REGISTRY: dict[str, Callable] = {
     "lavoisier.analyse.drift": op_drift,
     "lavoisier.analyse.baseline": op_baseline,
     "lavoisier.analyse.shuffle_control": op_shuffle_control,
+    "lavoisier.ladder.resolve": op_ladder_resolve,
+    "lavoisier.ladder.ablate": op_ladder_ablate,
+    "lavoisier.ladder.minimum": op_ladder_minimum,
 }
