@@ -382,6 +382,7 @@ def main():
     all_above = all(v["sep"] >= beta_0 - 1e-12 for v in seps.values())
     none_zero = all(v["sep"] > 0 for v in seps.values())
     ex.record("group_floor", {
+        "similarity_weights": {"%s|%s" % uv: w for uv, w in sim.items()},
         "medium_weights": medium_w,
         "separations": seps,
         "beta_0_min_medium_weight": beta_0,

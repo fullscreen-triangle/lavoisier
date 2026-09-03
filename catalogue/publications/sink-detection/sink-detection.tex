@@ -617,6 +617,201 @@ decidable.
 \end{remark}
 
 % =====================================================================
+\section{Validation}
+\label{sec:validation}
+
+Every claim in this paper was executed. The suite builds the contact
+graphs the theorems quantify over, computes separations by exhaustive
+minimisation rather than by the max-flow routine the paper itself
+asserts is correct, and grades each claim against a stated refuting
+observation registered \emph{before} the measurement. Thirteen of the
+fifteen graded claims reproduced. The two that did not are reported here
+in full, because in both cases the measurement identified the defect
+precisely enough to repair the statement.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_collapse.png}
+\caption{\Cref{thm:collapse} and \Cref{prop:amplify} as measured.
+(a)~the two-sided band over nine sink levels: no separation falls
+outside it, and the upper edge is attained rather than merely respected.
+(b)~the sink's own weighted spread over graph size and sink level.
+(c)~the band's relative width, which collapses as the sink strengthens.
+(d)~the sink's share of each separation against an ordinary vertex's:
+the bound is flat in $|S|$.}
+\label{fig:panel-collapse}
+\end{figure}
+
+\subsection{The collapse band, and a strengthening}
+
+\Cref{thm:collapse} bounds every separation between the floor $\flo$ and
+the incident-star sum. Over a grid of six graph sizes and nine sink
+levels no separation fell outside the band. The measurement also
+supports a claim stronger than the one stated: in all $54$ cells the
+separation equalled the upper bound to full floating precision. The
+minimiser for an ordinary item is always its own incident star, so the
+cut equals exactly the sum the theorem writes down.
+
+\begin{proposition}[The ceiling is attained]\label{prop:ceiling-attained}
+On a contact graph in which the sink is adjacent to every item and no
+item-item contact exceeds the sink's weight, the upper bound of
+\Cref{thm:collapse} holds with equality for every ordinary item.
+\end{proposition}
+
+\begin{proof}
+Let $v$ be an ordinary item and $S \ni v$ admissible. Adding any second
+item $u$ to $S$ removes $u$'s contact with $v$ from the cut, of weight
+$w(uv)$, and adds $u$'s medium edge and $u$'s sink edge, of combined
+weight at least $\flo + \lambda$. Under the stated condition
+$w(uv) \le \lambda < \flo + \lambda$, so the cut strictly increases.
+Hence $S^*(v) = \{v\}$ and the cut is the incident-star sum.
+\end{proof}
+
+This matters practically: the band's upper edge is not a slack guarantee
+to be padded against but the value itself, so a measured separation that
+falls below it is evidence that the hypothesis --- in particular the
+weight condition --- has failed.
+
+\Cref{prop:amplify}'s conclusion is only half correct, and the
+measurement says which half. The proposition closes by asserting that
+taking $\lambda$ large \emph{or the analysis to deeper $S$} drives the
+sink's share of the separation to $1$. The bound it derives,
+$\lambda/(\lambda + C)$, is constant in $|S|$, and the measured share is
+exactly $0.6452$ for every $n$ from $3$ to $8$. The $\lambda$ half holds;
+the depth half should be struck from the statement.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_degree.png}
+\caption{\Cref{thm:degree-fails} and \Cref{rem:spread-vs-degree}.
+(a)~the harmless vertex carries more contacts than the fatal one at
+every size. (b)~what deletion actually does: the harmless vertex moves
+nothing, the fatal one multiplies every separation it touches.
+(c)~the two detectors as surfaces over graph size; they cross exactly
+once, between the detectors. (d)~each detector's ratio of fatal to
+harmless --- only weighted spread puts the sink on top.}
+\label{fig:panel-degree}
+\end{figure}
+
+\subsection{Degree against spread}
+
+\Cref{thm:degree-fails} was tested by constructing, at every size from
+$4$ to $12$, a high-degree vertex whose deletion moves no separation and
+a low-degree vertex whose deletion multiplies separations fourfold. The
+orders never converge: the harmless vertex has the larger degree at
+every size, and the degree ratio of fatal to harmless falls further
+below $1$ as the graph grows. Weighted spread ranks the pair correctly
+at every size, by more than a decade. No degree threshold separates the
+two families, which is the theorem.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_spread_sound.png}
+\caption{\Cref{thm:spread-sound} as measured over $2403$ deletion pairs.
+(a)~measured against predicted separation: the upper bound holds
+everywhere, and every departure is downward. (b)~the size of the miss as
+a share of the separation. (c)~the mechanism: the departure from the
+predicted plane occurs only where the minimiser moved. (d)~the breach
+rate does not thin out with graph size.}
+\label{fig:panel-spread-sound}
+\end{figure}
+
+\subsection{A defect in \texorpdfstring{\Cref{thm:spread-sound}}{the
+soundness theorem}, and its repair}
+
+\Cref{thm:spread-sound} as stated is false, and the measurement locates
+the error exactly. Over $2403$ deletion pairs the upper bound was never
+breached; the lower bound was breached $330$ times, and the misses are
+not rounding errors --- the median breach leaves the separation
+$8.5\%$ below the predicted value and the worst $58\%$ below.
+
+Partitioning the same population by whether the minimiser survived the
+deletion identifies the cause. Of $1979$ pairs whose separating set was
+unchanged, the lower bound was breached exactly zero times. Of $424$
+pairs whose separating set moved, it was breached $330$ times. Every
+breach belongs to the moved population; no stable pair breaches. The
+share of the cut carried by the deleted vertex does not predict the
+breach --- its median is $0.240$ among breaching pairs against $0.483$
+among moved-but-sound ones --- so movement of the minimiser, not the
+magnitude of the deletion, is the operative condition.
+
+The theorem's arithmetic is therefore sound and its hypothesis is
+incomplete: the proof computes the new cut of the \emph{old} minimiser,
+which after deletion may no longer be minimal. The statement should read:
+
+\begin{theorem}[Spread is sound, corrected]\label{thm:spread-sound-fixed}
+Let $z$ be a vertex and $v \ne z$ an item with minimiser $S^*(v)$. If
+$S^*(v)$ remains a minimiser in $G - z$, then
+\[
+  \sep_{G-z}(v) \;=\; \sep_G(v) \;-\; w\bigl(z \text{ crossing } S^*(v)\bigr).
+\]
+Without that hypothesis only the upper bound survives:
+$\sep_{G-z}(v) \le \sep_G(v) - w(z \text{ crossing } S^*(v))$.
+\end{theorem}
+
+The upper bound is unconditional because the old minimiser remains
+\emph{admissible} after deletion, so the new minimum is at most its new
+cut; the lower bound requires it to remain \emph{optimal}, which is what
+fails. The corrected form is what the protocol of
+\Cref{sec:protocol} relies on, and the protocol is unaffected: it uses
+spread to rank candidates for excision, and the upper bound is the
+direction that licenses that use.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_threshold.png}
+\caption{\Cref{thm:threshold}'s antecedent over $4776$ vertices.
+(a)~weighted spread against the forced threshold: nothing reaches the
+diagonal. (b)~the slack $(\sep(v) - \flo) - w(z)$ over graph size and
+$z$'s weight across the cut --- non-negative in all $9808$ triples, with
+$404$ exactly tight. (c)~even on constructions where $z$ demonstrably
+supplies the floor, the gap is wide at every sink weight. (d)~the margin
+distribution: the best case over $4776$ vertices is $-0.067$.}
+\label{fig:panel-threshold}
+\end{figure}
+
+\subsection{\texorpdfstring{\Cref{thm:threshold}}{The threshold theorem}
+has an unsatisfiable antecedent}
+
+The threshold test as stated never fires. Over $4776$ vertices drawn
+from random contact graphs, not one satisfied
+$\spr_{\wt}(z) > 1 - \flo/W$; the closest any vertex came was $0.067$
+short, on a quantity bounded by $1$. This is not sampling scarcity. The
+antecedent is blocked by an identity the paper's own definitions imply.
+
+\begin{lemma}[The slack identity]\label{lem:slack-identity}
+For every item $v$ and every vertex $z \ne v$,
+\[
+  \bigl(\sep(v) - \flo\bigr) \;-\; w\bigl(z \text{ crossing } S^*(v)\bigr)
+  \;\ge\; 0 .
+\]
+\end{lemma}
+
+\begin{proof}
+$S^*(v)$ is a minimum cut, so its weight is at least the floor $\flo$,
+which is realised by the medium edge of some vertex in $S^*(v)$. That
+edge does not touch $z$. Hence the weight crossing $S^*(v)$ that touches
+$z$ is at most $\sep(v) - \flo$.
+\end{proof}
+
+Measured over $9808$ triples the slack was non-negative in every one,
+with minimum $-4.44\times 10^{-16}$ --- a floating-point zero --- and
+$404$ cases exactly tight. Summing \Cref{lem:slack-identity} over the
+items is what forbids $\spr_{\wt}(z)$ from exceeding $1 - \flo/W$. The
+theorem is therefore vacuously true as stated and useless as a test.
+
+The remedy is to state the threshold as a \emph{ranking} rule rather
+than an absolute one. Weighted spread does separate sinks from ordinary
+vertices --- by more than a decade, as
+\Cref{fig:panel-degree}(d) shows --- so the operative instruction is to
+excise the vertices whose spread is extreme relative to the rest of the
+graph, not those exceeding a fixed bound the graph's own structure
+prevents any vertex from reaching. The protocol in
+\Cref{sec:protocol} should be read accordingly, and
+\Cref{thm:threshold} retained only as the statement that the fixed bound
+is never binding.
+
+% =====================================================================
 \section{Discussion}
 \label{sec:discussion}
 
