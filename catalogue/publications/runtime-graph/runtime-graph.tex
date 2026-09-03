@@ -649,6 +649,163 @@ numbers outside it.
 \end{enumerate}
 
 % =====================================================================
+% =====================================================================
+\section{Validation}
+\label{sec:validation}
+
+Every claim in this paper was executed on runtime graphs built to
+\cref{def:rtg}. Separations are computed twice --- once by the max-flow
+routine \cref{thm:probe-cost} proposes and once by exhaustive
+minimisation over cuts --- so the cost claim and the correctness claim
+are checked against each other rather than against a single
+implementation. Each claim is graded against a refuting observation
+registered before the measurement, and each is paired with a control
+that establishes the statistic discriminates. All eleven graded claims
+reproduced, and none was non-discriminating.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_probe.png}
+\caption{\Cref{thm:probe-cost}, \cref{thm:monotone},
+\cref{cor:nested} and \cref{prop:relabel}. (a)~max-flow and exhaustive
+minimisation returning the same answer at diverging cost.
+(b)~separation over the query lattice, never falling as the query grows.
+(c)~one probe at the top of a chain against the four it replaces.
+(d)~keys moved by relabelling against keys moved by reweighting.}
+\label{fig:panel-probe}
+\end{figure}
+
+\subsection{The probe is correct, and its cost is the claimed one}
+
+\Cref{thm:probe-cost} was graded against the observation that would
+refute it --- a query on which the flow computation and exhaustive
+minimisation disagree. Over $41$ queries there were $0$ mismatches. The
+control is what makes this more than an agreement of two implementations
+of the same mistake: perturbing the returned value by $0.17$ is detected,
+so the comparison has the resolution to see a disagreement of that size
+and reports none.
+
+\Cref{thm:verify} is the claim that an answer carries its own proof, and
+it was tested adversarially rather than by construction. All $41$ honest
+certificates were accepted. Against them, $123$ forgeries were
+constructed in three families --- an inflated value, a deflated value,
+and a certificate placing the medium inside $S$ --- and $0$ were
+accepted. The three families matter separately: a checker that verifies
+only the arithmetic passes the third, and one that verifies only
+membership passes the first two.
+
+\subsection{Structure, and what it buys}
+
+\Cref{thm:monotone} was tested over $150$ nested query pairs with $0$
+violations. Separations range from $0.7300$ to $0.9000$ over those pairs,
+so the ordering is not holding because everything is equal.
+
+\Cref{cor:nested} is the consequence that makes the monotonicity
+operational. On a chain the separations were $0.9$, $0.9$, $0.9$ and
+$1.71$, all at or below the top value of $1.7100$, so a single probe at
+the top bounds all four --- one probe replacing four. The control
+confirms the bound is a real constraint rather than an artefact: a
+threshold of $0.9000$ is violated by the chain, as it must be.
+
+\Cref{prop:relabel} was tested against the invariance's own control.
+A weight-preserving swap moves $0$ keys; an asymmetric graph, where the
+swap is not weight-preserving, does move the key. An invariance whose
+control never fires is a claim that the key is constant, which is a
+different and weaker statement than the one the proposition makes.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_certificate.png}
+\caption{\Cref{thm:verify}, \cref{thm:floor} and
+\cref{thm:sensitivity}. (a)~separations over $56$ queries against the
+floor. (b)~the forgery check turning over at its own tolerance.
+(c)~the guarded region over the perturbation grid. (d)~the guard
+narrowing without ever misleading.}
+\label{fig:panel-certificate}
+\end{figure}
+
+\subsection{The floor, and what carries it}
+
+\Cref{thm:floor} was graded against an answer of zero cost. With
+$\flo = 0.2000$, the minimum separation over $56$ queries was $0.7300$
+and none fell below the floor, so \cref{cor:informative} holds on every
+query measured.
+
+The control is the more informative half. Dropping the medium's edges
+yields a cut of $0.0$: without the medium, separation is not merely
+cheaper but free, and the floor is destroyed rather than lowered.
+\Cref{prop:medium} was tested directly and separates the two cases that
+are easy to conflate --- an isolated vertex costs $0.3500$ with the
+medium and $0.0$ without it, while a vertex with its own contacts still
+costs $0.5000$ without it. The medium is therefore what makes
+separation cost anything for observations that have no contacts of their
+own, which is precisely \cref{rem:medium}'s reading. Its adjacency is
+definitional, and a graph in which it is treated as a removable artefact
+has a different theory rather than a cleaner one.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_medium.png}
+\caption{\Cref{prop:medium} and \cref{thm:not-a-cut}. (a)~separation
+with the medium and without it. (b)~the floor over the parameter grid,
+carried by the medium rather than by the contacts. (c)~the size at which
+every key is shared. (d)~how much richer weights resolve.}
+\label{fig:panel-medium}
+\end{figure}
+
+\subsection{Stability, bounded and measured}
+
+\Cref{thm:sensitivity} has two halves and both were tested. Part~(a)'s
+bound was checked over $400$ perturbations at $M = 5$ with $0$ breaches;
+the worst observed move fell short of the bound by less than $10^{-5}$,
+so the bound is attained and not merely respected. Part~(b) was graded
+against the observation that would make the slack condition idle ---
+minimisers moving under guarded perturbations. With slack $0.1600$ and
+$m + M = 7$, $0$ of $23$ guarded perturbations moved the minimiser while
+$184$ unguarded ones did. The condition is doing the work, which is what
+licenses \cref{cor:no-rerun}.
+
+\Cref{prop:slack} was tested in the direction that matters for use.
+Over $21$ cases the residual bound never exceeded the true slack: the
+cheap bound is conservative, so acting on it is safe even where it is
+loose. A bound that were sometimes optimistic would be unusable however
+tight it was on average.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_stability.png}
+\caption{\Cref{thm:sensitivity} and \cref{prop:slack}. (a)~breaches
+against perturbation size. (b)~the bound's looseness, evenly
+distributed. (c)~the guard over the parameter grid, never overstating.
+(d)~every query above the diagonal.}
+\label{fig:panel-stability}
+\end{figure}
+
+\subsection{The boundary is real}
+
+\Cref{thm:not-a-cut} is the paper's own limitation and is the one claim
+whose test is a search rather than an enumeration. The construction is
+realisable: after examining $31139$ pairs, two non-isomorphic graphs
+were found with identical keys on all $15$ queries. The rarity is the
+point --- the theorem does not say such pairs are common, and a sampling
+test would have reported the shortfall as a refutation, so the search
+was powered accordingly.
+
+\subsection{What the validation does not establish}
+
+The suite tests the algebra of separations on graphs constructed to
+\cref{def:rtg}; it does not establish that any particular runtime
+produces such a graph, which is an engineering question about
+instrumentation rather than a mathematical one.
+\Cref{ax:noncomplete} is imposed rather than tested --- what is tested
+is what follows from it, that a positive floor exists and is carried by
+the medium. \Cref{prop:compile}'s density claim is realised by the
+generator rather than measured on a deployment, as \cref{rem:density}
+already notes. The sensitivity bound was found tight in the sense that
+its worst case is attained; that is a statement about these graphs and
+not a proof of tightness in general.
+
+%======================================================================
 \section{Discussion}
 \label{sec:discussion}
 

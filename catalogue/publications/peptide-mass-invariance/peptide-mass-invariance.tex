@@ -1237,6 +1237,196 @@ average sequence identity. The generator was rebuilt around a shared
 domain pool, which produces maximum promiscuity $34$ and a shuffled
 control with zero sharing.
 
+\subsection{A second suite, on a measured library}
+
+The experiments above run on synthetic proteomes, which is what allows
+the negative controls to be constructed. A second suite was then run on
+a measured library --- $244$ distinct formulae drawn from NIST, with
+precursor $m/z$ as recorded --- so that the graph claims are exercised
+on weights nobody chose to make them work. Each claim is graded against
+a refuting observation registered before the measurement and paired with
+a control. Where a recorded number is a single scalar at a fixed cell,
+the experiment's own definitions are swept over the parameters it fixed,
+and every recorded scalar is asserted against the sweep before anything
+is reported. Eight of the nine claims reproduced;
+\Cref{prop:three} did not, and the reason is a defect in its statement
+rather than in its proof.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_invariance.png}
+\caption{\Cref{thm:invariance}, \Cref{thm:no-selector} and
+\Cref{thm:region} on the NIST library. (a)~relabelling never moves a
+key, while a real weight change moves one in every graph.
+(b)~distinct keys against items: the invariant is nearly injective.
+(c)~mean separation over (items, medium weight), with the medium
+present and deleted --- the lower sheet is identically zero in all $30$
+cells. (d)~the share of weights carrying several distinct minimum cuts.}
+\label{fig:panel-invariance}
+\end{figure}
+
+\subsubsection{The key is invariant, and it is not trivial}
+
+\Cref{thm:invariance} was tested by relabelling: $288$ relabellings
+across six subgraph sizes moved a key $0$ times. The control fires in
+every graph at every size --- scaling one medium edge by $0.25$ moves a
+key in $6$ of $6$ graphs at each size --- so this is an invariance claim
+rather than a claim that the key is constant.
+
+An invariant that collapses everything to one value is invariant and
+useless, so the number of distinct keys was measured against the number
+of items. It tracks the item count closely, rising from $3.83$ distinct
+keys at $n = 4$ to $9.00$ at $n = 9$: the key separates nearly every
+item from every other, which is what makes the invariance worth having.
+
+\Cref{thm:region} was graded against the observation that a scalar
+separation could stand in for the separating region --- that is, that
+distinct minimum cuts always carry distinct weights. They do not. Over
+$3120$ minimum cuts, $50$ of $3069$ weights carry several genuinely
+different cuts. The share is a couple of percent and falls with size,
+which is why the search had to be powered rather than sampled: at some
+sizes a small sample finds none and would report the shortfall as a
+refutation.
+
+\subsubsection{Separation is bought entirely from the medium}
+
+\Cref{thm:no-selector} was tested over a grid of five medium weights
+and six sizes. With the medium present, separation is positive in all
+$12$ graphs at every weight and the minimum separation is at or above
+$\flo$ in every cell. With the medium's edges deleted, separation is
+\emph{exactly} $0.0$ in all $30$ cells --- not merely cheaper. Deleting
+it does not lower the floor, it removes it, and the minimum separation
+rises linearly in the medium's weight ($0.2776$, $0.5551$, $1.1103$,
+$2.2206$, $4.4412$ at weights $0.25$ through $4$) while remaining flat
+in the number of items. This is \Cref{ax:noncomplete} operating rather
+than being assumed: the normalisation is what makes any determination
+cost anything.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_mass.png}
+\caption{\Cref{cor:mass}. (a)~mass gaps within key-sharing pairs; the
+smallest is $6448$ ppm. (b)~ambiguity over (mass tolerance, items) for
+each determination: mass ambiguity vanishes with tolerance, key
+ambiguity does not. (c)~the library's mass degeneracy against the swept
+tolerance, with the recorded points. (d)~the two determinations side by
+side per size.}
+\label{fig:panel-mass}
+\end{figure}
+
+\subsubsection{The key and the mass are independent determinations}
+
+\Cref{cor:mass} says the cut key is not recoverable from the mass, and
+the measurement makes the content of that precise. Over $6000$ pairs,
+$19$ share a cut key. None of them is near-degenerate in mass: the
+\emph{smallest} gap within a key-sharing pair is $6448.2$ ppm, five
+orders of magnitude above the tolerance at which the sweep bottoms out.
+No refinement of the mass will bring such a pair into agreement, and no
+sharpening of the mass will separate them by key.
+
+The honest converse was measured and is recorded rather than suppressed:
+mass alone resolves \emph{this} library completely, with $0$ ambiguous
+compounds below $9.0$ ppm, and resolution is monotone in the tolerance
+over the $23$ points swept. That is a fact about a $244$-compound
+library and not a refutation of the corollary. The two are compatible
+precisely because the pairs above survive it untouched --- which is what
+independence means here, and would be conflated by reporting either
+number alone.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_closure.png}
+\caption{\Cref{def:closure}, \Cref{thm:closure-stronger} and the regime \Cref{ax:noncomplete}
+excludes. (a)~the share of closed determinations naming a region rather
+than an item. (b)~mean and largest region size. (c)~mean $|S^*|$ over
+(contact scale, items): exactly a singleton in all $30$ cells while no
+item--item contact exceeds the medium. (d)~the same transition in
+section, with the excluded regime shaded.}
+\label{fig:panel-closure}
+\end{figure}
+
+\subsubsection{Closure names a region, and the regime is what makes it
+an item}
+
+\Cref{def:closure} was graded against the observation that a closed
+determination always names a single item --- which is the reading
+\Cref{thm:closure-stronger}(i) already denies in principle, by
+exhibiting a closed determination whose ambiguity set has two
+elements. The measurement finds that case at every scale: over
+$1560$ closed determinations, $51$ name a plural region, the mean region size
+sits just above one at every size, and the largest observed region is
+three. Plurality is rare --- a few percent --- and one swept size found
+none, which is a sampling gap rather than a structural fact: the mean
+region there is exactly $1.0$ over $280$ determinations while both its
+neighbours exceed it.
+
+The condition under which closure \emph{does} name an item was then
+measured directly, over a grid of six sizes and eight contact scales.
+While no item--item contact exceeds the medium, the mean size of the
+minimising set is exactly $1.0$ --- to machine precision, in all $30$
+cells at scale $\le 1$, at every size. Past the medium the floor breaks
+and the minimiser grows with the number of items, reaching $5.125$ at
+scale $3$. This is what \Cref{ax:noncomplete}'s normalisation buys and
+it is the regime the axiom excludes by hypothesis; the measurement shows
+the exclusion is doing work rather than being a convenience.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_three.png}
+\caption{\Cref{prop:three}, which the suite did not reproduce.
+(a)~the two readings of the proposition against $k$; they differ at
+$k = 2$ and nowhere else. (b)~the gap between the readings, exactly $1$
+at $k = 2$ and exactly $0$ elsewhere, at each candidate count.
+(c)~both readings over $(k, \text{candidates})$: flat in the candidate
+count. (d)~the swept curves against the recorded points.}
+\label{fig:panel-three}
+\end{figure}
+
+\subsubsection{A defect in the statement of
+\texorpdfstring{\Cref{prop:three}}{Proposition: three catalysts}}
+\label{ssec:three-defect}
+
+\Cref{prop:three} did not reproduce, and the measurement locates the
+fault precisely enough to say what should be changed.
+
+The proposition's wording admits two incompatible readings. Read
+literally, \emph{``the erroneous catalyst''} is definite: it is
+identified, removed, and the majority taken over the survivors. Under
+that reading $k = 2$ already suffices --- measured at $1.000$ of runs
+recovering the true region. Read as the proof's reason describes it, the
+erroneous catalyst is \emph{not} identified and the majority runs over
+all $k$; under that reading $k = 2$ recovers the true region in $0.000$
+of runs and $k \ge 3$ is required, which is what the proposition
+asserts.
+
+The two readings agree at every $k$ except $k = 2$, where they differ by
+exactly one. That single point is the whole of the disagreement, and it
+is identical at $3$, $4$ and $5$ candidates, so it is not an artefact of
+the candidate pool. Each recorded point rests on $2000$ trials, and the
+swept curves pass through exactly the values the experiment recorded.
+
+The defect is therefore in the statement, not the proof: the reason
+given is sound for the unaided case, and the definite article claims
+more than that case supports. The proposition should read \emph{``an
+erroneous catalyst''} and state explicitly that the erroneous one is not
+identified. With that amendment the bound $k \ge 3$ is correct and tight
+--- at $k = 3$ both readings recover the true region in $1.000$ of runs.
+We report it as not reproduced rather than silently repairing it,
+consistent with the treatment of \Cref{ass:structure} above.
+
+\subsubsection{What this second suite does not establish}
+
+The library is $244$ formulae, and the mass-resolution result is a
+property of that library rather than of libraries in general; a denser
+one would resolve at a sharper tolerance and the corollary would be
+unaffected either way, since the key-sharing pairs are mass-distinct by
+four orders of magnitude. The graph claims are exercised on subgraphs of
+between four and nine items, which is what permits exhaustive
+minimisation over cuts; the cost claims are not tested at scale here.
+\Cref{ax:noncomplete} is imposed rather than tested --- what is measured
+is the difference between the regime it admits and the regime it
+excludes, which is a singleton minimiser against one that grows.
+
 % =====================================================================
 \section{Limitations}
 \label{sec:limitations}
@@ -1253,8 +1443,22 @@ because the refutation is instructive, and readers should treat
 rather than as a recommendation to prefer them. The remaining theorems
 do not depend on it.
 
-\paragraph{Synthetic proteome.} The validation uses a generated proteome
-with domain-based sharing, not a measured one. It was built to have the
+\paragraph{The statement of \Cref{prop:three} is defective.} The
+proposition did not reproduce, and \Cref{ssec:three-defect} locates the
+fault in its wording rather than in its proof. \emph{``The erroneous
+catalyst''} is definite, and read that way $k=2$ suffices; the reason
+the proof gives describes the case in which the erroneous catalyst is
+not identified, where $k\ge3$ is required. The two readings differ at
+$k=2$ and nowhere else, identically at three, four and five candidates.
+The bound is correct under the intended reading and the statement should
+be amended to \emph{``an erroneous catalyst''}, made explicit that it is
+unidentified. We report it as not reproduced rather than silently
+repairing it.
+
+\paragraph{Synthetic proteome.} The proteome-level validation uses a
+generated proteome with domain-based sharing, not a measured one; only
+the graph and mass claims of \Cref{ssec:three-defect} and the
+subsections preceding it were exercised on measured data. It was built to have the
 structure the assumption named, and the assumption still failed, which
 is the strongest form the negative result could take on this data; but a
 real proteome may depart in further ways, and no claim here is

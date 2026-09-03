@@ -935,6 +935,176 @@ resolution of \cref{def:rung} is such a quantity, normalised to the floor. The
 difference is that the floor is not a modelling choice here but a consequence of
 finite instruments, and it is what makes $\pow$ bounded above by one.
 
+% =====================================================================
+\section{Validation}
+\label{sec:validation}
+
+Every prediction of \cref{sec:predictions} was executed. The suite builds
+contact-sequence machines that realise the ladder algebra rather than
+simulating a spectrometer, grades each prediction against a refuting
+observation registered \emph{before} the measurement, and pairs each test
+with a control that establishes whether the statistic discriminates at
+all. A test whose control cannot separate the prediction from a null is
+reported as non-discriminating and excluded rather than counted as a
+pass. All eight graded predictions reproduced, none was
+non-discriminating, and the two claims the paper itself marks as most
+exposed --- \cref{rem:direction} and \cref{prop:reach} --- were tested
+twice, once in the suite and once through an independent compiler.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_composition.png}
+\caption{\Cref{thm:multiplicative}, \cref{prop:marginal} and
+\cref{thm:saturation} as measured. (a)~composite resolution accumulating
+over the five rungs to $0.917125$. (b)~marginal sensitivity by rung: the
+maximum sits at the \emph{highest}-resolution contact, not the lowest.
+(c)~the saturation dichotomy over the two series. (d)~composite
+resolution over two rungs' resolutions.}
+\label{fig:panel-composition}
+\end{figure}
+
+\subsection{Elimination and inertness}
+
+\Cref{thm:elimination} was tested on two substrates differing in
+geometry ($3.0$ against $0.2$), field scale ($0.4$ against $7.5$) and
+path length ($120$ against $8$) while realising the same contact
+sequence. Both returned resolution $0.917125$ to twelve digits. The
+control --- a substrate realising a \emph{different} contact sequence
+--- returned $0.409510$, so the readout is not simply insensitive: it
+separates instruments that differ in the way the theorem says matters,
+and only in that way.
+
+\Cref{thm:inertness} was tested by relabelling: $200$ relabellings
+produced $0$ mismatches on admissible observables, while the control ---
+a change of $0.01$ in a single rung --- separated the pair. An
+invariance whose control never fires is a claim of constancy, which is
+weaker and less interesting; here the control fires.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_contact.png}
+\caption{\Cref{prop:spacecharge}, \cref{rem:transitfree} and
+\cref{prop:reach}. (a)~deviation from substrate independence against ion
+density. (b)~resolution and cost against path length, varied over four
+decades. (c)~the three candidate composition laws against the measured
+composite. (d)~static verdicts against executed outcomes over $300$
+ladders.}
+\label{fig:panel-contact}
+\end{figure}
+
+\subsection{Composition, and the two laws it is not}
+
+\Cref{thm:multiplicative} was graded against the two rules it must beat.
+Over $400$ trials the multiplicative law
+$1 - \prod_i (1 - \pow_i)$ reproduced the measured composite with
+maximum absolute error $0.00$; an additive law missed by $0.0728$ on
+average and a max-based law by $0.1890$. The additive rule also leaves
+the unit interval on part of the range, which is a qualitative failure
+rather than a quantitative one.
+
+\Cref{thm:saturation}'s dichotomy was tested on $4000$ terms of each of
+two series. The divergent series closed to within
+$2.50\times 10^{-4}$ of the floor; the convergent one stalled with a
+residual gap of $0.5001$ and stayed there. Both halves of the ``if and
+only if'' are therefore exercised, which a single series could not do.
+
+\subsection{Control lies at the strongest contact}
+
+\Cref{rem:direction} is the paper's most counter-intuitive prediction
+and the one it nominates as most exposed. It survived two independent
+tests.
+
+Numerically, $\partial \pow(\Lad)/\partial \pow_j$ agreed with the
+closed form of \cref{eq:marginal} to eleven significant figures at every
+rung, and ranking the rungs by measured sensitivity gave
+$(k_1, k_3, k_2, k_4, k_5)$ --- exactly the order of their resolutions
+$(0.6, 0.5, 0.35, 0.25, 0.15)$, not the reverse.
+
+The prediction was then tested a second way, by ablation rather than
+differentiation, which does not presuppose the derivative at all.
+Deleting the strongest contact $k_1$ costs $0.1243$ of composite
+resolution; deleting the weakest $k_5$ costs $0.0146$ --- a factor of
+$8.5$ in favour of the strong rung. Only the deletion of $k_5$ leaves
+the ladder above its declared requirement. The standard intuition, that
+an instrument is improved by attending to its weakest stage, is wrong at
+first order and wrong under ablation, in the same direction and by the
+same ordering.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_inertness.png}
+\caption{\Cref{thm:elimination} and \cref{thm:inertness}.
+(a)~two substrates against the differing-sequence control.
+(b)~no pair of rungs reaches the control's separation.
+(c)~sensitivity against rung resolution, with the ranking.
+(d)~inertness over $200$ relabellings.}
+\label{fig:panel-inertness}
+\end{figure}
+
+\subsection{Transit, locality, and the one departure}
+
+\Cref{rem:transitfree} was tested by varying path length over four
+decades, from $1$ to $10^{4}$, at fixed contact count. Resolution
+remained $0.917125$ and cost remained $5$ at every path length: neither
+quantity is a function of the flight. This is the measurement behind
+\cref{rem:whereeffort}'s first half.
+
+\Cref{prop:spacecharge} predicts the single departure from locality the
+framework admits, and predicts that it must vanish with ion current.
+Deviation was $0$ at zero density, rose monotonically with density, and
+reached $0.007558$ at density $8$. A deviation that did \emph{not} vanish
+with current would indicate a second locality violation the framework
+does not predict; none appeared.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_cost.png}
+\caption{\Cref{prop:spacecharge} and \cref{def:cost}. (a)~deviation over
+density and rung power. (b)~the additive rule leaving the unit interval.
+(c)~error of the three composition laws over $400$ trials.
+(d)~static analysis settling $132$ of $300$ ladders before execution.}
+\label{fig:panel-cost}
+\end{figure}
+
+\subsection{Static reachability, and a compiler that rejects}
+
+\Cref{prop:reach} says a ladder whose declared contacts cannot reach its
+declared target is detectable before execution. Over $300$ ladders the
+static verdict and the executed outcome disagreed $0$ times, with $132$
+rejected statically --- so the test is not passing by never firing.
+
+The claim was then re-tested through a separate implementation. The
+ladder was written in the surface syntax of \cref{sec:demo} and put
+through a prototype compiler, which reported five contacts giving
+resolution $0.91712$ against a requirement of $0.9$ and admitted the
+program. A deliberately unsatisfiable variant --- three contacts giving
+$0.58$ against the same requirement --- was rejected at compile time
+with a diagnostic naming the shortfall, and never executed. The
+compiler and the suite agree on the composite to five decimal places and
+on the sensitivity ordering exactly, having been written against the
+paper rather than against each other.
+
+\Cref{prop:costtarget}'s bound was checked in the same run: with
+$\pow_{\max} = 0.6$ and a target of $0.9$, \cref{eq:rungcount} gives a
+minimum of three contacts, and three contacts achieve $0.936$. The bound
+is tight in the sense that matters --- two would not suffice.
+
+\subsection{What the validation does not establish}
+
+The suite tests the algebra and its consequences on machines built to
+realise contact sequences. It does not test that any particular physical
+spectrometer realises a contact sequence in the sense of
+\cref{def:substrate}; that is an empirical question about hardware and
+is not settled here. \Cref{prop:spacecharge}'s non-local term is the
+only departure from locality introduced anywhere in the suite, so the
+measurement is consistent with the uniqueness claim of that proposition
+but does not prove it: absence of a second violation in a suite that
+introduces none is weak evidence. What the validation does establish is
+that the ladder algebra is internally sound, that its counter-intuitive
+consequence about where control lies survives two independent tests, and
+that its reachability claim is decidable by a compiler.
+
+%======================================================================
 \section{Limitations}
 \label{sec:limitations}
 

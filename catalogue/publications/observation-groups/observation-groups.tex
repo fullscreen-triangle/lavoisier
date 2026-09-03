@@ -675,6 +675,158 @@ and reporting it as a conclusion is an error the pipeline can detect.
 \end{enumerate}
 
 % =====================================================================
+% =====================================================================
+\section{Validation}
+\label{sec:validation}
+
+Every claim in this paper was executed on six observations, for which
+$\Lat(\Obs)$ has $203$ elements. Separations are computed by
+exhaustive minimisation over admissible subsets rather than by the
+max-flow routine of \cref{rem:computable}, so the floor results are
+checked independently of the algorithm the paper proposes for them.
+Each claim was graded against a refuting observation registered
+\emph{before} the measurement, and each is paired with a control
+establishing that the statistic discriminates. All eleven graded claims
+reproduced, and none was non-discriminating.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_floor.png}
+\caption{\Cref{lem:dof}, \cref{cor:no-free} and \cref{thm:group-floor}.
+(a)~degrees of freedom along a strict chain, rising by exactly one per
+collapse. (b)~the quantity a coarsening discards, against the bound of
+\cref{cor:no-free}. (c)~separation over the contact weights, floored by
+the smallest medium weight. (d)~the survivor set above threshold.}
+\label{fig:panel-floor}
+\end{figure}
+
+\subsection{The grouping carries part of the verdict}
+
+\Cref{lem:dof} was tested along a strict chain of six groupings. The
+degrees of freedom ran $0, 1, 2, 3, 4, 5$ --- one per collapse, with no
+step skipped --- and were identical for two unrelated data vectors $x$,
+which is the half of the lemma that matters: the denominator is set by
+the grouping alone. \Cref{rem:zero-dof} is exercised at the same time:
+dispersion is undefined at the finest grouping and $1.1951$ at the
+coarsest, so the remark reports a genuine boundary rather than an edge
+case.
+
+\Cref{thm:verdict-depends} is the paper's central claim and was graded
+against the observation that would refute it: no pair
+$(x, \text{threshold})$ placing two verdicts on opposite sides. Such a
+pair exists. On one $x$, the statistic is $6.5727$ at $P_1$ and
+$6.0000$ at $P_2$, where $P_1$ strictly refines $P_2$; the threshold
+$6.2863$ lies between them. The data are identical in both evaluations
+and the verdicts are opposite. A verdict is therefore not a function of
+$x$.
+
+\Cref{cor:pooling} was tested against the defence of
+\cref{rem:defence} --- that pooling is a normalisation step rather than
+a coarsening. It is a coarsening: pooling moved the statistic from
+$3.5782$ to $3.2385$, a factor of $1.1049$, in a direction that can
+carry a verdict across a threshold.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_verdict.png}
+\caption{\Cref{thm:verdict-depends}, \cref{cor:pooling} and
+\cref{thm:endpoints}. (a)~one data vector, two groupings, opposite
+verdicts. (b)~the shift pooling induces. (c)~the cost of collapsing
+groups over the chain. (d)~the two-evaluation test against exhaustive
+enumeration on $26$ intervals.}
+\label{fig:panel-verdict}
+\end{figure}
+
+\subsection{Stability is decided at the endpoints}
+
+\Cref{thm:endpoints} is what makes the size of $\Lat(\Obs)$ irrelevant
+in practice, and it was tested where it could fail: over $26$ intervals
+under a monotone analysis, comparing the two-evaluation test against
+exhaustive enumeration of every interior grouping. There were $0$
+disagreements. Six of the $26$ intervals were unstable, so the test is
+not passing by finding everything stable.
+
+\Cref{thm:coarsest-invariant} was graded against two refuting
+observations: a join-closed survivor set with no greatest element, or a
+greatest element moved by an $x$-preserving permutation. The survivor
+set of $122$ groupings is join-closed, has a unique greatest element,
+and that element is fixed by the $x$-preserving transposition
+$r_2 \leftrightarrow r_3$.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_lattice.png}
+\caption{\Cref{thm:coarsest-invariant} and \cref{thm:group-floor}.
+(a)~the survivor set as an up-set. (b)~separation rising with the
+medium's weight. (c)~the floor carried by the medium.
+(d)~the finest grouping, at zero degrees of freedom.}
+\label{fig:panel-lattice}
+\end{figure}
+
+\subsection{The floor, and what carries it}
+
+\Cref{thm:group-floor} was graded against the observation that would
+refute it --- an observation individuated at no cost. With
+$\flo = 0.5271$, the minimum separation measured over the observations
+was $5.2711$, and every separation was at or above the floor.
+
+The control matters more than the theorem here, because it decides
+whether \cref{rem:medium}'s regress argument is doing work or is idle.
+Removing the medium leaves a separating set of cut $0.0$: without it,
+every observation can be individuated for free, and the floor is not
+merely lowered but destroyed. The medium's adjacency is therefore
+definitional rather than incidental --- it is what makes separation
+cost anything at all --- and a graph in which it is treated as a
+removable artefact has a different theory, not a cleaner one.
+
+\Cref{cor:no-free} was tested along the same chain. The finest grouping
+discards $0$; the coarsest discards at least $2.6355$; and the
+discarded quantity is monotone along the chain, never falling below the
+$\flo \cdot (n - |P|)$ bound.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_decline.png}
+\caption{\Cref{thm:decline-informative} and \cref{cor:degenerate}.
+(a)~the groupings inside one interval. (b)~two reports agreeing on the
+verdict and differing in the interval. (c)~the statistic across the
+interval, cut at the threshold. (d)~the singleton survivor, which
+licenses nothing.}
+\label{fig:panel-decline}
+\end{figure}
+
+\subsection{Declining is more informative than answering}
+
+\Cref{thm:decline-informative} was graded against the observation that
+would make the extra structure idle: interval reports coinciding
+whenever point reports do. They do not. Two analyses returned the same
+point verdict --- both \emph{true} --- while returning intervals of
+size $5$ and $4$. The point report cannot distinguish them; the
+interval report does.
+
+\Cref{cor:degenerate} is sharper, and the measurement makes the case
+for it concrete. On one interval of five admissible groupings, the
+verdict holds at exactly one --- the coarsest, with statistic $31.08$
+against $25.62$ at the next --- and fails at the other four. A bare
+verdict would report \emph{true} and conceal that four of five
+admissible groupings disagree. This is the situation in which declining
+is not a failure to answer but the only honest report, and it is
+distinguishable from a robust \emph{true} only through the interval.
+
+\subsection{What the validation does not establish}
+
+The suite works on six observations, where the lattice is small enough
+to enumerate exhaustively; that is what licenses the comparison in
+\cref{thm:endpoints} and is not a claim about scale.
+\Cref{ax:no-internal} is a modelling assumption and is imposed by
+construction throughout, not tested --- an analysis that reads internal
+structure is outside the setting rather than a counterexample within
+it. The floor $\flo$ is measured from the contact graph rather than
+assumed from a fixture parameter, but its value is a property of the
+weights supplied; the claim tested is that a positive floor exists and
+is carried by the medium, not that any particular number is universal.
+
+%======================================================================
 \section{Discussion}
 \label{sec:discussion}
 

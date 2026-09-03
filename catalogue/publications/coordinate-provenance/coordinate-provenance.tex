@@ -598,6 +598,176 @@ the next context extension.
 \end{enumerate}
 
 % =====================================================================
+% =====================================================================
+\section{Validation}
+\label{sec:validation}
+
+Every claim in this paper was executed. Where a claim quantifies over
+maps, the suite enumerates them exhaustively rather than sampling ---
+$512$ coordinate maps, $256$ second stages, $81$ candidate recovery
+functions --- so a reported zero is a proof over the finite space and
+not a failure to find a witness. Each claim is graded against a refuting
+observation registered before the measurement and paired with a control
+that establishes the statistic can fire at all. All nine graded claims
+reproduced, and none was non-discriminating. One of them, however,
+reproduced the \emph{bound} of \cref{thm:minimal-record} while refuting
+the factorisation printed in its proof; that is reported in
+\cref{ssec:val-factorisation} and the theorem statement should be
+amended accordingly.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel1_collapse.png}
+\caption{\Cref{thm:collapse}, \cref{thm:pipeline-loss} and
+\cref{cor:no-recovery}. (a)~auditability against coordinate-space size,
+which is exactly zero below $|\Ctx|$. (b)~the same over
+$(|\Crd|, |\Ctx|)$: a zero wall wherever $|\Crd| < |\Ctx|$.
+(c)~second stages attempted against auditability restored. (d)~candidate
+recovery functions against contexts recovered.}
+\label{fig:panel-collapse}
+\end{figure}
+
+\subsection{Collapse is forced by cardinality alone}
+
+\Cref{thm:collapse} was graded against the observation that would refute
+it --- an auditable coordinate map into a codomain smaller than the
+context space. Over all $512$ maps from a $3$-element context space into
+a $2$-element coordinate space, $0$ are auditable. The control matters:
+widening the codomain to $9$ elements produces an auditable witness
+immediately, so the zero is a consequence of the cardinality and not of
+the enumeration being unable to recognise auditability.
+
+\Cref{thm:pipeline-loss} was tested by asking whether the loss can be
+undone downstream. Over all $256$ second stages, $0$ restored
+auditability; the control confirms that composing an auditable first
+stage with an injective second stage stays auditable, so the pipeline
+machinery is not simply reporting failure everywhere.
+
+\Cref{cor:no-recovery} is the sharpest of the three and was tested in
+the strongest form available: the two pipeline outputs are checked to be
+the \emph{same element}, and then all $81$ functions on that element are
+enumerated. None recovers the context, which is what the corollary
+asserts and is not an empirical claim about any particular estimator ---
+it holds for every function, learned or otherwise. The control returns
+$9$ successful recoveries as soon as the inputs are made distinct, which
+is exactly the case \cref{rem:ml} says is not the one at issue.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel2_record.png}
+\caption{\Cref{prop:cost} and \cref{thm:record-floor}. (a)~cost of both
+schemes against the number of measurements. (b)~the saving over five
+decades of $N$. (c)~the saving over (stages, record size).
+(d)~distinctions accumulating past a fixed record's capacity.}
+\label{fig:panel-record}
+\end{figure}
+
+\subsection{The record is cheap, and the cost objection is quantitative}
+
+\Cref{prop:cost} was graded against the observation that would sustain
+the objection of \cref{rem:cost-reading}: a per-run scheme whose
+advantage erodes as measurements accumulate. It does not erode. Over six
+stages with record sizes $64, 128, 32, 256, 16, 512$, the per-run scheme
+is cheaper at every $N$ tested, and the ratio is $2.4529$ at $N = 10^2$
+and $2.5145$ at $N = 10^6$ --- flat to within $3\%$ over four decades.
+The saving is bounded because the record is stored once per run rather
+than amplified per measurement, which is the content of the proposition
+rather than an artefact of the sizes chosen. The control makes the
+dependence visible: with one very small stage the ratio reaches
+$6884.1$, so the statistic is capable of moving by three orders of
+magnitude and simply does not move with $N$.
+
+\Cref{thm:record-floor} was tested against \cref{ax:noncomplete} by
+running releases forward. A constant record is insufficient
+immediately; a record of capacity $4$ is exhausted at release~$3$, where
+$6$ contexts induce $5$ behavioural classes. The floor counts
+distinctions rather than contexts, and the control shows the difference:
+adding a context that is behaviourally a duplicate of an existing one
+leaves the class count at $2$ and consumes no capacity.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel3_minimality.png}
+\caption{\Cref{thm:minimal-record}. (a)~sufficiency as contexts split.
+(b)~the image-size floor over the parameter grid, zero everywhere.
+(c)~the bound and the factorisation separated: the first holds, the
+second does not. (d)~no sufficient map has an image smaller than the
+behavioural quotient.}
+\label{fig:panel-minimality}
+\end{figure}
+
+\subsection{A defect in \texorpdfstring{\cref{thm:minimal-record}}{Theorem: minimal record}}
+\label{ssec:val-factorisation}
+
+The theorem's bound reproduced exactly. With $3$ contexts falling into
+$2$ behavioural classes, $\rec_{\min}$ is sufficient and $0$ sufficient
+maps have a smaller image; the control confirms that smaller maps exist
+and are simply not sufficient, so the minimum is a real one and not an
+absence of candidates.
+
+The theorem's \emph{proof}, however, asserts that every sufficient
+record map factors through $\rec_{\min}$, and that is false. Six
+sufficient maps do not factor through it. The counterexample is
+immediate once stated: the map sending $c_1, c_2, c_3$ to $0, 1, 2$ is
+sufficient --- it is injective, so it distinguishes everything a
+sufficient map must --- yet it splits the class $\{c_1, c_2\}$ that
+$\rec_{\min}$ identifies, and no map out of $\rec_{\min}$'s image can
+recover that split. Sufficiency is closed upwards under refinement while
+factorisation through the quotient requires coarseness, and the two
+pull in opposite directions.
+
+What survives is the statement the theorem is actually used for and
+which its proof does establish: $\rec_{\min}$ attains the minimum image
+size among sufficient maps, and is unique \emph{up to relabelling among
+maps of that size}. The universal property should be struck from the
+statement, or restricted to sufficient maps of minimal image. Nothing
+elsewhere in the paper depends on the factorisation --- \cref{prop:cost}
+uses the image size and \cref{thm:comparability} uses sufficiency ---
+so the repair is local.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/panel4_declining.png}
+\caption{\Cref{thm:comparability} and \cref{thm:decline-sound}.
+(a)~admitted and declined comparisons against unsound admissions.
+(b)~each declined pair against the answer a total comparator gives it.
+(c)~unlicensed answers over the family of comparators. (d)~the floor as
+a count of distinctions rather than of contexts.}
+\label{fig:panel-declining}
+\end{figure}
+
+\subsection{Declining is sound, and a total comparator is not}
+
+\Cref{thm:comparability} was graded against the observation that would
+refute it --- an admitted comparison between measurements whose records
+disagree. Of $45$ admitted pairs, $0$ are unsound. Four context pairs
+were declined, so the comparator is not passing by admitting everything.
+
+\Cref{thm:decline-sound} is the claim that the four declines are not a
+weakness, and it was tested by putting a total comparator on the same
+pairs. The total comparator answers $4$ unlicensed comparisons --- one
+for each pair the partial comparator declines --- while the partial
+comparator answers $0$ and declines all four. The counts coincide
+exactly, which is the substance of \cref{rem:decline}: declining is not
+a smaller answer than answering, it is the removal of precisely the
+answers that are not licensed. A total comparator buys its totality by
+being wrong on that set and nowhere else.
+
+\subsection{What the validation does not establish}
+
+The enumerations are exhaustive over small spaces --- three contexts,
+two or nine coordinates, six stages --- which is what makes a reported
+zero a proof rather than a search. It is not evidence about scale, and
+none is claimed: \cref{thm:collapse} is a cardinality argument, so the
+small case is the general case, whereas \cref{prop:cost}'s constant is a
+property of the stage sizes supplied and would change with different
+ones. What is measured there is that the constant does not grow with
+$N$, which is the objection the proposition answers.
+\Cref{ax:noncomplete} is an assumption about the world and is imposed
+rather than tested; what is tested is what follows from it, namely that
+a fixed record is exhausted at a definite release.
+
+%======================================================================
 \section{Discussion}
 \label{sec:discussion}
 
