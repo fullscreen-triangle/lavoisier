@@ -1,0 +1,272 @@
+{
+  "experiment": "exp1_instrument_ladder",
+  "paper": "instrument-process-ladder",
+  "question": "Do the elimination theorem and the ladder algebra hold on machines built to realise contact sequences?",
+  "summary": {
+    "graded": 8,
+    "passed": 8,
+    "failed": 0,
+    "non_discriminating": 0,
+    "verdict": "PASS"
+  },
+  "expectations": [
+    {
+      "label": "V1 elimination",
+      "prediction": "Two substrates of differing geometry realising an identical contact sequence produce identical readouts.",
+      "paper_ref": "thm:elimination / P1",
+      "failure_mode": "A readout separating two such instruments.",
+      "observed": {
+        "a": 0.917125,
+        "b": 0.917125
+      },
+      "passed": true,
+      "detail": "a=0.917125000000 b=0.917125000000; control separates (0.40951)",
+      "discriminating": null
+    },
+    {
+      "label": "V2 locality failure scales with current",
+      "prediction": "With a density-dependent term, deviation from substrate independence grows with ion current and vanishes as current -> 0.",
+      "paper_ref": "prop:spacecharge / P2",
+      "failure_mode": "A current-independent deviation, indicating a second locality violation the framework does not predict.",
+      "observed": {
+        "at_zero": 0.0,
+        "at_max": 0.007558016753643204
+      },
+      "passed": true,
+      "detail": "deviation 0 at zero current, 0.007558 at density 8, monotone=True",
+      "discriminating": null
+    },
+    {
+      "label": "V3 multiplicative composition",
+      "prediction": "Composite resolution follows 1 - prod(1-pi_i), not an additive or max-based law.",
+      "paper_ref": "thm:multiplicative / P3",
+      "failure_mode": "Measured composite tracking sum(pi_i) or max(pi_i).",
+      "observed": 0.0,
+      "passed": true,
+      "detail": "multiplicative err 0.00e+00; additive 0.0728, max-based 0.1890",
+      "discriminating": null
+    },
+    {
+      "label": "V4 saturation dichotomy",
+      "prediction": "Residual ambiguity vanishes iff sum(pi_i) diverges; indexed from i=2 per Remark 3.9.",
+      "paper_ref": "thm:saturation / P5",
+      "failure_mode": "A convergent series reaching the floor, or a divergent one failing to.",
+      "observed": {
+        "divergent_gap": 0.0002499375156210954,
+        "convergent_gap": 0.5001249687578094
+      },
+      "passed": true,
+      "detail": "divergent series gap -> 2.50e-04; convergent series gap stays 0.5001",
+      "discriminating": null
+    },
+    {
+      "label": "V5 sensitivity and the ordering of control",
+      "prediction": "d pi(L)/d pi_j = (1-pi(L))/(1-pi_j), maximised at the HIGHEST-resolution contact.",
+      "paper_ref": "prop:marginal / P6",
+      "failure_mode": "Control ordered by ascending resolution, or not ordered by this quantity at all. The sharpest test in the set.",
+      "observed": {
+        "analytic": [
+          0.20718750000000002,
+          0.1275,
+          0.16575,
+          0.1105,
+          0.0975
+        ],
+        "matches_numeric": true
+      },
+      "passed": true,
+      "detail": "numeric agrees with closed form; control ranks ['k1', 'k3', 'k2', 'k4', 'k5'] == power order",
+      "discriminating": null
+    },
+    {
+      "label": "V6 inertness under relabelling",
+      "prediction": "Two instruments with equal resolution sequences agree on every admissible observable.",
+      "paper_ref": "thm:inertness / P8",
+      "failure_mode": "An admissible observable separating them.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 mismatches over 200 relabellings; control separates a 0.01 change in one rung",
+      "discriminating": null
+    },
+    {
+      "label": "V7 transit is free",
+      "prediction": "Cost scales with contact count, not with flight length, duration, or field complexity.",
+      "paper_ref": "def:cost / P7",
+      "failure_mode": "Information content increasing with path length at fixed contact count.",
+      "observed": {
+        "resolutions": [
+          0.917125,
+          0.917125,
+          0.917125,
+          0.917125,
+          0.917125
+        ]
+      },
+      "passed": true,
+      "detail": "path length varied 1 -> 10000 at fixed contact count: resolution and cost both unchanged",
+      "discriminating": null
+    },
+    {
+      "label": "V8 static analysis agrees with execution",
+      "prediction": "A ladder whose declared contacts cannot reach its declared target is rejected statically, and the verdict matches execution --- including cases designed to be rejected.",
+      "paper_ref": "prop:reach / P9",
+      "failure_mode": "Disagreement between static verdict and executed outcome.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 disagreements over 300 cases, 132 of them statically rejected",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "V1_readouts": {
+      "substrate_a": {
+        "ambiguity": 0.082875,
+        "resolution": 0.917125,
+        "contacts": 5
+      },
+      "substrate_b": {
+        "ambiguity": 0.082875,
+        "resolution": 0.917125,
+        "contacts": 5
+      }
+    },
+    "V1_control": {
+      "different_sequence": {
+        "ambiguity": 0.5904900000000002,
+        "resolution": 0.4095099999999998,
+        "contacts": 5
+      },
+      "control_separates": true
+    },
+    "V2_deviation_vs_density": [
+      {
+        "density": 0.0,
+        "deviation": 0.0
+      },
+      {
+        "density": 0.5,
+        "deviation": 0.0003786742230751372
+      },
+      {
+        "density": 1.0,
+        "deviation": 0.0007689455537888135
+      },
+      {
+        "density": 2.0,
+        "deviation": 0.0015850280568177055
+      },
+      {
+        "density": 4.0,
+        "deviation": 0.003364684302556764
+      },
+      {
+        "density": 8.0,
+        "deviation": 0.007558016753643204
+      }
+    ],
+    "V3_model_error": {
+      "multiplicative_max_abs_err": 0.0,
+      "additive_mean_abs_err": 0.07282838247681798,
+      "max_based_mean_abs_err": 0.18896813888588204,
+      "n_trials": 400
+    },
+    "V4_saturation": {
+      "n_terms": 4000,
+      "divergent_sum": 7.8716402373108485,
+      "divergent_residual_gap": 0.0002499375156210954,
+      "convergent_sum": 0.6446841605643839,
+      "convergent_residual_gap": 0.5001249687578094
+    },
+    "V5_sensitivity": {
+      "powers": [
+        0.6,
+        0.35,
+        0.5,
+        0.25,
+        0.15
+      ],
+      "analytic": [
+        0.20718750000000002,
+        0.1275,
+        0.16575,
+        0.1105,
+        0.0975
+      ],
+      "numeric": [
+        0.20718749993431373,
+        0.12750000000227857,
+        0.16574999983642869,
+        0.1105000002610268,
+        0.09749999974051349
+      ],
+      "closed_form": [
+        0.20718750000000008,
+        0.12750000000000006,
+        0.16575000000000006,
+        0.11050000000000004,
+        0.09750000000000004
+      ]
+    },
+    "V5_ordering": {
+      "by_sensitivity": [
+        "k1",
+        "k3",
+        "k2",
+        "k4",
+        "k5"
+      ],
+      "by_power": [
+        "k1",
+        "k3",
+        "k2",
+        "k4",
+        "k5"
+      ]
+    },
+    "V6_inertness": {
+      "relabel_mismatches": 0,
+      "control_separates_different": true
+    },
+    "V7_cost_vs_path": [
+      {
+        "path_len": 1.0,
+        "resolution": 0.917125,
+        "cost": 5
+      },
+      {
+        "path_len": 10.0,
+        "resolution": 0.917125,
+        "cost": 5
+      },
+      {
+        "path_len": 100.0,
+        "resolution": 0.917125,
+        "cost": 5
+      },
+      {
+        "path_len": 1000.0,
+        "resolution": 0.917125,
+        "cost": 5
+      },
+      {
+        "path_len": 10000.0,
+        "resolution": 0.917125,
+        "cost": 5
+      }
+    ],
+    "V8_static_vs_executed": {
+      "n_cases": 300,
+      "disagreements": 0,
+      "statically_rejected": 132
+    }
+  },
+  "notes": [
+    "Substrates differ in geometry (3.0 vs 0.2), field scale (0.4 vs 7.5) and path length (120 vs 8) while realising the same contact sequence.",
+    "V2's non-local term is the only departure from locality introduced anywhere in this suite, matching the uniqueness claim of Prop. 2.8."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 0.4546
+  }
+}

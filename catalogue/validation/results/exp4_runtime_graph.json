@@ -1,0 +1,252 @@
+{
+  "experiment": "exp4_runtime_graph",
+  "paper": "runtime-graph",
+  "question": "Can one acquisition be compiled once and queried many times, with each answer carrying its own proof?",
+  "summary": {
+    "graded": 11,
+    "passed": 11,
+    "failed": 0,
+    "non_discriminating": 0,
+    "verdict": "PASS"
+  },
+  "expectations": [
+    {
+      "label": "prop:medium deleting the medium makes separation free",
+      "prediction": "Without the medium an isolated observation separates at zero cost; with it, every observation carries a positive price.",
+      "paper_ref": "prop:medium / rem:medium",
+      "failure_mode": "A medium-free graph still charging for an isolated vertex.",
+      "observed": {
+        "with": 0.35,
+        "without": 0.0
+      },
+      "passed": true,
+      "detail": "isolated vertex: 0.3500 with the medium, 0.0 without; control: a connected vertex still costs 0.5000 without it",
+      "discriminating": null
+    },
+    {
+      "label": "thm:probe-cost max-flow reproduces the true minimum",
+      "prediction": "A single max-flow computation on the Q-contracted graph returns sep(Q) and an inclusion-minimal minimiser, agreeing with exhaustive minimisation on every query.",
+      "paper_ref": "thm:probe-cost",
+      "failure_mode": "Any query where flow value and brute-force minimum differ.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 mismatches over 41 queries between max-flow and exhaustive minimisation; a 0.17 perturbation of the value is detected",
+      "discriminating": null
+    },
+    {
+      "label": "thm:verify certificates are checkable and forgeries rejected",
+      "prediction": "The four checks accept every honest certificate and reject certificates with an inflated value, a deflated value, or an inadmissible set.",
+      "paper_ref": "thm:verify",
+      "failure_mode": "A forged certificate passing all four checks.",
+      "observed": {
+        "honest": 41,
+        "forged_passed": 0
+      },
+      "passed": true,
+      "detail": "41 honest certificates accepted, 0 of 123 forgeries accepted (inflated value, deflated value, medium inside S)",
+      "discriminating": null
+    },
+    {
+      "label": "thm:monotone separation is monotone in the query",
+      "prediction": "Q subset Q' implies sep(Q) <= sep(Q'), over every nested pair.",
+      "paper_ref": "thm:monotone",
+      "failure_mode": "A nested pair where the larger query separates more cheaply.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 violations over 150 nested pairs; sep ranges 0.7300 to 0.9000 so the order is not trivial",
+      "discriminating": null
+    },
+    {
+      "label": "cor:nested one probe answers a threshold for the chain",
+      "prediction": "Along a chain Q1 subset ... subset Qm, sep(Qm) <= t implies sep(Qi) <= t for every i, so one probe suffices.",
+      "paper_ref": "cor:nested",
+      "failure_mode": "A chain member exceeding a threshold the top satisfies.",
+      "observed": [
+        0.9,
+        0.9,
+        0.9,
+        1.7100000000000002
+      ],
+      "passed": true,
+      "detail": "chain seps [0.9, 0.9, 0.9, 1.71] all <= top value 1.7100; 1 probe replaces 4; control threshold 0.9000 is violated as it must be",
+      "discriminating": null
+    },
+    {
+      "label": "prop:relabel keys are invariant under weight-preserving bijections",
+      "prediction": "A bijection fixing the medium and preserving weights leaves sep and dep unchanged.",
+      "paper_ref": "prop:relabel",
+      "failure_mode": "A key that moves under relabelling --- it would be reporting a file-format artefact.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 keys move under a weight-preserving swap; control: an asymmetric graph does move the key",
+      "discriminating": null
+    },
+    {
+      "label": "thm:floor a positive floor under every query",
+      "prediction": "sep(Q) >= beta = min medium weight > 0 for every non-empty query, so no answer is 'free'.",
+      "paper_ref": "thm:floor / cor:informative",
+      "failure_mode": "A query separating below the minimum medium weight.",
+      "observed": 0,
+      "passed": true,
+      "detail": "beta = 0.2000; min sep over 56 queries = 0.7300, 0 below the floor; control: dropping medium edges yields a 0.0 cut",
+      "discriminating": null
+    },
+    {
+      "label": "thm:sensitivity (a) value moves at most epsilon*M",
+      "prediction": "Under any epsilon-bounded perturbation the separation value moves by at most epsilon*M, where M is the largest number of edges crossing any admissible set.",
+      "paper_ref": "thm:sensitivity(a)",
+      "failure_mode": "A perturbation moving the value further than the bound.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 breaches over 400 perturbations; M = 5, worst observed move fell short of the bound by -0.00000",
+      "discriminating": null
+    },
+    {
+      "label": "thm:sensitivity (b) the separating set is stable",
+      "prediction": "If epsilon*(m+M) < slack then the minimising set is unchanged, so the answer rests on the same observations.",
+      "paper_ref": "thm:sensitivity(b) / cor:no-rerun",
+      "failure_mode": "A perturbation satisfying the hypothesis that nevertheless changes the minimiser --- this would make cor:no-rerun unsafe.",
+      "observed": 0,
+      "passed": true,
+      "detail": "slack 0.1600, m+M = 7: 0 of 23 guarded perturbations move the minimiser, while 184 unguarded ones do --- the condition is the thing preventing the change",
+      "discriminating": null
+    },
+    {
+      "label": "prop:slack the residual bound never overstates the margin",
+      "prediction": "The residual-capacity bound is a LOWER bound on true slack. Overstating it would authorise unsafe skips.",
+      "paper_ref": "prop:slack",
+      "failure_mode": "A residual bound exceeding the true slack.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 of 21 cases where the residual bound exceeds the true slack --- the bound is safe in the direction that matters",
+      "discriminating": null
+    },
+    {
+      "label": "thm:not-a-cut an explicit non-isomorphic pair with equal keys",
+      "prediction": "There exist two non-isomorphic runtime graphs agreeing on key(Q) for EVERY query. The paper's proof describes such a construction without exhibiting one; this searches for a witness.",
+      "paper_ref": "thm:not-a-cut",
+      "failure_mode": "No witness at any size searched, which would leave the theorem unsupported by this suite.",
+      "observed": {
+        "graph_1": {
+          "('u0', 'u3')": 0.4,
+          "('u1', 'u2')": 0.4,
+          "('u1', 'u3')": 0.7,
+          "('u2', 'u3')": 0.7
+        },
+        "graph_2": {
+          "('u0', 'u2')": 0.4,
+          "('u1', 'u2')": 0.4,
+          "('u1', 'u3')": 0.7,
+          "('u2', 'u3')": 0.4
+        }
+      },
+      "passed": true,
+      "detail": "witness found after 31139 pairs: two non-isomorphic graphs with identical keys on all 15 queries --- the theorem's construction is realisable",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "medium": {
+      "sep_with_medium": 0.35,
+      "cut_without_medium": 0.0
+    },
+    "medium_control": {
+      "connected_vertex_cut_without_medium": 0.5
+    },
+    "probe_cost": {
+      "queries_checked": 41,
+      "flow_vs_brute_mismatches": 0
+    },
+    "probe_cost_control": {
+      "wrong_value_detected": true
+    },
+    "verify": {
+      "honest_accepted": 41,
+      "forgeries_attempted": 123,
+      "forgeries_passed": 0
+    },
+    "monotone": {
+      "nested_pairs": 150,
+      "violations": 0,
+      "sep_range": [
+        0.73,
+        0.9
+      ]
+    },
+    "nested": {
+      "chain_seps": [
+        0.9,
+        0.9,
+        0.9,
+        1.7100000000000002
+      ],
+      "threshold": 1.7100000000000002,
+      "all_below": true,
+      "control_threshold": 0.899999,
+      "control_has_failure": true
+    },
+    "relabel": {
+      "weights_preserved": true,
+      "keys_moved": 0,
+      "control_asymmetric_moves": true
+    },
+    "floor": {
+      "beta": 0.2,
+      "n_queries": 56,
+      "min_sep": 0.73,
+      "below_floor": 0
+    },
+    "floor_control": {
+      "zero_cut_without_medium": true
+    },
+    "sensitivity_a": {
+      "M": 5,
+      "m": 2,
+      "trials": 400,
+      "breaches": 0,
+      "worst_margin": 0.0
+    },
+    "sensitivity_b": {
+      "slack": 0.15999999999999992,
+      "m_plus_M": 7,
+      "guarded_trials": 23,
+      "guarded_violations": 0,
+      "unguarded_changes": 184
+    },
+    "slack_bound": {
+      "cases": 21,
+      "overstatements": 0
+    },
+    "not_a_cut": {
+      "pairs_searched": 31139,
+      "trivially_different_rejected": 57,
+      "witness": {
+        "graph_1": {
+          "('u0', 'u3')": 0.4,
+          "('u1', 'u2')": 0.4,
+          "('u1', 'u3')": 0.7,
+          "('u2', 'u3')": 0.7
+        },
+        "graph_2": {
+          "('u0', 'u2')": 0.4,
+          "('u1', 'u2')": 0.4,
+          "('u1', 'u3')": 0.7,
+          "('u2', 'u3')": 0.4
+        }
+      }
+    },
+    "not_a_cut_control": {
+      "isomorphism_test_fires": true
+    }
+  },
+  "notes": [
+    "Separation is computed by exhaustive minimisation over admissible subsets. The max-flow implementation is checked against it, not the other way round.",
+    "thm:not-a-cut's proof in the manuscript describes a construction rather than exhibiting one; the witness recorded above (if any) is a concrete instance the paper could adopt.",
+    "CAVEAT on that witness: for 13 of its 15 queries the minimum admissible cut is the whole vertex set, so the agreement there is carried by the medium edges rather than by the contact structure. The pair satisfies the theorem as stated --- the differing edges do participate in the {u0} cut --- but a manuscript adopting it should say this rather than imply the keys probe contact structure deeply."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 15.6116
+  }
+}

@@ -489,14 +489,16 @@ def main():
 
     # ============================================================ T7
     e = ex.expect(
-        "prop:three stability needs at least three catalysts",
-        "A claim region supported by k catalysts, one of which may be "
-        "in error, is stable under removal of the erroneous catalyst "
-        "only if k >= 3. The proof adjudicates by majority among "
-        "survivors, so k=1 leaves no support and k=2 leaves no "
-        "majority; recovery should be near-total from k=3 and absent "
-        "below it.",
-        "prop:three",
+        "prop:three under the superseded (definite-article) reading",
+        "The statement as FIRST DRAFTED read 'removal of THE erroneous "
+        "catalyst', whose definite article presupposes the erroneous "
+        "one has been identified. Under that reading k >= 3 should "
+        "still be required. It is not: naming the bad catalyst leaves "
+        "one sound survivor sufficient, so recovery is already total "
+        "at k=2 and the drafted statement is false. This row is "
+        "retained as the evidence that motivated the amendment; the "
+        "amended statement is graded by the row below.",
+        "prop:three (superseded draft; see rem:three-unaided)",
         "k=2 recovering the true region as reliably as k=3, which "
         "would put the laboratory convention at two tests instead of "
         "three.")
@@ -548,12 +550,12 @@ def main():
     # That is a different operation and it is graded separately, as
     # exp3 grades thm:minimal-record's two readings.
     e2 = ex.expect(
-        "prop:three the bound the proof actually establishes",
+        "prop:three as amended: an unidentified erroneous catalyst",
         "When the erroneous catalyst is not identified, the region is "
         "whatever the catalysts' majority yields. Then k=2 leaves a "
         "one-one split with no majority and k >= 3 is genuinely the "
         "first count at which the true region is recovered.",
-        "prop:three (proof)",
+        "prop:three (as printed, with rem:three-unaided)",
         "k=2 recovering the true region unaided, which would remove "
         "the proof's reason as well as its conclusion.")
 
@@ -612,9 +614,17 @@ def main():
             "catalyst is NOT identified; there k=2 recovers nothing "
             "and k=3 recovers everything, exactly as claimed. The "
             "proof is sound for an operation the statement does not "
-            "quantify. The fix is to the statement, not the argument: "
-            "it should suppose one catalyst may be in error without "
-            "supposing it can be picked out.")
+            "quantify. The fix was to the statement, not the argument, "
+            "and it has been made: prop:three now supposes one "
+            "catalyst may be in error WITHOUT supposing it can be "
+            "picked out, and removal of 'an' rather than 'the' "
+            "erroneous catalyst. rem:three-unaided records why the "
+            "hypothesis is load-bearing. The failing row above is "
+            "retained deliberately --- it grades the superseded draft "
+            "and is the evidence that forced the amendment. It is "
+            "reported as a failure rather than deleted, because a "
+            "register that quietly drops the rows that changed the "
+            "paper is not a register.")
     ex.note("Section 6's claims are about procedures over catalysts, "
             "which a static library does not contain, so T5-T7 run on "
             "constructed configurations where the catalysts are the "

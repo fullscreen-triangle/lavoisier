@@ -1,0 +1,465 @@
+{
+  "experiment": "exp6_peptide_mass_invariance",
+  "paper": "peptide-mass-invariance",
+  "question": "Do the identity chain of section 4 and the closure chain of section 6 hold, and does mass fail to determine identity on a real spectral library?",
+  "summary": {
+    "graded": 9,
+    "passed": 8,
+    "failed": 1,
+    "non_discriminating": 0,
+    "verdict": "FAIL"
+  },
+  "expectations": [
+    {
+      "label": "thm:invariance the cut key is a graph invariant",
+      "prediction": "A weighted isomorphism that fixes the medium preserves sigma and delta, so the cut key does not depend on how vertices are named.",
+      "paper_ref": "thm:invariance",
+      "failure_mode": "A relabelling of the same graph that changes any cut key, which would make identity an artefact of naming.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 key mismatches over 40 relabellings of an 8-compound NIST subgraph; control: a 9x weight change does move a key",
+      "discriminating": null
+    },
+    {
+      "label": "thm:region identity is an edge set, not a value",
+      "prediction": "The minimum cut is a SET of edges of weight at least beta. A scalar determines that set only if the map from edge sets to reals is injective; distinct cuts sharing a weight refute it.",
+      "paper_ref": "thm:region",
+      "failure_mode": "Every distinct minimum cut carrying a distinct weight, which would let a scalar stand in for the region after all.",
+      "observed": 7,
+      "passed": true,
+      "detail": "7 weights carry more than one distinct minimum cut over 420 cuts drawn from the NIST graph, so the weight-to-cut map is not injective and the region is not recoverable from a scalar",
+      "discriminating": null
+    },
+    {
+      "label": "cor:mass a scalar observable does not determine the cut key",
+      "prediction": "Precursor m/z, at ANY precision, fails to determine identity: refining it yields a more precise point and leaves the region undetermined. Concretely, compounds agreeing on mass to within tolerance need not agree on cut key, and compounds agreeing on cut key need not agree on mass.",
+      "paper_ref": "cor:mass",
+      "failure_mode": "Mass determining the cut key on this library, i.e. mass agreement implying key agreement at every tolerance.",
+      "observed": [
+        {
+          "tol_ppm": 100.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 10.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 1.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 0.01,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 1e-06,
+          "same_key_diff_mass": 17
+        }
+      ],
+      "passed": true,
+      "detail": "17 of 5600 compound pairs share a cut key while differing in precursor mass; all remain mass-distinct down to 1e-6 ppm, so no refinement of the scalar recovers the key it fails to determine",
+      "discriminating": null
+    },
+    {
+      "label": "cor:mass the honest converse on this library",
+      "prediction": "The library is a curated 244-compound set, so mass ambiguity in the OTHER direction may vanish under refinement. Measure it rather than assume it: report the tolerance at which no two library compounds share a precursor m/z.",
+      "paper_ref": "cor:mass, rem:collapse-honest",
+      "failure_mode": "Reporting the corollary as if a curated library exhibited mass degeneracy it does not exhibit.",
+      "observed": [
+        {
+          "tol_ppm": 100.0,
+          "ambiguous_compounds": 44,
+          "fraction": 0.1803
+        },
+        {
+          "tol_ppm": 50.0,
+          "ambiguous_compounds": 14,
+          "fraction": 0.0574
+        },
+        {
+          "tol_ppm": 10.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        },
+        {
+          "tol_ppm": 5.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        },
+        {
+          "tol_ppm": 1.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        }
+      ],
+      "passed": true,
+      "detail": "on THIS library precursor m/z alone separates every compound at 10 ppm and finer (44 ambiguous at 100 ppm, 0 at 10). cor:mass is therefore not a claim about curated-library ambiguity; it is the claim tested in T3, that a point does not determine a region.",
+      "discriminating": null
+    },
+    {
+      "label": "thm:no-selector removing the medium leaves items symmetric",
+      "prediction": "There is no computable, non-arbitrary selection of a distinguished rival: with the medium deleted the remaining items admit a zero-cost separating set, so nothing in the graph nominates a rival.",
+      "paper_ref": "thm:no-selector, rem:medium-why",
+      "failure_mode": "A graph in which deleting the medium still leaves every item with a positive separation, which would make the medium dispensable and give the regress a base case.",
+      "observed": {
+        "with_medium_positive": 25,
+        "without_medium_zero": 25
+      },
+      "passed": true,
+      "detail": "in all 25 NIST subgraphs every item has positive separation with the medium present, and all 25 admit a zero-cost separating set once it is deleted",
+      "discriminating": null
+    },
+    {
+      "label": "thm:closure-stronger case (i): closed yet plural",
+      "prediction": "Closure neither implies nor is implied by confidence above a threshold. The case of central interest is (i): a determination may be CLOSED and still return a region containing more than one candidate. That is the correct output, not a failure.",
+      "paper_ref": "thm:closure-stronger",
+      "failure_mode": "Closure always collapsing to a singleton, which would make closure and high confidence the same condition.",
+      "observed": 2,
+      "passed": true,
+      "detail": "2 of 210 determinations close on a region with more than one candidate while 208 close on a singleton, so closure and singleton-return are distinct conditions",
+      "discriminating": null
+    },
+    {
+      "label": "thm:dichotomy exactly two outcomes, no cycling",
+      "prediction": "Every determination ends in closure within the demand bound or in an honest decline. Demand is a strictly decreasing non-negative integer, so no run cycles and none exceeds the bound.",
+      "paper_ref": "thm:dichotomy, ass:effective",
+      "failure_mode": "A run that neither closes nor declines, or one whose step count exceeds its initial demand.",
+      "observed": {
+        "closed": 92,
+        "declined": 308,
+        "other": 0
+      },
+      "passed": true,
+      "detail": "400 runs: 92 closed, 308 declined, 0 other; 0 exceeded the initial demand bound and 0 steps failed to decrease demand",
+      "discriminating": null
+    },
+    {
+      "label": "prop:three under the superseded (definite-article) reading",
+      "prediction": "The statement as FIRST DRAFTED read 'removal of THE erroneous catalyst', whose definite article presupposes the erroneous one has been identified. Under that reading k >= 3 should still be required. It is not: naming the bad catalyst leaves one sound survivor sufficient, so recovery is already total at k=2 and the drafted statement is false. This row is retained as the evidence that motivated the amendment; the amended statement is graded by the row below.",
+      "paper_ref": "prop:three (superseded draft; see rem:three-unaided)",
+      "failure_mode": "k=2 recovering the true region as reliably as k=3, which would put the laboratory convention at two tests instead of three.",
+      "observed": {
+        "1": 0.0,
+        "2": 1.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "passed": false,
+      "detail": "recovery after removing the IDENTIFIED erroneous catalyst is 0.000 at k=1 but already 1.000 at k=2: once the bad catalyst is named, one sound survivor determines the region and no majority is needed. Under the definite article of the statement, k >= 3 is not required.",
+      "discriminating": null
+    },
+    {
+      "label": "prop:three as amended: an unidentified erroneous catalyst",
+      "prediction": "When the erroneous catalyst is not identified, the region is whatever the catalysts' majority yields. Then k=2 leaves a one-one split with no majority and k >= 3 is genuinely the first count at which the true region is recovered.",
+      "paper_ref": "prop:three (as printed, with rem:three-unaided)",
+      "failure_mode": "k=2 recovering the true region unaided, which would remove the proof's reason as well as its conclusion.",
+      "observed": {
+        "1": 0.0,
+        "2": 0.0,
+        "3": 1.0,
+        "4": 1.0,
+        "5": 1.0
+      },
+      "passed": true,
+      "detail": "unaided recovery is 0.000 at k=1, 0.000 at k=2 and 1.000 from k=3: three catalysts is exactly the threshold, so the proof's reasoning is sound for the operation it describes even though the statement quantifies a different one",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "nist_library": {
+      "path": "oxford/public/ac_cac_lib2020_msp/AC_CAC_MSLibrary2020_V1D1B.msp",
+      "usable_spectra": 5298,
+      "compounds": 244,
+      "mean_signature_size": 59.89,
+      "collision_energies": [
+        "NCE=10%",
+        "NCE=15%",
+        "NCE=20%",
+        "NCE=25%",
+        "NCE=30%",
+        "NCE=40%",
+        "NCE=50%",
+        "NCE=60%",
+        "NCE=80%"
+      ]
+    },
+    "T1_invariance": {
+      "vertices": 8,
+      "relabellings": 40,
+      "key_mismatches": 0,
+      "control_weight_change_moves_key": true,
+      "keys": {
+        "C12H22N2O5": [
+          1.888888889,
+          1
+        ],
+        "C15H23NO6": [
+          2.373015873,
+          1
+        ],
+        "C17H27NO6": [
+          2.698412698,
+          1
+        ],
+        "C13H23NO5S": [
+          1.380952382,
+          1
+        ],
+        "C19H35NO6": [
+          2.849206348,
+          1
+        ],
+        "C19H36N2O8S": [
+          1.888888889,
+          1
+        ],
+        "C26H44N2O6S": [
+          2.404761904,
+          1
+        ],
+        "C11H22N2O4": [
+          2.119047619,
+          1
+        ]
+      }
+    },
+    "T2_region": {
+      "cuts_examined": 420,
+      "weights_carrying_several_distinct_cuts": 7,
+      "examples": [
+        {
+          "weight": 1.880952381,
+          "distinct_cuts": 2
+        },
+        {
+          "weight": 2.404761904,
+          "distinct_cuts": 2
+        },
+        {
+          "weight": 1.909090909,
+          "distinct_cuts": 2
+        }
+      ]
+    },
+    "T3_mass_vs_key": {
+      "subgraphs": 200,
+      "pairs_examined": 5600,
+      "pairs_sharing_a_cut_key": 17,
+      "subgraphs_with_varying_keys": 200,
+      "by_tolerance": [
+        {
+          "tol_ppm": 100.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 10.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 1.0,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 0.01,
+          "same_key_diff_mass": 17
+        },
+        {
+          "tol_ppm": 1e-06,
+          "same_key_diff_mass": 17
+        }
+      ],
+      "examples": [
+        {
+          "a": "C14H27NO5",
+          "b": "C19H33NO8",
+          "key": [
+            2.54,
+            1
+          ],
+          "mz_a": 290.1962,
+          "mz_b": 404.2279,
+          "ppm_apart": 392946.9
+        },
+        {
+          "a": "C25H43NO10",
+          "b": "C22H36N2O6S",
+          "key": [
+            2.424528303,
+            1
+          ],
+          "mz_a": 518.296,
+          "mz_b": 457.2367,
+          "ppm_apart": 117807.8
+        },
+        {
+          "a": "C16H29NO6",
+          "b": "C22H41NO6",
+          "key": [
+            3.172413793,
+            1
+          ],
+          "mz_a": 332.2068,
+          "mz_b": 416.3007,
+          "ppm_apart": 253137.2
+        },
+        {
+          "a": "C23H39NO10",
+          "b": "C17H26N2O4",
+          "key": [
+            2.962962963,
+            1
+          ],
+          "mz_a": 490.2647,
+          "mz_b": 323.1965,
+          "ppm_apart": 340771.4
+        },
+        {
+          "a": "C14H26N2O5",
+          "b": "C14H27NO4",
+          "key": [
+            2.75,
+            1
+          ],
+          "mz_a": 303.1914,
+          "mz_b": 274.2013,
+          "ppm_apart": 95616.5
+        },
+        {
+          "a": "C16H21NO6",
+          "b": "C17H31NO4",
+          "key": [
+            1.867647058,
+            1
+          ],
+          "mz_a": 324.1442,
+          "mz_b": 314.2326,
+          "ppm_apart": 30577.7
+        }
+      ]
+    },
+    "T3b_library_mass_degeneracy": {
+      "distinct_masses": 244,
+      "by_tolerance": [
+        {
+          "tol_ppm": 100.0,
+          "ambiguous_compounds": 44,
+          "fraction": 0.1803
+        },
+        {
+          "tol_ppm": 50.0,
+          "ambiguous_compounds": 14,
+          "fraction": 0.0574
+        },
+        {
+          "tol_ppm": 10.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        },
+        {
+          "tol_ppm": 5.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        },
+        {
+          "tol_ppm": 1.0,
+          "ambiguous_compounds": 0,
+          "fraction": 0.0
+        }
+      ],
+      "resolved_at_ppm": 10.0
+    },
+    "T4_no_selector": {
+      "graphs": 25,
+      "all_positive_with_medium": 25,
+      "zero_cost_separation_without_medium": 25
+    },
+    "T5_closed_plural": {
+      "determinations": 210,
+      "closed_with_plural_region": 2,
+      "closed_with_singleton": 208
+    },
+    "T6_dichotomy": {
+      "runs": 400,
+      "outcomes": {
+        "closed": 92,
+        "declined": 308,
+        "other": 0
+      },
+      "runs_exceeding_demand_bound": 0,
+      "non_decreasing_demand_steps": 0
+    },
+    "T7a_three_catalysts_literal": {
+      "reading": "the proposition as stated: THE erroneous catalyst is identified and removed, and the majority among survivors is compared with the true region",
+      "by_k": {
+        "1": {
+          "trials": 2000,
+          "recovered_true_region": 0,
+          "fraction": 0.0
+        },
+        "2": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        },
+        "3": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        },
+        "4": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        },
+        "5": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        }
+      }
+    },
+    "T7b_three_catalysts_unaided": {
+      "reading": "the erroneous catalyst is NOT identified; the region is the majority over all k catalysts",
+      "by_k": {
+        "1": {
+          "trials": 2000,
+          "recovered_true_region": 0,
+          "fraction": 0.0
+        },
+        "2": {
+          "trials": 2000,
+          "recovered_true_region": 0,
+          "fraction": 0.0
+        },
+        "3": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        },
+        "4": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        },
+        "5": {
+          "trials": 2000,
+          "recovered_true_region": 2000,
+          "fraction": 1.0
+        }
+      }
+    }
+  },
+  "notes": [
+    "Sections 4's tests run on the NIST AC/CAC MS/MS library (5298 usable spectra, 244 compounds, nine collision energies). Compounds are vertices; a contact edge exists where two compounds share at least two binned product ions at 0.01 Th and 1%% of base peak. The binary .INU/.DBU index files alongside the library carry no documented layout and are not read; the vendor's .MSP text export of the same content is.",
+    "T3b records a result that runs against a loose reading of cor:mass: on this curated library precursor m/z alone separates every compound at 10 ppm. The corollary is not a claim about ambiguity in curated sets. Its content is T3's: a point does not determine a region, and refining the point does not make it one.",
+    "prop:three is graded twice, as exp3 grades thm:minimal-record. The statement says the region is stable under removal of THE erroneous catalyst --- the definite article identifies it --- and under that reading k=2 already recovers the true region in every trial, because one named-sound survivor settles it and no majority is needed. The proof's reason, 'no majority to adjudicate', describes the case where the erroneous catalyst is NOT identified; there k=2 recovers nothing and k=3 recovers everything, exactly as claimed. The proof is sound for an operation the statement does not quantify. The fix was to the statement, not the argument, and it has been made: prop:three now supposes one catalyst may be in error WITHOUT supposing it can be picked out, and removal of 'an' rather than 'the' erroneous catalyst. rem:three-unaided records why the hypothesis is load-bearing. The failing row above is retained deliberately --- it grades the superseded draft and is the evidence that forced the amendment. It is reported as a failure rather than deleted, because a register that quietly drops the rows that changed the paper is not a register.",
+    "Section 6's claims are about procedures over catalysts, which a static library does not contain, so T5-T7 run on constructed configurations where the catalysts are the controlled variable."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 3.6206
+  }
+}

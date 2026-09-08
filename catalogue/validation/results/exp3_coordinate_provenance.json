@@ -1,0 +1,300 @@
+{
+  "experiment": "exp3_coordinate_provenance",
+  "paper": "coordinate-provenance",
+  "question": "Is a coordinate computed in one context safely comparable to one computed in another?",
+  "summary": {
+    "graded": 9,
+    "passed": 9,
+    "failed": 0,
+    "non_discriminating": 0,
+    "verdict": "PASS"
+  },
+  "expectations": [
+    {
+      "label": "thm:collapse collapse is forced by cardinality",
+      "prediction": "If |Crd| < |Ctx| for the maps phi(x,.) at some fixed x, then two distinct contexts share a coordinate and phi is not auditable.",
+      "paper_ref": "thm:collapse",
+      "failure_mode": "An auditable map whose coordinate space is smaller than its context space.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 of 512 maps into a 2-element coordinate space are auditable (|Ctx| = 3); control: an injective map into a 9-element space is auditable",
+      "discriminating": null
+    },
+    {
+      "label": "thm:pipeline-loss loss compounds along a pipeline",
+      "prediction": "If stage 1 is non-auditable then the composition is non-auditable, for EVERY choice of stage 2 --- including injective and information-preserving ones.",
+      "paper_ref": "thm:pipeline-loss",
+      "failure_mode": "A downstream stage that restores auditability.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 of 256 possible second stages restore auditability; control: composing an auditable stage 1 with an injective stage 2 stays auditable",
+      "discriminating": null
+    },
+    {
+      "label": "cor:no-recovery no downstream function recovers the context",
+      "prediction": "No f : Crd2 -> Ctx1 returns c1 on one input and c1' on the other, because the two inputs are the same element.",
+      "paper_ref": "cor:no-recovery",
+      "failure_mode": "A recovery function, however contrived.",
+      "observed": 0,
+      "passed": true,
+      "detail": "the two pipeline outputs are the same element, and 0 of 81 functions recover the context; control: 9 functions succeed when the inputs are distinct",
+      "discriminating": null
+    },
+    {
+      "label": "thm:minimal-record the quotient is the smallest sufficient record",
+      "prediction": "rec_min is sufficient for comparison, and NO sufficient record map has a smaller image. Checked exhaustively over every record map into every codomain size.",
+      "paper_ref": "thm:minimal-record",
+      "failure_mode": "A sufficient record map with a strictly smaller image than |Ctx/=|.",
+      "observed": 0,
+      "passed": true,
+      "detail": "rec_min has 2 classes and is sufficient; 0 sufficient maps have a smaller image, though smaller INSUFFICIENT maps do exist",
+      "discriminating": null
+    },
+    {
+      "label": "thm:minimal-record (stated form) factorisation as printed",
+      "prediction": "As printed, the theorem claims every sufficient record map factors through rec_min. A map that splits an equivalence class refutes this while remaining sufficient.",
+      "paper_ref": "thm:minimal-record",
+      "failure_mode": "No sufficient record map splits a class --- which would make the printed statement correct after all.",
+      "observed": 6,
+      "passed": true,
+      "detail": "6 sufficient record maps do NOT factor through rec_min (e.g. {'c1': 0, 'c2': 1, 'c3': 2} splits the class {c1,c2}); the printed factorisation claim is false, the image-size bound the proof actually establishes is not",
+      "discriminating": null
+    },
+    {
+      "label": "prop:cost per-run records are cheap",
+      "prediction": "Attaching a record to every measurement costs N*sum(log|Prv_i|) bits; storing per run and referencing costs N*s*log(s) + sum(log|Prv_i|), which is asymptotically smaller in N for fixed contexts.",
+      "paper_ref": "prop:cost",
+      "failure_mode": "The per-run scheme costing more than the per-measurement one at large N.",
+      "observed": {
+        "min_ratio": 2.452864898364072,
+        "max_ratio": 2.5145369241126785
+      },
+      "passed": true,
+      "detail": "per-run scheme is cheaper at every N tested; saving is 2.51x and is independent of N (2.45 at N=100, 2.51 at N=1e6) --- the record is stored once, not amplified",
+      "discriminating": null
+    },
+    {
+      "label": "thm:comparability record equality decides comparability",
+      "prediction": "With rec sufficient, r1 = r2 implies the coordinates are comparable; with rec = rec_min the test never reports comparable for coordinates whose generating maps disagree.",
+      "paper_ref": "thm:comparability",
+      "failure_mode": "A pair passing the record test whose generating maps differ on X.",
+      "observed": 0,
+      "passed": true,
+      "detail": "45 admitted comparisons, 0 of them between disagreeing maps; 4 context pairs declined",
+      "discriminating": null
+    },
+    {
+      "label": "thm:decline-sound a defined comparison is always licensed",
+      "prediction": "The partial comparison is defined exactly when r1 = r2, and every defined case is between coordinates produced by the same function on X.",
+      "paper_ref": "thm:decline-sound",
+      "failure_mode": "A defined comparison the contexts do not license.",
+      "observed": 0,
+      "passed": true,
+      "detail": "the total comparator answers 4 unlicensed comparisons; the partial one answers 0 and declines 4",
+      "discriminating": null
+    },
+    {
+      "label": "thm:record-floor no non-empty record is free",
+      "prediction": "A one-element record space is never sufficient once some extension context behaves differently, and any fixed Prv is eventually exhausted as contexts accumulate.",
+      "paper_ref": "thm:record-floor / ax:noncomplete",
+      "failure_mode": "A constant record remaining sufficient across an extension, or a bounded record surviving unbounded extension.",
+      "observed": {
+        "trivial_sufficient": false,
+        "exhausted_at": 3
+      },
+      "passed": true,
+      "detail": "a constant record is insufficient; a 4-element record is exhausted at release 3; control: a behaviourally duplicate context leaves the class count at 2",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "collapse_small_codomain": {
+      "n_maps": 512,
+      "size_Crd": 2,
+      "size_Ctx": 3,
+      "auditable": 0
+    },
+    "collapse_control": {
+      "size_Crd": 9,
+      "auditable_witness_exists": true
+    },
+    "pipeline_loss": {
+      "n_stage2_maps": 256,
+      "restored_auditability": 0
+    },
+    "pipeline_loss_control": {
+      "auditable_stage1_stays_auditable": true
+    },
+    "no_recovery": {
+      "outputs_identical": true,
+      "n_functions_enumerated": 81,
+      "successful_recoveries": 0
+    },
+    "no_recovery_control": {
+      "recoveries_when_inputs_distinct": 9
+    },
+    "minimal_record": {
+      "n_contexts": 3,
+      "n_equivalence_classes": 2,
+      "rec_min_sufficient": true,
+      "sufficient_maps_with_smaller_image": 0
+    },
+    "minimal_record_control": {
+      "smaller_but_insufficient_map_exists": true
+    },
+    "minimal_record_factorisation": {
+      "sufficient_maps_not_factoring_through_rec_min": 6,
+      "example": {
+        "c1": 0,
+        "c2": 1,
+        "c3": 2
+      }
+    },
+    "cost": {
+      "stages": 6,
+      "record_sizes": [
+        64,
+        128,
+        32,
+        256,
+        16,
+        512
+      ],
+      "rows": [
+        {
+          "N": 100,
+          "per_measurement_bits": 3900.0,
+          "per_run_bits": 1589.9775004326937,
+          "ratio": 2.452864898364072
+        },
+        {
+          "N": 1000,
+          "per_measurement_bits": 39000.0,
+          "per_run_bits": 15548.775004326937,
+          "ratio": 2.5082361786794793
+        },
+        {
+          "N": 10000,
+          "per_measurement_bits": 390000.0,
+          "per_run_bits": 155136.75004326936,
+          "ratio": 2.513911113203188
+        },
+        {
+          "N": 100000,
+          "per_measurement_bits": 3900000.0,
+          "per_run_bits": 1551016.5004326936,
+          "ratio": 2.5144800193369963
+        },
+        {
+          "N": 1000000,
+          "per_measurement_bits": 39000000.0,
+          "per_run_bits": 15509814.004326936,
+          "ratio": 2.5145369241126785
+        }
+      ]
+    },
+    "cost_control": {
+      "ratio_at_one_tiny_stage": 6884.099049141316,
+      "ratio_range": [
+        2.452864898364072,
+        2.5145369241126785
+      ]
+    },
+    "comparability": {
+      "admitted_pairs": 45,
+      "unsound_admissions": 0,
+      "declined_context_pairs": 4
+    },
+    "decline_sound": {
+      "total_comparator_unlicensed_answers": 4,
+      "partial_comparator_unlicensed_answers": 0,
+      "declined": 4
+    },
+    "record_floor": {
+      "trivial_record_sufficient": false,
+      "Prv_capacity": 4,
+      "exhausted_at_release": 3,
+      "history": [
+        {
+          "release": 1,
+          "n_contexts": 4,
+          "n_classes": 3,
+          "fits_in_Prv": true
+        },
+        {
+          "release": 2,
+          "n_contexts": 5,
+          "n_classes": 4,
+          "fits_in_Prv": true
+        },
+        {
+          "release": 3,
+          "n_contexts": 6,
+          "n_classes": 5,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 4,
+          "n_contexts": 7,
+          "n_classes": 6,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 5,
+          "n_contexts": 8,
+          "n_classes": 7,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 6,
+          "n_contexts": 9,
+          "n_classes": 8,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 7,
+          "n_contexts": 10,
+          "n_classes": 9,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 8,
+          "n_contexts": 11,
+          "n_classes": 10,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 9,
+          "n_contexts": 12,
+          "n_classes": 11,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 10,
+          "n_contexts": 13,
+          "n_classes": 12,
+          "fits_in_Prv": false
+        },
+        {
+          "release": 11,
+          "n_contexts": 14,
+          "n_classes": 13,
+          "fits_in_Prv": false
+        }
+      ]
+    },
+    "record_floor_control": {
+      "classes_before": 2,
+      "classes_after_duplicate": 2
+    }
+  },
+  "notes": [
+    "thm:collapse, thm:pipeline-loss, cor:no-recovery and thm:minimal-record are checked by exhaustive enumeration over the whole function space, not by sampling.",
+    "The printed form of thm:minimal-record claims a factorisation its own proof does not establish; the test above exhibits a sufficient record map that splits an equivalence class. The image-size bound the proof does establish is what thm:record-floor consumes, so the floor result is unaffected."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 0.7234
+  }
+}

@@ -1,0 +1,350 @@
+{
+  "experiment": "exp2_observation_groups",
+  "paper": "observation-groups",
+  "question": "Is a verdict a function of the data alone, or does the grouping carry part of it?",
+  "summary": {
+    "graded": 11,
+    "passed": 11,
+    "failed": 0,
+    "non_discriminating": 0,
+    "verdict": "PASS"
+  },
+  "expectations": [
+    {
+      "label": "lem:dof degrees of freedom set by grouping alone",
+      "prediction": "n - |P| depends on P alone and strictly increases along any strictly increasing chain, from 0 at the finest to n-1 at the coarsest.",
+      "paper_ref": "lem:dof",
+      "failure_mode": "A chain along which the denominator fails to increase, or a dependence on x.",
+      "observed": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "passed": true,
+      "detail": "dof [0, 1, 2, 3, 4, 5] along a strict chain; 0 at finest, 5 at coarsest; identical for two unrelated x",
+      "discriminating": null
+    },
+    {
+      "label": "rem:zero-dof the finest grouping computes nothing",
+      "prediction": "At the finest grouping the within-group dispersion is undefined --- zero degrees of freedom.",
+      "paper_ref": "rem:zero-dof",
+      "failure_mode": "A finite dispersion at the finest grouping, which would make the remark an edge case rather than a report.",
+      "observed": null,
+      "passed": true,
+      "detail": "undefined at the finest grouping, 1.1951 at the coarsest",
+      "discriminating": null
+    },
+    {
+      "label": "thm:verdict-depends a refinement flips the verdict",
+      "prediction": "There exist x and P1 < P2 whose statistics straddle a fixed threshold; hence no verdict is a function of x alone.",
+      "paper_ref": "thm:verdict-depends",
+      "failure_mode": "No (x, threshold) placing the two verdicts on opposite sides, which would leave the verdict a function of x.",
+      "observed": {
+        "s1": 6.572670690061995,
+        "s2": 6.0,
+        "t": 6.286335345030997
+      },
+      "passed": true,
+      "detail": "same x: statistic 6.5727 at P1 vs 6.0000 at P2, threshold 6.2863 separates the verdicts",
+      "discriminating": null
+    },
+    {
+      "label": "cor:pooling pooling can change the verdict",
+      "prediction": "Averaging technical replicates is a coarsening, and by thm:verdict-depends it can change the verdict.",
+      "paper_ref": "cor:pooling",
+      "failure_mode": "Pooling that provably never changes a verdict, which would make it a normalisation step after all.",
+      "observed": {
+        "pooled": 3.2385122319863977,
+        "unpooled": 3.578183404032489
+      },
+      "passed": true,
+      "detail": "pooling is a coarsening and moves the statistic 3.5782 -> 3.2385",
+      "discriminating": null
+    },
+    {
+      "label": "thm:endpoints two evaluations decide stability",
+      "prediction": "For a monotone analysis, agreement at the two endpoints implies agreement everywhere in the interval --- so stability costs 2 evaluations, not |interval|.",
+      "paper_ref": "thm:endpoints",
+      "failure_mode": "An interval whose endpoints agree but whose interior disagrees under a monotone A.",
+      "observed": 0,
+      "passed": true,
+      "detail": "26 intervals, 6 of them unstable, 0 disagreements between the 2-evaluation test and exhaustive enumeration",
+      "discriminating": null
+    },
+    {
+      "label": "thm:coarsest-invariant the greatest survivor is permutation-invariant",
+      "prediction": "If the survivor set is closed under join it has a greatest element, invariant under every permutation of Obs preserving x.",
+      "paper_ref": "thm:coarsest-invariant",
+      "failure_mode": "A join-closed survivor set with no greatest element, or one moved by an x-preserving permutation.",
+      "observed": {
+        "n_greatest": 1
+      },
+      "passed": true,
+      "detail": "join-closed survivor set of 122 groupings has a unique greatest element, fixed by the x-preserving swap r2<->r3",
+      "discriminating": null
+    },
+    {
+      "label": "thm:group-floor a positive floor on separation",
+      "prediction": "sep(o) >= beta > 0 for every observation, because the medium edge crosses every admissible cut.",
+      "paper_ref": "thm:group-floor",
+      "failure_mode": "An observation with sep(o) = 0, individuated at no cost.",
+      "observed": 0.5271,
+      "passed": true,
+      "detail": "beta_0 = 0.5271; min observed sep = 5.2711, all >= beta_0",
+      "discriminating": null
+    },
+    {
+      "label": "control: dropping the medium destroys the floor",
+      "prediction": "With the medium removed, some observation is individuated at zero cost --- confirming the floor is carried by the medium edge and not by the similarity weights.",
+      "paper_ref": "rem:medium",
+      "failure_mode": "A positive floor surviving removal of the medium, which would make rem:medium's regress argument idle.",
+      "observed": 0.0,
+      "passed": true,
+      "detail": "removing the medium leaves a zero-cost separating set (cut = 0.0)",
+      "discriminating": null
+    },
+    {
+      "label": "cor:no-free a grouping discards at least beta*(n-|P|)",
+      "prediction": "Every grouping coarser than the finest discards a positive quantity, bounded below by beta * (n - |P|).",
+      "paper_ref": "cor:no-free",
+      "failure_mode": "A coarsening whose discarded quantity is below the bound.",
+      "observed": 2.6355,
+      "passed": true,
+      "detail": "finest discards 0; coarsest discards at least 2.6355, monotone along the chain",
+      "discriminating": null
+    },
+    {
+      "label": "thm:decline-informative the interval report dominates",
+      "prediction": "Two datasets can share a point report while differing in interval report; the interval report determines the point report but not conversely.",
+      "paper_ref": "thm:decline-informative",
+      "failure_mode": "Interval reports that coincide whenever point reports do, making the extra structure idle.",
+      "observed": {
+        "I_a": 5,
+        "I_b": 4
+      },
+      "passed": true,
+      "detail": "both report verdict True; intervals of size 5 and 4",
+      "discriminating": null
+    },
+    {
+      "label": "cor:degenerate a singleton interval should decline",
+      "prediction": "When the survivor interval is exactly {P_top}, the verdict holds at one grouping only and the data do not establish that it is the intended one.",
+      "paper_ref": "cor:degenerate",
+      "failure_mode": "A singleton interval that nonetheless licenses the point report.",
+      "observed": {
+        "survivors": 1,
+        "of_members": 5
+      },
+      "passed": true,
+      "detail": "verdict holds at 1 of 5 admissible groupings (the coarsest alone, statistic 31.08 vs next 25.62); a bare verdict would conceal that 4 groupings disagree",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "dof_chain": {
+      "dofs": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "chain_is_strict": true,
+      "endpoints": [
+        0,
+        5
+      ]
+    },
+    "zero_dof": {
+      "finest_dispersion": null,
+      "coarsest_dispersion": 1.1951185199983536
+    },
+    "verdict_dependence": {
+      "statistic_at_P1": 6.572670690061995,
+      "statistic_at_P2": 6.0,
+      "P1_strictly_refines_P2": true,
+      "threshold": 6.286335345030997,
+      "verdict_at_P1": true,
+      "verdict_at_P2": false,
+      "x_identical_in_both": true
+    },
+    "pooling": {
+      "pooled_statistic": 3.2385122319863977,
+      "unpooled_statistic": 3.578183404032489,
+      "ratio_c": 1.1048849433672658,
+      "is_coarsening": true
+    },
+    "endpoint_decidability": {
+      "intervals_checked": 26,
+      "endpoint_says_stable": 20,
+      "exhaustive_says_stable": 20,
+      "disagreements": 0,
+      "evaluations_saved_per_interval": "2 vs |interval|"
+    },
+    "coarsest_invariant": {
+      "survivor_set_size": 122,
+      "join_closed": true,
+      "greatest_elements": [
+        [
+          [
+            "r1",
+            "r2",
+            "r3",
+            "r4",
+            "r5",
+            "r6"
+          ]
+        ]
+      ],
+      "permutation_preserves_x": true,
+      "greatest_is_invariant": true
+    },
+    "group_floor": {
+      "similarity_weights": {
+        "r1|r2": 0.0486,
+        "r1|r3": 0.83,
+        "r1|r4": 1.224,
+        "r1|r5": 0.8974,
+        "r1|r6": 0.8288,
+        "r2|r3": 1.3548,
+        "r2|r4": 1.9377,
+        "r2|r5": 0.1972,
+        "r2|r6": 1.1317,
+        "r3|r4": 1.5034,
+        "r3|r5": 0.2778,
+        "r3|r6": 0.8773,
+        "r4|r5": 1.9034,
+        "r4|r6": 1.5843,
+        "r5|r6": 1.0035
+      },
+      "medium_weights": {
+        "r1": 1.4423,
+        "r2": 1.3063,
+        "r3": 0.5271,
+        "r4": 1.0722,
+        "r5": 1.0779,
+        "r6": 1.4905
+      },
+      "separations": {
+        "r1": {
+          "sep": 5.271100000000001,
+          "depth": 1
+        },
+        "r2": {
+          "sep": 5.976299999999998,
+          "depth": 1
+        },
+        "r3": {
+          "sep": 5.3704,
+          "depth": 1
+        },
+        "r4": {
+          "sep": 6.916299999999999,
+          "depth": 6
+        },
+        "r5": {
+          "sep": 5.3572,
+          "depth": 1
+        },
+        "r6": {
+          "sep": 6.9161,
+          "depth": 1
+        }
+      },
+      "beta_0_min_medium_weight": 0.5271,
+      "all_at_or_above_beta_0": true
+    },
+    "medium_control": {
+      "cut_of_full_set_without_medium": 0.0
+    },
+    "no_free_grouping": [
+      {
+        "n_groups": 6,
+        "dof": 0,
+        "lower_bound_discarded": 0.0
+      },
+      {
+        "n_groups": 5,
+        "dof": 1,
+        "lower_bound_discarded": 0.5271
+      },
+      {
+        "n_groups": 4,
+        "dof": 2,
+        "lower_bound_discarded": 1.0542
+      },
+      {
+        "n_groups": 3,
+        "dof": 3,
+        "lower_bound_discarded": 1.5813000000000001
+      },
+      {
+        "n_groups": 2,
+        "dof": 4,
+        "lower_bound_discarded": 2.1084
+      },
+      {
+        "n_groups": 1,
+        "dof": 5,
+        "lower_bound_discarded": 2.6355
+      }
+    ],
+    "decline_dominates": {
+      "threshold": 6.2,
+      "x_point_verdict": true,
+      "x_interval_size": 5,
+      "xprime_point_verdict": true,
+      "xprime_interval_size": 4,
+      "same_point_report": true,
+      "different_interval_report": true
+    },
+    "degenerate_interval": {
+      "interval_size": 5,
+      "statistics": [
+        {
+          "grouping": "(('r1', 'r3'), ('r2',), ('r4', 'r5', 'r6'))",
+          "statistic": 31.081100606490804
+        },
+        {
+          "grouping": "(('r1', 'r3'), ('r2',), ('r4', 'r5'), ('r6',))",
+          "statistic": 25.622828512203743
+        },
+        {
+          "grouping": "(('r1', 'r3'), ('r2',), ('r4', 'r6'), ('r5',))",
+          "statistic": 25.456907283754234
+        },
+        {
+          "grouping": "(('r1', 'r3'), ('r2',), ('r4',), ('r5', 'r6'))",
+          "statistic": 25.422124414914162
+        },
+        {
+          "grouping": "(('r1', 'r3'), ('r2',), ('r4',), ('r5',), ('r6',))",
+          "statistic": 18.119272615232305
+        }
+      ],
+      "threshold": 28.35,
+      "verdict_at_point_report": true,
+      "survivors": [
+        "(('r1', 'r3'), ('r2',), ('r4', 'r5', 'r6'))"
+      ]
+    },
+    "degenerate_control": {
+      "singleton_lattice_survivors": 1,
+      "wide_interval_survivors": 5,
+      "wide_interval_size": 10
+    }
+  },
+  "notes": [
+    "The lattice L(Obs) on 6 observations has 203 elements (Bell(6)); thm:endpoints is what makes that size irrelevant.",
+    "Separations are computed by brute-force minimisation over admissible subsets, not by max-flow, so the floor result is checked independently of rem:computable's algorithm."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 1.583
+  }
+}

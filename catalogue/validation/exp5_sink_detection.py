@@ -528,6 +528,13 @@ def main():
     breaches, cases, lower_breaches = 0, 0, 0
     worst = 0.0
     lower_examples = []
+    # Partition by whether the minimiser SURVIVED the deletion.  The
+    # diagnosis in sec:validation rests on this split: if every breach
+    # belongs to the moved population, movement of the minimiser --- not
+    # the magnitude of the deletion --- is the operative condition.
+    stable_cases = stable_breaches = moved_cases = moved_breaches = 0
+    breach_shortfalls = []      # relative shortfall below the prediction
+    breach_tw_frac, moved_sound_tw_frac = [], []
     for trial in range(60):
         n = rng.randint(3, 5)
         items = ["a%d" % i for i in range(n)] + ["t"]
@@ -555,7 +562,24 @@ def main():
                 breaches += 1
             # Lower half: the proof asserts sep(v) is also AT LEAST
             # sep - tw.  That step assumes S is still the minimiser.
-            if new < sep_v - tw - 1e-9:
+            moved = sorted(st0[v][2]) != sorted(x for x in S if x != "t")
+            is_breach = new < sep_v - tw - 1e-9
+            if moved:
+                moved_cases += 1
+                if is_breach:
+                    moved_breaches += 1
+                else:
+                    moved_sound_tw_frac.append(tw / sep_v if sep_v else 0.0)
+            else:
+                stable_cases += 1
+                if is_breach:
+                    stable_breaches += 1
+            if is_breach:
+                predicted = sep_v - tw
+                if predicted > 0:
+                    breach_shortfalls.append((predicted - new) / predicted)
+                breach_tw_frac.append(tw / sep_v if sep_v else 0.0)
+            if is_breach:
                 lower_breaches += 1
                 if len(lower_examples) < 3:
                     lower_examples.append(
@@ -582,8 +606,26 @@ def main():
         "A separation falling BELOW the predicted value, which happens "
         "when deleting z makes a different admissible set cheaper and "
         "the minimiser moves.")
-    ex.record("spread_sound_a_lower", {"cases": cases,
-                                       "breaches": lower_breaches})
+    def _median(xs):
+        if not xs:
+            return None
+        ys = sorted(xs)
+        h = len(ys) // 2
+        return ys[h] if len(ys) % 2 else 0.5 * (ys[h - 1] + ys[h])
+
+    ex.record("spread_sound_a_lower",
+              {"cases": cases,
+               "breaches": lower_breaches,
+               "stable_cases": stable_cases,
+               "stable_breaches": stable_breaches,
+               "moved_cases": moved_cases,
+               "moved_breaches": moved_breaches,
+               "median_relative_shortfall": _median(breach_shortfalls),
+               "worst_relative_shortfall": (max(breach_shortfalls)
+                                            if breach_shortfalls else None),
+               "median_tw_fraction_breaching": _median(breach_tw_frac),
+               "median_tw_fraction_moved_sound":
+                   _median(moved_sound_tw_frac)})
     e.check(lower_breaches == 0, lower_breaches,
             "%d of %d cases fall below the predicted value" %
             (lower_breaches, cases))
@@ -751,7 +793,7 @@ def main():
         "antecedent to be satisfiable after all.")
 
     rngU = random.Random(11)
-    worst_slack, checked = 9e9, 0
+    worst_slack, checked, exactly_tight = 9e9, 0, 0
     for _ in range(800):
         nU = rngU.randint(3, 5)
         itemsU = ["u%d" % i for i in range(nU)]
@@ -769,15 +811,126 @@ def main():
                     continue
                 sv, _, S = sU[v]
                 zw = sum(val for e, val in crossing_edges(GU, S) if zz in e)
-                worst_slack = min(worst_slack, (sv - bU) - zw)
+                slack = (sv - bU) - zw
+                worst_slack = min(worst_slack, slack)
+                if abs(slack) <= 1e-9:
+                    exactly_tight += 1
                 checked += 1
     ex.record("threshold_mechanism", {"triples_checked": checked,
-                                      "min_slack": worst_slack})
+                                      "min_slack": worst_slack,
+                                      "exactly_tight": exactly_tight})
     e.check(worst_slack >= -1e-9, worst_slack,
             "over %d (graph, z, item) triples the slack "
             "[sep(v) - floor] - z_weight is never negative; its minimum "
             "is %+.6f, so the bound is tight and thm:threshold's "
             "antecedent is unsatisfiable" % (checked, worst_slack))
+
+    # ================================== def:wspread is NON-MONOTONE
+    # Found while establishing that thm:threshold's antecedent cannot
+    # be met.  It is a stronger and worse result than vacuity: the
+    # statistic the protocol thresholds is not merely bounded away from
+    # its cutoff, it is ANTI-correlated with sink strength above a
+    # transition.  Below lambda = (2n+1)*w_m the minimiser S*(v) excludes z,
+    # z's edge crosses it, and wspread rises with lambda.  Above it the
+    # minimiser SWALLOWS z --- S*(v) = U u {z} --- so no z edge crosses
+    # at all and the z-term collapses to the medium edge alone.
+    e = ex.expect(
+        "def:wspread is non-monotone in sink strength",
+        "There is a lambda* above which increasing the sink's "
+        "attachment weight DECREASES its weighted spread, because "
+        "S*(v) absorbs z and no z edge crosses the minimising cut. "
+        "A detector that flags large wspread therefore misses the "
+        "strongest sinks, and ranking by wspread does not repair it.",
+        "def:wspread, read against thm:threshold",
+        "wspread rising monotonically in lambda across the sweep, "
+        "which would leave the statistic usable as a one-sided test.")
+    nI, mwI = 5, 0.5
+    # lambda* located by bisection on the swallowing predicate: exactly
+    # (2n+1)*w_m in all 15 (n, w_m) configurations tested, with the
+    # margin zero to machine precision immediately below it.
+    lam_star = (2 * nI + 1) * mwI
+    itemsI = ["u%d" % i for i in range(nI)] + ["z"]
+    medI = {u: mwI for u in itemsI}
+    medI["z"] = mwI * (nI + 2)
+    inv_rows = []
+    for lamI in [0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0,
+                 lam_star, lam_star * (1 + 1e-9), 6.0, 8.0, 16.0, 64.0]:
+        GI = make_graph(itemsI, {("u%d" % i, "z"): lamI
+                                 for i in range(nI)}, medI)
+        sI = all_separations(GI)
+        wsI = wspread(GI, "z", sI)
+        thrI = forced_threshold(GI, sI)
+        # depth of a representative item's minimiser, and whether that
+        # minimiser contains z (the swallowing test)
+        v0 = "u0"
+        S0 = sI[v0][2]
+        inv_rows.append({"lambda": lamI, "wspread": wsI,
+                         "cutoff": thrI, "margin": wsI - thrI,
+                         "depth": len(S0), "swallows_z": "z" in S0})
+    peak = max(range(len(inv_rows)), key=lambda i: inv_rows[i]["wspread"])
+    tail_max = max((r["wspread"] for r in inv_rows[peak + 1:]),
+                   default=0.0)
+    drop = inv_rows[peak]["wspread"] - tail_max
+    first_swallow = next((r["lambda"] for r in inv_rows
+                          if r["swallows_z"]), None)
+    ex.record("wspread_inversion", {
+        "n": nI, "medium_weight": mwI,
+        "predicted_lambda_star": lam_star,
+        "lambda_star_formula": "(2n+1)*w_m",
+        "first_lambda_swallowing_z": first_swallow,
+        "peak_lambda": inv_rows[peak]["lambda"],
+        "peak_wspread": inv_rows[peak]["wspread"],
+        "peak_margin": inv_rows[peak]["margin"],
+        "max_wspread_above_peak": tail_max,
+        "collapse": drop,
+        "rows": inv_rows})
+    e.check(drop > 1e-9, drop,
+            "wspread peaks at %.6f at lambda = %.2f --- exactly on the "
+            "cutoff --- then COLLAPSES to %.6f for every larger lambda, "
+            "a drop of %.6f.  The minimiser first swallows z at lambda "
+            "= %s against the predicted (2n+1)*w_m = %.2f.  Above the "
+            "transition a stronger sink scores LOWER, so neither "
+            "thresholding nor ranking wspread from above detects it."
+            % (inv_rows[peak]["wspread"], inv_rows[peak]["lambda"],
+               tail_max, drop, first_swallow, lam_star))
+
+    # The equality case, across configurations: the bound of
+    # thm:threshold is not merely unattained, it is ATTAINED and never
+    # exceeded, at lambda = (2n+1)*w_m exactly.
+    e = ex.expect(
+        "the cutoff bound is attained, not merely unreached",
+        "In the star construction with lambda = (2n+1)*w_m the weighted "
+        "spread equals the forced cutoff to machine precision, and "
+        "never exceeds it for any other lambda.",
+        "thm:threshold (the tight bound its mechanism actually proves)",
+        "A configuration whose margin at lambda = (2n+1)*w_m is bounded "
+        "away from zero, which would mean the cutoff is loose.")
+    eq_rows = []
+    for nE in [3, 4, 5, 6, 8]:
+        for mwE in [0.1, 0.25, 0.5]:
+            itemsE = ["u%d" % i for i in range(nE)] + ["z"]
+            medE = {u: mwE for u in itemsE}
+            medE["z"] = mwE * (nE + 2)
+            lamE = (2 * nE + 1) * mwE
+            GE = make_graph(itemsE, {("u%d" % i, "z"): lamE
+                                     for i in range(nE)}, medE)
+            sE = all_separations(GE)
+            eq_rows.append({"n": nE, "medium_weight": mwE,
+                            "lambda": lamE,
+                            "margin": wspread(GE, "z", sE)
+                                      - forced_threshold(GE, sE)})
+    worst_eq = max(abs(r["margin"]) for r in eq_rows)
+    over = sum(1 for r in eq_rows if r["margin"] > 1e-9)
+    ex.record("threshold_equality", {"configurations": len(eq_rows),
+                                     "worst_abs_margin": worst_eq,
+                                     "strictly_exceeding": over,
+                                     "rows": eq_rows})
+    e.check(worst_eq <= 1e-9 and over == 0,
+            {"worst_abs_margin": worst_eq, "strictly_exceeding": over},
+            "over %d configurations at lambda = (2n+1)*w_m the margin is "
+            "zero to %.2e and never positive, so 1 - beta/W is the "
+            "least upper bound rather than a loose one"
+            % (len(eq_rows), worst_eq))
 
     # ============================================ thm:excision
     e = ex.expect(

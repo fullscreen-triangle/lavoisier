@@ -423,6 +423,12 @@ By construction $0 \leq \spr_{\wt}(z) \leq 1$.
 \end{definition}
 
 \begin{theorem}[Spread is sound]\label{thm:spread-sound}
+\emph{As printed here this theorem is defective; see
+\Cref{sec:validation} and the corrected
+\Cref{thm:spread-sound-fixed}. The upper bound below is sound and is
+the half every later result consumes; the proof's accompanying lower
+bound is false, and we retain the original statement so the defect and
+its repair can be read together.}
 Let $z \in U$ and suppose $\spr_{\wt}(z) \leq \tau$. Then for every
 $v \in U \setminus \{z\}$, deleting $z$ changes $\sep(v)$ by at most
 $\tau' \sep(v)$ where $\tau'$ is the per-$v$ contribution fraction, and
@@ -444,10 +450,16 @@ removes exactly the $z$-incident edges crossing $S$, whose total weight
 is by definition $\tau'_v \sep(v)$ with $\tau'_v$ the summand in
 \Cref{def:wspread}. The cut value of $S$ in the reduced graph is
 therefore $(1-\tau'_v)\sep(v)$, and since deletion cannot increase any
-cut value, the new separation is at most this and at least
-$\sep(v) - \tau'_v\sep(v)$ --- the latter because any admissible set in
-the reduced graph has cut value at least its value in $\Gph$ minus the
-$z$-edges it crossed, which is at most the maximum $z$-contribution.
+cut value, the new separation is at most this. \emph{The original proof
+continued: ``and at least $\sep(v) - \tau'_v\sep(v)$ --- the latter
+because any admissible set in the reduced graph has cut value at least
+its value in $\Gph$ minus the $z$-edges it crossed, which is at most the
+maximum $z$-contribution.'' That step is false: it assumes
+$S^{\ast}(v)$ is still the minimiser after the deletion, and when it is
+not, a different admissible set is cheaper and the separation falls
+below the predicted value. Measured, this happens in $29$ of $237$
+pairs, in every one of which the minimiser moved. See
+\Cref{thm:spread-sound-fixed}.}
 Averaging over $v$ gives the mean statement with $\tau$.
 
 For the converse, by \Cref{thm:collapse} the $z$-edges crossing
@@ -501,12 +513,22 @@ of the threshold above $1-\flo/W$ admit such vertices and the threshold
 must lie below it.
 \end{proof}
 
-\begin{remark}[Why forcing matters]\label{rem:forced}
-A detector with a tunable threshold is a detector whose output can be
-argued with. \Cref{thm:threshold} pins the admissible range using $\flo$
-and $W$, both computed from the graph in the same pass that computes the
-spreads. The practitioner does not choose the cutoff; the graph reports
-it.
+\begin{remark}[What forcing buys, and what it does not]\label{rem:forced}
+The motivation for pinning the cutoff was that a detector with a tunable
+threshold is a detector whose output can be argued with, and
+\Cref{thm:threshold} does pin it: $\flo$ and $W$ are both computed from
+the graph in the same pass that computes the spreads, so the
+practitioner does not choose the cutoff. What the measurements of
+\Cref{sec:validation} show is that this buys less than it appears to.
+The cutoff is not merely forced, it is the attained supremum of the
+statistic (\Cref{thm:cutoff-tight}), so the strict inequality is
+satisfied by nothing and the rule never fires; and $\spr_{\wt}$ is not
+monotone in attachment weight (\Cref{prop:inversion}), so replacing the
+fixed cutoff with a rank threshold fails on the strongest sinks. A
+forced threshold is still preferable to a tunable one, but only once
+there is a rule for it to force, and this statistic does not supply one
+in the flagging direction. \Cref{sec:protocol}(iii) states what it does
+supply.
 \end{remark}
 
 % =====================================================================
@@ -596,10 +618,20 @@ analysis; the diagnostic adds nothing to it.
 \emph{not} substitute degree --- by \Cref{thm:degree-fails} it is neither
 sound nor complete.
 
-\item \textbf{Compare against the forced threshold.} Compute $\flo$ and
-$W$ from the same pass and flag every $z$ with
-$\spr_{\wt}(z) > 1 - \flo/W$ (\Cref{thm:threshold}). The threshold is
-read from the graph, not chosen.
+\item \textbf{Use the spread in the safe direction only.} Compute $\flo$
+and $W$ from the same pass. By \Cref{thm:cutoff-tight} the quantity
+$1 - \flo/W$ is the attained supremum of $\spr_{\wt}$, so no vertex ever
+exceeds it and no flagging rule can be built on crossing it; by
+\Cref{prop:inversion} $\spr_{\wt}$ is not monotone in attachment
+weight, so ranking vertices by it does not repair this --- above
+$\lambda^*$ the strongest sinks score lowest. What the statistic
+licenses is the converse: a vertex with \emph{small} weighted spread may
+be left in place, because by \Cref{thm:spread-sound-fixed} deleting it
+could not have moved the separations by more than $\spr_{\wt}(z)$ of
+their value. Use it to decline excision, not to order it. Candidates for
+excision must come from elsewhere --- prior knowledge of the
+contaminant, or the collapse signature of \Cref{thm:collapse} --- and
+step (iv) then decides them.
 
 \item \textbf{Excise and recompute; do not reweight, and do not correct
 downstream.} By \Cref{thm:excision} excision yields a valid contact
@@ -707,7 +739,7 @@ two families, which is the theorem.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/panel3_spread_sound.png}
-\caption{\Cref{thm:spread-sound} as measured over $2403$ deletion pairs.
+\caption{\Cref{thm:spread-sound} as measured over $237$ deletion pairs.
 (a)~measured against predicted separation: the upper bound holds
 everywhere, and every departure is downward. (b)~the size of the miss as
 a share of the separation. (c)~the mechanism: the departure from the
@@ -720,20 +752,25 @@ rate does not thin out with graph size.}
 soundness theorem}, and its repair}
 
 \Cref{thm:spread-sound} as stated is false, and the measurement locates
-the error exactly. Over $2403$ deletion pairs the upper bound was never
-breached; the lower bound was breached $330$ times, and the misses are
-not rounding errors --- the median breach leaves the separation
-$8.5\%$ below the predicted value and the worst $58\%$ below.
+the error exactly. Over $237$ deletion pairs the upper bound was never
+breached --- its worst overshoot is $4.4\times10^{-16}$, which is
+floating-point noise --- while the lower bound was breached $29$ times,
+and the misses are not rounding errors: the median breach leaves the
+separation $13.0\%$ below the predicted value and the worst $41.3\%$
+below.
 
 Partitioning the same population by whether the minimiser survived the
-deletion identifies the cause. Of $1979$ pairs whose separating set was
-unchanged, the lower bound was breached exactly zero times. Of $424$
-pairs whose separating set moved, it was breached $330$ times. Every
-breach belongs to the moved population; no stable pair breaches. The
-share of the cut carried by the deleted vertex does not predict the
-breach --- its median is $0.240$ among breaching pairs against $0.483$
-among moved-but-sound ones --- so movement of the minimiser, not the
-magnitude of the deletion, is the operative condition.
+deletion identifies the cause, and the partition is exact. Of the $208$
+pairs whose separating set was unchanged, the lower bound was breached
+zero times. Of the $29$ pairs whose separating set moved, it was
+breached $29$ times. The two populations coincide with the sound and
+breaching ones respectively: movement of the minimiser is not merely
+correlated with the breach, it is a necessary and sufficient condition
+for it in every case measured. In particular there are no
+moved-but-sound pairs, so the magnitude of the deletion cannot be what
+discriminates --- the share of the cut carried by the deleted vertex has
+median $0.354$ among the breaching pairs and is undefined among
+moved-but-sound ones, there being none.
 
 The theorem's arithmetic is therefore sound and its hypothesis is
 incomplete: the proof computes the new cut of the \emph{old} minimiser,
@@ -760,20 +797,20 @@ direction that licenses that use.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/panel4_threshold.png}
-\caption{\Cref{thm:threshold}'s antecedent over $4776$ vertices.
+\caption{\Cref{thm:threshold}'s antecedent over $4779$ vertices.
 (a)~weighted spread against the forced threshold: nothing reaches the
 diagonal. (b)~the slack $(\sep(v) - \flo) - w(z)$ over graph size and
 $z$'s weight across the cut --- non-negative in all $9808$ triples, with
 $404$ exactly tight. (c)~even on constructions where $z$ demonstrably
 supplies the floor, the gap is wide at every sink weight. (d)~the margin
-distribution: the best case over $4776$ vertices is $-0.067$.}
+distribution: the best case over $4779$ vertices is $-0.067$.}
 \label{fig:panel-threshold}
 \end{figure}
 
 \subsection{\texorpdfstring{\Cref{thm:threshold}}{The threshold theorem}
 has an unsatisfiable antecedent}
 
-The threshold test as stated never fires. Over $4776$ vertices drawn
+The threshold test as stated never fires. Over $4779$ vertices drawn
 from random contact graphs, not one satisfied
 $\spr_{\wt}(z) > 1 - \flo/W$; the closest any vertex came was $0.067$
 short, on a quantity bounded by $1$. This is not sampling scarcity. The
@@ -800,16 +837,80 @@ $404$ cases exactly tight. Summing \Cref{lem:slack-identity} over the
 items is what forbids $\spr_{\wt}(z)$ from exceeding $1 - \flo/W$. The
 theorem is therefore vacuously true as stated and useless as a test.
 
-The remedy is to state the threshold as a \emph{ranking} rule rather
-than an absolute one. Weighted spread does separate sinks from ordinary
-vertices --- by more than a decade, as
-\Cref{fig:panel-degree}(d) shows --- so the operative instruction is to
-excise the vertices whose spread is extreme relative to the rest of the
-graph, not those exceeding a fixed bound the graph's own structure
-prevents any vertex from reaching. The protocol in
-\Cref{sec:protocol} should be read accordingly, and
-\Cref{thm:threshold} retained only as the statement that the fixed bound
-is never binding.
+What survives is a sharper theorem than the one printed. The bound is
+not merely never exceeded; it is \emph{attained}, and we can say exactly
+where.
+
+\begin{theorem}[The cutoff is the least upper bound]\label{thm:cutoff-tight}
+For every contact graph $G$ and every vertex $z$,
+$\spr_{\wt}(z) \le 1 - \flo/W$, and the inequality is tight: for each
+$n \ge 3$ and each medium weight $\wm > 0$ there is a graph on $n$ items
+in which $\spr_{\wt}(z) = 1 - \flo/W$ exactly.
+\end{theorem}
+
+\begin{proof}
+The inequality is \Cref{lem:slack-identity} summed over the items, as
+above. For tightness take the star $G_{n,\wm,\lambda}$: items
+$u_1,\dots,u_n$ with no contacts among themselves, each joined to $z$ at
+weight $\lambda$, every item carrying medium weight $\wm$ and $z$
+carrying $(n+2)\wm$. Equality holds at
+$\lambda = \lambda^* := (2n+1)\wm$.
+\end{proof}
+
+Measured across $15$ configurations spanning
+$n \in \{3,4,5,6,8\}$ and $\wm \in \{0.1, 0.25, 0.5\}$, the margin at
+$\lambda^*$ is zero to within $1.11\times10^{-16}$ and positive in none
+of them. So \Cref{thm:threshold}'s strict antecedent fails for a
+structural reason rather than through sampling scarcity: the graph's own
+definitions place the cutoff exactly at the supremum of the statistic,
+and a strict inequality against a supremum that is attained but never
+exceeded is satisfied by nothing.
+
+\subsection{Weighted spread is not monotone in sink strength}
+\label{sec:inversion}
+
+The natural repair --- state the threshold as a \emph{ranking} rule,
+excising the vertices whose spread is extreme relative to the rest of
+the graph rather than those exceeding a fixed bound --- does not work
+either, and the reason is a property of \Cref{def:wspread} we did not
+anticipate.
+
+In the same star family, sweep $\lambda$ upward. Below $\lambda^*$ the
+minimiser $S^*(v)$ of each item excludes $z$, so $z$'s edge crosses it
+and $\spr_{\wt}(z)$ rises with $\lambda$, reaching the cutoff exactly at
+$\lambda^*$. At $\lambda^*$ the minimiser \emph{swallows} $z$: taking
+$S^*(v) = U \cup \{z\}$ becomes cheaper than paying $\lambda$ to cut
+$z$ off, so no $z$-edge crosses the minimising cut at all and the
+$z$-term of the average collapses to the medium edge alone. Measured at
+$n = 5$, $\wm = 0.5$, $\lambda^* = 5.5$: weighted spread rises to
+$0.9167$ at $\lambda^*$ and falls to $0.5833$ for every larger
+$\lambda$ tested, up to $\lambda = 64$ --- a drop of $0.333$ that does
+not recover.
+
+\begin{proposition}[Inversion]\label{prop:inversion}
+$\spr_{\wt}(z)$ is not monotone in the attachment weight $\lambda$.
+There is a $\lambda^*$ above which increasing $\lambda$ strictly
+decreases $\spr_{\wt}(z)$.
+\end{proposition}
+
+This is a worse result than vacuity, and we report it as such. A
+detector that flags large weighted spread is not merely mis-calibrated;
+it is anti-correlated with the pathology in precisely the regime the
+paper cares about, because the strongest sinks --- those attached most
+heavily --- score \emph{lowest}. Ranking by $\spr_{\wt}$ inherits the
+defect exactly: the ordering it induces is wrong at the top. Neither
+recalibrating the cutoff nor replacing it with a rank threshold repairs
+this, and we do not claim otherwise.
+
+What the statistic does support is the bounded claim
+\Cref{thm:spread-sound-fixed} establishes: a \emph{small} weighted
+spread certifies that deleting $z$ cannot move the separations much,
+provided the minimiser is unchanged. That is a one-sided guarantee in
+the safe direction --- it licenses \emph{declining} to excise, not
+excising --- and it is the only use of \Cref{def:wspread} the
+measurements here support. \Cref{thm:threshold} is retained solely as
+\Cref{thm:cutoff-tight}, the statement that the fixed bound is the
+attained supremum and therefore never binding.
 
 % =====================================================================
 \section{Discussion}

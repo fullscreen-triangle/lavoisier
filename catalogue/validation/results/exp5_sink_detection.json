@@ -1,0 +1,854 @@
+{
+  "experiment": "exp5_sink_detection",
+  "paper": "sink-detection",
+  "question": "Does one universally-attached vertex silently collapse separation structure, and does weighted spread detect it where degree cannot?",
+  "summary": {
+    "graded": 17,
+    "passed": 15,
+    "failed": 2,
+    "non_discriminating": 0,
+    "verdict": "FAIL"
+  },
+  "expectations": [
+    {
+      "label": "thm:collapse the two-sided bound",
+      "prediction": "With a sink z at level lambda, every item satisfies beta <= sep(v) <= w(v,med) + w(v,z) + D(v), and sep(v) >= lambda*dep(v) whenever z is outside the separating set.",
+      "paper_ref": "thm:collapse",
+      "failure_mode": "A separation escaping the band, which would mean a sink does not constrain the structure the theorem says it does.",
+      "observed": {
+        "band": 0,
+        "lower": 0
+      },
+      "passed": true,
+      "detail": "0 band breaches over 6 items, 0 lower-bound breaches over 6 cases with z outside S*; control: clean graph takes 2 distinct separation values",
+      "discriminating": null
+    },
+    {
+      "label": "thm:collapse the band narrows",
+      "prediction": "As lambda grows the spread of separations across items shrinks toward a lambda-determined constant, so item-specific structure stops being visible in the output.",
+      "paper_ref": "thm:collapse (consequence)",
+      "failure_mode": "A band whose width is independent of lambda.",
+      "observed": {
+        "clean": 0.30000000000000004,
+        "lambda_64": 0.004615384615384572
+      },
+      "passed": true,
+      "detail": "relative band width falls monotonically from 0.3000 (no sink) to 0.00462 (lambda=64)",
+      "discriminating": null
+    },
+    {
+      "label": "cor:silent contamination is invisible in the output",
+      "prediction": "Every separation in the contaminated graph is positive, defined, and bit-identical under recomputation; and the multiset of returned values alone does not separate the contaminated graph from an uncontaminated one.",
+      "paper_ref": "cor:silent / rem:silence",
+      "failure_mode": "Some predicate on the returned values that flags contamination without inspecting the graph --- which would make the paper's central claim false and the detector unnecessary.",
+      "observed": {
+        "stable": true,
+        "impersonated": true
+      },
+      "passed": true,
+      "detail": "all 7 separations positive and bit-identical across runs; a sink-free graph with 7 edges reproduces the contaminated graph's 18-edge separation multiset exactly --- no output-only test separates them",
+      "discriminating": null
+    },
+    {
+      "label": "prop:amplify the sink's share does not dilute with n",
+      "prediction": "As the graph grows, the fraction of each separation carried by the sink's edges does not fall; a bounded non-sink contact weight C gives a floor of lambda/(lambda+C).",
+      "paper_ref": "prop:amplify / rem:dilution",
+      "failure_mode": "A z-fraction decreasing in n, which would mean more data dilutes a sink rather than entrenching it.",
+      "observed": {
+        "floor": 0.6451612903225806,
+        "measured_C": 1.1,
+        "min_z_fraction_by_n": [
+          0.6451612903225806,
+          0.6451612903225806,
+          0.6451612903225806,
+          0.6451612903225806,
+          0.6451612903225806,
+          0.6451612903225806
+        ],
+        "n8": 0.6624423963133641
+      },
+      "passed": true,
+      "detail": "z-fraction ATTAINS the floor lambda/(lambda+C) = 0.6452 exactly at every n from 3 to 8 (measured C = 1.100, min share 0.6452), while an ordinary vertex's share falls 0.0484 -> 0.0138. The share does not GROW with n: the proposition's bound is constant in |S|, so the manuscript's 'as deeper S' clause does not follow.",
+      "discriminating": null
+    },
+    {
+      "label": "thm:degree-fails both constructions behave as claimed",
+      "prediction": "A vertex h of degree n-1 with weight eps/n is harmless (deleting it moves no separation by more than eps), while a vertex z of degree sqrt(n) at weight lambda >> 1 is fatal (deleting it changes separations by a factor bounded from 1).",
+      "paper_ref": "thm:degree-fails",
+      "failure_mode": "Either the high-degree vertex mattering or the low-degree one not mattering, which would make degree a usable detector.",
+      "observed": {
+        "harmless_shift": 0.011111111111111072,
+        "fatal_min_ratio": 4.0
+      },
+      "passed": true,
+      "detail": "degree 9 vertex shifts separations by at most 0.01111 (<= eps=0.10); degree 3 vertex changes them by a factor >= 4.00. The harmless vertex has the LARGER degree, so no degree threshold is both sound and complete",
+      "discriminating": null
+    },
+    {
+      "label": "rem:spread-vs-degree spread separates what degree cannot",
+      "prediction": "On the same two graphs, weighted spread orders the fatal vertex above the harmless one --- the reverse of the degree order.",
+      "paper_ref": "rem:spread-vs-degree / def:wspread",
+      "failure_mode": "Weighted spread reproducing the degree order, leaving the paper with a diagnosis but no remedy.",
+      "observed": {
+        "wspread_fatal": 0.08333333333333333,
+        "wspread_harmless": 0.007247223845704266
+      },
+      "passed": true,
+      "detail": "wspread ranks fatal 0.0833 > harmless 0.0072 while degree ranks them 3 < 9 --- the two statistics disagree, and spread is the one that agrees with the damage",
+      "discriminating": null
+    },
+    {
+      "label": "thm:spread-sound (a) small weighted spread bounds the damage",
+      "prediction": "If z's per-item contribution fraction is tau'_v, deleting z changes sep(v) by at most tau'_v * sep(v).",
+      "paper_ref": "thm:spread-sound (first claim)",
+      "failure_mode": "A deletion moving a separation by more than the vertex's own contribution, which would break the bound.",
+      "observed": 0,
+      "passed": true,
+      "detail": "0 breaches over 237 (graph, item) pairs; worst overshoot 4.441e-16",
+      "discriminating": null
+    },
+    {
+      "label": "thm:spread-sound (a') the proof's LOWER bound",
+      "prediction": "The proof also asserts sep^-z(v) >= sep(v) - tau'_v*sep(v), pinning the post-deletion separation to a single value.",
+      "paper_ref": "thm:spread-sound (proof, second inequality)",
+      "failure_mode": "A separation falling BELOW the predicted value, which happens when deleting z makes a different admissible set cheaper and the minimiser moves.",
+      "observed": 29,
+      "passed": false,
+      "detail": "29 of 237 cases fall below the predicted value",
+      "discriminating": null
+    },
+    {
+      "label": "thm:spread-sound (b) sinks have large weighted spread",
+      "prediction": "A sink at level (lambda, 1) with all depths >= d has wspread >= lambda/(lambda+C), where C bounds non-sink contact weight per item.",
+      "paper_ref": "thm:spread-sound (converse)",
+      "failure_mode": "A sink with small weighted spread, which would make the detector unsound.",
+      "observed": {
+        "wspreads": [
+          0.3365384615384615,
+          0.5026455026455027,
+          0.6682027649769585,
+          0.8006535947712418,
+          0.8891108891108891
+        ]
+      },
+      "passed": true,
+      "detail": "bound holds at all 5 values of lambda (wspread 0.337 -> 0.889 as lambda 0.5 -> 8); control: the harmless high-degree vertex sits at 0.0072",
+      "discriminating": null
+    },
+    {
+      "label": "prop:spread-cost the one-pass accumulation is correct",
+      "prediction": "Accumulating wt(e)/sep(v) into both endpoints of each crossing edge, in one pass, reproduces def:wspread for every vertex.",
+      "paper_ref": "prop:spread-cost",
+      "failure_mode": "A discrepancy between the streaming accumulation and the definition, which would make the stated cost the cost of a different quantity.",
+      "observed": 0,
+      "passed": true,
+      "detail": "31 vertices across 4 graphs, 0 mismatches, worst absolute gap 0.00e+00",
+      "discriminating": null
+    },
+    {
+      "label": "thm:threshold the antecedent is satisfiable at all",
+      "prediction": "Some vertex somewhere has wspread(z) > 1 - floor/W. If nothing can satisfy the hypothesis, the theorem is vacuous and the cutoff rem:forced advertises never fires.",
+      "paper_ref": "thm:threshold, rem:forced",
+      "failure_mode": "No vertex in any graph exceeding the cutoff, which would make the claim that 'the graph reports the cutoff' empty.",
+      "observed": 0,
+      "passed": false,
+      "detail": "0 of 4779 vertices exceeded the cutoff; best margin -6.724e-02. The three constructions in which z demonstrably supplies the floor land EXACTLY on the cutoff, never above it.",
+      "discriminating": null
+    },
+    {
+      "label": "thm:threshold why the antecedent cannot be met",
+      "prediction": "For every item v, the z-weight crossing S*(v) is at most sep(v) - floor, because v's medium edge always crosses S*(v) and is never a z edge. Each term of the wspread average is therefore at most 1 - floor/sep(v) <= 1 - floor/W, so the average cannot exceed 1 - floor/W.",
+      "paper_ref": "def:wspread with def:contact and thm:floor",
+      "failure_mode": "A single (graph, z, v) triple where the z-weight crossing S*(v) exceeds sep(v) - floor, which would leave room for the antecedent to be satisfiable after all.",
+      "observed": -4.440892098500626e-16,
+      "passed": true,
+      "detail": "over 9808 (graph, z, item) triples the slack [sep(v) - floor] - z_weight is never negative; its minimum is -0.000000, so the bound is tight and thm:threshold's antecedent is unsatisfiable",
+      "discriminating": null
+    },
+    {
+      "label": "def:wspread is non-monotone in sink strength",
+      "prediction": "There is a lambda* above which increasing the sink's attachment weight DECREASES its weighted spread, because S*(v) absorbs z and no z edge crosses the minimising cut. A detector that flags large wspread therefore misses the strongest sinks, and ranking by wspread does not repair it.",
+      "paper_ref": "def:wspread, read against thm:threshold",
+      "failure_mode": "wspread rising monotonically in lambda across the sweep, which would leave the statistic usable as a one-sided test.",
+      "observed": 0.33333333333333326,
+      "passed": true,
+      "detail": "wspread peaks at 0.916667 at lambda = 5.50 --- exactly on the cutoff --- then COLLAPSES to 0.583333 for every larger lambda, a drop of 0.333333.  The minimiser first swallows z at lambda = 5.5000000055000005 against the predicted (2n+1)*w_m = 5.50.  Above the transition a stronger sink scores LOWER, so neither thresholding nor ranking wspread from above detects it.",
+      "discriminating": null
+    },
+    {
+      "label": "the cutoff bound is attained, not merely unreached",
+      "prediction": "In the star construction with lambda = (2n+1)*w_m the weighted spread equals the forced cutoff to machine precision, and never exceeds it for any other lambda.",
+      "paper_ref": "thm:threshold (the tight bound its mechanism actually proves)",
+      "failure_mode": "A configuration whose margin at lambda = (2n+1)*w_m is bounded away from zero, which would mean the cutoff is loose.",
+      "observed": {
+        "worst_abs_margin": 1.1102230246251565e-16,
+        "strictly_exceeding": 0
+      },
+      "passed": true,
+      "detail": "over 15 configurations at lambda = (2n+1)*w_m the margin is zero to 1.11e-16 and never positive, so 1 - beta/W is the least upper bound rather than a loose one",
+      "discriminating": null
+    },
+    {
+      "label": "thm:excision (a) and (b) validity and monotonicity",
+      "prediction": "The excised graph is a contact graph with its own floor beta^-z >= beta, and sep^-z(v) <= sep(v) for every survivor.",
+      "paper_ref": "thm:excision (a),(b)",
+      "failure_mode": "An excision raising a separation, or destroying a medium edge.",
+      "observed": {
+        "monotone": true,
+        "floor_after": 0.5
+      },
+      "passed": true,
+      "detail": "every survivor keeps its medium edge, floor 0.50 -> 0.50, and all 6 separations fall (6 strictly)",
+      "discriminating": null
+    },
+    {
+      "label": "thm:excision (c) the order reversal is realisable",
+      "prediction": "Two items exist whose separation ORDER reverses under excision, so excision is not a monotone rescaling and cannot be applied as a correction after the fact.",
+      "paper_ref": "thm:excision (c) / rem:remedy",
+      "failure_mode": "No such pair, which would leave the operational claim -- that results computed before excision cannot be adjusted -- unsupported.",
+      "observed": {
+        "before": [
+          2.6,
+          1.4100000000000001
+        ],
+        "after": [
+          1.0,
+          1.4
+        ]
+      },
+      "passed": true,
+      "detail": "before excision v1=2.600 > v2=1.410; after, v1=1.000 < v2=1.400 --- the order reverses, so no post-hoc rescaling can reproduce it",
+      "discriminating": null
+    },
+    {
+      "label": "prop:reweight-fails no alpha > 0 removes the collapse",
+      "prediction": "Multiplying the sink's edges by any alpha in (0,1) leaves the collapse intact at a deeper d; the sink's share of each separation stays bounded away from zero and the band still narrows with depth.",
+      "paper_ref": "prop:reweight-fails",
+      "failure_mode": "Some alpha at which the sink's share vanishes, which would make reweighting a legitimate remedy and the excision requirement unnecessary.",
+      "observed": {
+        "fractions": [
+          0.6682027649769585,
+          0.5026455026455027,
+          0.1692307692307692,
+          0.02003484320557491
+        ],
+        "depths": [
+          0.25,
+          0.5,
+          2.5,
+          25.0
+        ]
+      },
+      "passed": true,
+      "detail": "sink share stays positive at every alpha (0.0200 at alpha=0.01) and the recurrence depth grows as 1/alpha (0.2 -> 25.0); excision by contrast takes it to exactly 0",
+      "discriminating": null
+    }
+  ],
+  "records": {
+    "collapse": {
+      "beta": 0.5,
+      "lambda": 2.0,
+      "seps": {
+        "u0": 2.8,
+        "u1": 3.1,
+        "u2": 3.1,
+        "u3": 3.1,
+        "u4": 3.1,
+        "u5": 2.8,
+        "z": 19.0
+      },
+      "deps": {
+        "u0": 1,
+        "u1": 1,
+        "u2": 1,
+        "u3": 1,
+        "u4": 1,
+        "u5": 1,
+        "z": 7
+      },
+      "band_breaches": 0,
+      "z_outside_cases": 6,
+      "lower_bound_breaches": 0
+    },
+    "collapse_control": {
+      "clean_sep_values": [
+        0.8,
+        1.1
+      ],
+      "varies_without_sink": true
+    },
+    "band_width_vs_lambda": [
+      {
+        "lambda": 0.0,
+        "rel_width": 0.30000000000000004
+      },
+      {
+        "lambda": 0.25,
+        "rel_width": 0.24000000000000005
+      },
+      {
+        "lambda": 1.0,
+        "rel_width": 0.15000000000000002
+      },
+      {
+        "lambda": 4.0,
+        "rel_width": 0.05999999999999996
+      },
+      {
+        "lambda": 16.0,
+        "rel_width": 0.017647058823529453
+      },
+      {
+        "lambda": 64.0,
+        "rel_width": 0.004615384615384572
+      }
+    ],
+    "silent": {
+      "stable_under_recomputation": true,
+      "all_positive": true,
+      "contaminated_values": [
+        2.8,
+        2.8,
+        3.1,
+        3.1,
+        3.1,
+        3.1,
+        19.0
+      ],
+      "clean_impersonator_values": [
+        2.8,
+        2.8,
+        3.1,
+        3.1,
+        3.1,
+        3.1,
+        19.0
+      ],
+      "indistinguishable_from_output": true
+    },
+    "silent_control": {
+      "contaminated_edges": 18,
+      "clean_edges": 7,
+      "structurally_different": true
+    },
+    "amplify": [
+      {
+        "n": 3,
+        "mean_z_fraction": 0.6912442396313364,
+        "min_z_fraction": 0.6451612903225806
+      },
+      {
+        "n": 4,
+        "mean_z_fraction": 0.6797235023041475,
+        "min_z_fraction": 0.6451612903225806
+      },
+      {
+        "n": 5,
+        "mean_z_fraction": 0.6728110599078341,
+        "min_z_fraction": 0.6451612903225806
+      },
+      {
+        "n": 6,
+        "mean_z_fraction": 0.6682027649769585,
+        "min_z_fraction": 0.6451612903225806
+      },
+      {
+        "n": 7,
+        "mean_z_fraction": 0.6649111257406188,
+        "min_z_fraction": 0.6451612903225806
+      },
+      {
+        "n": 8,
+        "mean_z_fraction": 0.6624423963133641,
+        "min_z_fraction": 0.6451612903225806
+      }
+    ],
+    "amplify_control": {
+      "ordinary_vertex": [
+        {
+          "n": 3,
+          "mean_ordinary_fraction": 0.04838709677419355
+        },
+        {
+          "n": 4,
+          "mean_ordinary_fraction": 0.03225806451612903
+        },
+        {
+          "n": 5,
+          "mean_ordinary_fraction": 0.024193548387096774
+        },
+        {
+          "n": 6,
+          "mean_ordinary_fraction": 0.01935483870967742
+        },
+        {
+          "n": 7,
+          "mean_ordinary_fraction": 0.016129032258064516
+        },
+        {
+          "n": 8,
+          "mean_ordinary_fraction": 0.013824884792626727
+        }
+      ],
+      "ordinary_dilutes": true
+    },
+    "degree_fails": {
+      "harmless": {
+        "vertex": "h",
+        "degree": 9,
+        "max_separation_shift": 0.011111111111111072,
+        "epsilon": 0.1
+      },
+      "fatal": {
+        "vertex": "z",
+        "degree": 3,
+        "separation_ratios": [
+          4.0,
+          4.0,
+          4.0
+        ]
+      }
+    },
+    "degree_fails_control": {
+      "deg_harmless": 9,
+      "deg_fatal": 3,
+      "harmless_has_larger_degree": true
+    },
+    "spread_vs_degree": {
+      "harmless": {
+        "degree": 9,
+        "wspread": 0.007247223845704266
+      },
+      "fatal": {
+        "degree": 3,
+        "wspread": 0.08333333333333333
+      }
+    },
+    "spread_sound_a": {
+      "cases": 237,
+      "upper_bound_breaches": 0,
+      "lower_bound_breaches": 29,
+      "worst_upper_overshoot": 4.440892098500626e-16,
+      "lower_bound_counterexamples": [
+        {
+          "sep_before": 2.025253271012653,
+          "sep_after": 2.0070795844574096,
+          "sink_weight_on_old_minimiser": 0,
+          "predicted": 2.025253271012653,
+          "old_minimiser": [
+            "a0"
+          ],
+          "new_minimiser": [
+            "a0",
+            "a1"
+          ]
+        },
+        {
+          "sep_before": 2.8651163874029173,
+          "sep_after": 1.466245698385109,
+          "sink_weight_on_old_minimiser": 1.068139508966522,
+          "predicted": 1.7969768784363953,
+          "old_minimiser": [
+            "a1"
+          ],
+          "new_minimiser": [
+            "a1",
+            "a2"
+          ]
+        },
+        {
+          "sep_before": 2.8543686508259274,
+          "sep_after": 2.323625599733051,
+          "sink_weight_on_old_minimiser": 0.07918793673367588,
+          "predicted": 2.7751807140922513,
+          "old_minimiser": [
+            "a1"
+          ],
+          "new_minimiser": [
+            "a0",
+            "a1",
+            "a2"
+          ]
+        }
+      ]
+    },
+    "spread_sound_a_lower": {
+      "cases": 237,
+      "breaches": 29,
+      "stable_cases": 208,
+      "stable_breaches": 0,
+      "moved_cases": 29,
+      "moved_breaches": 29,
+      "median_relative_shortfall": 0.12969528259641153,
+      "worst_relative_shortfall": 0.4130009470614847,
+      "median_tw_fraction_breaching": 0.3536662193701628,
+      "median_tw_fraction_moved_sound": null
+    },
+    "spread_sound_b": {
+      "checks": [
+        {
+          "lambda": 0.5,
+          "wspread": 0.3365384615384615,
+          "C": 1.1,
+          "bound": 0.3125,
+          "holds": true
+        },
+        {
+          "lambda": 1.0,
+          "wspread": 0.5026455026455027,
+          "C": 1.1,
+          "bound": 0.47619047619047616,
+          "holds": true
+        },
+        {
+          "lambda": 2.0,
+          "wspread": 0.6682027649769585,
+          "C": 1.1,
+          "bound": 0.6451612903225806,
+          "holds": true
+        },
+        {
+          "lambda": 4.0,
+          "wspread": 0.8006535947712418,
+          "C": 1.1,
+          "bound": 0.7843137254901962,
+          "holds": true
+        },
+        {
+          "lambda": 8.0,
+          "wspread": 0.8891108891108891,
+          "C": 1.1,
+          "bound": 0.8791208791208791,
+          "holds": true
+        }
+      ]
+    },
+    "spread_sound_b_control": {
+      "harmless_wspread": 0.007247223845704266,
+      "harmless_bound": 0.01,
+      "stays_low": true
+    },
+    "spread_cost": {
+      "compared": 31,
+      "mismatches": 0,
+      "worst_abs_gap": 0.0
+    },
+    "spread_cost_control": {
+      "values_nontrivial": true
+    },
+    "threshold_satisfiability": {
+      "vertices_tested": 4779,
+      "strict_fires": 0,
+      "best_margin": -0.06724105131599512,
+      "floor_supplying_constructions": [
+        {
+          "n": 4,
+          "lambda": 0.05,
+          "threshold": 0.8387096774193549,
+          "wspread": 0.047619047619047616,
+          "fires": false,
+          "supplies_floor": true,
+          "margin": -0.7910906298003073
+        },
+        {
+          "n": 5,
+          "lambda": 0.02,
+          "threshold": 0.8591549295774648,
+          "wspread": 0.0196078431372549,
+          "fires": false,
+          "supplies_floor": true,
+          "margin": -0.8395470864402098
+        },
+        {
+          "n": 6,
+          "lambda": 0.01,
+          "threshold": 0.8759305210918115,
+          "wspread": 0.009900990099009901,
+          "fires": false,
+          "supplies_floor": true,
+          "margin": -0.8660295309928016
+        }
+      ]
+    },
+    "threshold_mechanism": {
+      "triples_checked": 9808,
+      "min_slack": -4.440892098500626e-16,
+      "exactly_tight": 404
+    },
+    "wspread_inversion": {
+      "n": 5,
+      "medium_weight": 0.5,
+      "predicted_lambda_star": 5.5,
+      "lambda_star_formula": "(2n+1)*w_m",
+      "first_lambda_swallowing_z": 5.5000000055000005,
+      "peak_lambda": 5.5,
+      "peak_wspread": 0.9166666666666666,
+      "peak_margin": 0.0,
+      "max_wspread_above_peak": 0.5833333333333334,
+      "collapse": 0.33333333333333326,
+      "rows": [
+        {
+          "lambda": 0.05,
+          "wspread": 0.09090909090909091,
+          "cutoff": 0.8666666666666667,
+          "margin": -0.7757575757575758,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 0.1,
+          "wspread": 0.16666666666666669,
+          "cutoff": 0.875,
+          "margin": -0.7083333333333333,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 0.25,
+          "wspread": 0.3333333333333333,
+          "cutoff": 0.8947368421052632,
+          "margin": -0.5614035087719298,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 0.5,
+          "wspread": 0.5,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.41666666666666663,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 1.0,
+          "wspread": 0.6666666666666666,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.25,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 2.0,
+          "wspread": 0.8,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.11666666666666659,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 4.0,
+          "wspread": 0.888888888888889,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.02777777777777768,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 5.5,
+          "wspread": 0.9166666666666666,
+          "cutoff": 0.9166666666666666,
+          "margin": 0.0,
+          "depth": 1,
+          "swallows_z": false
+        },
+        {
+          "lambda": 5.5000000055000005,
+          "wspread": 0.5833333333333334,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.33333333333333326,
+          "depth": 6,
+          "swallows_z": true
+        },
+        {
+          "lambda": 6.0,
+          "wspread": 0.5833333333333334,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.33333333333333326,
+          "depth": 6,
+          "swallows_z": true
+        },
+        {
+          "lambda": 8.0,
+          "wspread": 0.5833333333333334,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.33333333333333326,
+          "depth": 6,
+          "swallows_z": true
+        },
+        {
+          "lambda": 16.0,
+          "wspread": 0.5833333333333334,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.33333333333333326,
+          "depth": 6,
+          "swallows_z": true
+        },
+        {
+          "lambda": 64.0,
+          "wspread": 0.5833333333333334,
+          "cutoff": 0.9166666666666666,
+          "margin": -0.33333333333333326,
+          "depth": 6,
+          "swallows_z": true
+        }
+      ]
+    },
+    "threshold_equality": {
+      "configurations": 15,
+      "worst_abs_margin": 1.1102230246251565e-16,
+      "strictly_exceeding": 0,
+      "rows": [
+        {
+          "n": 3,
+          "medium_weight": 0.1,
+          "lambda": 0.7000000000000001,
+          "margin": 0.0
+        },
+        {
+          "n": 3,
+          "medium_weight": 0.25,
+          "lambda": 1.75,
+          "margin": 0.0
+        },
+        {
+          "n": 3,
+          "medium_weight": 0.5,
+          "lambda": 3.5,
+          "margin": 0.0
+        },
+        {
+          "n": 4,
+          "medium_weight": 0.1,
+          "lambda": 0.9,
+          "margin": 0.0
+        },
+        {
+          "n": 4,
+          "medium_weight": 0.25,
+          "lambda": 2.25,
+          "margin": 0.0
+        },
+        {
+          "n": 4,
+          "medium_weight": 0.5,
+          "lambda": 4.5,
+          "margin": 0.0
+        },
+        {
+          "n": 5,
+          "medium_weight": 0.1,
+          "lambda": 1.1,
+          "margin": 0.0
+        },
+        {
+          "n": 5,
+          "medium_weight": 0.25,
+          "lambda": 2.75,
+          "margin": 0.0
+        },
+        {
+          "n": 5,
+          "medium_weight": 0.5,
+          "lambda": 5.5,
+          "margin": 0.0
+        },
+        {
+          "n": 6,
+          "medium_weight": 0.1,
+          "lambda": 1.3,
+          "margin": -1.1102230246251565e-16
+        },
+        {
+          "n": 6,
+          "medium_weight": 0.25,
+          "lambda": 3.25,
+          "margin": 1.1102230246251565e-16
+        },
+        {
+          "n": 6,
+          "medium_weight": 0.5,
+          "lambda": 6.5,
+          "margin": 1.1102230246251565e-16
+        },
+        {
+          "n": 8,
+          "medium_weight": 0.1,
+          "lambda": 1.7000000000000002,
+          "margin": 1.1102230246251565e-16
+        },
+        {
+          "n": 8,
+          "medium_weight": 0.25,
+          "lambda": 4.25,
+          "margin": 1.1102230246251565e-16
+        },
+        {
+          "n": 8,
+          "medium_weight": 0.5,
+          "lambda": 8.5,
+          "margin": 1.1102230246251565e-16
+        }
+      ]
+    },
+    "excision_ab": {
+      "medium_edges_intact": true,
+      "floor_before": 0.5,
+      "floor_after": 0.5,
+      "monotone": true,
+      "strictly_decreased": 6,
+      "of_items": 6
+    },
+    "excision_c": {
+      "sep_before": {
+        "v1": 2.6,
+        "v2": 1.4100000000000001
+      },
+      "sep_after": {
+        "v1": 1.0,
+        "v2": 1.4
+      },
+      "order_reverses": true
+    },
+    "reweight": [
+      {
+        "alpha": 1.0,
+        "mean_z_fraction": 0.6682027649769585,
+        "still_positive": true,
+        "depth_for_recurrence": 0.25
+      },
+      {
+        "alpha": 0.5,
+        "mean_z_fraction": 0.5026455026455027,
+        "still_positive": true,
+        "depth_for_recurrence": 0.5
+      },
+      {
+        "alpha": 0.1,
+        "mean_z_fraction": 0.1692307692307692,
+        "still_positive": true,
+        "depth_for_recurrence": 2.5
+      },
+      {
+        "alpha": 0.01,
+        "mean_z_fraction": 0.02003484320557491,
+        "still_positive": true,
+        "depth_for_recurrence": 25.0
+      }
+    ],
+    "reweight_control": {
+      "z_weight_after_excision": 0.0
+    }
+  },
+  "notes": [
+    "prop:amplify's proof closes with 'taking lambda large or the analysis to deeper S drives the fraction to 1', but the bound it has just derived, lambda/(lambda+C), is CONSTANT in |S|. Depth does not drive it to 1; only lambda does. The test above grades the claim the proof establishes -- that the fraction does not fall with n -- and the manuscript should drop the 'deeper S' half of that sentence.",
+    "thm:spread-sound's proof derives 'at most (1 - tau'_v) sep(v)' and 'at least sep(v) - tau'_v sep(v)'. These are the same number, so the proof pins the deleted separation to a single value. It does so by treating S*(v) as still the minimiser after z is removed, which it need not be: deleting a vertex removes edges elsewhere and can make a different admissible set cheaper. Measured: 0 upper-bound breaches over 237 pairs, 29 lower-bound breaches. Trial 0 item a0 is the clearest witness --- S*(a0) carried NO z-weight, so the bound predicts no movement at all, yet sep(a0) moved by 0.0182 as the minimiser shifted from {a0} to {a0,a1}. The upper bound is sound and is the half the detector actually needs.",
+    "thm:threshold's antecedent is unsatisfiable, so the theorem is vacuously true and rem:forced's 'the graph reports the cutoff' claim is empty. Mechanism: v's medium edge crosses S*(v) by def:contact (v in S, medium not in S) and is never a z edge, so the z-weight crossing S*(v) is at most sep(v) - beta. Every term of the def:wspread average is therefore at most 1 - beta/sep(v) <= 1 - beta/W, and an average of such terms cannot exceed 1 - beta/W. Verified: minimum slack exactly 0 over thousands of (graph, z, item) triples --- tight, never negative. Three hand-built graphs in which z demonstrably DOES supply the floor land exactly ON the cutoff, never above it.",
+    "All separations here are computed by exhaustive minimisation over admissible subsets. prop:computable's max-flow claim is validated in exp4 against the same brute-force values; using it here would assume the machinery under test.",
+    "rem:medium is stated in this paper as it is in runtime-graph: the medium's adjacency to every vertex is definitional and thm:floor fails without it. exp2 and exp4 both confirmed empirically that removing it leaves a zero-cost separating set. The repository's CLAUDE.md and memory notes calling `purpose ckg build`'s node `m` a phantom-node BUG are therefore describing the structure these papers argue is load-bearing."
+  ],
+  "environment": {
+    "python": "3.14.3",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "elapsed_s": 0.928
+  }
+}
