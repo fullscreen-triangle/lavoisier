@@ -183,13 +183,23 @@ def spread_sound():
             pred = sep_v - tw
             pts.append({"n": n, "pred": pred, "new": new, "sep": sep_v,
                         "tau": tw / sep_v,
-                        "moved": sorted(S) != sorted(st0[v][2])})
+                        # S is computed on Gt and may contain the sink
+                        # "t"; st0[v][2] is computed on Gt0 and cannot.
+                        # Comparing them unstripped reports a move
+                        # whenever "t" merely sat in the separating set,
+                        # which inflates the moved population by 94 of
+                        # 424 --- and every one of those 94 is
+                        # moved-but-sound, a population exp5's register
+                        # measures as empty.
+                        "moved": sorted(x for x in S if x != "t")
+                                 != sorted(st0[v][2])})
             d = per_n.setdefault(n, {"cases": 0, "upper": 0, "lower": 0,
                                      "moved": 0})
             d["cases"] += 1
             d["upper"] += int(new > pred + 1e-9)
             d["lower"] += int(new < pred - 1e-9)
-            d["moved"] += int(sorted(S) != sorted(st0[v][2]))
+            d["moved"] += int(sorted(x for x in S if x != "t")
+                              != sorted(st0[v][2]))
     OUT["spread_sound"] = {
         "points": pts,
         "by_n": [dict(n=k, **v) for k, v in sorted(per_n.items())],
@@ -317,6 +327,15 @@ if __name__ == "__main__":
 
     assert OUT["spread_sound"]["upper_breaches"] == 0
     assert OUT["spread_sound"]["lower_breaches"] > 0
+    # exp5's register measures the stable/moved split as EXACT: every
+    # moved pair breaches and every stable pair is sound, so the
+    # moved-but-sound population is empty.  The sweep is a different
+    # random family and must reproduce that structure, not merely a
+    # correlation.  This assertion is what caught the "t"-stripping bug
+    # above --- it failed at 94 moved-but-sound points.
+    _ms = [q for q in OUT["spread_sound"]["points"]
+           if q["moved"] and not (q["new"] < q["pred"] - 1e-9)]
+    assert not _ms, "moved but sound: %d" % len(_ms)
 
     assert OUT["threshold"]["fires"] == 0
     assert OUT["threshold"]["negative_slacks"] == 0
