@@ -4,8 +4,13 @@
 //  The page with the most to be honest about. Every graded cell hit its
 //  bound to full precision, and three of the paper's own stated results
 //  are defective --- one whose proof overreaches, one whose lower bound
-//  is simply false, and one whose antecedent nothing satisfies. The
-//  experiment found all three and the paper reports all three.
+//  is simply false, and one whose antecedent nothing satisfies.
+//
+//  The third turned out to be the worst of them. Measuring WHY nothing
+//  satisfies the antecedent found that weighted spread INVERTS: past a
+//  transition located exactly at (2n+1)*w_m, a stronger sink scores
+//  lower. That is not a mis-calibration, and this page does not present
+//  it as one.
 // =====================================================================
 
 import { Link } from 'react-router-dom'
@@ -25,6 +30,10 @@ const SA = REC.spread_sound_a
 const CO = REC.collapse
 const AM = REC.amplify
 const AC = REC.amplify_control
+const INV = REC.wspread_inversion
+const EQ = REC.threshold_equality
+const SAL = REC.spread_sound_a_lower
+const SUM = EXPERIMENTS.exp5.summary
 
 /* --------------------------------------------------- the collapse -- */
 
@@ -169,10 +178,23 @@ function SpreadSoundDemo() {
         <b>{SA.upper_bound_breaches} breaches</b>, worst overshoot{' '}
         {SA.worst_upper_overshoot.toExponential(1)}, which is floating-point
         noise &mdash; while the lower bound was breached{' '}
-        <b>{SA.lower_bound_breaches} times</b>. Every one of those breaches has a
-        moved minimiser, which is what the counterexamples in the register show:
-        the predicted value assumes the old minimising set survives, and it does
-        not.
+        <b>{SA.lower_bound_breaches} times</b>, leaving the separation a median{' '}
+        {(SAL.median_relative_shortfall * 100).toFixed(1)}% and at worst{' '}
+        {(SAL.worst_relative_shortfall * 100).toFixed(1)}% below the predicted
+        value.
+      </p>
+      <p className="note">
+        The split is not a tendency, it is exact. Of the{' '}
+        <b>{SAL.stable_cases}</b> pairs whose separating set was unchanged the
+        lower bound was breached <b>{SAL.stable_breaches}</b> times; of the{' '}
+        <b>{SAL.moved_cases}</b> whose separating set moved it was breached{' '}
+        <b>{SAL.moved_breaches}</b> times. The two populations coincide with the
+        sound and breaching ones, so movement of the minimiser is not merely
+        correlated with the failure &mdash; it is <i>necessary and sufficient</i>{' '}
+        for it in every case measured. In particular there are no
+        moved-but-sound pairs at all, which is why the magnitude of the deletion
+        cannot be the discriminating quantity: there is nothing on the other
+        side to compare it against.
       </p>
     </div>
   )
@@ -206,15 +228,117 @@ function ThresholdDemo() {
       />
       <p className="note">
         Every point lies <i>below</i> the diagonal, meaning no vertex reaches its
-        own threshold. The theorem is not false &mdash; it is vacuous: its
-        antecedent is satisfied by nothing. Over the full sweep of{' '}
-        {rec.vertices_tested} vertices the antecedent fired{' '}
-        {rec.strict_fires} times, and the closest any vertex came was{' '}
-        {Math.abs(rec.best_margin).toFixed(4)} short. A conditional nothing
-        satisfies proves nothing about anything. The {m.length} points plotted
-        are a downsample of that sweep, so read the two figures above from the
-        register rather than off the chart&rsquo;s extremes.
+        own threshold. Over the full sweep of {rec.vertices_tested} vertices the
+        antecedent fired {rec.strict_fires} times, and the closest any vertex
+        came was {Math.abs(rec.best_margin).toFixed(4)} short. The {m.length}{' '}
+        points plotted are a downsample of that sweep, so read the two figures
+        above from the register rather than off the chart&rsquo;s extremes.
       </p>
+      <p className="note">
+        The obvious diagnosis is that the cutoff is set too high, and it is
+        wrong. The cutoff is <i>exactly</i> right &mdash; it is attained, as the
+        next chart shows &mdash; and the reason nothing reaches it is worse than
+        a bad constant.
+      </p>
+    </div>
+  )
+}
+
+/* ------------------------------------------------- the inversion -- */
+
+// What the vacuity turned out to be hiding. Weighted spread rises with
+// the sink's attachment weight up to lambda* = (2n+1)*w_m, touches the
+// cutoff there exactly, and then COLLAPSES --- so the strongest sinks
+// score lowest. Plotted against log10(lambda) because the sweep spans
+// three decades and the collapse is at one end of it.
+function InversionDemo() {
+  const rows = INV.rows
+  const L = (r) => Math.log10(r.lambda)
+  const lo = Math.min(...rows.map(L))
+  const hi = Math.max(...rows.map(L))
+  const star = Math.log10(INV.peak_lambda)
+
+  return (
+    <div className="panel">
+      <div className="grid g2">
+        <LineChart
+          series={[
+            {
+              label: 'weighted spread',
+              points: rows.map((r) => [L(r), r.wspread]),
+              color: BADC,
+            },
+            {
+              label: 'the cutoff 1 − β/W',
+              points: rows.map((r) => [L(r), r.cutoff]),
+              color: SERIES[3],
+            },
+            {
+              label: 'λ* = (2n+1)·w_m  (marker, not data)',
+              points: [
+                [star, 0],
+                [star, 1],
+              ],
+              color: 'var(--ink-faint)',
+            },
+          ]}
+          xDomain={[lo, hi]}
+          yDomain={[0, 1]}
+          xLabel="log₁₀ λ  (the sink's attachment weight)"
+          yLabel="weighted spread"
+          xFmt={(v) => v.toFixed(1)}
+          yFmt={(v) => v.toFixed(2)}
+          h={310}
+        />
+        <div>
+          <div className="grid g2">
+            <Stat
+              value={INV.peak_wspread.toFixed(4)}
+              label={'peak, at λ* = ' + INV.peak_lambda}
+            />
+            <Stat
+              value={'−' + INV.collapse.toFixed(4)}
+              label="the drop just past it"
+              color="var(--bad)"
+            />
+          </div>
+          <p>
+            The red curve rises with λ, meets the cutoff at{' '}
+            <span className="mono">λ* = {INV.peak_lambda}</span> exactly, and
+            then falls to {INV.max_wspread_above_peak.toFixed(4)} and stays
+            there for every larger λ. Past λ* the minimising set{' '}
+            <i>swallows the sink</i>: <span className="mono">z</span> lands
+            inside <span className="mono">S*(v)</span>, so none of its edges
+            cross the cut and its weight stops being counted.
+          </p>
+          <p className="note">
+            The transition is not fitted. It was located by bisecting the
+            swallowing predicate, and came out at{' '}
+            <span className="mono">(2n+1)·w_m</span> in all{' '}
+            {EQ.configurations} configurations of n and medium weight tested,
+            with the margin at{' '}
+            {Math.abs(EQ.worst_abs_margin).toExponential(1)} &mdash; machine
+            zero &mdash; and <b>{EQ.strictly_exceeding}</b> ever exceeding the
+            cutoff. First λ observed to swallow z here:{' '}
+            {INV.first_lambda_swallowing_z.toFixed(6)}, against the predicted{' '}
+            {INV.predicted_lambda_star}.
+          </p>
+        </div>
+      </div>
+      <Callout tone="warn">
+        This is <b>worse than vacuity</b>, and it is the reason the page does
+        not simply lower the cutoff. A detector that flags large weighted
+        spread is not mis-calibrated &mdash; it is <i>anti-correlated</i> with
+        the pathology in exactly the regime the paper cares about, because the
+        most heavily attached sinks score <i>lowest</i>. Ranking inherits the
+        defect unchanged: the ordering is wrong at the top, which is the only
+        part of it anyone reads. The paper replaces the threshold with{' '}
+        <span className="mono">thm:cutoff-tight</span> &mdash; the cutoff is the
+        least upper bound, with an explicit equality family &mdash; and rewrites
+        the protocol to use the spread <b>in the safe direction only</b>: a
+        vertex with <i>small</i> spread may be left in place. It licenses
+        declining to excise, never ordering an excision.
+      </Callout>
     </div>
   )
 }
@@ -258,8 +382,10 @@ export default function SinkDetection() {
         title="Three stated results that do not hold as printed"
         sub={
           'These were found by the experiment, not by a reviewer, and they are on ' +
-          'this page rather than in an appendix. Two of the fifteen graded rows ' +
-          'below fail, and this is why.'
+          'this page rather than in an appendix. ' +
+          SUM.failed + ' of the ' + SUM.graded + ' graded rows below fail, ' +
+          'and this is why --- and the third defect is the one that cost the ' +
+          'paper its detection criterion outright.'
         }
       >
         <h3>thm:spread-sound &mdash; the lower bound is false</h3>
@@ -276,6 +402,11 @@ export default function SinkDetection() {
 
         <h3>thm:threshold &mdash; the antecedent is unsatisfiable</h3>
         <ThresholdDemo />
+
+        <h3>
+          def:wspread &mdash; and the reason nothing satisfies it
+        </h3>
+        <InversionDemo />
 
         <h3>prop:amplify &mdash; the depth half of the proof is wrong</h3>
         <Callout tone="warn">
@@ -302,7 +433,12 @@ export default function SinkDetection() {
         id="claims"
         kicker="registered predictions"
         title="What was predicted, and what happened"
-        sub="Fifteen rows, thirteen reproduced, two refuted. The two failures are the defects above."
+        sub={
+          SUM.graded + ' rows, ' + SUM.passed + ' reproduced, ' + SUM.failed +
+          ' refuted. The failures are the defects above, and the two rows ' +
+          'grading the inversion both pass --- the statistic really does ' +
+          'invert, and really does attain the cutoff.'
+        }
       >
         <ClaimsTable expKey="exp5" />
         <Environment expKey="exp5" />
